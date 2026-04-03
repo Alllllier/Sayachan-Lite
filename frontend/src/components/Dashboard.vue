@@ -1,0 +1,614 @@
+<script setup>
+import { computed, ref, onMounted, watch } from 'vue'
+import { generateWeeklyReview, recommendFocus, generateActionPlan, generateTaskDrafts } from '../services/aiService'
+import { tasksRef, fetchTasks } from '../services/taskService'
+
+const props = defineProps(['notes', 'projects'])
+const emit = defineEmits(['refreshed'])
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
+
+const safeNotes = computed(() => Array.isArray(props.notes) ? props.notes : [])
+const safeProjects = computed(() => Array.isArray(props.projects) ? props.projects : [])
+
+const recentNotes = computed(() => safeNotes.value.slice(0, 3))
+const recentProjects = computed(() => safeProjects.value.slice(0, 3))
+
+const weeklyReview = ref('')
+const isLoading = ref(false)
+const focusRecommendation = ref('')
+const isLoadingFocus = ref(false)
+const actionPlan = ref([])
+const isLoadingAction = ref(false)
+const taskDrafts = ref([])
+const isLoadingDrafts = ref(false)
+
+const savedTasks = tasksRef
+const isSavingTasks = ref(false)
+
+const saveSuccess = ref('')
+const reviewSuccess = ref('')
+const focusSuccess = ref('')
+const actionSuccess = ref('')
+const draftsSuccess = ref('')
+const taskActionSuccess = ref('')
+
+onMounted(fetchTasks)
+
+async function handleTaskComplete(task) {
+  try {
+    const newStatus = task.status === 'completed' ? 'active' : 'completed'
+    const res = await fetch(`${API_BASE}/tasks/${task._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed: newStatus === 'completed', status: newStatus })
+    })
+    const updated = await res.json()
+    task.status = updated.status
+    task.completed = updated.completed
+    taskActionSuccess.value = newStatus === 'completed' ? 'Task completed' : 'Task reactivated'
+    setTimeout(() => { taskActionSuccess.value = '' }, 2000)
+    // Notify parent to refresh data (for project focus transition)
+    emit('refreshed')
+  } catch (e) {
+    console.error('Failed to update task:', e)
+  }
+}
+
+async function handleTaskArchive(task) {
+  try {
+    await fetch(`${API_BASE}/tasks/${task._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'archived' })
+    })
+    savedTasks.value = savedTasks.value.filter(t => t._id !== task._id)
+    taskActionSuccess.value = 'Task archived'
+    setTimeout(() => { taskActionSuccess.value = '' }, 2000)
+  } catch (e) {
+    console.error('Failed to archive task:', e)
+  }
+}
+
+async function handleTaskDelete(task) {
+  if (!confirm('Delete this task? This cannot be undone.')) {
+    return
+  }
+  try {
+    await fetch(`${API_BASE}/tasks/${task._id}`, {
+      method: 'DELETE'
+    })
+    savedTasks.value = savedTasks.value.filter(t => t._id !== task._id)
+    taskActionSuccess.value = 'Task deleted'
+    setTimeout(() => { taskActionSuccess.value = '' }, 2000)
+  } catch (e) {
+    console.error('Failed to delete task:', e)
+  }
+}
+
+async function handleSaveDraftsAsTasks() {
+  isSavingTasks.value = true
+  try {
+    for (const draft of taskDrafts.value) {
+      await fetch(`${API_BASE}/tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: draft.title,
+          source: draft.source
+        })
+      })
+    }
+    await fetchTasks()
+    saveSuccess.value = `Saved ${taskDrafts.value.length} task(s)`
+    taskDrafts.value = []
+    setTimeout(() => { saveSuccess.value = '' }, 3000)
+  } catch (e) {
+    saveSuccess.value = 'Failed to save tasks'
+    setTimeout(() => { saveSuccess.value = '' }, 3000)
+  } finally {
+    isSavingTasks.value = false
+  }
+}
+
+async function handleGenerateReview() {
+  isLoading.value = true
+  reviewSuccess.value = ''
+  try {
+    const { review } = await generateWeeklyReview(safeNotes.value, safeProjects.value)
+    weeklyReview.value = review
+    reviewSuccess.value = 'Review generated'
+    setTimeout(() => { reviewSuccess.value = '' }, 2000)
+  } catch (e) {
+    weeklyReview.value = 'Failed to generate review'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function handleRecommendFocus() {
+  isLoadingFocus.value = true
+  focusSuccess.value = ''
+  try {
+    const { recommendation } = await recommendFocus(safeNotes.value, safeProjects.value)
+    focusRecommendation.value = recommendation
+    focusSuccess.value = 'Focus recommended'
+    setTimeout(() => { focusSuccess.value = '' }, 2000)
+  } catch (e) {
+    focusRecommendation.value = 'Failed to get recommendation'
+  } finally {
+    isLoadingFocus.value = false
+  }
+}
+
+async function handleGenerateActionPlan() {
+  isLoadingAction.value = true
+  actionSuccess.value = ''
+  try {
+    const { actions } = await generateActionPlan(
+      safeNotes.value,
+      safeProjects.value,
+      focusRecommendation.value || undefined
+    )
+    actionPlan.value = actions
+    actionSuccess.value = 'Action plan generated'
+    setTimeout(() => { actionSuccess.value = '' }, 2000)
+  } catch (e) {
+    actionPlan.value = ['Failed to generate action plan']
+  } finally {
+    isLoadingAction.value = false
+  }
+}
+
+async function handleGenerateTaskDrafts() {
+  isLoadingDrafts.value = true
+  draftsSuccess.value = ''
+  try {
+    const { drafts } = await generateTaskDrafts(
+      safeNotes.value,
+      safeProjects.value,
+      actionPlan.value || undefined
+    )
+    taskDrafts.value = drafts
+    draftsSuccess.value = 'Drafts generated'
+    setTimeout(() => { draftsSuccess.value = '' }, 2000)
+  } catch (e) {
+    taskDrafts.value = [{ title: 'Failed to generate drafts', source: 'error' }]
+  } finally {
+    isLoadingDrafts.value = false
+  }
+}
+</script>
+
+<template>
+  <div class="dashboard">
+    <h2 class="dashboard-title">Dashboard</h2>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-value">{{ safeNotes.length }}</div>
+        <div class="stat-label">Notes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ safeProjects.length }}</div>
+        <div class="stat-label">Projects</div>
+      </div>
+    </div>
+
+    <div class="recent-section">
+      <h3>Recent Notes</h3>
+      <div v-if="recentNotes.length === 0" class="empty">No notes yet</div>
+      <div v-for="note in recentNotes" :key="note._id" class="mini-item">
+        <strong>{{ note.title }}</strong>
+        <span class="date">{{ new Date(note.createdAt).toLocaleDateString() }}</span>
+      </div>
+    </div>
+
+    <div class="recent-section">
+      <h3>Recent Projects</h3>
+      <div v-if="recentProjects.length === 0" class="empty">No projects yet</div>
+      <div v-for="project in recentProjects" :key="project._id" class="mini-item">
+        <strong>{{ project.name }}</strong>
+        <span class="status">{{ project.status }}</span>
+      </div>
+    </div>
+
+    <div class="ai-workflow">
+      <div class="workflow-step">
+        <div class="step-header">
+          <h4 class="step-title">1. Weekly Review</h4>
+        </div>
+        <button @click="handleGenerateReview" class="ai-btn" :disabled="isLoading">
+          {{ isLoading ? 'Generating...' : 'Generate Review' }}
+        </button>
+        <div v-if="reviewSuccess" class="step-success">{{ reviewSuccess }}</div>
+        <div v-if="weeklyReview" class="weekly-review">{{ weeklyReview }}</div>
+      </div>
+
+      <div class="workflow-step">
+        <div class="step-header">
+          <h4 class="step-title">2. Focus</h4>
+        </div>
+        <button @click="handleRecommendFocus" class="ai-btn" :disabled="isLoadingFocus">
+          {{ isLoadingFocus ? 'Analyzing...' : 'Get Focus' }}
+        </button>
+        <div v-if="focusSuccess" class="step-success">{{ focusSuccess }}</div>
+        <div v-if="focusRecommendation" class="focus-recommendation">{{ focusRecommendation }}</div>
+      </div>
+
+      <div class="workflow-step">
+        <div class="step-header">
+          <h4 class="step-title">3. Action Plan</h4>
+        </div>
+        <button @click="handleGenerateActionPlan" class="ai-btn" :disabled="isLoadingAction">
+          {{ isLoadingAction ? 'Generating...' : 'Create Plan' }}
+        </button>
+        <div v-if="actionSuccess" class="step-success">{{ actionSuccess }}</div>
+        <div v-if="actionPlan.length > 0" class="action-plan">
+          <div class="action-item" v-for="(action, idx) in actionPlan" :key="idx">{{ idx + 1 }}. {{ action }}</div>
+        </div>
+      </div>
+
+      <div class="workflow-step">
+        <div class="step-header">
+          <h4 class="step-title">4. Task Drafts</h4>
+        </div>
+        <button @click="handleGenerateTaskDrafts" class="ai-btn" :disabled="isLoadingDrafts">
+          {{ isLoadingDrafts ? 'Generating...' : 'Create Drafts' }}
+        </button>
+        <div v-if="draftsSuccess" class="step-success">{{ draftsSuccess }}</div>
+        <div v-if="taskDrafts.length > 0" class="task-drafts">
+          <div class="draft-item" v-for="(draft, idx) in taskDrafts" :key="idx">
+            <span class="draft-title">{{ draft.title }}</span>
+            <span class="draft-source">[{{ draft.source }}]</span>
+          </div>
+          <button @click="handleSaveDraftsAsTasks" class="save-btn" :disabled="isSavingTasks">
+            {{ isSavingTasks ? 'Saving...' : 'Save to Tasks' }}
+          </button>
+          <div v-if="saveSuccess" class="save-success">{{ saveSuccess }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tasks-execution-zone">
+      <div class="zone-header">
+        <h3>Task Execution</h3>
+        <div v-if="taskActionSuccess" class="task-action-success">{{ taskActionSuccess }}</div>
+      </div>
+      <div v-if="savedTasks.length > 0" class="saved-tasks-list">
+        <div class="saved-task-item" :class="{ completed: task.status === 'completed' }" v-for="task in savedTasks" :key="task._id">
+          <input type="checkbox" class="task-checkbox" :checked="task.status === 'completed'" @change="handleTaskComplete(task)">
+          <span class="task-title">{{ task.title }}</span>
+          <span class="task-source">{{ task.source }}</span>
+          <div class="task-actions">
+            <button @click="handleTaskArchive(task)" class="task-action-btn archive-btn" title="Archive">Archive</button>
+            <button @click="handleTaskDelete(task)" class="task-action-btn delete-btn" title="Delete">Delete</button>
+          </div>
+        </div>
+      </div>
+      <div v-else class="empty-tasks">No saved tasks yet</div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.dashboard {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 24px;
+  background: #f0f4ff;
+  margin-bottom: 24px;
+}
+
+.dashboard-title {
+  font-size: 20px;
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  flex: 1;
+  background: white;
+  padding: 16px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #42b883;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.recent-section {
+  margin-bottom: 16px;
+}
+
+.recent-section h3 {
+  font-size: 14px;
+  margin: 0 0 8px;
+  color: #555;
+}
+
+.mini-item {
+  background: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.mini-item .date, .mini-item .status {
+  color: #999;
+  font-size: 11px;
+}
+
+.empty {
+  color: #999;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.ai-workflow {
+  margin-top: 24px;
+}
+
+.workflow-step {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.step-header {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.step-title {
+  font-size: 14px;
+  margin: 0;
+  color: #444;
+  font-weight: 600;
+}
+
+.step-success {
+  margin-top: 8px;
+  color: #10b981;
+  font-size: 12px;
+}
+
+.ai-btn {
+  background: #42b883;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: opacity 0.15s;
+}
+
+.ai-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.ai-btn:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.weekly-review {
+  margin-top: 12px;
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #333;
+  border-left: 3px solid #42b883;
+}
+
+.focus-recommendation {
+  margin-top: 12px;
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #333;
+  border-left: 3px solid #6366f1;
+}
+
+.action-plan {
+  margin-top: 12px;
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #333;
+  border-left: 3px solid #f59e0b;
+}
+
+.action-item {
+  padding: 4px 0;
+}
+
+.task-drafts {
+  margin-top: 12px;
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #333;
+  border-left: 3px solid #ec4899;
+}
+
+.draft-item {
+  padding: 6px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.draft-source {
+  font-size: 10px;
+  color: #ec4899;
+  background: #fdf2f8;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.save-btn {
+  margin-top: 8px;
+  background: #6366f1;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: opacity 0.15s;
+}
+
+.save-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.save-btn:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.save-success {
+  margin-top: 8px;
+  color: #10b981;
+  font-size: 12px;
+}
+
+.tasks-execution-zone {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 2px solid rgba(0, 0, 0, 0.08);
+}
+
+.zone-header {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.zone-header h3 {
+  font-size: 15px;
+  margin: 0;
+  color: #333;
+  font-weight: 600;
+}
+
+.task-action-success {
+  color: #10b981;
+  font-size: 12px;
+}
+
+.saved-tasks-list {
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.saved-task-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.saved-task-item:last-child {
+  border-bottom: none;
+}
+
+.saved-task-item.completed .task-title {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.task-checkbox {
+  margin-right: 12px;
+  cursor: pointer;
+}
+
+.task-title {
+  flex: 1;
+  font-size: 13px;
+  color: #333;
+}
+
+.task-source {
+  font-size: 10px;
+  color: #999;
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-right: 8px;
+}
+
+.task-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.task-action-btn {
+  background: #f5f5f5;
+  color: #666;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.15s;
+}
+
+.task-action-btn:hover {
+  background: #e0e0e0;
+}
+
+.archive-btn:hover {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.delete-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.empty-tasks {
+  color: #999;
+  padding: 16px;
+  font-size: 12px;
+  text-align: center;
+  background: white;
+  border-radius: 8px;
+  border: 1px dashed #ddd;
+}
+</style>
