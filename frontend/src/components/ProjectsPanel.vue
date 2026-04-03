@@ -17,6 +17,10 @@ const savedSuggestions = ref(new Set())
 const saveSuccessMessages = ref({})
 const applyingFocus = ref(new Set())
 const savingFocusAsTask = ref(new Set())
+const manualTaskProjects = ref(new Set())
+const addingManualTasks = ref(new Set())
+const manualTaskInputs = ref({})
+const manualTaskSuccess = ref({})
 
 const emit = defineEmits(['refreshed'])
 
@@ -186,6 +190,36 @@ async function useAsCurrentFocus(project, suggestion) {
   }
 }
 
+function toggleManualTaskInput(projectId) {
+  if (manualTaskProjects.value.has(projectId)) {
+    manualTaskProjects.value.delete(projectId)
+    delete manualTaskInputs.value[projectId]
+  } else {
+    manualTaskProjects.value.add(projectId)
+    manualTaskInputs.value[projectId] = ''
+  }
+}
+
+async function addManualTask(project) {
+  const taskTitle = manualTaskInputs.value[project._id]?.trim()
+  if (!taskTitle) return
+
+  addingManualTasks.value.add(project._id)
+  try {
+    const newTask = await saveTask(taskTitle, 'project_manual', project.name)
+    if (newTask) {
+      manualTaskSuccess.value[project._id] = 'Task added'
+      manualTaskProjects.value.delete(project._id)
+      delete manualTaskInputs.value[project._id]
+      setTimeout(() => { delete manualTaskSuccess.value[project._id] }, 2000)
+    }
+  } catch (e) {
+    error.value = 'Failed to add task'
+  } finally {
+    addingManualTasks.value.delete(project._id)
+  }
+}
+
 onMounted(fetchProjects)
 </script>
 
@@ -237,6 +271,22 @@ onMounted(fetchProjects)
             {{ aiLoadingProjects.has(project._id) ? 'Generating...' : (project.nextAction ? 'Continue Project' : 'Generate Next Step') }}
           </button>
           <button @click="deleteProject(project._id)" class="delete-btn">Delete</button>
+          <button @click="toggleManualTaskInput(project._id)" class="add-task-btn">
+            {{ manualTaskProjects.has(project._id) ? 'Cancel' : '+ Add Task' }}
+          </button>
+        </div>
+        <div v-if="manualTaskProjects.has(project._id)" class="manual-task-input">
+          <input
+            v-model="manualTaskInputs[project._id]"
+            placeholder="Task title..."
+            @keyup.enter="addManualTask(project)"
+            :disabled="addingManualTasks.has(project._id)"
+            class="task-input"
+          />
+          <button @click="addManualTask(project)" class="save-task-btn" :disabled="addingManualTasks.has(project._id)">
+            {{ addingManualTasks.has(project._id) ? 'Saving...' : 'Save' }}
+          </button>
+          <div v-if="manualTaskSuccess[project._id]" class="manual-task-success">{{ manualTaskSuccess[project._id] }}</div>
         </div>
         <div v-if="aiSuggestions[project._id] && aiSuggestions[project._id].length > 0" class="ai-suggestions">
           <div class="ai-suggestions-header">
@@ -379,6 +429,14 @@ button:disabled {
 
 .delete-btn:hover:not(:disabled) {
   background: #c0392b;
+}
+
+.add-task-btn {
+  background: #3498db;
+}
+
+.add-task-btn:hover:not(:disabled) {
+  background: #2980b9;
 }
 
 button.cancel {
@@ -538,5 +596,55 @@ button.cancel:hover:not(:disabled) {
 
 .history-item:last-child {
   margin-bottom: 0;
+}
+
+.manual-task-input {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.task-input {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.task-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.save-task-btn {
+  padding: 6px 16px;
+  font-size: 12px;
+  background: #42b883;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.save-task-btn:hover:not(:disabled) {
+  background: #36a372;
+}
+
+.save-task-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.manual-task-success {
+  margin-top: 8px;
+  color: #10b981;
+  font-size: 11px;
 }
 </style>

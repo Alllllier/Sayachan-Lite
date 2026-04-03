@@ -182,17 +182,25 @@ async function handleGenerateTaskDrafts() {
 
 <template>
   <div class="dashboard">
-    <h2 class="dashboard-title">Dashboard</h2>
+    <h2 class="dashboard-title">Today</h2>
 
-    <div class="stats">
-      <div class="stat-card">
-        <div class="stat-value">{{ safeNotes.length }}</div>
-        <div class="stat-label">Notes</div>
+    <div class="tasks-execution-zone">
+      <div class="zone-header">
+        <h3 class="zone-title">Saved Tasks</h3>
+        <div v-if="taskActionSuccess" class="task-action-success">{{ taskActionSuccess }}</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ safeProjects.length }}</div>
-        <div class="stat-label">Projects</div>
+      <div v-if="savedTasks.length > 0" class="saved-tasks-list">
+        <div class="saved-task-item" :class="{ completed: task.status === 'completed' }" v-for="task in savedTasks" :key="task._id">
+          <input type="checkbox" class="task-checkbox" :checked="task.status === 'completed'" @change="handleTaskComplete(task)">
+          <span class="task-title">{{ task.title }}</span>
+          <span class="task-source">{{ task.source }}</span>
+          <div class="task-actions">
+            <button @click="handleTaskArchive(task)" class="task-action-btn archive-btn" title="Archive">Archive</button>
+            <button @click="handleTaskDelete(task)" class="task-action-btn delete-btn" title="Delete">Delete</button>
+          </div>
+        </div>
       </div>
+      <div v-else class="empty-tasks">No saved tasks yet</div>
     </div>
 
     <div class="recent-section">
@@ -205,7 +213,7 @@ async function handleGenerateTaskDrafts() {
     </div>
 
     <div class="recent-section">
-      <h3>Recent Projects</h3>
+      <h3>Projects</h3>
       <div v-if="recentProjects.length === 0" class="empty">No projects yet</div>
       <div v-for="project in recentProjects" :key="project._id" class="mini-item">
         <strong>{{ project.name }}</strong>
@@ -214,6 +222,8 @@ async function handleGenerateTaskDrafts() {
     </div>
 
     <div class="ai-workflow">
+      <h3 class="ai-section-title">AI Assistant</h3>
+
       <div class="workflow-step">
         <div class="step-header">
           <h4 class="step-title">1. Weekly Review</h4>
@@ -269,25 +279,6 @@ async function handleGenerateTaskDrafts() {
         </div>
       </div>
     </div>
-
-    <div class="tasks-execution-zone">
-      <div class="zone-header">
-        <h3>Task Execution</h3>
-        <div v-if="taskActionSuccess" class="task-action-success">{{ taskActionSuccess }}</div>
-      </div>
-      <div v-if="savedTasks.length > 0" class="saved-tasks-list">
-        <div class="saved-task-item" :class="{ completed: task.status === 'completed' }" v-for="task in savedTasks" :key="task._id">
-          <input type="checkbox" class="task-checkbox" :checked="task.status === 'completed'" @change="handleTaskComplete(task)">
-          <span class="task-title">{{ task.title }}</span>
-          <span class="task-source">{{ task.source }}</span>
-          <div class="task-actions">
-            <button @click="handleTaskArchive(task)" class="task-action-btn archive-btn" title="Archive">Archive</button>
-            <button @click="handleTaskDelete(task)" class="task-action-btn delete-btn" title="Delete">Delete</button>
-          </div>
-        </div>
-      </div>
-      <div v-else class="empty-tasks">No saved tasks yet</div>
-    </div>
   </div>
 </template>
 
@@ -296,51 +287,31 @@ async function handleGenerateTaskDrafts() {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   padding: 24px;
-  background: #f0f4ff;
+  background: #f9f9f9;
   margin-bottom: 24px;
 }
 
 .dashboard-title {
   font-size: 20px;
   margin-top: 0;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   color: #333;
-}
-
-.stats {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  flex: 1;
-  background: white;
-  padding: 16px;
-  border-radius: 6px;
-  text-align: center;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: #42b883;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #666;
-  margin-top: 4px;
+  font-weight: 600;
 }
 
 .recent-section {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e8e8e8;
 }
 
 .recent-section h3 {
   font-size: 14px;
-  margin: 0 0 8px;
-  color: #555;
+  margin: 0 0 10px;
+  color: #333;
+  font-weight: 600;
 }
 
 .mini-item {
@@ -361,49 +332,77 @@ async function handleGenerateTaskDrafts() {
 
 .empty {
   color: #999;
-  padding: 8px;
+  padding: 12px;
   font-size: 12px;
+  text-align: center;
+}
+
+.empty-tasks {
+  color: #999;
+  padding: 20px;
+  font-size: 13px;
+  text-align: center;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px dashed #ddd;
 }
 
 .ai-workflow {
-  margin-top: 24px;
+  margin-top: 20px;
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.ai-section-title {
+  font-size: 13px;
+  margin: 0 0 12px;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .workflow-step {
-  margin-bottom: 20px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  margin-bottom: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #e5e5e5;
+}
+
+.workflow-step:last-child {
+  margin-bottom: 0;
 }
 
 .step-header {
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .step-title {
-  font-size: 14px;
+  font-size: 13px;
   margin: 0;
-  color: #444;
-  font-weight: 600;
+  color: #666;
+  font-weight: 500;
 }
 
 .step-success {
-  margin-top: 8px;
+  margin-top: 6px;
   color: #10b981;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .ai-btn {
   background: #42b883;
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 6px 14px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   transition: opacity 0.15s;
 }
 
@@ -418,51 +417,51 @@ async function handleGenerateTaskDrafts() {
 }
 
 .weekly-review {
-  margin-top: 12px;
-  background: white;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #333;
-  border-left: 3px solid #42b883;
+  margin-top: 8px;
+  background: #f9f9f9;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #555;
+  border-left: 2px solid #42b883;
 }
 
 .focus-recommendation {
-  margin-top: 12px;
-  background: white;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #333;
-  border-left: 3px solid #6366f1;
+  margin-top: 8px;
+  background: #f9f9f9;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #555;
+  border-left: 2px solid #6366f1;
 }
 
 .action-plan {
-  margin-top: 12px;
-  background: white;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #333;
-  border-left: 3px solid #f59e0b;
+  margin-top: 8px;
+  background: #f9f9f9;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #555;
+  border-left: 2px solid #f59e0b;
 }
 
 .action-item {
-  padding: 4px 0;
+  padding: 3px 0;
 }
 
 .task-drafts {
-  margin-top: 12px;
-  background: white;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #333;
-  border-left: 3px solid #ec4899;
+  margin-top: 8px;
+  background: #f9f9f9;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #555;
+  border-left: 2px solid #ec4899;
 }
 
 .draft-item {
-  padding: 6px 0;
+  padding: 4px 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -477,14 +476,14 @@ async function handleGenerateTaskDrafts() {
 }
 
 .save-btn {
-  margin-top: 8px;
+  margin-top: 6px;
   background: #6366f1;
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 5px 10px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11px;
   transition: opacity 0.15s;
 }
 
@@ -499,15 +498,18 @@ async function handleGenerateTaskDrafts() {
 }
 
 .save-success {
-  margin-top: 8px;
+  margin-top: 6px;
   color: #10b981;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .tasks-execution-zone {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 2px solid rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  border: 2px solid #42b883;
+  box-shadow: 0 2px 8px rgba(66, 184, 131, 0.1);
 }
 
 .zone-header {
@@ -517,10 +519,10 @@ async function handleGenerateTaskDrafts() {
   align-items: center;
 }
 
-.zone-header h3 {
-  font-size: 15px;
+.zone-title {
+  font-size: 16px;
   margin: 0;
-  color: #333;
+  color: #42b883;
   font-weight: 600;
 }
 
