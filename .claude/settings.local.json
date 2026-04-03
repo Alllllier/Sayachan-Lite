@@ -13,7 +13,8 @@
       "Bash(timeout 3 node src/server.js)",
       "Bash(npm install:*)",
       "Bash(pkill -f \"node.*server.js\")",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(taskkill:*)"
     ]
   }
 }

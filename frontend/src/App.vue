@@ -1,79 +1,70 @@
-<script setup>
-import { ref, onMounted } from 'vue'
-import Dashboard from './components/Dashboard.vue'
-import NotesPanel from './components/NotesPanel.vue'
-import ProjectsPanel from './components/ProjectsPanel.vue'
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
-
-const notes = ref([])
-const projects = ref([])
-
-async function fetchNotes() {
-  try {
-    const res = await fetch(`${API_BASE}/notes`)
-    notes.value = await res.json()
-  } catch (e) {
-    console.error('Failed to fetch notes:', e)
-  }
-}
-
-async function fetchProjects() {
-  try {
-    const res = await fetch(`${API_BASE}/projects`)
-    projects.value = await res.json()
-  } catch (e) {
-    console.error('Failed to fetch projects:', e)
-  }
-}
-
-async function refreshAllData() {
-  await fetchNotes()
-  await fetchProjects()
-}
-
-function onNotesRefreshed(data) {
-  notes.value = data
-}
-
-function onProjectsRefreshed(data) {
-  projects.value = data
-}
-
-// Initial fetch
-onMounted(refreshAllData)
-</script>
-
 <template>
   <div class="app">
-    <h1>Sayachan Lite</h1>
-    <p class="subtitle">轻量级个人生产力工具</p>
-
-    <Dashboard :notes="notes" :projects="projects" @refreshed="refreshAllData" />
-
-    <NotesPanel @refreshed="onNotesRefreshed" />
-
-    <ProjectsPanel :projects="projects" @refreshed="onProjectsRefreshed" />
+    <router-view />
+    <nav class="bottom-nav">
+      <router-link to="/notes" class="nav-item">
+        <span class="nav-icon">Notes</span>
+      </router-link>
+      <router-link to="/dashboard" class="nav-item">
+        <span class="nav-icon">Dashboard</span>
+      </router-link>
+      <router-link to="/projects" class="nav-item">
+        <span class="nav-icon">Projects</span>
+      </router-link>
+    </nav>
   </div>
 </template>
 
-<style scoped>
-.app {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 40px 20px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-h1 {
-  font-size: 32px;
-  margin-bottom: 8px;
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background: #fafafa;
   color: #333;
 }
 
-.subtitle {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 40px;
+.app {
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: white;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 100;
+}
+
+.nav-item {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  color: #999;
+  font-size: 12px;
+  transition: color 0.2s;
+}
+
+.nav-item.router-link-active {
+  color: #42b883;
+}
+
+.nav-icon {
+  font-weight: 500;
 }
 </style>
