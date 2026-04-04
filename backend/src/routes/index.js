@@ -117,7 +117,11 @@ router.get('/tasks', async (ctx) => {
   const { projectId } = ctx.query;
   const filter = { status: { $ne: 'archived' } };
   if (projectId) {
-    filter.projectId = projectId;
+    // Support querying by both new linkedProjectId and legacy projectId
+    filter.$or = [
+      { linkedProjectId: projectId },
+      { projectId: projectId }
+    ];
   }
   const tasks = await Task.find(filter).sort({ createdAt: -1 });
   ctx.body = tasks;
@@ -127,21 +131,19 @@ router.get('/tasks', async (ctx) => {
 router.post('/tasks', async (ctx) => {
   const body = ctx.request.body;
 
-  // Map new semantic fields
+  // Only write new semantic fields for new tasks
+  // Legacy fields (source, sourceDetail, projectId, projectName) are kept for backward compatibility
+  // but new writes should only use new semantic fields
   const taskData = {
     title: body.title,
-    // New semantic fields
+    // New semantic fields only
     creationMode: body.creationMode || 'manual',
     originModule: body.originModule || '',
     originId: body.originId || null,
     originLabel: body.originLabel || '',
-    linkedProjectId: body.linkedProjectId || null,
-    linkedProjectName: body.linkedProjectName || '',
-    // Legacy fields for compatibility
-    source: body.source,
-    sourceDetail: body.sourceDetail || '',
-    projectId: body.projectId || null,
-    projectName: body.projectName || ''
+    // Accept linkedProjectId directly, or fallback to legacy projectId if provided by old clients
+    linkedProjectId: body.linkedProjectId || body.projectId || null,
+    linkedProjectName: body.linkedProjectName || body.projectName || ''
   };
 
   const task = await Task.create(taskData);
@@ -178,13 +180,15 @@ router.put('/tasks/:id', async (ctx) => {
   const isBecomingCompleted = (body.completed === true || body.status === 'completed') &&
     (existingTask.completed !== true && existingTask.status !== 'completed');
 
-  // Support both new and legacy semantic fields
-  const isProjectFocus = (task.creationMode === 'ai' && task.originModule === 'project' && task.originId) ||
-                          (task.source === 'project' && task.sourceDetail === 'focus');
+  // Check if this is a project-linked task (has linkedProjectId or legacy projectId)
+  const projectId = task.linkedProjectId || task.projectId;
+  const isProjectTask = projectId &&
+    ((task.creationMode === 'ai' && task.originModule === 'project' && task.originId) ||
+     (task.source === 'project' && task.sourceDetail === 'focus'));
 
-  if (isBecomingCompleted && isProjectFocus) {
-    // Find project with matching nextAction
-    const project = await Project.findOne({ nextAction: task.title });
+  if (isBecomingCompleted && isProjectTask) {
+    // Find project by exact ID match (no title/nextAction fuzzy matching)
+    const project = await Project.findById(projectId);
     if (project) {
       const historyEntry = project.nextAction;
       await Project.findByIdAndUpdate(project._id, {
