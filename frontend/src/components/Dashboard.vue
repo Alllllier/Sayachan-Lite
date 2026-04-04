@@ -32,6 +32,7 @@ const focusSuccess = ref('')
 const actionSuccess = ref('')
 const draftsSuccess = ref('')
 const taskActionSuccess = ref('')
+const taskMenuOpen = ref(null)
 
 onMounted(fetchTasks)
 
@@ -86,6 +87,56 @@ async function handleTaskDelete(task) {
   }
 }
 
+function toggleTaskMenu(taskId) {
+  if (taskMenuOpen.value === taskId) {
+    taskMenuOpen.value = null
+  } else {
+    taskMenuOpen.value = taskId
+  }
+}
+
+function closeTaskMenu() {
+  taskMenuOpen.value = null
+}
+
+function getSourceColor(task) {
+  // Priority: use new creationMode field
+  if (task.creationMode === 'ai') {
+    return '#DAA520'
+  }
+  if (task.creationMode === 'manual') {
+    return '#6b7280'
+  }
+  // Legacy: fallback to old source field for historical data
+  if (task.source === 'ai') {
+    return '#DAA520'
+  }
+  if (task.source === 'manual') {
+    return '#6b7280'
+  }
+  return '#999' // Ultimate fallback
+}
+
+function getSourceLetter(task) {
+  // Priority: use new originModule field
+  const originModule = task.originModule?.toLowerCase() || ''
+  if (originModule.includes('note')) {
+    return 'N'
+  }
+  if (originModule.includes('project')) {
+    return 'P'
+  }
+  // Legacy: fallback to old sourceDetail field for historical data
+  const sourceDetail = task.sourceDetail?.toLowerCase() || task.projectName?.toLowerCase() || ''
+  if (sourceDetail.includes('note')) {
+    return 'N'
+  }
+  if (sourceDetail.includes('project')) {
+    return 'P'
+  }
+  return '?' // Ultimate fallback
+}
+
 async function handleSaveDraftsAsTasks() {
   isSavingTasks.value = true
   try {
@@ -95,7 +146,15 @@ async function handleSaveDraftsAsTasks() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: draft.title,
-          source: draft.source
+          creationMode: draft.creationMode || draft.source || 'manual',
+          originModule: draft.originModule || '',
+          originId: draft.originId || null,
+          originLabel: draft.originLabel || '',
+          // Legacy fields for compatibility
+          source: draft.creationMode || draft.source || 'manual',
+          sourceDetail: draft.originModule || '',
+          projectId: null,
+          projectName: ''
         })
       })
     }
@@ -189,14 +248,19 @@ async function handleGenerateTaskDrafts() {
         <h3 class="zone-title">Saved Tasks</h3>
         <div v-if="taskActionSuccess" class="task-action-success">{{ taskActionSuccess }}</div>
       </div>
-      <div v-if="savedTasks.length > 0" class="saved-tasks-list">
+      <div v-if="savedTasks.length > 0" class="saved-tasks-list" @click="closeTaskMenu">
         <div class="saved-task-item" :class="{ completed: task.status === 'completed' }" v-for="task in savedTasks" :key="task._id">
-          <input type="checkbox" class="task-checkbox" :checked="task.status === 'completed'" @change="handleTaskComplete(task)">
+          <input type="checkbox" class="task-checkbox" :checked="task.status === 'completed'" @change="handleTaskComplete(task)" @click.stop>
           <span class="task-title">{{ task.title }}</span>
-          <span class="task-source">{{ task.source }}</span>
-          <div class="task-actions">
-            <button @click="handleTaskArchive(task)" class="task-action-btn archive-btn" title="Archive">Archive</button>
-            <button @click="handleTaskDelete(task)" class="task-action-btn delete-btn" title="Delete">Delete</button>
+          <span class="source-dot" :style="{ backgroundColor: getSourceColor(task) }" :title="task.originModule || task.sourceDetail">{{ getSourceLetter(task) }}</span>
+          <div class="task-menu-container">
+            <button @click="toggleTaskMenu(task._id)" class="task-menu-btn" :class="{ active: taskMenuOpen === task._id }" @click.stop title="Actions">
+              <span class="menu-icon">⋯</span>
+            </button>
+            <div v-if="taskMenuOpen === task._id" class="task-menu-dropdown" @click.stop>
+              <button @click="handleTaskArchive(task)" class="menu-item">Archive</button>
+              <button @click="handleTaskDelete(task)" class="menu-item delete">Delete</button>
+            </div>
           </div>
         </div>
       </div>
@@ -555,53 +619,105 @@ async function handleGenerateTaskDrafts() {
 }
 
 .task-checkbox {
-  margin-right: 12px;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .task-title {
   flex: 1;
   font-size: 13px;
   color: #333;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.task-source {
-  font-size: 10px;
-  color: #999;
-  background: #f5f5f5;
-  padding: 2px 6px;
-  border-radius: 3px;
-  margin-right: 8px;
-}
-
-.task-actions {
+.source-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
   display: flex;
-  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: white;
+  margin-left: 6px;
+  flex-shrink: 0;
 }
 
-.task-action-btn {
-  background: #f5f5f5;
-  color: #666;
+.task-menu-container {
+  position: relative;
+  margin-left: 4px;
+}
+
+.task-menu-btn {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  background: transparent;
   border: none;
-  padding: 4px 8px;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 11px;
-  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: background 0.15s;
 }
 
-.task-action-btn:hover {
-  background: #e0e0e0;
+.task-menu-btn:hover {
+  background: #f5f5f5;
 }
 
-.archive-btn:hover {
-  background: #d1fae5;
-  color: #059669;
+.task-menu-btn.active {
+  background: #e5e5e5;
 }
 
-.delete-btn:hover {
-  background: #fee2e2;
+.menu-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.task-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 120px;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.menu-item {
+  width: 100%;
+  padding: 10px 16px;
+  background: white;
+  border: none;
+  text-align: left;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.menu-item:hover {
+  background: #f5f5f5;
+}
+
+.menu-item.delete {
   color: #dc2626;
+}
+
+.menu-item.delete:hover {
+  background: #fee2e2;
 }
 
 .empty-tasks {

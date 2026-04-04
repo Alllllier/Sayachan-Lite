@@ -14,6 +14,34 @@ const aiLoadingNotes = ref(new Set())
 const savedTaskDrafts = ref(new Set())
 const taskSuccessMessages = reactive({})
 
+// Toast notifications
+const toast = ref(null)
+const toastMessage = ref('')
+const toastType = ref('success') // success, error
+
+function showToast(message, type = 'success') {
+  toastMessage.value = message
+  toastType.value = type
+  toast.value = true
+  setTimeout(() => {
+    toast.value = false
+  }, 3000)
+}
+
+// Local draft cache
+const drafts = ref(JSON.parse(localStorage.getItem('sayachan_note_drafts') || '{}'))
+
+function saveDraft() {
+  localStorage.setItem('sayachan_note_drafts', JSON.stringify(drafts.value))
+}
+
+function clearDraft() {
+  drafts.value = {}
+  localStorage.removeItem('sayachan_note_drafts')
+}
+const formTextareaRef = ref(null)
+const editTextareaRefs = ref({})
+
 const emit = defineEmits(['refreshed'])
 
 async function fetchNotes() {
@@ -32,18 +60,30 @@ async function fetchNotes() {
 async function createNote() {
   if (!form.value.title.trim() || !form.value.content.trim()) return
   loading.value = true
+  error.value = null
   try {
     const response = await fetch(`${API_BASE}/notes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form.value)
     })
+    if (!response.ok) throw new Error('Save failed')
     const note = await response.json()
     notes.value.unshift(note)
     form.value = { title: '', content: '' }
     emit('refreshed', notes.value)
+    showToast('Note saved')
+    // Auto-grow reset textarea
+    if (formTextareaRef.value) {
+      setTimeout(() => {
+        formTextareaRef.value.style.height = 'auto'
+      }, 0)
+    }
   } catch (e) {
-    error.value = 'Failed to create note'
+    showToast('Failed to save note. Please try again.', 'error')
+    // Save as local draft
+    drafts.value[Date.now()] = { ...form.value }
+    saveDraft()
   } finally {
     loading.value = false
   }
@@ -51,19 +91,22 @@ async function createNote() {
 
 async function updateNote(note) {
   loading.value = true
+  error.value = null
   try {
     const response = await fetch(`${API_BASE}/notes/${note._id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: note.title, content: note.content })
     })
+    if (!response.ok) throw new Error('Update failed')
     const updated = await response.json()
     const index = notes.value.findIndex(n => n._id === note._id)
     if (index !== -1) notes.value[index] = updated
     editingId.value = null
     emit('refreshed', notes.value)
+    showToast('Note updated')
   } catch (e) {
-    error.value = 'Failed to update note'
+    showToast('Failed to update note. Please try again.', 'error')
   } finally {
     loading.value = false
   }
@@ -72,12 +115,15 @@ async function updateNote(note) {
 async function deleteNote(id) {
   if (!confirm('Delete this note?')) return
   loading.value = true
+  error.value = null
   try {
-    await fetch(`${API_BASE}/notes/${id}`, { method: 'DELETE' })
+    const response = await fetch(`${API_BASE}/notes/${id}`, { method: 'DELETE' })
+    if (!response.ok) throw new Error('Delete failed')
     notes.value = notes.value.filter(n => n._id !== id)
     emit('refreshed', notes.value)
+    showToast('Note deleted')
   } catch (e) {
-    error.value = 'Failed to delete note'
+    showToast('Failed to delete note. Please try again.', 'error')
   } finally {
     loading.value = false
   }
@@ -85,11 +131,35 @@ async function deleteNote(id) {
 
 function startEditing(note) {
   editingId.value = note._id
+  // Auto-grow after ref is set
+  setTimeout(() => {
+    const textarea = editTextareaRefs.value[note._id]
+    if (textarea) {
+      autoGrow(textarea)
+    }
+  }, 0)
 }
 
 function cancelEdit() {
   editingId.value = null
 }
+
+function autoGrow(textarea) {
+  textarea.style.height = 'auto'
+  textarea.style.height = textarea.scrollHeight + 'px'
+}
+
+function onInput(e) {
+  autoGrow(e.target)
+}
+
+onMounted(() => {
+  fetchNotes()
+  // Auto-grow initial form textarea
+  if (formTextareaRef.value) {
+    autoGrow(formTextareaRef.value)
+  }
+})
 
 async function handleAIGenerateTasks(note) {
   aiLoadingNotes.value.add(note._id)
@@ -113,7 +183,16 @@ async function saveNoteTaskDraft(noteId, draft) {
     return
   }
   savedTaskDrafts.value.add(draft)
-  const newTask = await saveTask(draft, 'note')
+  const note = notes.value.find(n => n._id === noteId)
+  const newTask = await saveTask(
+    draft,
+    'ai',           // creationMode
+    'note',         // originModule
+    note._id,       // originId
+    note.title,      // originLabel
+    null,            // linkedProjectId
+    ''               // linkedProjectName
+  )
   if (newTask) {
     taskSuccessMessages[noteId] = 'Task saved'
     setTimeout(() => { delete taskSuccessMessages[noteId] }, 2000)
@@ -121,17 +200,27 @@ async function saveNoteTaskDraft(noteId, draft) {
     savedTaskDrafts.value.delete(draft)
   }
 }
-
-onMounted(fetchNotes)
 </script>
 
 <template>
+  <!-- Toast Notification -->
+  <div v-if="toast" class="toast" :class="toastType">
+    {{ toastMessage }}
+  </div>
+
   <div v-if="error" class="error">{{ error }}</div>
 
   <div class="form-section">
     <h2>{{ editingId ? 'Edit Note' : 'New Note' }}</h2>
     <input v-model="form.title" placeholder="Title" />
-    <textarea v-model="form.content" placeholder="Content" rows="4"></textarea>
+    <textarea
+      ref="formTextareaRef"
+      v-model="form.content"
+      placeholder="Content"
+      rows="3"
+      class="auto-grow-textarea"
+      @input="onInput"
+    ></textarea>
     <div class="form-buttons">
       <button @click="createNote" :disabled="loading || editingId">
         {{ loading ? 'Saving...' : 'Add Note' }}
@@ -148,7 +237,14 @@ onMounted(fetchNotes)
     <div v-for="note in notes" :key="note._id" class="note-card">
       <div v-if="editingId === note._id">
         <input v-model="note.title" placeholder="Title" />
-        <textarea v-model="note.content" placeholder="Content" rows="3"></textarea>
+        <textarea
+          :ref="el => { if (el) editTextareaRefs[note._id] = el }"
+          v-model="note.content"
+          placeholder="Content"
+          rows="3"
+          class="auto-grow-textarea"
+          @input="onInput"
+        ></textarea>
         <div class="card-buttons">
           <button @click="updateNote(note)" :disabled="loading">Save</button>
           <button @click="cancelEdit" :disabled="loading" class="cancel">Cancel</button>
@@ -183,6 +279,41 @@ onMounted(fetchNotes)
 </template>
 
 <style scoped>
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 1000;
+  animation: slideUp 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 90%;
+}
+
+.toast.success {
+  background: #10b981;
+}
+
+.toast.error {
+  background: #ef4444;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
 .form-section, .notes-section {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -209,7 +340,15 @@ input, textarea {
 }
 
 textarea {
-  resize: vertical;
+  resize: none;
+  overflow-y: hidden;
+  min-height: 80px;
+  max-height: 400px;
+  line-height: 1.5;
+}
+
+.auto-grow-textarea {
+  transition: height 0.1s ease;
 }
 
 .form-buttons, .card-buttons {

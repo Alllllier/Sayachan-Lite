@@ -114,18 +114,37 @@ router.delete('/projects/:id', async (ctx) => {
 
 // GET /tasks
 router.get('/tasks', async (ctx) => {
-  const tasks = await Task.find({ status: { $ne: 'archived' } }).sort({ createdAt: -1 });
+  const { projectId } = ctx.query;
+  const filter = { status: { $ne: 'archived' } };
+  if (projectId) {
+    filter.projectId = projectId;
+  }
+  const tasks = await Task.find(filter).sort({ createdAt: -1 });
   ctx.body = tasks;
 });
 
 // POST /tasks
 router.post('/tasks', async (ctx) => {
   const body = ctx.request.body;
-  const task = await Task.create({
+
+  // Map new semantic fields
+  const taskData = {
     title: body.title,
+    // New semantic fields
+    creationMode: body.creationMode || 'manual',
+    originModule: body.originModule || '',
+    originId: body.originId || null,
+    originLabel: body.originLabel || '',
+    linkedProjectId: body.linkedProjectId || null,
+    linkedProjectName: body.linkedProjectName || '',
+    // Legacy fields for compatibility
     source: body.source,
-    sourceDetail: body.sourceDetail || ''
-  });
+    sourceDetail: body.sourceDetail || '',
+    projectId: body.projectId || null,
+    projectName: body.projectName || ''
+  };
+
+  const task = await Task.create(taskData);
   ctx.status = 201;
   ctx.body = task;
 });
@@ -159,7 +178,11 @@ router.put('/tasks/:id', async (ctx) => {
   const isBecomingCompleted = (body.completed === true || body.status === 'completed') &&
     (existingTask.completed !== true && existingTask.status !== 'completed');
 
-  if (isBecomingCompleted && task.source === 'project' && task.sourceDetail === 'focus') {
+  // Support both new and legacy semantic fields
+  const isProjectFocus = (task.creationMode === 'ai' && task.originModule === 'project' && task.originId) ||
+                          (task.source === 'project' && task.sourceDetail === 'focus');
+
+  if (isBecomingCompleted && isProjectFocus) {
     // Find project with matching nextAction
     const project = await Project.findOne({ nextAction: task.title });
     if (project) {

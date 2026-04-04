@@ -14,7 +14,9 @@
       "Bash(npm install:*)",
       "Bash(pkill -f \"node.*server.js\")",
       "Bash(node -e \":*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(find . -name *.js -path */server/* -o -path */backend/*)",
+      "Bash(find . -maxdepth 3 -name *.js -type f)"
     ]
   }
 }

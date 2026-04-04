@@ -17,12 +17,28 @@ export async function fetchTasks() {
   }
 }
 
-export async function saveTask(title, source, sourceDetail = '') {
+export async function saveTask(title, creationMode, originModule = '', originId = null, originLabel = '', linkedProjectId = null, linkedProjectName = '') {
   try {
+    const taskData = {
+      title,
+      // New semantic fields
+      creationMode,
+      originModule,
+      originId,
+      originLabel,
+      linkedProjectId,
+      linkedProjectName,
+      // Legacy fields for compatibility
+      source: creationMode,
+      sourceDetail: originModule,
+      projectId: linkedProjectId,
+      projectName: linkedProjectName
+    };
+
     const res = await fetch(`${API_BASE}/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, source, sourceDetail })
+      body: JSON.stringify(taskData)
     })
     const newTask = await res.json()
     if (newTask) {
@@ -38,5 +54,16 @@ export async function saveTask(title, source, sourceDetail = '') {
   } catch (e) {
     console.error('Failed to save task:', e)
     return null
+  }
+}
+
+export async function fetchProjectTasks(projectId) {
+  try {
+    const res = await fetch(`${API_BASE}/tasks?projectId=${projectId}`)
+    const tasks = await res.json()
+    return tasks
+  } catch (e) {
+    console.error('Failed to fetch project tasks:', e)
+    return []
   }
 }
