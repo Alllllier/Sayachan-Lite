@@ -34,7 +34,53 @@ const draftsSuccess = ref('')
 const taskActionSuccess = ref('')
 const taskMenuOpen = ref(null)
 
+// P0-2: Task Expand
+const expandedTasks = ref(new Set())
+
+// P0-1: Quick Add Task
+const quickAddInput = ref('')
+const isQuickAdding = ref(false)
+const quickAddSuccess = ref('')
+
 onMounted(fetchTasks)
+
+async function handleQuickAddTask() {
+  const title = quickAddInput.value.trim()
+  if (!title) return
+
+  isQuickAdding.value = true
+  try {
+    const res = await fetch(`${API_BASE}/tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        creationMode: 'manual',
+        originModule: 'dashboard',
+        originId: null,
+        originLabel: '',
+        // Legacy fields
+        source: 'manual',
+        sourceDetail: 'dashboard',
+        projectId: null,
+        projectName: ''
+      })
+    })
+    const newTask = await res.json()
+    if (newTask) {
+      tasksRef.value.unshift(newTask)
+      quickAddSuccess.value = 'Task added'
+      quickAddInput.value = ''
+      setTimeout(() => { quickAddSuccess.value = '' }, 2000)
+    }
+  } catch (e) {
+    console.error('Failed to quick add task:', e)
+    quickAddSuccess.value = 'Failed to add'
+    setTimeout(() => { quickAddSuccess.value = '' }, 2000)
+  } finally {
+    isQuickAdding.value = false
+  }
+}
 
 async function handleTaskComplete(task) {
   try {
@@ -99,6 +145,15 @@ function closeTaskMenu() {
   taskMenuOpen.value = null
 }
 
+// P0-2: Toggle task expand
+function toggleTaskExpand(taskId) {
+  if (expandedTasks.value.has(taskId)) {
+    expandedTasks.value.delete(taskId)
+  } else {
+    expandedTasks.value.add(taskId)
+  }
+}
+
 function getSourceColor(task) {
   // Priority: use new creationMode field
   if (task.creationMode === 'ai') {
@@ -126,6 +181,9 @@ function getSourceLetter(task) {
   if (originModule.includes('project')) {
     return 'P'
   }
+  if (originModule === 'dashboard') {
+    return 'D'
+  }
   // Legacy: fallback to old sourceDetail field for historical data
   const sourceDetail = task.sourceDetail?.toLowerCase() || task.projectName?.toLowerCase() || ''
   if (sourceDetail.includes('note')) {
@@ -134,7 +192,27 @@ function getSourceLetter(task) {
   if (sourceDetail.includes('project')) {
     return 'P'
   }
+  if (sourceDetail === 'dashboard') {
+    return 'D'
+  }
   return '?' // Ultimate fallback
+}
+
+// Hotfix-1: Helper to get tooltip text for source dot
+function getSourceTooltip(task) {
+  if (task.creationMode === 'ai') {
+    if (task.originModule === 'project_suggestion') {
+      return 'AI suggestion → Focus'
+    }
+    return 'AI generated'
+  }
+  if (task.originModule === 'project_focus') {
+    return 'Manual focus'
+  }
+  if (task.originModule === 'dashboard') {
+    return 'Dashboard quick add'
+  }
+  return task.originModule || 'Manual'
 }
 
 async function handleSaveDraftsAsTasks() {
@@ -243,16 +321,34 @@ async function handleGenerateTaskDrafts() {
   <div class="dashboard">
     <h2 class="dashboard-title">Today</h2>
 
+    <!-- Quick Add Task - P0-1 -->
+    <div class="quick-add-section">
+      <input
+        v-model="quickAddInput"
+        placeholder="Quick add task... (e.g., 去拿快递)"
+        @keyup.enter="handleQuickAddTask"
+        :disabled="isQuickAdding"
+        class="quick-add-input"
+      />
+      <div v-if="quickAddSuccess" class="quick-add-success">{{ quickAddSuccess }}</div>
+    </div>
+
     <div class="tasks-execution-zone">
       <div class="zone-header">
         <h3 class="zone-title">Saved Tasks</h3>
         <div v-if="taskActionSuccess" class="task-action-success">{{ taskActionSuccess }}</div>
       </div>
       <div v-if="savedTasks.length > 0" class="saved-tasks-list" @click="closeTaskMenu">
-        <div class="saved-task-item" :class="{ completed: task.status === 'completed' }" v-for="task in savedTasks" :key="task._id">
+        <div
+          class="saved-task-item"
+          :class="{ completed: task.status === 'completed', expanded: expandedTasks.has(task._id) }"
+          v-for="task in savedTasks"
+          :key="task._id"
+          @click="toggleTaskExpand(task._id)"
+        >
           <input type="checkbox" class="task-checkbox" :checked="task.status === 'completed'" @change="handleTaskComplete(task)" @click.stop>
-          <span class="task-title">{{ task.title }}</span>
-          <span class="source-dot" :style="{ backgroundColor: getSourceColor(task) }" :title="task.originModule || task.sourceDetail">{{ getSourceLetter(task) }}</span>
+          <span class="task-title" :title="task.title">{{ task.title }}</span>
+          <span class="source-dot" :style="{ backgroundColor: getSourceColor(task) }" :title="getSourceTooltip(task)">{{ getSourceLetter(task) }}</span>
           <div class="task-menu-container">
             <button @click="toggleTaskMenu(task._id)" class="task-menu-btn" :class="{ active: taskMenuOpen === task._id }" @click.stop title="Actions">
               <span class="menu-icon">⋯</span>
@@ -361,6 +457,46 @@ async function handleGenerateTaskDrafts() {
   margin-bottom: 20px;
   color: #333;
   font-weight: 600;
+}
+
+/* Hotfix-2: Quick Add Section - Light weight, integrated style */
+.quick-add-section {
+  margin-bottom: 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.quick-add-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background: white;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.quick-add-input:focus {
+  outline: none;
+  border-color: #42b883;
+  box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.15), 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.quick-add-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.quick-add-success {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #10b981;
+  padding-left: 4px;
 }
 
 .recent-section {
@@ -634,6 +770,16 @@ async function handleGenerateTaskDrafts() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
+  line-height: 1.5;
+  padding: 2px 0;
+}
+
+/* Hotfix-3: Expanded state - only change white-space, no display change to avoid drift */
+.saved-task-item.expanded .task-title {
+  white-space: normal;
+  word-break: break-word;
+  overflow: visible;
 }
 
 .source-dot {

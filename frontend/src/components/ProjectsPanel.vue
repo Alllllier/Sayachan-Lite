@@ -21,6 +21,13 @@ const manualTaskProjects = ref(new Set())
 const addingManualTasks = ref(new Set())
 const manualTaskInputs = ref({})
 const manualTaskSuccess = ref({})
+
+// Unified Task Capture (Single/Batch mode)
+const taskCaptureOpen = ref(new Set()) // 记录哪些 project 打开了 capture 区域
+const taskCaptureMode = ref({}) // { [projectId]: 'single' | 'batch' }
+const batchTaskInputs = ref({})
+const addingBatchTasks = ref(new Set())
+const batchTaskSuccess = ref({})
 const formSummaryTextareaRef = ref(null)
 const editSummaryTextareaRefs = ref({})
 const editFocusInputRefs = ref({})
@@ -31,6 +38,9 @@ const loadingProjectTasks = ref(new Set())
 const toast = ref(null)
 const toastMessage = ref('')
 const toastType = ref('success') // success, error
+
+// Hotfix-1: Track AI-generated focus provenance (client-side only, no DB schema change)
+const aiGeneratedFocusMap = ref({}) // { [projectId]: boolean }
 
 function showToast(message, type = 'success') {
   toastMessage.value = message
@@ -115,6 +125,8 @@ async function updateProject(project) {
     const index = projects.value.findIndex(p => p._id === project._id)
     if (index !== -1) projects.value[index] = updated
     editingProjectId.value = null
+    // Hotfix-1: When user manually edits project, clear AI-generated flag (manual intervention)
+    aiGeneratedFocusMap.value[project._id] = false
     emit('refreshed', projects.value)
     showToast('Project updated')
   } catch (e) {
@@ -241,10 +253,12 @@ async function saveCurrentFocusAsTask(project) {
   }
   savingFocusAsTask.value.add(project._id)
   try {
+    // Hotfix-1: Check if this focus was AI-generated
+    const isAIGenerated = aiGeneratedFocusMap.value[project._id] === true
     const newTask = await saveTask(
       project.nextAction,
-      'ai',           // Focus is likely AI suggested, treat as ai
-      'project',       // originModule
+      isAIGenerated ? 'ai' : 'manual',  // creationMode: ai if from suggestion, manual if user-typed
+      isAIGenerated ? 'project_suggestion' : 'project_focus',  // originModule: distinguish source
       project._id,       // originId
       project.name || '',  // originLabel
       project._id,          // linkedProjectId
@@ -278,6 +292,8 @@ async function useAsCurrentFocus(project, suggestion) {
     const updated = await response.json()
     const index = projects.value.findIndex(p => p._id === project._id)
     if (index !== -1) projects.value[index] = updated
+    // Hotfix-1: Mark this focus as AI-generated since it came from AI suggestion
+    aiGeneratedFocusMap.value[project._id] = true
     emit('refreshed', projects.value)
   } catch (e) {
     error.value = 'Failed to update current focus'
@@ -286,13 +302,35 @@ async function useAsCurrentFocus(project, suggestion) {
   }
 }
 
-function toggleManualTaskInput(projectId) {
-  if (manualTaskProjects.value.has(projectId)) {
-    manualTaskProjects.value.delete(projectId)
-    delete manualTaskInputs.value[projectId]
-  } else {
+function openTaskCapture(projectId) {
+  taskCaptureOpen.value.add(projectId)
+  // 默认从 single 模式开始
+  taskCaptureMode.value[projectId] = 'single'
+  manualTaskInputs.value[projectId] = ''
+  manualTaskProjects.value.add(projectId)
+}
+
+function closeTaskCapture(projectId) {
+  taskCaptureOpen.value.delete(projectId)
+  delete taskCaptureMode.value[projectId]
+  delete manualTaskInputs.value[projectId]
+  delete batchTaskInputs.value[projectId]
+  manualTaskProjects.value.delete(projectId)
+}
+
+function setTaskCaptureMode(projectId, mode) {
+  taskCaptureMode.value[projectId] = mode
+  if (mode === 'single') {
     manualTaskProjects.value.add(projectId)
-    manualTaskInputs.value[projectId] = ''
+    if (!manualTaskInputs.value[projectId]) {
+      manualTaskInputs.value[projectId] = ''
+    }
+    delete batchTaskInputs.value[projectId]
+  } else {
+    manualTaskProjects.value.delete(projectId)
+    if (!batchTaskInputs.value[projectId]) {
+      batchTaskInputs.value[projectId] = ''
+    }
   }
 }
 
@@ -313,8 +351,8 @@ async function addManualTask(project) {
     )
     if (newTask) {
       manualTaskSuccess.value[project._id] = 'Task added'
-      manualTaskProjects.value.delete(project._id)
-      delete manualTaskInputs.value[project._id]
+      // Close capture area after successful save
+      closeTaskCapture(project._id)
       // Refresh project tasks
       await fetchProjectTasksForCard(project._id)
       setTimeout(() => { delete manualTaskSuccess.value[project._id] }, 2000)
@@ -323,6 +361,49 @@ async function addManualTask(project) {
     error.value = 'Failed to add task'
   } finally {
     addingManualTasks.value.delete(project._id)
+  }
+}
+
+// toggleBatchTaskInput removed - replaced by unified task capture
+
+async function addBatchTasks(project) {
+  const inputText = batchTaskInputs.value[project._id]?.trim()
+  if (!inputText) return
+
+  // Split by newlines and filter empty lines
+  const taskTitles = inputText
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+
+  if (taskTitles.length === 0) return
+
+  addingBatchTasks.value.add(project._id)
+  try {
+    let successCount = 0
+    for (const title of taskTitles) {
+      const newTask = await saveTask(
+        title,
+        'manual',        // creationMode
+        'project',       // originModule
+        project._id,       // originId
+        project.name,      // originLabel
+        project._id,          // linkedProjectId
+        project.name         // linkedProjectName
+      )
+      if (newTask) successCount++
+    }
+
+    batchTaskSuccess.value[project._id] = `Added ${successCount} task(s)`
+    // Close capture area after successful batch save
+    closeTaskCapture(project._id)
+    // Refresh project tasks
+    await fetchProjectTasksForCard(project._id)
+    setTimeout(() => { delete batchTaskSuccess.value[project._id] }, 2000)
+  } catch (e) {
+    error.value = 'Failed to add tasks'
+  } finally {
+    addingBatchTasks.value.delete(project._id)
   }
 }
 </script>
@@ -399,27 +480,77 @@ async function addManualTask(project) {
           </div>
         </div>
 
-        <!-- Main Action: Add Task -->
+        <!-- Main Action: Add Task / Cancel -->
         <div class="card-buttons main-actions">
-          <button @click="toggleManualTaskInput(project._id)" class="add-task-btn primary">
-            {{ manualTaskProjects.has(project._id) ? 'Cancel' : '+ Add Task' }}
+          <button
+            v-if="!taskCaptureOpen.has(project._id)"
+            @click="openTaskCapture(project._id)"
+            class="add-task-btn primary"
+          >
+            + Add Task
+          </button>
+          <button
+            v-else
+            @click="closeTaskCapture(project._id)"
+            class="add-task-btn cancel-btn"
+          >
+            Cancel
           </button>
         </div>
 
-        <!-- Manual Task Input -->
-        <div v-if="manualTaskProjects.has(project._id)" class="manual-task-input">
-          <input
-            v-model="manualTaskInputs[project._id]"
-            placeholder="Task title..."
-            @keyup.enter="addManualTask(project)"
-            :disabled="addingManualTasks.has(project._id)"
-            class="task-input"
-          />
-          <div class="manual-task-actions">
-            <button @click="addManualTask(project)" class="save-task-btn" :disabled="addingManualTasks.has(project._id)">
-              {{ addingManualTasks.has(project._id) ? 'Saving...' : 'Save' }}
+        <!-- Task Capture Area: Single/Batch Mode Switch (shown below the main button) -->
+        <div v-if="taskCaptureOpen.has(project._id)" class="task-capture-area">
+          <!-- Mode Switch -->
+          <div class="capture-mode-switch">
+            <button
+              @click="setTaskCaptureMode(project._id, 'single')"
+              class="mode-btn"
+              :class="{ active: taskCaptureMode[project._id] === 'single' }"
+            >
+              Single
             </button>
-            <div v-if="manualTaskSuccess[project._id]" class="manual-task-success">{{ manualTaskSuccess[project._id] }}</div>
+            <button
+              @click="setTaskCaptureMode(project._id, 'batch')"
+              class="mode-btn"
+              :class="{ active: taskCaptureMode[project._id] === 'batch' }"
+            >
+              Batch
+            </button>
+          </div>
+
+          <!-- Single Mode Input -->
+          <div v-if="taskCaptureMode[project._id] === 'single'" class="single-task-input">
+            <input
+              v-model="manualTaskInputs[project._id]"
+              placeholder="Task title..."
+              @keyup.enter="addManualTask(project)"
+              :disabled="addingManualTasks.has(project._id)"
+              class="task-input"
+            />
+            <div class="manual-task-actions">
+              <button @click="addManualTask(project)" class="save-task-btn" :disabled="addingManualTasks.has(project._id)">
+                {{ addingManualTasks.has(project._id) ? 'Saving...' : 'Save' }}
+              </button>
+              <div v-if="manualTaskSuccess[project._id]" class="manual-task-success">{{ manualTaskSuccess[project._id] }}</div>
+            </div>
+          </div>
+
+          <!-- Batch Mode Input -->
+          <div v-if="taskCaptureMode[project._id] === 'batch'" class="batch-task-input">
+            <textarea
+              v-model="batchTaskInputs[project._id]"
+              placeholder="One task per line..."
+              :disabled="addingBatchTasks.has(project._id)"
+              class="auto-grow-textarea"
+              rows="3"
+              @input="onInput"
+            ></textarea>
+            <div class="batch-task-actions">
+              <button @click="addBatchTasks(project)" class="save-task-btn" :disabled="addingBatchTasks.has(project._id)">
+                {{ addingBatchTasks.has(project._id) ? 'Saving...' : 'Save All' }}
+              </button>
+              <div v-if="batchTaskSuccess[project._id]" class="batch-task-success">{{ batchTaskSuccess[project._id] }}</div>
+            </div>
           </div>
         </div>
 
@@ -541,8 +672,8 @@ input, textarea, select {
 textarea {
   resize: none;
   overflow-y: hidden;
-  min-height: 60px;
-  max-height: 300px;
+  min-height: 80px;
+  max-height: 400px;
   line-height: 1.5;
 }
 
@@ -583,8 +714,11 @@ textarea {
   gap: 8px;
 }
 
+/* Polish-1: Compact button row layout */
 .main-actions {
   margin-top: 12px;
+  display: flex;
+  gap: 8px;
 }
 
 .secondary-actions {
@@ -698,19 +832,30 @@ button:disabled {
   background: #c0392b;
 }
 
+/* Polish-1: Unified compact button styles for task capture */
 .add-task-btn {
   background: #42b883;
-  width: 100%;
-}
-
-.add-task-btn.primary {
-  padding: 12px 20px;
-  font-size: 14px;
+  padding: 10px 16px;
+  font-size: 13px;
   font-weight: 500;
+  border-radius: 4px;
+  height: 40px;
+  line-height: 1;
+  flex: 1 1 0;
+  min-width: 90px;
+  white-space: nowrap;
 }
 
 .add-task-btn:hover:not(:disabled) {
   background: #36a372;
+}
+
+.add-task-btn.cancel-btn {
+  background: #6b7280;
+}
+
+.add-task-btn.cancel-btn:hover:not(:disabled) {
+  background: #4b5563;
 }
 
 button.cancel {
@@ -923,22 +1068,22 @@ button.cancel:hover:not(:disabled) {
   text-overflow: ellipsis;
 }
 
+/* Polish-1: Unified compact input area styling */
 .manual-task-input {
   margin-top: 12px;
-  padding: 12px;
-  background: #f8f9fa;
-  border-radius: 4px;
-  border: 1px solid #e9ecef;
+  padding: 0;
+  background: transparent;
+  border: none;
 }
 
 .task-input {
   width: 100%;
-  padding: 8px 12px;
-  margin-bottom: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .task-input:focus {
@@ -950,7 +1095,6 @@ button.cancel:hover:not(:disabled) {
 .manual-task-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
 }
 
@@ -975,7 +1119,99 @@ button.cancel:hover:not(:disabled) {
 }
 
 .manual-task-success {
+  color: #10b981;
+  font-size: 11px;
+}
+
+/* Task Capture Area: Unified Single/Batch Mode */
+.task-capture-area {
   margin-top: 8px;
+  padding: 8px 12px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.capture-mode-switch {
+  display: flex;
+  gap: 0;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+  background: #e9ecef;
+  color: #666;
+  border: 1px solid #dee2e6;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mode-btn:first-child {
+  border-radius: 4px 0 0 4px;
+  border-right: none;
+}
+
+.mode-btn:last-child {
+  border-radius: 0 4px 4px 0;
+  border-left: none;
+}
+
+.mode-btn:hover:not(:disabled):not(.active) {
+  background: #dee2e6;
+}
+
+.mode-btn.active {
+  background: #42b883;
+  color: white;
+  border-color: #42b883;
+}
+
+.mode-btn.active:first-child,
+.mode-btn.active:last-child {
+  border-color: #42b883;
+}
+
+/* Single Task Input */
+.single-task-input {
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+/* Batch Task Input - Aligned with Notes textarea */
+.batch-task-input {
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.batch-task-input textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: none;
+  overflow-y: hidden;
+  min-height: 80px;
+  max-height: 400px;
+  line-height: 1.5;
+}
+
+.batch-task-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.batch-task-success {
   color: #10b981;
   font-size: 11px;
 }
