@@ -1,3 +1,110 @@
+/* ============================================
+   Sayachan UI Foundation - CSS Variables
+   Phase 1: Semantic Tokens
+   ============================================ */
+
+:root {
+  /* -----------------------------------------
+     Surface / Background
+     ----------------------------------------- */
+  --surface-page: #fafafa;
+  --surface-panel: #f5f5f5;
+  --surface-card: #ffffff;
+  --surface-elevated: #f9f9f9;
+  --surface-hover: #f5f5f5;
+  --surface-active: #e5e5e5;
+
+  /* -----------------------------------------
+     Border
+     ----------------------------------------- */
+  --border-default: #e0e0e0;
+  --border-subtle: #eeeeee;
+  --border-accent: #42b883;
+  --border-focus: #42b883;
+
+  /* -----------------------------------------
+     Text
+     ----------------------------------------- */
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --text-inverse: #ffffff;
+
+  /* -----------------------------------------
+     Interactive / Action
+     ----------------------------------------- */
+  --action-primary: #42b883;
+  --action-primary-hover: #36a372;
+  --action-secondary: #7c85d8;
+  --action-secondary-hover: #6b73c2;
+  --action-danger: #c45c5c;
+  --action-danger-hover: #a84848;
+  --action-ai: #DAA520;
+  --action-ai-hover: #c5931a;
+  --action-disabled: #cccccc;
+
+  /* -----------------------------------------
+     Provenance (核心语义层)
+     ----------------------------------------- */
+  --provenance-ai: #DAA520;
+  --provenance-manual: #6b7280;
+  --provenance-project: #3498db;
+  --provenance-note: #9b59b6;
+  --provenance-dashboard: #42b883;
+
+  /* -----------------------------------------
+     Status
+     ----------------------------------------- */
+  --status-success: #10b981;
+  --status-error: #ef4444;
+  --status-warning: #f59e0b;
+  --status-info: #3498db;
+
+  /* -----------------------------------------
+     Radius
+     ----------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+
+  /* -----------------------------------------
+     Spacing
+     ----------------------------------------- */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+
+  /* -----------------------------------------
+     Shadow
+     ----------------------------------------- */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-focus: 0 0 0 2px rgba(66, 184, 131, 0.15);
+
+  /* -----------------------------------------
+     Typography
+     ----------------------------------------- */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 13px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 24px;
+}
+
+/* ============================================
+   Base Reset
+   ============================================ */
+
 * {
   margin: 0;
   padding: 0;
@@ -5,6 +112,284 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  background: #f5f5f5;
+  font-family: var(--font-family-base);
+  background: var(--surface-page);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   Button Baseline
+   Phase 3: Reusable button primitives
+   ============================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  font-family: inherit;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.15s;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn:disabled {
+  background: var(--action-disabled);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Primary Action */
+.btn-primary {
+  background: var(--action-primary);
+  color: var(--text-inverse);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--action-primary-hover);
+}
+
+/* Secondary Action - Soft indigo for edit actions */
+.btn-secondary {
+  background: var(--action-secondary);
+  color: var(--text-inverse);
+  border: none;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--action-secondary-hover);
+}
+
+/* Danger/Delete Action - Muted red background with white text */
+.btn-danger {
+  background: var(--action-danger);
+  color: var(--text-inverse);
+  border: none;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--action-danger-hover);
+}
+
+/* AI Action */
+.btn-ai {
+  background: var(--action-ai);
+  color: var(--text-inverse);
+}
+
+.btn-ai:hover:not(:disabled) {
+  background: var(--action-ai-hover);
+}
+
+/* AI Icon Button - Small circular, auxiliary function indicator */
+.btn-ai-icon {
+  background: var(--surface-card);
+  color: var(--action-ai);
+  border: none;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  align-self: center;
+  transition: box-shadow 0.2s ease;
+}
+
+.btn-ai-icon:hover:not(:disabled) {
+  background: rgba(218, 165, 32, 0.1);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-ai-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-ai-icon svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+/* Loading animation for icon buttons */
+.icon-loading {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Size variants */
+.btn-sm {
+  padding: 6px 12px;
+  font-size: var(--font-size-sm);
+}
+
+.btn-lg {
+  padding: 12px 24px;
+  font-size: var(--font-size-lg);
+}
+
+/* Compact button for tight spaces */
+.btn-compact {
+  padding: 8px 16px;
+  font-size: var(--font-size-md);
+}
+
+/* ============================================
+   Input / Textarea Baseline
+   Phase 3: Reusable form primitives
+   ============================================ */
+
+.input,
+.textarea,
+select.input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: var(--space-md);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input:focus,
+.textarea:focus,
+select.input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.input:disabled,
+.textarea:disabled,
+select.input:disabled {
+  background: var(--surface-panel);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Textarea specific */
+.textarea {
+  resize: none;
+  overflow-y: hidden;
+  min-height: 80px;
+  max-height: 400px;
+  line-height: 1.5;
+}
+
+/* Select specific */
+select.input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+/* Size variants */
+.input-sm,
+.textarea-sm {
+  padding: 6px 10px;
+  font-size: var(--font-size-sm);
+}
+
+.input-lg,
+.textarea-lg {
+  padding: 14px;
+  font-size: var(--font-size-lg);
+}
+
+/* Muted text for placeholders */
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ============================================
+   Card Shell Baseline
+   Phase 3: Reusable card primitives
+   ============================================ */
+
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-elevated {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-subtle);
+}
+
+.card-interactive:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-accent);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+/* Card header/title */
+.card-title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-sm);
+}
+
+/* Card content */
+.card-content {
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+}
+
+/* Card meta/footer */
+.card-meta {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin-top: var(--space-sm);
+}
+
+/* Card accent border variants */
+.card-accent-green {
+  border-left: 3px solid var(--action-primary);
+}
+
+.card-accent-blue {
+  border-left: 3px solid var(--provenance-project);
+}
+
+.card-accent-purple {
+  border-left: 3px solid var(--provenance-note);
+}
+
+.card-accent-gold {
+  border-left: 3px solid var(--action-ai);
 }

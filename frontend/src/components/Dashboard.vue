@@ -2,6 +2,7 @@
 import { computed, ref, onMounted, watch } from 'vue'
 import { generateWeeklyReview, recommendFocus, generateActionPlan, generateTaskDrafts } from '../services/aiService'
 import { tasksRef, fetchTasks } from '../services/taskService'
+import EmptyState from './ui/EmptyState.vue'
 
 const props = defineProps(['notes', 'projects'])
 const emit = defineEmits(['refreshed'])
@@ -198,6 +199,17 @@ function getSourceLetter(task) {
   return '?' // Ultimate fallback
 }
 
+// Hotfix-1: Helper to get provenance class for semantic styling
+function getProvenanceClass(task) {
+  if (task.creationMode === 'ai' || task.source === 'ai') {
+    return 'provenance-ai'
+  }
+  if (task.creationMode === 'manual' || task.source === 'manual') {
+    return 'provenance-manual'
+  }
+  return ''
+}
+
 // Hotfix-1: Helper to get tooltip text for source dot
 function getSourceTooltip(task) {
   if (task.creationMode === 'ai') {
@@ -328,7 +340,7 @@ async function handleGenerateTaskDrafts() {
         placeholder="Quick add task... (e.g., 去拿快递)"
         @keyup.enter="handleQuickAddTask"
         :disabled="isQuickAdding"
-        class="quick-add-input"
+        class="input quick-add-input"
       />
       <div v-if="quickAddSuccess" class="quick-add-success">{{ quickAddSuccess }}</div>
     </div>
@@ -348,7 +360,11 @@ async function handleGenerateTaskDrafts() {
         >
           <input type="checkbox" class="task-checkbox" :checked="task.status === 'completed'" @change="handleTaskComplete(task)" @click.stop>
           <span class="task-title" :title="task.title">{{ task.title }}</span>
-          <span class="source-dot" :style="{ backgroundColor: getSourceColor(task) }" :title="getSourceTooltip(task)">{{ getSourceLetter(task) }}</span>
+          <span
+            class="source-dot"
+            :class="getProvenanceClass(task)"
+            :title="getSourceTooltip(task)"
+          >{{ getSourceLetter(task) }}</span>
           <div class="task-menu-container">
             <button @click="toggleTaskMenu(task._id)" class="task-menu-btn" :class="{ active: taskMenuOpen === task._id }" @click.stop title="Actions">
               <span class="menu-icon">⋯</span>
@@ -360,21 +376,21 @@ async function handleGenerateTaskDrafts() {
           </div>
         </div>
       </div>
-      <div v-else class="empty-tasks">No saved tasks yet</div>
+      <EmptyState v-else title="No saved tasks yet" description="Add tasks from AI drafts or quick add above" />
     </div>
 
-    <div class="recent-section">
-      <h3>Recent Notes</h3>
-      <div v-if="recentNotes.length === 0" class="empty">No notes yet</div>
+    <div class="card">
+      <h3 class="card-title">Recent Notes</h3>
+      <EmptyState v-if="recentNotes.length === 0" title="No notes yet" />
       <div v-for="note in recentNotes" :key="note._id" class="mini-item">
         <strong>{{ note.title }}</strong>
         <span class="date">{{ new Date(note.createdAt).toLocaleDateString() }}</span>
       </div>
     </div>
 
-    <div class="recent-section">
-      <h3>Projects</h3>
-      <div v-if="recentProjects.length === 0" class="empty">No projects yet</div>
+    <div class="card">
+      <h3 class="card-title">Projects</h3>
+      <EmptyState v-if="recentProjects.length === 0" title="No projects yet" />
       <div v-for="project in recentProjects" :key="project._id" class="mini-item">
         <strong>{{ project.name }}</strong>
         <span class="status">{{ project.status }}</span>
@@ -388,7 +404,7 @@ async function handleGenerateTaskDrafts() {
         <div class="step-header">
           <h4 class="step-title">1. Weekly Review</h4>
         </div>
-        <button @click="handleGenerateReview" class="ai-btn" :disabled="isLoading">
+        <button @click="handleGenerateReview" class="btn btn-ai ai-btn" :disabled="isLoading">
           {{ isLoading ? 'Generating...' : 'Generate Review' }}
         </button>
         <div v-if="reviewSuccess" class="step-success">{{ reviewSuccess }}</div>
@@ -399,7 +415,7 @@ async function handleGenerateTaskDrafts() {
         <div class="step-header">
           <h4 class="step-title">2. Focus</h4>
         </div>
-        <button @click="handleRecommendFocus" class="ai-btn" :disabled="isLoadingFocus">
+        <button @click="handleRecommendFocus" class="btn btn-ai ai-btn" :disabled="isLoadingFocus">
           {{ isLoadingFocus ? 'Analyzing...' : 'Get Focus' }}
         </button>
         <div v-if="focusSuccess" class="step-success">{{ focusSuccess }}</div>
@@ -410,7 +426,7 @@ async function handleGenerateTaskDrafts() {
         <div class="step-header">
           <h4 class="step-title">3. Action Plan</h4>
         </div>
-        <button @click="handleGenerateActionPlan" class="ai-btn" :disabled="isLoadingAction">
+        <button @click="handleGenerateActionPlan" class="btn btn-ai ai-btn" :disabled="isLoadingAction">
           {{ isLoadingAction ? 'Generating...' : 'Create Plan' }}
         </button>
         <div v-if="actionSuccess" class="step-success">{{ actionSuccess }}</div>
@@ -423,7 +439,7 @@ async function handleGenerateTaskDrafts() {
         <div class="step-header">
           <h4 class="step-title">4. Task Drafts</h4>
         </div>
-        <button @click="handleGenerateTaskDrafts" class="ai-btn" :disabled="isLoadingDrafts">
+        <button @click="handleGenerateTaskDrafts" class="btn btn-ai ai-btn" :disabled="isLoadingDrafts">
           {{ isLoadingDrafts ? 'Generating...' : 'Create Drafts' }}
         </button>
         <div v-if="draftsSuccess" class="step-success">{{ draftsSuccess }}</div>
@@ -432,7 +448,7 @@ async function handleGenerateTaskDrafts() {
             <span class="draft-title">{{ draft.title }}</span>
             <span class="draft-source">[{{ draft.source }}]</span>
           </div>
-          <button @click="handleSaveDraftsAsTasks" class="save-btn" :disabled="isSavingTasks">
+          <button @click="handleSaveDraftsAsTasks" class="btn btn-primary save-btn" :disabled="isSavingTasks">
             {{ isSavingTasks ? 'Saving...' : 'Save to Tasks' }}
           </button>
           <div v-if="saveSuccess" class="save-success">{{ saveSuccess }}</div>
@@ -499,20 +515,7 @@ async function handleGenerateTaskDrafts() {
   padding-left: 4px;
 }
 
-.recent-section {
-  margin-bottom: 20px;
-  padding: 16px;
-  background: white;
-  border-radius: 6px;
-  border: 1px solid #e8e8e8;
-}
-
-.recent-section h3 {
-  font-size: 14px;
-  margin: 0 0 10px;
-  color: #333;
-  font-weight: 600;
-}
+/* .recent-section now uses .card baseline */
 
 .mini-item {
   background: white;
@@ -530,22 +533,7 @@ async function handleGenerateTaskDrafts() {
   font-size: 11px;
 }
 
-.empty {
-  color: #999;
-  padding: 12px;
-  font-size: 12px;
-  text-align: center;
-}
-
-.empty-tasks {
-  color: #999;
-  padding: 20px;
-  font-size: 13px;
-  text-align: center;
-  background: #fafafa;
-  border-radius: 6px;
-  border: 1px dashed #ddd;
-}
+/* Empty states use EmptyState component */
 
 .ai-workflow {
   margin-top: 20px;
@@ -570,6 +558,27 @@ async function handleGenerateTaskDrafts() {
   background: white;
   border-radius: 4px;
   border: 1px solid #e5e5e5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.workflow-step > * {
+  flex: 1 1 100%;
+}
+
+.workflow-step .step-header {
+  flex: 1 1 auto;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.workflow-step .ai-btn,
+.workflow-step .btn-ai {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 .workflow-step:last-child {
@@ -595,26 +604,7 @@ async function handleGenerateTaskDrafts() {
   font-size: 11px;
 }
 
-.ai-btn {
-  background: #42b883;
-  color: white;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: opacity 0.15s;
-}
-
-.ai-btn:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.ai-btn:disabled {
-  background: #a0aec0;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
+/* .ai-btn now uses global .btn .btn-ai baseline */
 
 .weekly-review {
   margin-top: 8px;
@@ -676,25 +666,10 @@ async function handleGenerateTaskDrafts() {
 }
 
 .save-btn {
+  /* Uses global .btn .btn-primary for color/styles */
   margin-top: 6px;
-  background: #6366f1;
-  color: white;
-  border: none;
   padding: 5px 10px;
-  border-radius: 4px;
-  cursor: pointer;
   font-size: 11px;
-  transition: opacity 0.15s;
-}
-
-.save-btn:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.save-btn:disabled {
-  background: #a0aec0;
-  cursor: not-allowed;
-  opacity: 0.7;
 }
 
 .save-success {
@@ -794,6 +769,24 @@ async function handleGenerateTaskDrafts() {
   color: white;
   margin-left: 6px;
   flex-shrink: 0;
+  background-color: var(--text-muted); /* Default fallback */
+}
+
+/* Provenance color variants using semantic tokens */
+.source-dot.provenance-ai {
+  background-color: var(--provenance-ai) !important;
+}
+
+.source-dot.provenance-manual {
+  background-color: var(--provenance-manual) !important;
+}
+
+.source-dot.provenance-project {
+  background-color: var(--provenance-project) !important;
+}
+
+.source-dot.provenance-note {
+  background-color: var(--provenance-note) !important;
 }
 
 .task-menu-container {

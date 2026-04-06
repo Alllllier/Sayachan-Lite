@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted, defineEmits, defineProps, watch } from 'vue'
 import { saveTask, fetchProjectTasks } from '../services/taskService.js'
+import Toast from './ui/Toast.vue'
+import EmptyState from './ui/EmptyState.vue'
 
 const props = defineProps(['projects'])
 
@@ -410,28 +412,26 @@ async function addBatchTasks(project) {
 
 <template>
   <!-- Toast Notification -->
-  <div v-if="toast" class="toast" :class="toastType">
-    {{ toastMessage }}
-  </div>
+  <Toast :message="toastMessage" :type="toastType" :visible="toast" />
 
   <div v-if="error" class="error">{{ error }}</div>
 
   <div class="projects-section">
     <h2>Projects ({{ projects.length }})</h2>
-    <div v-if="projects.length === 0" class="empty">No projects yet</div>
-    <div v-for="project in projects" :key="project._id" class="project-card">
+    <EmptyState v-if="projects.length === 0" title="No projects yet" />
+    <div v-for="project in projects" :key="project._id" class="card card-accent-blue project-card">
       <div v-if="editingProjectId === project._id">
-        <input v-model="project.name" placeholder="Project name" />
+         <input v-model="project.name" placeholder="Project name" class="input" />
         <textarea
           :ref="el => { if (el) editSummaryTextareaRefs[project._id] = el }"
           v-model="project.summary"
           placeholder="Summary"
           rows="2"
-          class="auto-grow-textarea"
+          class="textarea auto-grow-textarea"
           @input="onInput"
         ></textarea>
-        <input v-model="project.nextAction" placeholder="Current focus" />
-        <select v-model="project.status">
+        <input v-model="project.nextAction" placeholder="Current focus" class="input" />
+        <select v-model="project.status" class="input">
           <option value="pending">Pending</option>
           <option value="in_progress">In Progress</option>
           <option value="completed">Completed</option>
@@ -443,25 +443,25 @@ async function addBatchTasks(project) {
         </div>
       </div>
       <div v-else>
-        <h3>{{ project.name }}</h3>
-        <p>{{ project.summary }}</p>
-        <p class="meta">Status: {{ project.status }}</p>
+        <h3 class="card-title">{{ project.name }}</h3>
+        <p class="card-content">{{ project.summary }}</p>
+        <p class="card-meta">Status: {{ project.status }}</p>
         <div class="focus-row">
-          <p class="meta">Current Focus: {{ project.nextAction || 'None' }}</p>
-          <button v-if="project.nextAction" @click="saveCurrentFocusAsTask(project)" class="save-focus-btn" :disabled="savingFocusAsTask.has(project._id)">
+          <p class="card-meta">Current Focus: {{ project.nextAction || 'None' }}</p>
+          <button v-if="project.nextAction" @click="saveCurrentFocusAsTask(project)" class="btn btn-primary btn-sm save-focus-btn" :disabled="savingFocusAsTask.has(project._id)">
             {{ savingFocusAsTask.has(project._id) ? 'Saving...' : 'Save Focus as Task' }}
           </button>
         </div>
-        <p v-if="project.lastCompletedAction" class="meta last-completed">Last Completed: {{ project.lastCompletedAction }}</p>
+         <p v-if="project.lastCompletedAction" class="card-meta last-completed">Last Completed: {{ project.lastCompletedAction }}</p>
         <div v-if="project.focusHistory && project.focusHistory.length > 0" class="focus-history">
-          <p class="meta history-label">Focus History:</p>
+                    <p class="card-meta history-label">Focus History:</p>
           <ul class="history-list">
             <li v-for="(item, idx) in project.focusHistory.slice(-3).reverse()" :key="idx" class="history-item">
               {{ item }}
             </li>
           </ul>
         </div>
-        <p class="meta">{{ new Date(project.createdAt).toLocaleString() }}</p>
+        <p class="card-meta">{{ new Date(project.createdAt).toLocaleString() }}</p>
 
         <!-- Project Tasks Preview -->
         <div v-if="projectTasks[project._id] && projectTasks[project._id].length > 0" class="project-tasks-preview">
@@ -485,14 +485,14 @@ async function addBatchTasks(project) {
           <button
             v-if="!taskCaptureOpen.has(project._id)"
             @click="openTaskCapture(project._id)"
-            class="add-task-btn primary"
+            class="btn btn-primary add-task-btn"
           >
             + Add Task
           </button>
           <button
             v-else
             @click="closeTaskCapture(project._id)"
-            class="add-task-btn cancel-btn"
+            class="btn btn-secondary add-task-btn"
           >
             Cancel
           </button>
@@ -525,10 +525,10 @@ async function addBatchTasks(project) {
               placeholder="Task title..."
               @keyup.enter="addManualTask(project)"
               :disabled="addingManualTasks.has(project._id)"
-              class="task-input"
+              class="input task-input"
             />
             <div class="manual-task-actions">
-              <button @click="addManualTask(project)" class="save-task-btn" :disabled="addingManualTasks.has(project._id)">
+              <button @click="addManualTask(project)" class="btn btn-primary btn-sm save-task-btn" :disabled="addingManualTasks.has(project._id)">
                 {{ addingManualTasks.has(project._id) ? 'Saving...' : 'Save' }}
               </button>
               <div v-if="manualTaskSuccess[project._id]" class="manual-task-success">{{ manualTaskSuccess[project._id] }}</div>
@@ -541,12 +541,12 @@ async function addBatchTasks(project) {
               v-model="batchTaskInputs[project._id]"
               placeholder="One task per line..."
               :disabled="addingBatchTasks.has(project._id)"
-              class="auto-grow-textarea"
+              class="textarea auto-grow-textarea"
               rows="3"
               @input="onInput"
             ></textarea>
             <div class="batch-task-actions">
-              <button @click="addBatchTasks(project)" class="save-task-btn" :disabled="addingBatchTasks.has(project._id)">
+              <button @click="addBatchTasks(project)" class="btn btn-primary btn-sm save-task-btn" :disabled="addingBatchTasks.has(project._id)">
                 {{ addingBatchTasks.has(project._id) ? 'Saving...' : 'Save All' }}
               </button>
               <div v-if="batchTaskSuccess[project._id]" class="batch-task-success">{{ batchTaskSuccess[project._id] }}</div>
@@ -556,11 +556,11 @@ async function addBatchTasks(project) {
 
         <!-- Secondary Actions -->
         <div class="card-buttons secondary-actions">
-          <button @click="startEditingProject(project)" class="secondary-btn">Edit</button>
-          <button @click="deleteProject(project._id)" class="secondary-btn delete-btn">Delete</button>
-          <button @click="handleAISuggest(project)" class="secondary-btn ai-btn" :disabled="aiLoadingProjects.has(project._id)" title="AI Assistant">
+          <button @click="startEditingProject(project)" class="btn btn-secondary secondary-btn">Edit</button>
+          <button @click="deleteProject(project._id)" class="btn btn-danger secondary-btn delete-btn">Delete</button>
+          <button @click="handleAISuggest(project)" class="btn-ai-icon" :disabled="aiLoadingProjects.has(project._id)" title="Generate with AI">
             <span v-if="aiLoadingProjects.has(project._id)" class="icon-loading">⋯</span>
-            <span v-else>✨</span>
+            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
           </button>
         </div>
 
@@ -573,10 +573,10 @@ async function addBatchTasks(project) {
           <div v-for="(suggestion, idx) in aiSuggestions[project._id]" :key="idx" :class="['ai-suggestion-item', { applied: project.nextAction === suggestion }]">
             <span class="suggestion-text">{{ suggestion }}</span>
             <div class="suggestion-actions">
-              <button @click="useAsCurrentFocus(project, suggestion)" class="use-focus-btn" :disabled="applyingFocus.has(project._id) || project.nextAction === suggestion">
+              <button @click="useAsCurrentFocus(project, suggestion)" class="btn btn-secondary btn-sm use-focus-btn" :disabled="applyingFocus.has(project._id) || project.nextAction === suggestion">
                 {{ project.nextAction === suggestion ? 'Applied' : (applyingFocus.has(project._id) ? 'Setting...' : 'Use as Current Focus') }}
               </button>
-              <button @click="saveSuggestionAsTask(project._id, suggestion)" class="save-suggestion-btn" :disabled="savedSuggestions.has(suggestion)">
+              <button @click="saveSuggestionAsTask(project._id, suggestion)" class="btn btn-primary btn-sm save-suggestion-btn" :disabled="savedSuggestions.has(suggestion)">
                 {{ savedSuggestions.has(suggestion) ? 'Saved' : 'Save as Task' }}
               </button>
             </div>
@@ -588,62 +588,29 @@ async function addBatchTasks(project) {
 
   <div class="form-section project-form">
     <h2>New Project</h2>
-    <input v-model="projectForm.name" placeholder="Project name" />
+    <input v-model="projectForm.name" placeholder="Project name" class="input" />
     <textarea
       ref="formSummaryTextareaRef"
       v-model="projectForm.summary"
       placeholder="Summary"
       rows="2"
-      class="auto-grow-textarea"
+      class="textarea auto-grow-textarea"
       @input="onInput"
     ></textarea>
-    <input v-model="projectForm.nextAction" placeholder="Current focus" />
-    <select v-model="projectForm.status">
+    <input v-model="projectForm.nextAction" placeholder="Current focus" class="input" />
+    <select v-model="projectForm.status" class="input">
       <option value="pending">Pending</option>
       <option value="in_progress">In Progress</option>
       <option value="completed">Completed</option>
       <option value="on_hold">On Hold</option>
     </select>
-    <button @click="createProject" :disabled="loading">Add Project</button>
+    <div class="form-buttons">
+      <button @click="createProject" :disabled="loading" class="btn btn-primary">Add Project</button>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.toast {
-  position: fixed;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 12px 24px;
-  border-radius: 8px;
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  z-index: 1000;
-  animation: slideUp 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  max-width: 90%;
-}
-
-.toast.success {
-  background: #10b981;
-}
-
-.toast.error {
-  background: #ef4444;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 20px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
-
 .projects-section, .project-form {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -656,25 +623,14 @@ async function addBatchTasks(project) {
   font-size: 18px;
   margin-top: 0;
   margin-bottom: 16px;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
   color: #333;
-}
-
-input, textarea, select {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 14px;
-}
-
-textarea {
-  resize: none;
-  overflow-y: hidden;
-  min-height: 80px;
-  max-height: 400px;
-  line-height: 1.5;
 }
 
 .auto-grow-textarea {
@@ -694,19 +650,9 @@ textarea {
 }
 
 .save-focus-btn {
-  padding: 4px 12px;
-  font-size: 11px;
-  background: #42b883;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
+  /* Layout only: uses global .btn .btn-primary .btn-sm for colors */
   margin-left: 8px;
   flex-shrink: 0;
-}
-
-.save-focus-btn:hover:not(:disabled) {
-  background: #36a372;
 }
 
 .card-buttons {
@@ -726,58 +672,8 @@ textarea {
   justify-content: flex-end;
 }
 
-.secondary-btn {
-  padding: 8px 16px;
-  font-size: 13px;
-  background: #f5f5f5;
-  color: #666;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.secondary-btn:hover:not(:disabled) {
-  background: #e5e5e5;
-  color: #333;
-}
-
-.secondary-btn.delete-btn {
-  color: white;
-  background: #dc2626;
-  border-color: #dc2626;
-}
-
-.secondary-btn.delete-btn:hover:not(:disabled) {
-  background: #b91c1c;
-  border-color: #b91c1c;
-}
-
-.secondary-btn.ai-btn {
-  background: #DAA520;
-  color: white;
-  border-color: #DAA520;
-  padding: 8px 14px;
-  border-radius: 12px;
-  font-size: 13px;
-}
-
-.secondary-btn.ai-btn:hover:not(:disabled) {
-  background: #c5931a;
-  border-color: #c5931a;
-}
-
-.secondary-btn.ai-btn:disabled {
-  background: #e5e5e5;
-  color: #999;
-  border-color: #e5e5e5;
-  cursor: not-allowed;
-}
-
-.secondary-btn.ai-btn span {
-  font-size: 14px;
-  line-height: 1;
-}
+/* .secondary-btn uses global .btn .btn-secondary .btn-compact baseline */
+/* .secondary-btn layout preserved, colors from global .btn .btn-secondary */
 
 .icon-loading {
   animation: spin 1s linear infinite;
@@ -788,83 +684,19 @@ textarea {
   to { transform: rotate(360deg); }
 }
 
-button {
-  padding: 10px 20px;
-  font-size: 14px;
-  background: #42b883;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-button:hover:not(:disabled) {
-  background: #36a372;
-}
-
-button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.edit-btn {
-  background: #95a5a6;
-}
-
-.edit-btn:hover:not(:disabled) {
-  background: #7f8c8d;
-}
-
-.continue-btn {
-  background: #9b59b6;
-}
-
-.continue-btn:hover:not(:disabled) {
-  background: #8e44ad;
-}
-
-.delete-btn {
-  background: #e74c3c;
-}
-
-.delete-btn:hover:not(:disabled) {
-  background: #c0392b;
-}
+/* .edit-btn uses global .btn .btn-secondary */
 
 /* Polish-1: Unified compact button styles for task capture */
 .add-task-btn {
-  background: #42b883;
-  padding: 10px 16px;
-  font-size: 13px;
-  font-weight: 500;
-  border-radius: 4px;
+  /* Layout specific for task capture area */
   height: 40px;
-  line-height: 1;
+  line-height: 1;  
   flex: 1 1 0;
   min-width: 90px;
   white-space: nowrap;
 }
 
-.add-task-btn:hover:not(:disabled) {
-  background: #36a372;
-}
-
-.add-task-btn.cancel-btn {
-  background: #6b7280;
-}
-
-.add-task-btn.cancel-btn:hover:not(:disabled) {
-  background: #4b5563;
-}
-
-button.cancel {
-  background: #999;
-}
-
-button.cancel:hover:not(:disabled) {
-  background: #777;
-}
+/* button.cancel uses global .btn .btn-secondary */
 
 .ai-suggestions {
   margin-top: 12px;
@@ -918,39 +750,10 @@ button.cancel:hover:not(:disabled) {
   margin-left: 8px;
 }
 
-.use-focus-btn {
-  padding: 4px 10px;
-  font-size: 11px;
-  background: #3498db;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-}
+/* .use-focus-btn uses global .btn .btn-secondary .btn-sm */
+/* .save-suggestion-btn uses global .btn .btn-primary .btn-sm */
 
-.use-focus-btn:hover:not(:disabled) {
-  background: #2980b9;
-}
-
-.save-suggestion-btn {
-  padding: 4px 10px;
-  font-size: 11px;
-  background: #42b883;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.save-suggestion-btn:hover:not(:disabled) {
-  background: #36a372;
-}
-
-.empty {
-  color: #999;
-  padding: 20px;
-  text-align: center;
-}
+/* Empty state uses EmptyState component */
 
 .error {
   padding: 12px;
@@ -961,31 +764,7 @@ button.cancel:hover:not(:disabled) {
   text-align: center;
 }
 
-.project-card {
-  background: white;
-  padding: 16px;
-  border-radius: 4px;
-  margin-bottom: 12px;
-  border-left: 3px solid #3498db;
-}
-
-.project-card h3 {
-  font-size: 16px;
-  margin-top: 0;
-  margin-bottom: 8px;
-  color: #333;
-}
-
-.project-card p {
-  font-size: 14px;
-  color: #555;
-  margin: 0 0 8px;
-}
-
-.project-card .meta {
-  font-size: 12px;
-  color: #999;
-}
+/* .project-card uses .card and .card-accent-blue baseline */
 
 .focus-history {
   margin: 8px 0;
@@ -1098,25 +877,7 @@ button.cancel:hover:not(:disabled) {
   gap: 8px;
 }
 
-.save-task-btn {
-  padding: 6px 16px;
-  font-size: 12px;
-  background: #42b883;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.save-task-btn:hover:not(:disabled) {
-  background: #36a372;
-}
-
-.save-task-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
+/* .save-task-btn uses global .btn .btn-primary .btn-sm */
 
 .manual-task-success {
   color: #10b981;

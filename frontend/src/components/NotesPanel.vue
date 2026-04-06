@@ -1,6 +1,8 @@
 <script setup>
 import { ref, reactive, onMounted, defineEmits } from 'vue'
 import { saveTask } from '../services/taskService.js'
+import Toast from './ui/Toast.vue'
+import EmptyState from './ui/EmptyState.vue'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
@@ -204,28 +206,26 @@ async function saveNoteTaskDraft(noteId, draft) {
 
 <template>
   <!-- Toast Notification -->
-  <div v-if="toast" class="toast" :class="toastType">
-    {{ toastMessage }}
-  </div>
+  <Toast :message="toastMessage" :type="toastType" :visible="toast" />
 
   <div v-if="error" class="error">{{ error }}</div>
 
   <div class="form-section">
     <h2>{{ editingId ? 'Edit Note' : 'New Note' }}</h2>
-    <input v-model="form.title" placeholder="Title" />
+    <input v-model="form.title" placeholder="Title" class="input" />
     <textarea
       ref="formTextareaRef"
       v-model="form.content"
       placeholder="Content"
       rows="3"
-      class="auto-grow-textarea"
+      class="textarea auto-grow-textarea"
       @input="onInput"
     ></textarea>
     <div class="form-buttons">
-      <button @click="createNote" :disabled="loading || editingId">
+      <button @click="createNote" :disabled="loading || editingId" class="btn btn-primary">
         {{ loading ? 'Saving...' : 'Add Note' }}
       </button>
-      <button v-if="editingId" @click="cancelEdit" :disabled="loading" class="cancel">
+      <button v-if="editingId" @click="cancelEdit" :disabled="loading" class="btn btn-secondary cancel">
         Cancel
       </button>
     </div>
@@ -233,32 +233,33 @@ async function saveNoteTaskDraft(noteId, draft) {
 
   <div class="notes-section">
     <h2>Notes ({{ notes.length }})</h2>
-    <div v-if="notes.length === 0" class="empty">No notes yet</div>
-    <div v-for="note in notes" :key="note._id" class="note-card">
+    <EmptyState v-if="notes.length === 0" title="No notes yet" />
+    <div v-for="note in notes" :key="note._id" class="card card-accent-green note-card">
       <div v-if="editingId === note._id">
-        <input v-model="note.title" placeholder="Title" />
+        <input v-model="note.title" placeholder="Title" class="input" />
         <textarea
           :ref="el => { if (el) editTextareaRefs[note._id] = el }"
           v-model="note.content"
           placeholder="Content"
           rows="3"
-          class="auto-grow-textarea"
+          class="textarea auto-grow-textarea"
           @input="onInput"
         ></textarea>
         <div class="card-buttons">
-          <button @click="updateNote(note)" :disabled="loading">Save</button>
-          <button @click="cancelEdit" :disabled="loading" class="cancel">Cancel</button>
+          <button @click="updateNote(note)" :disabled="loading" class="btn btn-primary">Save</button>
+          <button @click="cancelEdit" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
         </div>
       </div>
       <div v-else>
-        <h3>{{ note.title }}</h3>
-        <p>{{ note.content }}</p>
-        <p class="meta">{{ new Date(note.createdAt).toLocaleString() }}</p>
+        <h3 class="card-title">{{ note.title }}</h3>
+        <p class="card-content">{{ note.content }}</p>
+        <p class="card-meta">{{ new Date(note.createdAt).toLocaleString() }}</p>
         <div class="card-buttons">
-          <button @click="startEditing(note)">Edit</button>
-          <button @click="deleteNote(note._id)" class="delete">Delete</button>
-          <button @click="handleAIGenerateTasks(note)" class="ai-btn" :disabled="aiLoadingNotes.has(note._id)">
-            {{ aiLoadingNotes.has(note._id) ? 'Generating...' : 'AI Tasks' }}
+          <button @click="startEditing(note)" class="btn btn-secondary">Edit</button>
+          <button @click="deleteNote(note._id)" class="btn btn-danger delete">Delete</button>
+          <button @click="handleAIGenerateTasks(note)" class="btn-ai-icon" :disabled="aiLoadingNotes.has(note._id)" title="Generate with AI">
+            <span v-if="aiLoadingNotes.has(note._id)" class="icon-loading">⋯</span>
+            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
           </button>
         </div>
         <div v-if="aiTasksByNote[note._id] && aiTasksByNote[note._id].length > 0" class="ai-tasks">
@@ -268,7 +269,7 @@ async function saveNoteTaskDraft(noteId, draft) {
           </div>
           <div v-for="(draft, idx) in aiTasksByNote[note._id]" :key="idx" class="ai-task-item">
             <span class="task-draft-title">{{ draft }}</span>
-            <button @click="saveNoteTaskDraft(note._id, draft)" class="save-task-btn" :disabled="savedTaskDrafts.has(draft)">
+            <button @click="saveNoteTaskDraft(note._id, draft)" class="btn btn-primary btn-sm save-task-btn" :disabled="savedTaskDrafts.has(draft)">
               {{ savedTaskDrafts.has(draft) ? 'Saved' : 'Save as Task' }}
             </button>
           </div>
@@ -279,41 +280,6 @@ async function saveNoteTaskDraft(noteId, draft) {
 </template>
 
 <style scoped>
-.toast {
-  position: fixed;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 12px 24px;
-  border-radius: 8px;
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  z-index: 1000;
-  animation: slideUp 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  max-width: 90%;
-}
-
-.toast.success {
-  background: #10b981;
-}
-
-.toast.error {
-  background: #ef4444;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 20px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
-
 .form-section, .notes-section {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -329,24 +295,6 @@ async function saveNoteTaskDraft(noteId, draft) {
   color: #333;
 }
 
-input, textarea {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 14px;
-}
-
-textarea {
-  resize: none;
-  overflow-y: hidden;
-  min-height: 80px;
-  max-height: 400px;
-  line-height: 1.5;
-}
-
 .auto-grow-textarea {
   transition: height 0.1s ease;
 }
@@ -354,51 +302,15 @@ textarea {
 .form-buttons, .card-buttons {
   display: flex;
   gap: 8px;
+  justify-content: flex-end;
 }
 
-button {
-  padding: 10px 20px;
-  font-size: 14px;
-  background: #42b883;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
+/* Base button styles now use global .btn classes */
 
-button:hover:not(:disabled) {
-  background: #36a372;
-}
+/* button.cancel uses global .btn .btn-secondary */
 
-button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
+/* button.delete uses global .btn .btn-danger */
 
-button.cancel {
-  background: #999;
-}
-
-button.cancel:hover:not(:disabled) {
-  background: #777;
-}
-
-button.delete {
-  background: #e74c3c;
-}
-
-button.delete:hover:not(:disabled) {
-  background: #c0392b;
-}
-
-button.ai-btn {
-  background: #9b59b6;
-}
-
-button.ai-btn:hover:not(:disabled) {
-  background: #8e44ad;
-}
 
 .ai-tasks {
   margin-top: 12px;
@@ -441,30 +353,9 @@ button.ai-btn:hover:not(:disabled) {
   color: #555;
 }
 
-.save-task-btn {
-  padding: 4px 10px;
-  font-size: 11px;
-  background: #42b883;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-}
+/* .save-task-btn uses global .btn .btn-primary .btn-sm */
 
-.save-task-btn:hover {
-  background: #36a372;
-}
-
-.save-task-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.empty {
-  color: #999;
-  padding: 20px;
-  text-align: center;
-}
+/* Empty state uses EmptyState component */
 
 .error {
   padding: 12px;
@@ -475,31 +366,6 @@ button.ai-btn:hover:not(:disabled) {
   text-align: center;
 }
 
-.note-card {
-  background: white;
-  padding: 16px;
-  border-radius: 4px;
-  margin-bottom: 12px;
-  border-left: 3px solid #42b883;
-}
-
-.note-card h3 {
-  font-size: 16px;
-  margin-top: 0;
-  margin-bottom: 8px;
-  color: #333;
-}
-
-.note-card p {
-  font-size: 14px;
-  color: #555;
-  margin: 0 0 8px;
-  white-space: pre-wrap;
-}
-
-.note-card .meta {
-  font-size: 12px;
-  color: #999;
-}
+/* .note-card uses .card and .card-accent-green baseline */
 
 </style>
