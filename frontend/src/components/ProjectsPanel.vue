@@ -30,9 +30,6 @@ const taskCaptureMode = ref({}) // { [projectId]: 'single' | 'batch' }
 const batchTaskInputs = ref({})
 const addingBatchTasks = ref(new Set())
 const batchTaskSuccess = ref({})
-const formSummaryTextareaRef = ref(null)
-const editSummaryTextareaRefs = ref({})
-const editFocusInputRefs = ref({})
 const projectTasks = ref({})
 const loadingProjectTasks = ref(new Set())
 
@@ -43,6 +40,9 @@ const toastType = ref('success') // success, error
 
 // Hotfix-1: Track AI-generated focus provenance (client-side only, no DB schema change)
 const aiGeneratedFocusMap = ref({}) // { [projectId]: boolean }
+
+// P0-Fix-1: Store original project data for cancel restore
+const editingOriginalData = ref({})
 
 function showToast(message, type = 'success') {
   toastMessage.value = message
@@ -98,12 +98,6 @@ async function createProject() {
     projectForm.value = { name: '', summary: '', status: 'pending', nextAction: '' }
     emit('refreshed', projects.value)
     showToast('Project created')
-    // Auto-grow reset textarea
-    if (formSummaryTextareaRef.value) {
-      setTimeout(() => {
-        formSummaryTextareaRef.value.style.height = 'auto'
-      }, 0)
-    }
     // Initialize empty task list for new project
     projectTasks.value[project._id] = []
   } catch (e) {
@@ -157,22 +151,13 @@ async function deleteProject(id) {
 
 function startEditingProject(project) {
   editingProjectId.value = project._id
-  // Auto-grow after refs are set
-  setTimeout(() => {
-    const textarea = editSummaryTextareaRefs.value[project._id]
-    if (textarea) {
-      autoGrow(textarea)
-    }
-  }, 0)
-}
-
-function autoGrow(textarea) {
-  textarea.style.height = 'auto'
-  textarea.style.height = textarea.scrollHeight + 'px'
-}
-
-function onInput(e) {
-  autoGrow(e.target)
+  // P0-Fix-1: Store original data for restore on cancel
+  editingOriginalData.value[project._id] = {
+    name: project.name,
+    summary: project.summary,
+    nextAction: project.nextAction,
+    status: project.status
+  }
 }
 
 onMounted(async () => {
@@ -186,14 +171,24 @@ onMounted(async () => {
   projects.value.forEach(project => {
     fetchProjectTasksForCard(project._id)
   })
-  // Auto-grow initial form textarea
-  if (formSummaryTextareaRef.value) {
-    autoGrow(formSummaryTextareaRef.value)
-  }
 })
 
-function cancelEditProject() {
+function cancelEditProject(project) {
+  // P0-Fix-1: Restore original data before closing edit mode
+  if (project && editingOriginalData.value[project._id]) {
+    project.name = editingOriginalData.value[project._id].name
+    project.summary = editingOriginalData.value[project._id].summary
+    project.nextAction = editingOriginalData.value[project._id].nextAction
+    project.status = editingOriginalData.value[project._id].status
+    // Clean up stored original data
+    delete editingOriginalData.value[project._id]
+  }
   editingProjectId.value = null
+}
+
+// Close AI suggestions by clearing data (allows reopening)
+function closeAISuggestions(projectId) {
+  delete aiSuggestions.value[projectId]
 }
 
 async function fetchProjectTasksForCard(projectId) {
@@ -423,12 +418,10 @@ async function addBatchTasks(project) {
       <div v-if="editingProjectId === project._id">
          <input v-model="project.name" placeholder="Project name" class="input" />
         <textarea
-          :ref="el => { if (el) editSummaryTextareaRefs[project._id] = el }"
           v-model="project.summary"
           placeholder="Summary"
           rows="2"
-          class="textarea auto-grow-textarea"
-          @input="onInput"
+          class="textarea"
         ></textarea>
         <input v-model="project.nextAction" placeholder="Current focus" class="input" />
         <select v-model="project.status" class="input">
@@ -438,8 +431,8 @@ async function addBatchTasks(project) {
           <option value="on_hold">On Hold</option>
         </select>
         <div class="card-buttons">
-          <button @click="updateProject(project)" :disabled="loading">Save</button>
-          <button @click="cancelEditProject" :disabled="loading" class="cancel">Cancel</button>
+          <button @click="updateProject(project)" :disabled="loading" class="btn btn-primary">Save</button>
+          <button @click="cancelEditProject(project)" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
         </div>
       </div>
       <div v-else>
@@ -541,9 +534,8 @@ async function addBatchTasks(project) {
               v-model="batchTaskInputs[project._id]"
               placeholder="One task per line..."
               :disabled="addingBatchTasks.has(project._id)"
-              class="textarea auto-grow-textarea"
+              class="textarea"
               rows="3"
-              @input="onInput"
             ></textarea>
             <div class="batch-task-actions">
               <button @click="addBatchTasks(project)" class="btn btn-primary btn-sm save-task-btn" :disabled="addingBatchTasks.has(project._id)">
@@ -564,19 +556,22 @@ async function addBatchTasks(project) {
           </button>
         </div>
 
-        <!-- AI Suggestions Block -->
+        <!-- AI Suggestions with close/reopen support -->
         <div v-if="aiSuggestions[project._id] && aiSuggestions[project._id].length > 0" class="ai-suggestions">
           <div class="ai-suggestions-header">
             <strong>AI Suggestions ({{ aiSuggestions[project._id].length }})</strong>
-            <span v-if="saveSuccessMessages[`${project._id}_focus`]" class="save-success">{{ saveSuccessMessages[`${project._id}_focus`] }}</span>
+            <div class="ai-suggestions-actions">
+              <span v-if="saveSuccessMessages[`${project._id}_focus`]" class="save-success">{{ saveSuccessMessages[`${project._id}_focus`] }}</span>
+              <button @click="closeAISuggestions(project._id)" class="btn-ai-dismiss" title="Close">×</button>
+            </div>
           </div>
           <div v-for="(suggestion, idx) in aiSuggestions[project._id]" :key="idx" :class="['ai-suggestion-item', { applied: project.nextAction === suggestion }]">
-            <span class="suggestion-text">{{ suggestion }}</span>
+            <div class="suggestion-content">{{ suggestion }}</div>
             <div class="suggestion-actions">
-              <button @click="useAsCurrentFocus(project, suggestion)" class="btn btn-secondary btn-sm use-focus-btn" :disabled="applyingFocus.has(project._id) || project.nextAction === suggestion">
+              <button @click="useAsCurrentFocus(project, suggestion)" class="btn btn-secondary btn-sm" :disabled="applyingFocus.has(project._id) || project.nextAction === suggestion">
                 {{ project.nextAction === suggestion ? 'Applied' : (applyingFocus.has(project._id) ? 'Setting...' : 'Use as Current Focus') }}
               </button>
-              <button @click="saveSuggestionAsTask(project._id, suggestion)" class="btn btn-primary btn-sm save-suggestion-btn" :disabled="savedSuggestions.has(suggestion)">
+              <button @click="saveSuggestionAsTask(project._id, suggestion)" class="btn btn-secondary btn-sm" :disabled="savedSuggestions.has(suggestion)">
                 {{ savedSuggestions.has(suggestion) ? 'Saved' : 'Save as Task' }}
               </button>
             </div>
@@ -590,12 +585,10 @@ async function addBatchTasks(project) {
     <h2>New Project</h2>
     <input v-model="projectForm.name" placeholder="Project name" class="input" />
     <textarea
-      ref="formSummaryTextareaRef"
       v-model="projectForm.summary"
       placeholder="Summary"
       rows="2"
-      class="textarea auto-grow-textarea"
-      @input="onInput"
+      class="textarea"
     ></textarea>
     <input v-model="projectForm.nextAction" placeholder="Current focus" class="input" />
     <select v-model="projectForm.status" class="input">
@@ -631,10 +624,6 @@ async function addBatchTasks(project) {
   justify-content: flex-end;
   margin-top: 8px;
   color: #333;
-}
-
-.auto-grow-textarea {
-  transition: height 0.1s ease;
 }
 
 .focus-row {
@@ -714,19 +703,47 @@ async function addBatchTasks(project) {
   margin-bottom: 8px;
 }
 
+.ai-suggestions-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .save-success {
   color: #10b981;
   font-size: 11px;
 }
 
+.btn-ai-dismiss {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(107, 63, 160, 0.15);
+  color: #6b3fa0;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.btn-ai-dismiss:hover {
+  background: rgba(107, 63, 160, 0.25);
+}
+
+/* AI Suggestion Item - Vertical hierarchy (content first) */
 .ai-suggestion-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 8px;
+  flex-direction: column;
+  padding: 10px 12px;
   background: white;
   border-radius: 4px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  gap: 10px;
 }
 
 .ai-suggestion-item:last-child {
@@ -738,20 +755,19 @@ async function addBatchTasks(project) {
   border-left: 2px solid #4caf50;
 }
 
-.suggestion-text {
-  flex: 1;
+.suggestion-content {
   font-size: 12px;
   color: #555;
+  line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .suggestion-actions {
   display: flex;
-  gap: 6px;
-  margin-left: 8px;
+  justify-content: flex-end;
+  gap: 8px;
 }
-
-/* .use-focus-btn uses global .btn .btn-secondary .btn-sm */
-/* .save-suggestion-btn uses global .btn .btn-primary .btn-sm */
 
 /* Empty state uses EmptyState component */
 
@@ -960,10 +976,12 @@ async function addBatchTasks(project) {
   font-family: inherit;
   font-size: 14px;
   resize: none;
-  overflow-y: hidden;
+  overflow-y: auto;
   min-height: 80px;
   max-height: 400px;
   line-height: 1.5;
+  /* Modern browsers: native auto-grow */
+  field-sizing: content;
 }
 
 .batch-task-actions {

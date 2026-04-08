@@ -295,10 +295,12 @@ select.input:disabled {
 /* Textarea specific */
 .textarea {
   resize: none;
-  overflow-y: hidden;
+  overflow-y: auto;
   min-height: 80px;
   max-height: 400px;
   line-height: 1.5;
+  /* Modern browsers: native auto-grow (Chrome 123+, Firefox 129+) */
+  field-sizing: content;
 }
 
 /* Select specific */

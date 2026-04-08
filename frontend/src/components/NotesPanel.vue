@@ -16,6 +16,9 @@ const aiLoadingNotes = ref(new Set())
 const savedTaskDrafts = ref(new Set())
 const taskSuccessMessages = reactive({})
 
+// P0-Fix-1: Store original note data for cancel restore
+const editingOriginalData = ref({})
+
 // Toast notifications
 const toast = ref(null)
 const toastMessage = ref('')
@@ -41,9 +44,6 @@ function clearDraft() {
   drafts.value = {}
   localStorage.removeItem('sayachan_note_drafts')
 }
-const formTextareaRef = ref(null)
-const editTextareaRefs = ref({})
-
 const emit = defineEmits(['refreshed'])
 
 async function fetchNotes() {
@@ -75,12 +75,6 @@ async function createNote() {
     form.value = { title: '', content: '' }
     emit('refreshed', notes.value)
     showToast('Note saved')
-    // Auto-grow reset textarea
-    if (formTextareaRef.value) {
-      setTimeout(() => {
-        formTextareaRef.value.style.height = 'auto'
-      }, 0)
-    }
   } catch (e) {
     showToast('Failed to save note. Please try again.', 'error')
     // Save as local draft
@@ -133,34 +127,31 @@ async function deleteNote(id) {
 
 function startEditing(note) {
   editingId.value = note._id
-  // Auto-grow after ref is set
-  setTimeout(() => {
-    const textarea = editTextareaRefs.value[note._id]
-    if (textarea) {
-      autoGrow(textarea)
-    }
-  }, 0)
+  // P0-Fix-1: Store original data for restore on cancel
+  editingOriginalData.value[note._id] = {
+    title: note.title,
+    content: note.content
+  }
 }
 
-function cancelEdit() {
+function cancelEdit(note) {
+  // P0-Fix-1: Restore original data before closing edit mode
+  if (note && editingOriginalData.value[note._id]) {
+    note.title = editingOriginalData.value[note._id].title
+    note.content = editingOriginalData.value[note._id].content
+    // Clean up stored original data
+    delete editingOriginalData.value[note._id]
+  }
   editingId.value = null
 }
 
-function autoGrow(textarea) {
-  textarea.style.height = 'auto'
-  textarea.style.height = textarea.scrollHeight + 'px'
-}
-
-function onInput(e) {
-  autoGrow(e.target)
+// Close AI suggestions by clearing data (allows reopening)
+function closeAITasks(noteId) {
+  delete aiTasksByNote[noteId]
 }
 
 onMounted(() => {
   fetchNotes()
-  // Auto-grow initial form textarea
-  if (formTextareaRef.value) {
-    autoGrow(formTextareaRef.value)
-  }
 })
 
 async function handleAIGenerateTasks(note) {
@@ -214,12 +205,10 @@ async function saveNoteTaskDraft(noteId, draft) {
     <h2>{{ editingId ? 'Edit Note' : 'New Note' }}</h2>
     <input v-model="form.title" placeholder="Title" class="input" />
     <textarea
-      ref="formTextareaRef"
       v-model="form.content"
       placeholder="Content"
       rows="3"
-      class="textarea auto-grow-textarea"
-      @input="onInput"
+      class="textarea"
     ></textarea>
     <div class="form-buttons">
       <button @click="createNote" :disabled="loading || editingId" class="btn btn-primary">
@@ -238,16 +227,14 @@ async function saveNoteTaskDraft(noteId, draft) {
       <div v-if="editingId === note._id">
         <input v-model="note.title" placeholder="Title" class="input" />
         <textarea
-          :ref="el => { if (el) editTextareaRefs[note._id] = el }"
           v-model="note.content"
           placeholder="Content"
           rows="3"
-          class="textarea auto-grow-textarea"
-          @input="onInput"
+          class="textarea"
         ></textarea>
         <div class="card-buttons">
           <button @click="updateNote(note)" :disabled="loading" class="btn btn-primary">Save</button>
-          <button @click="cancelEdit" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
+          <button @click="cancelEdit(note)" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
         </div>
       </div>
       <div v-else>
@@ -262,16 +249,22 @@ async function saveNoteTaskDraft(noteId, draft) {
             <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
           </button>
         </div>
+        <!-- AI Tasks with close/reopen support -->
         <div v-if="aiTasksByNote[note._id] && aiTasksByNote[note._id].length > 0" class="ai-tasks">
           <div class="ai-tasks-header">
             <strong>AI Tasks ({{ aiTasksByNote[note._id].length }})</strong>
-            <span v-if="taskSuccessMessages[note._id]" class="save-success">{{ taskSuccessMessages[note._id] }}</span>
+            <div class="ai-tasks-actions">
+              <span v-if="taskSuccessMessages[note._id]" class="save-success">{{ taskSuccessMessages[note._id] }}</span>
+              <button @click="closeAITasks(note._id)" class="btn-ai-dismiss" title="Close">×</button>
+            </div>
           </div>
           <div v-for="(draft, idx) in aiTasksByNote[note._id]" :key="idx" class="ai-task-item">
-            <span class="task-draft-title">{{ draft }}</span>
-            <button @click="saveNoteTaskDraft(note._id, draft)" class="btn btn-primary btn-sm save-task-btn" :disabled="savedTaskDrafts.has(draft)">
-              {{ savedTaskDrafts.has(draft) ? 'Saved' : 'Save as Task' }}
-            </button>
+            <div class="task-content">{{ draft }}</div>
+            <div class="task-actions">
+              <button @click="saveNoteTaskDraft(note._id, draft)" class="btn btn-secondary btn-sm" :disabled="savedTaskDrafts.has(draft)">
+                {{ savedTaskDrafts.has(draft) ? 'Saved' : 'Save as Task' }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -293,10 +286,6 @@ async function saveNoteTaskDraft(noteId, draft) {
   margin-top: 0;
   margin-bottom: 16px;
   color: #333;
-}
-
-.auto-grow-textarea {
-  transition: height 0.1s ease;
 }
 
 .form-buttons, .card-buttons {
@@ -328,32 +317,65 @@ async function saveNoteTaskDraft(noteId, draft) {
   margin-bottom: 8px;
 }
 
+.ai-tasks-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .save-success {
   color: #10b981;
   font-size: 11px;
 }
 
+.btn-ai-dismiss {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(107, 63, 160, 0.15);
+  color: #6b3fa0;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.btn-ai-dismiss:hover {
+  background: rgba(107, 63, 160, 0.25);
+}
+
+/* AI Task Item - Vertical hierarchy (content first) */
 .ai-task-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 8px;
+  flex-direction: column;
+  padding: 10px 12px;
   background: white;
   border-radius: 4px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  gap: 10px;
 }
 
 .ai-task-item:last-child {
   margin-bottom: 0;
 }
 
-.task-draft-title {
-  flex: 1;
+.task-content {
   font-size: 12px;
   color: #555;
+  line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
-/* .save-task-btn uses global .btn .btn-primary .btn-sm */
+.task-actions {
+  display: flex;
+  justify-content: flex-end;
+}
 
 /* Empty state uses EmptyState component */
 
