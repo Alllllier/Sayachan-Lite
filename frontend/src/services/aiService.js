@@ -99,7 +99,8 @@ export async function suggestNextAction(project) {
   const summary = project?.summary || '(无描述)'
   const status = project?.status || 'unknown'
   const nextAction = project?.nextAction || '(无)'
-  const lastCompletedAction = project?.lastCompletedAction || '(无)'
+  // Derive last completed from focusHistory instead of deprecated lastCompletedAction field
+  const lastCompletedAction = project?.focusHistory?.slice(-1)[0] || '(无)'
 
   // Take recent 3 items from focusHistory (most recent first)
   const recentHistory = project?.focusHistory && Array.isArray(project.focusHistory)

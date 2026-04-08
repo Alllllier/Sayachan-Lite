@@ -53,6 +53,27 @@ function showToast(message, type = 'success') {
   }, 3000)
 }
 
+// Status mapping: internal enum → user-friendly language and color
+function formatStatus(status) {
+  const statusMap = {
+    'pending': 'Planning',
+    'in_progress': 'In Progress',
+    'completed': 'Completed',
+    'on_hold': 'Paused'
+  }
+  return statusMap[status] || status
+}
+
+function getStatusClass(status) {
+  const classMap = {
+    'pending': 'status-planning',
+    'in_progress': 'status-active',
+    'completed': 'status-completed',
+    'on_hold': 'status-paused'
+  }
+  return classMap[status] || 'status-default'
+}
+
 const emit = defineEmits(['refreshed'])
 
 async function fetchProjects() {
@@ -440,23 +461,29 @@ async function addBatchTasks(project) {
       <div v-else>
         <h3 class="card-title">{{ project.name }}</h3>
         <p class="card-content">{{ project.summary }}</p>
-        <p class="card-meta">Status: {{ project.status }}</p>
-        <div class="focus-row">
-          <p class="card-meta">Current Focus: {{ project.nextAction || 'None' }}</p>
+
+        <!-- Meta Row: Status and Date -->
+        <div class="meta-row">
+          <span class="status-badge" :class="getStatusClass(project.status)">{{ formatStatus(project.status) }}</span>
+          <span class="date-meta">{{ new Date(project.createdAt).toLocaleDateString() }}</span>
+        </div>
+
+        <!-- Current Focus - Primary Decision Layer -->
+        <div class="focus-section">
+          <div class="focus-main">
+            <span class="focus-label">Current Focus</span>
+            <span class="focus-value">{{ project.nextAction || 'No active focus' }}</span>
+          </div>
           <button v-if="project.nextAction" @click="saveCurrentFocusAsTask(project)" class="btn btn-primary btn-sm save-focus-btn" :disabled="savingFocusAsTask.has(project._id)">
-            {{ savingFocusAsTask.has(project._id) ? 'Saving...' : 'Save Focus as Task' }}
+            {{ savingFocusAsTask.has(project._id) ? 'Saving...' : 'Save as Task' }}
           </button>
         </div>
-         <p v-if="project.lastCompletedAction" class="card-meta last-completed">Last Completed: {{ project.lastCompletedAction }}</p>
-        <div v-if="project.focusHistory && project.focusHistory.length > 0" class="focus-history">
-                    <p class="card-meta history-label">Focus History:</p>
-          <ul class="history-list">
-            <li v-for="(item, idx) in project.focusHistory.slice(-3).reverse()" :key="idx" class="history-item">
-              {{ item }}
-            </li>
-          </ul>
+
+        <!-- Focus History - Tertiary Trail (De-emphasized) -->
+        <div v-if="project.focusHistory && project.focusHistory.length > 0" class="focus-history compact">
+          <span class="history-label">Previous:</span>
+          <span class="history-trail">{{ project.focusHistory.slice(-2).reverse().join(' → ') }}</span>
         </div>
-        <p class="card-meta">{{ new Date(project.createdAt).toLocaleString() }}</p>
 
         <!-- Project Tasks Preview -->
         <div v-if="projectTasks[project._id] && projectTasks[project._id].length > 0" class="project-tasks-preview">
@@ -628,22 +655,97 @@ async function addBatchTasks(project) {
   color: #333;
 }
 
-.focus-row {
+/* Focus Section - Primary Decision Layer */
+.focus-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 0 0 8px;
+  margin: 12px 0 0;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-left: 3px solid #42b883;
+  border-radius: 6px;
 }
 
-.focus-row .meta {
-  margin: 0;
+.focus-main {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  gap: 4px;
+}
+
+.focus-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.focus-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.4;
 }
 
 .save-focus-btn {
   /* Layout only: uses global .btn .btn-primary .btn-sm for colors */
-  margin-left: 8px;
+  margin-left: 12px;
   flex-shrink: 0;
+}
+
+/* Meta Row: Status and Date - Secondary Context */
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0 12px;
+}
+
+.status-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.date-meta {
+  font-size: 11px;
+  color: #999;
+}
+
+/* Status Color Coding */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-planning {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-active {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.status-completed {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.status-paused {
+  background: #fff3e0;
+  color: #f57c00;
 }
 
 .card-buttons {
@@ -792,34 +894,36 @@ async function addBatchTasks(project) {
   font-size: 12px;
 }
 
+.focus-history.compact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 12px;
+  padding: 4px 10px;
+  background: transparent;
+  border-left: 2px solid #ddd;
+}
+
 .history-label {
-  margin: 0 0 6px;
+  font-size: 11px;
   font-weight: 500;
-  color: #666;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.history-list {
-  margin: 0;
-  padding-left: 18px;
-  list-style-type: disc;
-}
-
-.history-item {
-  color: #555;
-  margin-bottom: 3px;
-  line-height: 1.4;
-}
-
-.history-item:last-child {
-  margin-bottom: 0;
+.history-trail {
+  font-size: 11px;
+  color: #999;
+  font-style: italic;
 }
 
 .project-tasks-preview {
-  margin-top: 12px;
-  padding: 10px 12px;
+  margin-top: 16px;
+  padding: 12px;
   background: #f8f9fa;
   border-radius: 6px;
-  border: 1px solid #e9ecef;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .tasks-preview-header {

@@ -184,7 +184,6 @@ router.put('/tasks/:id', async (ctx) => {
     if (project) {
       const historyEntry = project.nextAction;
       await Project.findByIdAndUpdate(project._id, {
-        lastCompletedAction: project.nextAction,
         nextAction: '',
         $push: { focusHistory: historyEntry }
       });
