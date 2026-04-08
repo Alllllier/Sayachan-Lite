@@ -59,12 +59,7 @@ async function handleQuickAddTask() {
         creationMode: 'manual',
         originModule: 'dashboard',
         originId: null,
-        originLabel: '',
-        // Legacy fields
-        source: 'manual',
-        sourceDetail: 'dashboard',
-        projectId: null,
-        projectName: ''
+        originLabel: ''
       })
     })
     const newTask = await res.json()
@@ -163,18 +158,11 @@ function getSourceColor(task) {
   if (task.creationMode === 'manual') {
     return '#6b7280'
   }
-  // Legacy: fallback to old source field for historical data
-  if (task.source === 'ai') {
-    return '#DAA520'
-  }
-  if (task.source === 'manual') {
-    return '#6b7280'
-  }
   return '#999' // Ultimate fallback
 }
 
 function getSourceLetter(task) {
-  // Priority: use new originModule field
+  // Canonical: only use originModule field
   const originModule = task.originModule?.toLowerCase() || ''
   if (originModule.includes('note')) {
     return 'N'
@@ -185,26 +173,16 @@ function getSourceLetter(task) {
   if (originModule === 'dashboard') {
     return 'D'
   }
-  // Legacy: fallback to old sourceDetail field for historical data
-  const sourceDetail = task.sourceDetail?.toLowerCase() || task.projectName?.toLowerCase() || ''
-  if (sourceDetail.includes('note')) {
-    return 'N'
-  }
-  if (sourceDetail.includes('project')) {
-    return 'P'
-  }
-  if (sourceDetail === 'dashboard') {
-    return 'D'
-  }
   return '?' // Ultimate fallback
 }
 
 // Hotfix-1: Helper to get provenance class for semantic styling
 function getProvenanceClass(task) {
-  if (task.creationMode === 'ai' || task.source === 'ai') {
+  // Canonical: only use creationMode
+  if (task.creationMode === 'ai') {
     return 'provenance-ai'
   }
-  if (task.creationMode === 'manual' || task.source === 'manual') {
+  if (task.creationMode === 'manual') {
     return 'provenance-manual'
   }
   return ''
@@ -239,12 +217,7 @@ async function handleSaveDraftsAsTasks() {
           creationMode: draft.creationMode || draft.source || 'manual',
           originModule: draft.originModule || '',
           originId: draft.originId || null,
-          originLabel: draft.originLabel || '',
-          // Legacy fields for compatibility
-          source: draft.creationMode || draft.source || 'manual',
-          sourceDetail: draft.originModule || '',
-          projectId: null,
-          projectName: ''
+          originLabel: draft.originLabel || ''
         })
       })
     }

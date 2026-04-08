@@ -21,18 +21,13 @@ export async function saveTask(title, creationMode, originModule = '', originId 
   try {
     const taskData = {
       title,
-      // New semantic fields
+      // Canonical semantic fields
       creationMode,
       originModule,
       originId,
       originLabel,
       linkedProjectId,
-      linkedProjectName,
-      // Legacy fields for compatibility
-      source: creationMode,
-      sourceDetail: originModule,
-      projectId: linkedProjectId,
-      projectName: linkedProjectName
+      linkedProjectName
     };
 
     const res = await fetch(`${API_BASE}/tasks`, {

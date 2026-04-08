@@ -264,6 +264,8 @@ async function saveCurrentFocusAsTask(project) {
     if (newTask) {
       saveSuccessMessages.value[`${project._id}_focus`] = 'Focus saved as task'
       setTimeout(() => { delete saveSuccessMessages.value[`${project._id}_focus`] }, 2000)
+      // Refresh project tasks to show new task immediately
+      await fetchProjectTasksForCard(project._id)
     }
   } catch (e) {
     error.value = 'Failed to save focus as task'
