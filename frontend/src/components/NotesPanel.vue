@@ -98,6 +98,7 @@ async function updateNote(note) {
     const updated = await response.json()
     const index = notes.value.findIndex(n => n._id === note._id)
     if (index !== -1) notes.value[index] = updated
+    notes.value.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
     editingId.value = null
     emit('refreshed', notes.value)
     showToast('Note updated')

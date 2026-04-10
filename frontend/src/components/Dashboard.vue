@@ -43,7 +43,15 @@ const quickAddInput = ref('')
 const isQuickAdding = ref(false)
 const quickAddSuccess = ref('')
 
-onMounted(fetchTasks)
+// P0-B: Archive visibility toggle
+const showArchived = ref(false)
+
+onMounted(() => fetchTasks(showArchived.value))
+
+// P0-B: Watch toggle and refetch tasks
+watch(showArchived, (newValue) => {
+  fetchTasks(newValue)
+})
 
 async function handleQuickAddTask() {
   const title = quickAddInput.value.trim()
@@ -100,13 +108,18 @@ async function handleTaskComplete(task) {
 
 async function handleTaskArchive(task) {
   try {
+    const newStatus = task.status === 'archived' ? 'active' : 'archived'
     await fetch(`${API_BASE}/tasks/${task._id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'archived' })
+      body: JSON.stringify({ status: newStatus })
     })
     savedTasks.value = savedTasks.value.filter(t => t._id !== task._id)
-    taskActionSuccess.value = 'Task archived'
+    // Fix: Clear menu open state when task is archived/restored
+    if (taskMenuOpen.value === task._id) {
+      taskMenuOpen.value = null
+    }
+    taskActionSuccess.value = newStatus === 'archived' ? 'Task archived' : 'Task restored'
     setTimeout(() => { taskActionSuccess.value = '' }, 2000)
   } catch (e) {
     console.error('Failed to archive task:', e)
@@ -122,6 +135,10 @@ async function handleTaskDelete(task) {
       method: 'DELETE'
     })
     savedTasks.value = savedTasks.value.filter(t => t._id !== task._id)
+    // Fix: Clear menu open state when task is deleted
+    if (taskMenuOpen.value === task._id) {
+      taskMenuOpen.value = null
+    }
     taskActionSuccess.value = 'Task deleted'
     setTimeout(() => { taskActionSuccess.value = '' }, 2000)
   } catch (e) {
@@ -321,17 +338,29 @@ async function handleGenerateTaskDrafts() {
     <div class="tasks-execution-zone">
       <div class="zone-header">
         <h3 class="zone-title">Saved Tasks</h3>
-        <div v-if="taskActionSuccess" class="task-action-success">{{ taskActionSuccess }}</div>
+        <div class="zone-controls">
+          <div v-if="taskActionSuccess" class="task-action-success">{{ taskActionSuccess }}</div>
+          <div class="archive-toggle">
+            <button
+              @click="showArchived = false"
+              :class="['toggle-btn', { active: !showArchived }]"
+            >Active</button>
+            <button
+              @click="showArchived = true"
+              :class="['toggle-btn', { active: showArchived }]"
+            >Archived</button>
+          </div>
+        </div>
       </div>
       <div v-if="savedTasks.length > 0" class="saved-tasks-list" @click="closeTaskMenu">
         <div
           class="saved-task-item"
-          :class="{ completed: task.status === 'completed', expanded: expandedTasks.has(task._id) }"
+          :class="{ completed: task.completed, expanded: expandedTasks.has(task._id) }"
           v-for="task in savedTasks"
           :key="task._id"
           @click="toggleTaskExpand(task._id)"
         >
-          <input type="checkbox" class="task-checkbox" :checked="task.status === 'completed'" @change="handleTaskComplete(task)" @click.stop>
+          <input v-if="!showArchived" type="checkbox" class="task-checkbox" :checked="task.completed" @change="handleTaskComplete(task)" @click.stop>
           <span class="task-title" :title="task.title">{{ task.title }}</span>
           <span
             class="source-dot"
@@ -343,13 +372,13 @@ async function handleGenerateTaskDrafts() {
               <span class="menu-icon">⋯</span>
             </button>
             <div v-if="taskMenuOpen === task._id" class="task-menu-dropdown" @click.stop>
-              <button @click="handleTaskArchive(task)" class="menu-item">Archive</button>
+              <button @click="handleTaskArchive(task)" class="menu-item">{{ showArchived ? 'Restore' : 'Archive' }}</button>
               <button @click="handleTaskDelete(task)" class="menu-item delete">Delete</button>
             </div>
           </div>
         </div>
       </div>
-      <EmptyState v-else title="No saved tasks yet" description="Add tasks from AI drafts or quick add above" />
+      <EmptyState v-else :title="showArchived ? 'No archived tasks' : 'No saved tasks yet'" :description="showArchived ? 'Archive tasks to see them here' : 'Add tasks from AI drafts or quick add above'" />
     </div>
 
     <div class="card">
@@ -667,6 +696,12 @@ async function handleGenerateTaskDrafts() {
   align-items: center;
 }
 
+.zone-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .zone-title {
   font-size: 16px;
   margin: 0;
@@ -677,6 +712,34 @@ async function handleGenerateTaskDrafts() {
 .task-action-success {
   color: #10b981;
   font-size: 12px;
+}
+
+/* P0-B: Archive toggle */
+.archive-toggle {
+  display: flex;
+  gap: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+}
+
+.toggle-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  border: none;
+  background: #f5f5f5;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.toggle-btn:hover {
+  background: #e8e8e8;
+}
+
+.toggle-btn.active {
+  background: #42b883;
+  color: white;
 }
 
 .saved-tasks-list {

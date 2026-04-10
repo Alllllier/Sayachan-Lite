@@ -18,7 +18,7 @@ router.get('/health', (ctx) => {
 
 // GET /notes
 router.get('/notes', async (ctx) => {
-  const notes = await Note.find().sort({ createdAt: -1 });
+  const notes = await Note.find().sort({ updatedAt: -1 });
   ctx.body = notes;
 });
 
@@ -65,7 +65,7 @@ router.delete('/notes/:id', async (ctx) => {
 
 // GET /projects
 router.get('/projects', async (ctx) => {
-  const projects = await Project.find().sort({ createdAt: -1 });
+  const projects = await Project.find().sort({ updatedAt: -1 });
   ctx.body = projects;
 });
 
@@ -114,8 +114,14 @@ router.delete('/projects/:id', async (ctx) => {
 
 // GET /tasks
 router.get('/tasks', async (ctx) => {
-  const { projectId } = ctx.query;
-  const filter = { status: { $ne: 'archived' } };
+  const { projectId, archived } = ctx.query;
+  const filter = {};
+  // Toggle archived visibility: default exclude archived, ?archived=true to include only archived
+  if (archived === 'true') {
+    filter.status = 'archived';
+  } else {
+    filter.status = { $ne: 'archived' };
+  }
   if (projectId) {
     // Canonical: only query by linkedProjectId
     filter.linkedProjectId = projectId;

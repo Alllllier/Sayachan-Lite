@@ -5,9 +5,10 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
 export const tasksRef = ref([])
 
-export async function fetchTasks() {
+export async function fetchTasks(archived = false) {
   try {
-    const res = await fetch(`${API_BASE}/tasks`)
+    const url = archived ? `${API_BASE}/tasks?archived=true` : `${API_BASE}/tasks`
+    const res = await fetch(url)
     const tasks = await res.json()
     tasksRef.value = tasks
     return tasksRef.value

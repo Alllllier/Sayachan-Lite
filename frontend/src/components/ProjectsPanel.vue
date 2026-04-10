@@ -141,6 +141,7 @@ async function updateProject(project) {
     const updated = await response.json()
     const index = projects.value.findIndex(p => p._id === project._id)
     if (index !== -1) projects.value[index] = updated
+    projects.value.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
     editingProjectId.value = null
     // Hotfix-1: When user manually edits project, clear AI-generated flag (manual intervention)
     aiGeneratedFocusMap.value[project._id] = false
@@ -312,6 +313,7 @@ async function useAsCurrentFocus(project, suggestion) {
     const updated = await response.json()
     const index = projects.value.findIndex(p => p._id === project._id)
     if (index !== -1) projects.value[index] = updated
+    projects.value.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
     // Hotfix-1: Mark this focus as AI-generated since it came from AI suggestion
     aiGeneratedFocusMap.value[project._id] = true
     emit('refreshed', projects.value)
