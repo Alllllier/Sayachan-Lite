@@ -330,8 +330,8 @@ async function saveNoteTaskDraft(noteId, draft) {
           class="textarea"
         ></textarea>
         <div class="card-buttons">
-          <button @click="updateNote(note)" :disabled="loading" class="btn btn-primary">Save</button>
           <button @click="cancelEdit(note)" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
+          <button @click="updateNote(note)" :disabled="loading" class="btn btn-primary">Save</button>
         </div>
       </div>
       <div v-else>

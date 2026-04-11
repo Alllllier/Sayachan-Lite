@@ -557,9 +557,9 @@ async function addBatchTasks(project) {
           <option value="completed">Completed</option>
           <option value="on_hold">On Hold</option>
         </select>
-        <div class="card-buttons">
-          <button @click="updateProject(project)" :disabled="loading" class="btn btn-primary">Save</button>
+        <div class="card-buttons edit-actions">
           <button @click="cancelEditProject(project)" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
+          <button @click="updateProject(project)" :disabled="loading" class="btn btn-primary">Save</button>
         </div>
       </div>
       <div v-else>
@@ -962,6 +962,11 @@ async function addBatchTasks(project) {
   gap: 8px;
 }
 
+/* Edit actions - align to right */
+.card-buttons.edit-actions {
+  justify-content: flex-end;
+}
+
 /* Polish-1: Compact button row layout */
 .main-actions {
   margin-top: 12px;
@@ -1205,6 +1210,7 @@ async function addBatchTasks(project) {
 .manual-task-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
 }
 
@@ -1302,6 +1308,7 @@ async function addBatchTasks(project) {
 .batch-task-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
 }
 
