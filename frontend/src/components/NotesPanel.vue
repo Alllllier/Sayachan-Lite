@@ -487,6 +487,10 @@ async function saveNoteTaskDraft(noteId, draft) {
   justify-content: flex-end;
 }
 
+.card-buttons {
+  margin-top: 16px;
+}
+
 /* Base button styles now use global .btn classes */
 
 /* button.cancel uses global .btn .btn-secondary */
