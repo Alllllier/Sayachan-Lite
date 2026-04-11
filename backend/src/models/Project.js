@@ -12,7 +12,7 @@ const projectSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'in_progress', 'completed', 'on_hold'],
+    enum: ['pending', 'in_progress', 'completed', 'on_hold', 'archived'],
     default: 'pending'
   },
   nextAction: {
@@ -26,6 +26,14 @@ const projectSchema = new mongoose.Schema({
   focusHistory: {
     type: [String],
     default: []
+  },
+  isPinned: {
+    type: Boolean,
+    default: false
+  },
+  pinnedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

@@ -9,6 +9,19 @@ const noteSchema = new mongoose.Schema({
   content: {
     type: String,
     default: ''
+  },
+  status: {
+    type: String,
+    enum: ['active', 'archived'],
+    default: 'active'
+  },
+  isPinned: {
+    type: Boolean,
+    default: false
+  },
+  pinnedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

@@ -11,6 +11,7 @@ const form = ref({ title: '', content: '' })
 const editingId = ref(null)
 const loading = ref(false)
 const error = ref(null)
+const showArchived = ref(false)
 const aiTasksByNote = reactive({})
 const aiLoadingNotes = ref(new Set())
 const savedTaskDrafts = ref(new Set())
@@ -49,7 +50,10 @@ const emit = defineEmits(['refreshed'])
 async function fetchNotes() {
   loading.value = true
   try {
-    const response = await fetch(`${API_BASE}/notes`)
+    const url = showArchived.value
+      ? `${API_BASE}/notes?archived=true`
+      : `${API_BASE}/notes`
+    const response = await fetch(url)
     notes.value = await response.json()
     emit('refreshed', notes.value)
   } catch (e) {
@@ -98,7 +102,11 @@ async function updateNote(note) {
     const updated = await response.json()
     const index = notes.value.findIndex(n => n._id === note._id)
     if (index !== -1) notes.value[index] = updated
-    notes.value.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+    // Sort: pinned first, then by updatedAt
+    notes.value.sort((a, b) => {
+      if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1
+      return new Date(b.updatedAt) - new Date(a.updatedAt)
+    })
     editingId.value = null
     emit('refreshed', notes.value)
     showToast('Note updated')
@@ -121,6 +129,67 @@ async function deleteNote(id) {
     showToast('Note deleted')
   } catch (e) {
     showToast('Failed to delete note. Please try again.', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function archiveNote(note) {
+  if (!confirm(`Archive "${note.title}"? All tasks from this note will be archived too.`)) return
+  loading.value = true
+  error.value = null
+  try {
+    const response = await fetch(`${API_BASE}/notes/${note._id}/archive`, { method: 'PUT' })
+    if (!response.ok) throw new Error('Archive failed')
+    await fetchNotes()
+    showToast('Note archived')
+    emit('refreshed', notes.value)
+  } catch (e) {
+    showToast('Failed to archive note. Please try again.', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function restoreNote(note) {
+  loading.value = true
+  error.value = null
+  try {
+    const response = await fetch(`${API_BASE}/notes/${note._id}/restore`, { method: 'PUT' })
+    if (!response.ok) throw new Error('Restore failed')
+    await fetchNotes()
+    showToast('Note restored')
+    emit('refreshed', notes.value)
+  } catch (e) {
+    showToast('Failed to restore note. Please try again.', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function pinNote(note) {
+  loading.value = true
+  try {
+    const response = await fetch(`${API_BASE}/notes/${note._id}/pin`, { method: 'PUT' })
+    if (!response.ok) throw new Error('Pin failed')
+    await fetchNotes()
+    showToast('Note pinned')
+  } catch (e) {
+    showToast('Failed to pin note', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function unpinNote(note) {
+  loading.value = true
+  try {
+    const response = await fetch(`${API_BASE}/notes/${note._id}/unpin`, { method: 'PUT' })
+    if (!response.ok) throw new Error('Unpin failed')
+    await fetchNotes()
+    showToast('Note unpinned')
+  } catch (e) {
+    showToast('Failed to unpin note', 'error')
   } finally {
     loading.value = false
   }
@@ -222,10 +291,37 @@ async function saveNoteTaskDraft(noteId, draft) {
   </div>
 
   <div class="notes-section">
-    <h2>Notes ({{ notes.length }})</h2>
-    <EmptyState v-if="notes.length === 0" title="No notes yet" />
-    <div v-for="note in notes" :key="note._id" class="card card-accent-green note-card">
-      <div v-if="editingId === note._id">
+    <div class="section-header">
+      <h2>Notes ({{ notes.length }})</h2>
+      <div class="archive-toggle">
+        <button
+          @click="showArchived = false; fetchNotes()"
+          :class="['toggle-btn', { active: !showArchived }]"
+        >Active</button>
+        <button
+          @click="showArchived = true; fetchNotes()"
+          :class="['toggle-btn', { active: showArchived }]"
+        >Archived</button>
+      </div>
+    </div>
+    <EmptyState v-if="notes.length === 0" :title="showArchived ? 'No archived notes' : 'No notes yet'" />
+    <div v-for="note in notes" :key="note._id" :class="['card', 'card-accent-green', 'note-card', { archived: note.status === 'archived' }]">
+      <div v-if="note.status === 'archived'" class="archived-badge">Archived</div>
+      <button
+        v-else
+        @click="note.isPinned ? unpinNote(note) : pinNote(note)"
+        class="pin-icon-btn"
+        :class="{ pinned: note.isPinned }"
+        :title="note.isPinned ? 'Unpin note' : 'Pin note'"
+      >
+        <svg v-if="note.isPinned" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
+        </svg>
+        <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
+        </svg>
+      </button>
+      <div v-if="editingId === note._id && note.status !== 'archived'">
         <input v-model="note.title" placeholder="Title" class="input" />
         <textarea
           v-model="note.content"
@@ -241,17 +337,24 @@ async function saveNoteTaskDraft(noteId, draft) {
       <div v-else>
         <h3 class="card-title">{{ note.title }}</h3>
         <p class="card-content">{{ note.content }}</p>
-        <p class="card-meta">{{ new Date(note.createdAt).toLocaleString() }}</p>
+        <p class="card-meta">{{ new Date(note.updatedAt).toLocaleString() }}</p>
         <div class="card-buttons">
-          <button @click="startEditing(note)" class="btn btn-secondary">Edit</button>
-          <button @click="deleteNote(note._id)" class="btn btn-danger delete">Delete</button>
-          <button @click="handleAIGenerateTasks(note)" class="btn-ai-icon" :disabled="aiLoadingNotes.has(note._id)" title="Generate with AI">
-            <span v-if="aiLoadingNotes.has(note._id)" class="icon-loading">⋯</span>
-            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-          </button>
+          <template v-if="note.status === 'archived'">
+            <button @click="restoreNote(note)" class="btn btn-primary">Restore</button>
+            <button @click="deleteNote(note._id)" class="btn btn-danger delete">Delete</button>
+          </template>
+          <template v-else>
+            <button @click="startEditing(note)" class="btn btn-secondary">Edit</button>
+            <button @click="archiveNote(note)" class="btn btn-archive" title="Archive note">Archive</button>
+            <button @click="deleteNote(note._id)" class="btn btn-danger delete">Delete</button>
+            <button @click="handleAIGenerateTasks(note)" class="btn-ai-icon" :disabled="aiLoadingNotes.has(note._id)" title="Generate with AI">
+              <span v-if="aiLoadingNotes.has(note._id)" class="icon-loading">⋯</span>
+              <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+            </button>
+          </template>
         </div>
-        <!-- AI Tasks with close/reopen support -->
-        <div v-if="aiTasksByNote[note._id] && aiTasksByNote[note._id].length > 0" class="ai-tasks">
+        <!-- AI Tasks - Hidden for archived notes -->
+        <div v-if="note.status !== 'archived' && aiTasksByNote[note._id] && aiTasksByNote[note._id].length > 0" class="ai-tasks">
           <div class="ai-tasks-header">
             <strong>AI Tasks ({{ aiTasksByNote[note._id].length }})</strong>
             <div class="ai-tasks-actions">
@@ -287,6 +390,95 @@ async function saveNoteTaskDraft(noteId, draft) {
   margin-top: 0;
   margin-bottom: 16px;
   color: #333;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+/* Archive Toggle - Uses semantic tokens */
+.archive-toggle {
+  display: flex;
+  gap: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+}
+
+.toggle-btn {
+  padding: 6px 12px;
+  font-size: var(--font-size-sm);
+  border: none;
+  background: var(--surface-panel);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.toggle-btn:hover {
+  background: var(--surface-hover);
+}
+
+.toggle-btn.active {
+  background: var(--action-primary);
+  color: var(--text-inverse);
+}
+
+/* Archived Note Card Styles - Uses semantic tokens */
+.note-card {
+  position: relative;
+}
+
+.note-card.archived {
+  opacity: 0.75;
+  background: var(--surface-panel);
+  border-color: var(--border-default);
+}
+
+.archived-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--text-muted);
+  color: var(--text-inverse);
+  padding: var(--space-xs) 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Pin Icon Button - Top right, no border */
+.pin-icon-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+
+.pin-icon-btn:hover {
+  color: var(--action-primary);
+  background: var(--surface-hover);
+}
+
+.pin-icon-btn.pinned {
+  color: var(--action-primary);
+  background: rgba(66, 184, 131, 0.1);
 }
 
 .form-buttons, .card-buttons {

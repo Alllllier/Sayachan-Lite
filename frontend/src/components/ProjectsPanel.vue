@@ -13,6 +13,7 @@ const projectForm = ref({ name: '', summary: '', status: 'pending', nextAction: 
 const editingProjectId = ref(null)
 const loading = ref(false)
 const error = ref(null)
+const showArchived = ref(false)
 const aiSuggestions = ref({})
 const aiLoadingProjects = ref(new Set())
 const savedSuggestions = ref(new Set())
@@ -79,7 +80,10 @@ const emit = defineEmits(['refreshed'])
 async function fetchProjects() {
   loading.value = true
   try {
-    const response = await fetch(`${API_BASE}/projects`)
+    const url = showArchived.value
+      ? `${API_BASE}/projects?archived=true`
+      : `${API_BASE}/projects`
+    const response = await fetch(url)
     const fetchedProjects = await response.json()
     projects.value = fetchedProjects
     emit('refreshed', projects.value)
@@ -141,7 +145,11 @@ async function updateProject(project) {
     const updated = await response.json()
     const index = projects.value.findIndex(p => p._id === project._id)
     if (index !== -1) projects.value[index] = updated
-    projects.value.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+    // Sort: pinned first, then by updatedAt
+    projects.value.sort((a, b) => {
+      if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1
+      return new Date(b.updatedAt) - new Date(a.updatedAt)
+    })
     editingProjectId.value = null
     // Hotfix-1: When user manually edits project, clear AI-generated flag (manual intervention)
     aiGeneratedFocusMap.value[project._id] = false
@@ -166,6 +174,69 @@ async function deleteProject(id) {
     showToast('Project deleted')
   } catch (e) {
     showToast('Failed to delete project. Please try again.', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function archiveProject(project) {
+  if (!confirm(`Archive "${project.name}"? All related tasks will be archived too.`)) return
+  loading.value = true
+  error.value = null
+  try {
+    const response = await fetch(`${API_BASE}/projects/${project._id}/archive`, { method: 'PUT' })
+    if (!response.ok) throw new Error('Archive failed')
+    await fetchProjects()
+    showToast('Project archived')
+    emit('refreshed', projects.value)
+  } catch (e) {
+    showToast('Failed to archive project. Please try again.', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function restoreProject(project) {
+  loading.value = true
+  error.value = null
+  try {
+    const response = await fetch(`${API_BASE}/projects/${project._id}/restore`, { method: 'PUT' })
+    if (!response.ok) throw new Error('Restore failed')
+    await fetchProjects()
+    // Refresh tasks for this project after restore (cascade restore tasks)
+    await fetchProjectTasksForCard(project._id)
+    showToast('Project restored')
+    emit('refreshed', projects.value)
+  } catch (e) {
+    showToast('Failed to restore project. Please try again.', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function pinProject(project) {
+  loading.value = true
+  try {
+    const response = await fetch(`${API_BASE}/projects/${project._id}/pin`, { method: 'PUT' })
+    if (!response.ok) throw new Error('Pin failed')
+    await fetchProjects()
+    showToast('Project pinned')
+  } catch (e) {
+    showToast('Failed to pin project', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function unpinProject(project) {
+  loading.value = true
+  try {
+    const response = await fetch(`${API_BASE}/projects/${project._id}/unpin`, { method: 'PUT' })
+    if (!response.ok) throw new Error('Unpin failed')
+    await fetchProjects()
+    showToast('Project unpinned')
+  } catch (e) {
+    showToast('Failed to unpin project', 'error')
   } finally {
     loading.value = false
   }
@@ -313,7 +384,11 @@ async function useAsCurrentFocus(project, suggestion) {
     const updated = await response.json()
     const index = projects.value.findIndex(p => p._id === project._id)
     if (index !== -1) projects.value[index] = updated
-    projects.value.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+    // Sort: pinned first, then by updatedAt
+    projects.value.sort((a, b) => {
+      if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1
+      return new Date(b.updatedAt) - new Date(a.updatedAt)
+    })
     // Hotfix-1: Mark this focus as AI-generated since it came from AI suggestion
     aiGeneratedFocusMap.value[project._id] = true
     emit('refreshed', projects.value)
@@ -437,10 +512,37 @@ async function addBatchTasks(project) {
   <div v-if="error" class="error">{{ error }}</div>
 
   <div class="projects-section">
-    <h2>Projects ({{ projects.length }})</h2>
-    <EmptyState v-if="projects.length === 0" title="No projects yet" />
-    <div v-for="project in projects" :key="project._id" class="card card-accent-blue project-card">
-      <div v-if="editingProjectId === project._id">
+    <div class="section-header">
+      <h2>Projects ({{ projects.length }})</h2>
+      <div class="archive-toggle">
+        <button
+          @click="showArchived = false; fetchProjects()"
+          :class="['toggle-btn', { active: !showArchived }]"
+        >Active</button>
+        <button
+          @click="showArchived = true; fetchProjects()"
+          :class="['toggle-btn', { active: showArchived }]"
+        >Archived</button>
+      </div>
+    </div>
+    <EmptyState v-if="projects.length === 0" :title="showArchived ? 'No archived projects' : 'No projects yet'" />
+    <div v-for="project in projects" :key="project._id" :class="['card', 'card-accent-blue', 'project-card', { archived: project.status === 'archived' }]">
+      <div v-if="project.status === 'archived'" class="archived-badge">Archived</div>
+      <button
+        v-else
+        @click="project.isPinned ? unpinProject(project) : pinProject(project)"
+        class="pin-icon-btn"
+        :class="{ pinned: project.isPinned }"
+        :title="project.isPinned ? 'Unpin project' : 'Pin project'"
+      >
+        <svg v-if="project.isPinned" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
+        </svg>
+        <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
+        </svg>
+      </button>
+      <div v-if="editingProjectId === project._id && project.status !== 'archived'">
          <input v-model="project.name" placeholder="Project name" class="input" />
         <textarea
           v-model="project.summary"
@@ -467,7 +569,7 @@ async function addBatchTasks(project) {
         <!-- Meta Row: Status and Date -->
         <div class="meta-row">
           <span class="status-badge" :class="getStatusClass(project.status)">{{ formatStatus(project.status) }}</span>
-          <span class="date-meta">{{ new Date(project.createdAt).toLocaleDateString() }}</span>
+          <span class="date-meta">{{ new Date(project.updatedAt).toLocaleDateString() }}</span>
         </div>
 
         <!-- Current Focus - Primary Decision Layer -->
@@ -476,7 +578,7 @@ async function addBatchTasks(project) {
             <span class="focus-label">Current Focus</span>
             <span class="focus-value">{{ project.nextAction || 'No active focus' }}</span>
           </div>
-          <button v-if="project.nextAction" @click="saveCurrentFocusAsTask(project)" class="btn btn-primary btn-sm save-focus-btn" :disabled="savingFocusAsTask.has(project._id)">
+          <button v-if="project.status !== 'archived' && project.nextAction" @click="saveCurrentFocusAsTask(project)" class="btn btn-primary btn-sm save-focus-btn" :disabled="savingFocusAsTask.has(project._id)">
             {{ savingFocusAsTask.has(project._id) ? 'Saving...' : 'Save as Task' }}
           </button>
         </div>
@@ -504,8 +606,8 @@ async function addBatchTasks(project) {
           </div>
         </div>
 
-        <!-- Main Action: Add Task / Cancel -->
-        <div class="card-buttons main-actions">
+        <!-- Main Action: Add Task / Cancel (Hidden for archived projects) -->
+        <div v-if="project.status !== 'archived'" class="card-buttons main-actions">
           <button
             v-if="!taskCaptureOpen.has(project._id)"
             @click="openTaskCapture(project._id)"
@@ -522,8 +624,8 @@ async function addBatchTasks(project) {
           </button>
         </div>
 
-        <!-- Task Capture Area: Single/Batch Mode Switch (shown below the main button) -->
-        <div v-if="taskCaptureOpen.has(project._id)" class="task-capture-area">
+        <!-- Task Capture Area: Single/Batch Mode Switch (shown below the main button, hidden for archived) -->
+        <div v-if="project.status !== 'archived' && taskCaptureOpen.has(project._id)" class="task-capture-area">
           <!-- Mode Switch -->
           <div class="capture-mode-switch">
             <button
@@ -579,16 +681,23 @@ async function addBatchTasks(project) {
 
         <!-- Secondary Actions -->
         <div class="card-buttons secondary-actions">
-          <button @click="startEditingProject(project)" class="btn btn-secondary secondary-btn">Edit</button>
-          <button @click="deleteProject(project._id)" class="btn btn-danger secondary-btn delete-btn">Delete</button>
-          <button @click="handleAISuggest(project)" class="btn-ai-icon" :disabled="aiLoadingProjects.has(project._id)" title="Generate with AI">
-            <span v-if="aiLoadingProjects.has(project._id)" class="icon-loading">⋯</span>
-            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-          </button>
+          <template v-if="project.status === 'archived'">
+            <button @click="restoreProject(project)" class="btn btn-primary secondary-btn">Restore</button>
+            <button @click="deleteProject(project._id)" class="btn btn-danger secondary-btn delete-btn">Delete</button>
+          </template>
+          <template v-else>
+            <button @click="startEditingProject(project)" class="btn btn-secondary secondary-btn">Edit</button>
+            <button @click="archiveProject(project)" class="btn btn-archive secondary-btn" title="Archive project">Archive</button>
+            <button @click="deleteProject(project._id)" class="btn btn-danger secondary-btn delete-btn">Delete</button>
+            <button @click="handleAISuggest(project)" class="btn-ai-icon" :disabled="aiLoadingProjects.has(project._id)" title="Generate with AI">
+              <span v-if="aiLoadingProjects.has(project._id)" class="icon-loading">⋯</span>
+              <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+            </button>
+          </template>
         </div>
 
-        <!-- AI Suggestions with close/reopen support -->
-        <div v-if="aiSuggestions[project._id] && aiSuggestions[project._id].length > 0" class="ai-suggestions">
+        <!-- AI Suggestions - Hidden for archived projects -->
+        <div v-if="project.status !== 'archived' && aiSuggestions[project._id] && aiSuggestions[project._id].length > 0" class="ai-suggestions">
           <div class="ai-suggestions-header">
             <strong>AI Suggestions ({{ aiSuggestions[project._id].length }})</strong>
             <div class="ai-suggestions-actions">
@@ -647,6 +756,104 @@ async function addBatchTasks(project) {
   font-size: 18px;
   margin-top: 0;
   margin-bottom: 16px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+/* Archive Toggle - Uses semantic tokens */
+.archive-toggle {
+  display: flex;
+  gap: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+}
+
+.toggle-btn {
+  padding: 6px 12px;
+  font-size: var(--font-size-sm);
+  border: none;
+  background: var(--surface-panel);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.toggle-btn:hover {
+  background: var(--surface-hover);
+}
+
+.toggle-btn.active {
+  background: var(--action-primary);
+  color: var(--text-inverse);
+}
+
+/* Archived Project Card Styles - Uses semantic tokens */
+.project-card {
+  position: relative;
+}
+
+.project-card.archived {
+  opacity: 0.75;
+  background: var(--surface-panel);
+  border-color: var(--border-default);
+}
+
+.project-card.archived .focus-section {
+  background: linear-gradient(135deg, var(--surface-panel) 0%, var(--surface-hover) 100%);
+  border-left-color: var(--text-muted);
+}
+
+.project-card.archived .focus-value {
+  color: var(--text-secondary);
+}
+
+.archived-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--text-muted);
+  color: var(--text-inverse);
+  padding: var(--space-xs) 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Pin Icon Button - Top right, no border */
+.pin-icon-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+
+.pin-icon-btn:hover {
+  color: var(--action-primary);
+  background: var(--surface-hover);
+}
+
+.pin-icon-btn.pinned {
+  color: var(--action-primary);
+  background: rgba(66, 184, 131, 0.1);
 }
 
 .form-buttons {

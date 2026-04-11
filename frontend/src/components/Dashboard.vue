@@ -167,6 +167,17 @@ function toggleTaskExpand(taskId) {
   }
 }
 
+// Status mapping: internal enum → user-friendly language
+function formatStatus(status) {
+  const statusMap = {
+    'pending': 'Planning',
+    'in_progress': 'In Progress',
+    'completed': 'Completed',
+    'on_hold': 'Paused'
+  }
+  return statusMap[status] || status
+}
+
 function getSourceColor(task) {
   // Priority: use new creationMode field
   if (task.creationMode === 'ai') {
@@ -395,7 +406,7 @@ async function handleGenerateTaskDrafts() {
       <EmptyState v-if="recentProjects.length === 0" title="No projects yet" />
       <div v-for="project in recentProjects" :key="project._id" class="mini-item">
         <strong>{{ project.name }}</strong>
-        <span class="status">{{ project.status }}</span>
+        <span class="status">{{ formatStatus(project.status) }}</span>
       </div>
     </div>
 

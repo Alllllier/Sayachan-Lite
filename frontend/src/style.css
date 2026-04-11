@@ -180,6 +180,17 @@ body {
   background: var(--action-danger-hover);
 }
 
+/* Archive Action - Neutral style, visually sibling to edit/delete */
+.btn-archive {
+  background: #8b9dc3;
+  color: var(--text-inverse);
+  border: none;
+}
+
+.btn-archive:hover:not(:disabled) {
+  background: #7a8ab0;
+}
+
 /* AI Action */
 .btn-ai {
   background: var(--action-ai);

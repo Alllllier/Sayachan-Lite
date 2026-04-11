@@ -18,7 +18,12 @@ router.get('/health', (ctx) => {
 
 // GET /notes
 router.get('/notes', async (ctx) => {
-  const notes = await Note.find().sort({ updatedAt: -1 });
+  const { archived } = ctx.query;
+  const filter = archived === 'true'
+    ? { status: 'archived' }
+    : { status: { $ne: 'archived' } };
+  // Priority Signal: pinned first (by pinnedAt), then recent content (by updatedAt)
+  const notes = await Note.find(filter).sort({ isPinned: -1, pinnedAt: -1, updatedAt: -1 });
   ctx.body = notes;
 });
 
@@ -63,9 +68,112 @@ router.delete('/notes/:id', async (ctx) => {
   }
 });
 
+// PUT /notes/:id/pin - Pin note (does not update content timestamp)
+router.put('/notes/:id/pin', async (ctx) => {
+  const id = ctx.params.id;
+  const note = await Note.findByIdAndUpdate(
+    id,
+    { isPinned: true, pinnedAt: new Date() },
+    { new: true, runValidators: true, timestamps: false }
+  );
+  if (!note) {
+    ctx.status = 404;
+    ctx.body = { error: 'Note not found' };
+    return;
+  }
+  console.log(`[Note Pin] "${note.title}" pinned`);
+  ctx.body = note;
+});
+
+// PUT /notes/:id/unpin - Unpin note (does not update content timestamp)
+router.put('/notes/:id/unpin', async (ctx) => {
+  const id = ctx.params.id;
+  const note = await Note.findByIdAndUpdate(
+    id,
+    { isPinned: false, pinnedAt: null },
+    { new: true, runValidators: true, timestamps: false }
+  );
+  if (!note) {
+    ctx.status = 404;
+    ctx.body = { error: 'Note not found' };
+    return;
+  }
+  console.log(`[Note Unpin] "${note.title}" unpinned`);
+  ctx.body = note;
+});
+
+// PUT /notes/:id/archive - Archive note and cascade to tasks
+router.put('/notes/:id/archive', async (ctx) => {
+  const id = ctx.params.id;
+
+  // 1. Archive note
+  const note = await Note.findByIdAndUpdate(
+    id,
+    { status: 'archived' },
+    { new: true, runValidators: true }
+  );
+
+  if (!note) {
+    ctx.status = 404;
+    ctx.body = { error: 'Note not found' };
+    return;
+  }
+
+  // 2. Cascade: Archive all tasks originated from this note
+  const result = await Task.updateMany(
+    {
+      originId: id,
+      originModule: 'note',
+      status: { $ne: 'archived' }
+    },
+    { status: 'archived' }
+  );
+
+  console.log(`[Note Archive] Note "${note.title}" archived, ${result.modifiedCount} tasks cascaded`);
+
+  ctx.body = note;
+});
+
+// PUT /notes/:id/restore - Restore note and cascade to tasks
+router.put('/notes/:id/restore', async (ctx) => {
+  const id = ctx.params.id;
+
+  // 1. Restore note to active status
+  const note = await Note.findByIdAndUpdate(
+    id,
+    { status: 'active' },
+    { new: true, runValidators: true }
+  );
+
+  if (!note) {
+    ctx.status = 404;
+    ctx.body = { error: 'Note not found' };
+    return;
+  }
+
+  // 2. Cascade: Restore all tasks originated from this note
+  const result = await Task.updateMany(
+    {
+      originId: id,
+      originModule: 'note',
+      status: 'archived'
+    },
+    { status: 'active' }
+  );
+
+  console.log(`[Note Restore] Note "${note.title}" restored, ${result.modifiedCount} tasks cascaded`);
+
+  ctx.body = note;
+});
+
 // GET /projects
 router.get('/projects', async (ctx) => {
-  const projects = await Project.find().sort({ updatedAt: -1 });
+  const { archived } = ctx.query;
+  const filter = archived === 'true'
+    ? { status: 'archived' }
+    : { status: { $ne: 'archived' } };
+  // Priority Signal: pinned first (by pinnedAt), then recent content (by updatedAt)
+  const projects = await Project.find(filter).sort({ isPinned: -1, pinnedAt: -1, updatedAt: -1 });
   ctx.body = projects;
 });
 
@@ -110,6 +218,108 @@ router.delete('/projects/:id', async (ctx) => {
     ctx.status = 204;
     ctx.body = null;
   }
+});
+
+// PUT /projects/:id/pin - Pin project (does not update content timestamp)
+router.put('/projects/:id/pin', async (ctx) => {
+  const id = ctx.params.id;
+  const project = await Project.findByIdAndUpdate(
+    id,
+    { isPinned: true, pinnedAt: new Date() },
+    { new: true, runValidators: true, timestamps: false }
+  );
+  if (!project) {
+    ctx.status = 404;
+    ctx.body = { error: 'Project not found' };
+    return;
+  }
+  console.log(`[Project Pin] "${project.name}" pinned`);
+  ctx.body = project;
+});
+
+// PUT /projects/:id/unpin - Unpin project (does not update content timestamp)
+router.put('/projects/:id/unpin', async (ctx) => {
+  const id = ctx.params.id;
+  const project = await Project.findByIdAndUpdate(
+    id,
+    { isPinned: false, pinnedAt: null },
+    { new: true, runValidators: true, timestamps: false }
+  );
+  if (!project) {
+    ctx.status = 404;
+    ctx.body = { error: 'Project not found' };
+    return;
+  }
+  console.log(`[Project Unpin] "${project.name}" unpinned`);
+  ctx.body = project;
+});
+
+// PUT /projects/:id/archive - Archive project and cascade to tasks
+router.put('/projects/:id/archive', async (ctx) => {
+  const id = ctx.params.id;
+
+  // 1. Archive project
+  const project = await Project.findByIdAndUpdate(
+    id,
+    { status: 'archived' },
+    { new: true, runValidators: true }
+  );
+
+  if (!project) {
+    ctx.status = 404;
+    ctx.body = { error: 'Project not found' };
+    return;
+  }
+
+  // 2. Cascade: Archive all related tasks
+  const result = await Task.updateMany(
+    {
+      $or: [
+        { linkedProjectId: id },
+        { originId: id }
+      ],
+      status: { $ne: 'archived' }
+    },
+    { status: 'archived' }
+  );
+
+  console.log(`[Project Archive] Project "${project.name}" archived, ${result.modifiedCount} tasks cascaded`);
+
+  ctx.body = project;
+});
+
+// PUT /projects/:id/restore - Restore project and cascade to tasks
+router.put('/projects/:id/restore', async (ctx) => {
+  const id = ctx.params.id;
+
+  // 1. Restore project to pending status
+  const project = await Project.findByIdAndUpdate(
+    id,
+    { status: 'pending' },
+    { new: true, runValidators: true }
+  );
+
+  if (!project) {
+    ctx.status = 404;
+    ctx.body = { error: 'Project not found' };
+    return;
+  }
+
+  // 2. Cascade: Restore all related tasks to active
+  const result = await Task.updateMany(
+    {
+      $or: [
+        { linkedProjectId: id },
+        { originId: id }
+      ],
+      status: 'archived'
+    },
+    { status: 'active' }
+  );
+
+  console.log(`[Project Restore] Project "${project.name}" restored, ${result.modifiedCount} tasks cascaded`);
+
+  ctx.body = project;
 });
 
 // GET /tasks
