@@ -14,22 +14,24 @@ export const useCockpitSignals = defineStore('cockpitSignals', () => {
   const activeTasksCount = ref(0)
   const pinnedProjectName = ref('')
   const currentNextAction = ref('')
+  const hasHydrated = ref(false)
 
-  function setSignals(partialOrFullSignals) {
-    if (partialOrFullSignals && typeof partialOrFullSignals === 'object') {
-      if (typeof partialOrFullSignals.activeProjectsCount === 'number') {
-        activeProjectsCount.value = partialOrFullSignals.activeProjectsCount
+  function setSignals(payload) {
+    if (payload && typeof payload === 'object') {
+      if (typeof payload.activeProjectsCount === 'number') {
+        activeProjectsCount.value = payload.activeProjectsCount
       }
-      if (typeof partialOrFullSignals.activeTasksCount === 'number') {
-        activeTasksCount.value = partialOrFullSignals.activeTasksCount
+      if (typeof payload.activeTasksCount === 'number') {
+        activeTasksCount.value = payload.activeTasksCount
       }
-      if (typeof partialOrFullSignals.pinnedProjectName === 'string') {
-        pinnedProjectName.value = partialOrFullSignals.pinnedProjectName
+      if (typeof payload.pinnedProjectName === 'string') {
+        pinnedProjectName.value = payload.pinnedProjectName
       }
-      if (typeof partialOrFullSignals.currentNextAction === 'string') {
-        currentNextAction.value = partialOrFullSignals.currentNextAction
+      if (typeof payload.currentNextAction === 'string') {
+        currentNextAction.value = payload.currentNextAction
       }
     }
+    hasHydrated.value = true
   }
 
   function resetSignals() {
@@ -37,6 +39,7 @@ export const useCockpitSignals = defineStore('cockpitSignals', () => {
     activeTasksCount.value = 0
     pinnedProjectName.value = ''
     currentNextAction.value = ''
+    hasHydrated.value = false
   }
 
   return {
@@ -44,6 +47,7 @@ export const useCockpitSignals = defineStore('cockpitSignals', () => {
     activeTasksCount,
     pinnedProjectName,
     currentNextAction,
+    hasHydrated,
     setSignals,
     resetSignals,
   }

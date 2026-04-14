@@ -220,7 +220,7 @@ router.post('/ai/projects/next-action', async (ctx) => {
 
 // POST /ai/chat - Orchestrated chat entry for AI substrate v0.1
 router.post('/ai/chat', async (ctx) => {
-  const { messages, context } = ctx.request.body;
+  const { messages, context, runtimeControls } = ctx.request.body;
 
   const KIMI_KEY = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
   if (!KIMI_KEY) {
@@ -231,7 +231,7 @@ router.post('/ai/chat', async (ctx) => {
 
   try {
     // TODO: extract options (e.g. thinkingEnabled) from request body when strategy is ready
-    const { reply } = await runChat(messages, context);
+    const { reply } = await runChat(messages, context, { runtimeControls });
     console.log('[AI Route] Kimi chat reply generated, length:', reply?.length);
     ctx.body = { reply };
   } catch (error) {

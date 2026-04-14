@@ -1,10 +1,10 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
-export async function sendChat(messages, context) {
+export async function sendChat(messages, context, runtimeControls = {}) {
   const res = await fetch(`${API_BASE}/ai/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages, context })
+    body: JSON.stringify({ messages, context, runtimeControls })
   })
 
   if (!res.ok) {

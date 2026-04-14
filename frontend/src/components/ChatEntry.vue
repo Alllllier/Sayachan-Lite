@@ -2,11 +2,14 @@
 import { ref, nextTick, watch, computed } from 'vue'
 import { useChatStore } from '../stores/chat'
 import { useCockpitSignals } from '../stores/cockpitSignals'
+import { useRuntimeControls } from '../stores/runtimeControls'
 import avatarUrl from '../assets/avator/temp.jpg'
 import { sendChat } from '../services/chatService'
+import { refreshDashboardContext } from '../services/dashboardContextService'
 
 const chatStore = useChatStore()
 const cockpitSignals = useCockpitSignals()
+const runtimeControls = useRuntimeControls()
 
 const context = computed(() => ({
   activeProjectsCount: cockpitSignals.activeProjectsCount,
@@ -16,6 +19,8 @@ const context = computed(() => ({
 }))
 const inputValue = ref('')
 const messageListRef = ref(null)
+const isPanelOpen = ref(false)
+const isHydrating = ref(false)
 
 function openPopup() {
   chatStore.openChat()
@@ -24,6 +29,11 @@ function openPopup() {
 
 function closePopup() {
   chatStore.closeChat()
+  isPanelOpen.value = false
+}
+
+function togglePanel() {
+  isPanelOpen.value = !isPanelOpen.value
 }
 
 function scrollToBottom() {
@@ -41,20 +51,34 @@ watch(() => chatStore.messages.length, () => {
 
 async function handleSend(presetText) {
   const text = (typeof presetText === 'string' ? presetText : inputValue.value).trim()
-  if (!text || chatStore.isSending) return
+  if (!text || chatStore.isSending || isHydrating.value) return
 
   if (typeof presetText !== 'string') {
     inputValue.value = ''
   }
   chatStore.appendMessage({ role: 'user', content: text })
 
+  let chatContext = context.value
+  if (!cockpitSignals.hasHydrated) {
+    isHydrating.value = true
+    try {
+      chatContext = await refreshDashboardContext()
+    } catch (e) {
+      console.error('Failed to hydrate context:', e)
+    } finally {
+      isHydrating.value = false
+    }
+  }
+
   chatStore.setSending(true)
   try {
-    const { reply } = await sendChat(chatStore.messages, context.value)
+    const { reply } = await sendChat(chatStore.messages, chatContext, {
+      personalityBaseline: runtimeControls.personalityBaseline
+    })
     chatStore.appendMessage({ role: 'assistant', content: reply })
   } catch (e) {
     console.error('Failed to send chat:', e)
-    chatStore.appendMessage({ role: 'assistant', content: '我刚刚有点走神了，我们再试一次。' })
+    chatStore.appendMessage({ role: 'assistant', content: mockFallbackReply() })
   } finally {
     chatStore.setSending(false)
   }
@@ -65,6 +89,16 @@ function handleKeydown(e) {
     e.preventDefault()
     handleSend()
   }
+}
+
+function mockFallbackReply() {
+  const baseline = runtimeControls.personalityBaseline
+  const fallbacks = {
+    warm: '我刚刚有点走神了，我们再试一次。',
+    strict: '连接中断。请重试，或检查网络状态。',
+    haraguro: '……连接断了呢。不过就算没断，你刚才想说的那个借口，我也不打算听的。'
+  }
+  return fallbacks[baseline] || fallbacks.warm
 }
 </script>
 
@@ -86,18 +120,26 @@ function handleKeydown(e) {
         <!-- Header -->
         <div class="chat-header">
           <span class="chat-title">Sayachan</span>
-          <button class="chat-close-btn" @click="closePopup" aria-label="Close chat">×</button>
+          <div class="chat-header-actions">
+            <button class="chat-gear-btn" @click="togglePanel" aria-label="Runtime controls" title="Runtime controls">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </button>
+            <button class="chat-close-btn" @click="closePopup" aria-label="Close chat">&times;</button>
+          </div>
         </div>
 
         <!-- Body -->
         <div ref="messageListRef" class="chat-body">
           <div class="chat-message assistant">
-            <div class="chat-bubble">我在这。如果你愿意，我们可以先把今天最想推进的那件事理清楚。</div>
+            <div class="chat-bubble">{{ runtimeControls.personalityConfig.welcome }}</div>
           </div>
           <div class="chat-chips">
-            <button class="chip" :disabled="chatStore.isSending" @click="handleSend('帮我聚焦')">帮我聚焦</button>
-            <button class="chip" :disabled="chatStore.isSending" @click="handleSend('拆下一步')">拆下一步</button>
-            <button class="chip" :disabled="chatStore.isSending" @click="handleSend('今天总结')">今天总结</button>
+            <button class="chip" :disabled="chatStore.isSending || isHydrating" @click="handleSend('帮我聚焦')">帮我聚焦</button>
+            <button class="chip" :disabled="chatStore.isSending || isHydrating" @click="handleSend('拆下一步')">拆下一步</button>
+            <button class="chip" :disabled="chatStore.isSending || isHydrating" @click="handleSend('今天总结')">今天总结</button>
           </div>
           <div
             v-for="(msg, idx) in chatStore.messages"
@@ -107,6 +149,12 @@ function handleKeydown(e) {
           >
             <div class="chat-bubble">{{ msg.content }}</div>
           </div>
+          <div v-if="isHydrating" class="chat-message assistant">
+            <div class="chat-bubble chat-bubble--thinking">正在同步当前工作上下文...</div>
+          </div>
+          <div v-if="chatStore.isSending" class="chat-message assistant">
+            <div class="chat-bubble chat-bubble--thinking">{{ runtimeControls.personalityConfig.toneLabel }} &middot; Thinking</div>
+          </div>
         </div>
 
         <!-- Footer -->
@@ -114,13 +162,73 @@ function handleKeydown(e) {
           <input
             v-model="inputValue"
             class="chat-input"
-            placeholder="说点什么…"
-            :disabled="chatStore.isSending"
+            placeholder="说点什么&hellip;"
+            :disabled="chatStore.isSending || isHydrating"
             @keydown="handleKeydown"
           />
-          <button class="btn btn-primary chat-send-btn" :disabled="chatStore.isSending" @click="handleSend">
-            {{ chatStore.isSending ? 'Thinking' : 'Send' }}
+          <button class="btn btn-primary chat-send-btn" :disabled="chatStore.isSending || isHydrating" @click="handleSend">
+            {{ isHydrating ? '准备中' : chatStore.isSending ? 'Thinking' : 'Send' }}
           </button>
+        </div>
+      </div>
+
+      <!-- Runtime Controls Mini Panel -->
+      <div class="runtime-panel" :class="{ open: isPanelOpen }">
+        <div class="runtime-panel-header">
+          <span class="runtime-panel-title">Runtime Controls</span>
+          <button class="runtime-panel-close" @click="isPanelOpen = false" aria-label="Close panel">&times;</button>
+        </div>
+
+        <div class="runtime-panel-body">
+          <div class="runtime-section">
+            <div class="runtime-section-title">Personality Baseline</div>
+            <div class="runtime-radio-list">
+              <label
+                v-for="key in ['warm', 'strict', 'haraguro']"
+                :key="key"
+                class="runtime-radio-card"
+                :class="{ active: runtimeControls.personalityBaseline === key }"
+              >
+                <input
+                  type="radio"
+                  name="personalityBaseline"
+                  :value="key"
+                  :checked="runtimeControls.personalityBaseline === key"
+                  @change="runtimeControls.setBaseline(key)"
+                />
+                <span class="runtime-radio-label">
+                  {{ key === 'warm' ? '温暖' : key === 'strict' ? '干练' : '腹黑' }}
+                </span>
+                <span v-if="runtimeControls.personalityBaseline === key" class="runtime-radio-check">&check;</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="runtime-section">
+            <div class="runtime-section-title">Future Controls</div>
+            <div class="runtime-future-list">
+              <div class="runtime-future-item disabled">
+                <span>Warmth</span>
+                <span class="runtime-badge">coming soon</span>
+              </div>
+              <div class="runtime-future-item disabled">
+                <span>Reflection Depth</span>
+                <span class="runtime-badge">coming soon</span>
+              </div>
+              <div class="runtime-future-item disabled">
+                <span>Workflow Strictness</span>
+                <span class="runtime-badge">coming soon</span>
+              </div>
+              <div class="runtime-future-item disabled">
+                <span>Thinking</span>
+                <span class="runtime-badge">coming soon</span>
+              </div>
+              <div class="runtime-future-item disabled">
+                <span>Debug Context</span>
+                <span class="runtime-badge">coming soon</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -177,6 +285,8 @@ function handleKeydown(e) {
   flex-direction: column;
   overflow: hidden;
   max-height: 520px;
+  position: relative;
+  z-index: 1;
 }
 
 /* Header */
@@ -192,6 +302,31 @@ function handleKeydown(e) {
 .chat-title {
   font-size: var(--font-size-base);
   font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.chat-gear-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.chat-gear-btn:hover {
+  background: var(--surface-hover);
   color: var(--text-primary);
 }
 
@@ -247,6 +382,11 @@ function handleKeydown(e) {
   font-size: var(--font-size-base);
   line-height: 1.5;
   word-break: break-word;
+}
+
+.chat-bubble--thinking {
+  opacity: 0.7;
+  font-style: italic;
 }
 
 .chat-message.user .chat-bubble {
@@ -326,11 +466,173 @@ function handleKeydown(e) {
   border-radius: var(--radius-md);
 }
 
+/* Runtime Controls Mini Panel */
+.runtime-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 240px;
+  background: var(--surface-card);
+  border-radius: 0 16px 16px 0;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+  z-index: 2;
+}
+
+.runtime-panel.open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.runtime-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-elevated);
+  border-radius: 0 16px 0 0;
+}
+
+.runtime-panel-title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.runtime-panel-close {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.runtime-panel-close:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.runtime-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.runtime-section-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: var(--space-sm);
+}
+
+.runtime-radio-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.runtime-radio-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-card);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.runtime-radio-card:hover {
+  border-color: var(--border-accent);
+  background: var(--surface-hover);
+}
+
+.runtime-radio-card.active {
+  border-color: var(--action-primary);
+  background: rgba(66, 184, 131, 0.08);
+}
+
+.runtime-radio-card input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.runtime-radio-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.runtime-radio-check {
+  font-size: var(--font-size-sm);
+  color: var(--action-primary);
+  font-weight: 600;
+}
+
+.runtime-future-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.runtime-future-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-subtle);
+  background: var(--surface-card);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.runtime-future-item.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.runtime-badge {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  background: var(--surface-panel);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
 /* Responsive safety */
 @media (max-width: 420px) {
   .chat-popup {
     width: calc(100vw - 32px);
     right: 0;
+  }
+
+  .runtime-panel {
+    width: calc(100% - 48px);
+    border-radius: 0 16px 16px 0;
   }
 }
 </style>
