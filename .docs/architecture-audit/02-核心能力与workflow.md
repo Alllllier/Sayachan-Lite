@@ -1,6 +1,6 @@
 # Sayachan Lite - 核心能力与 Workflow
 
-> 项目架构审计文档 | 最后更新: 2026-04-15
+> 项目架构审计文档 | 最后更新: 2026-04-16
 
 ---
 
@@ -195,6 +195,8 @@ Dashboard 加载 → 并行调用 4 个 AI 接口 → 展示结果 → 用户操
 - 全局浮动聊天入口，不依赖当前路由
 - 三套人格基线切换（温暖 / 干练 / 腹黑 Haraguro）
 - 按需拉取 Dashboard snapshot，避免上下文缺失
+- Trait Controls：Warmth slider（0-10）+ Convergence segmented control（explore / guided / decisive）
+- Shared Core + Delta Matrix 人格 prompt 架构 + Haraguro Safety Harness
 
 **Dashboard Context 解耦设计**：
 ```
@@ -217,9 +219,17 @@ ChatEntry.handleSend()
 // stores/runtimeControls.js
 {
   personalityBaseline: 'warm' | 'strict' | 'haraguro',
-  futureSlots: { warmth, reflectionDepth, workflowStrictness, thinking, debugContext }
+  futureSlots: {
+    warmth: 0..10,           // 温度 slider
+    convergenceMode: 'explore' | 'guided' | 'decisive',  // 收敛方式 segmented control
+    reflectionDepth: null,   // reserved
+    thinking: null,          // reserved
+    debugContext: null       // reserved
+  }
 }
 ```
+- `warmth` 与 `convergenceMode` 已接入后端 prompt modifier，支持 localStorage 持久化。
+- baseline 切换时 traits 不解耦重置。
 
 ---
 

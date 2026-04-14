@@ -1,6 +1,6 @@
 # Sayachan Lite - Roadmap
 
-> 项目架构审计文档 | 最后更新: 2026-04-12
+> 项目架构审计文档 | 最后更新: 2026-04-16
 
 ---
 
@@ -82,6 +82,9 @@
 | ✅ | Global Companion Chat Runtime | 2026-04-15 | ChatEntry + Kimi + Dashboard Context |
 | ✅ | Chat 人格基线切换 | 2026-04-15 | warm / strict / haraguro |
 | ✅ | Chat Runtime Controls | 2026-04-15 | 轻量面板 + future slots 占位 |
+| ✅ | Personality Card Sprint | 2026-04-16 | Shared Core + Delta Matrix 重构 |
+| ✅ | Modifier Hardening | 2026-04-16 | warmth / convergenceMode 后端生效验证 |
+| ✅ | Trait Controls UI | 2026-04-16 | Warmth slider + Convergence segmented control |
 
 ### 2.7 Chat / Runtime
 
@@ -144,6 +147,13 @@
 ├── 三套人格基线：温暖 / 干练 / 腹黑 (Haraguro)
 ├── Dashboard Context 按需解耦（非 Dashboard 路由可用）
 └── cockpitSignals hasHydrated 兜底机制
+
+2026-04-16: Personality Runtime 完整落地
+├── Shared Core + Delta Matrix 人格 prompt 重构
+├── Haraguro Safety Harness 脆弱输入保护
+├── warmth / convergenceMode modifier 后端硬验证
+├── Runtime Controls 面板 Trait UI（slider + segmented control）
+└── baseline / trait localStorage 独立持久化
 ```
 
 ---

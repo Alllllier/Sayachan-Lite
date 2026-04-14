@@ -181,7 +181,7 @@ function mockFallbackReply() {
 
         <div class="runtime-panel-body">
           <div class="runtime-section">
-            <div class="runtime-section-title">Personality Baseline</div>
+            <div class="runtime-section-title">人格基线</div>
             <div class="runtime-radio-list">
               <label
                 v-for="key in ['warm', 'strict', 'haraguro']"
@@ -205,18 +205,52 @@ function mockFallbackReply() {
           </div>
 
           <div class="runtime-section">
+            <div class="runtime-section-title">特质调整</div>
+
+            <div class="runtime-trait">
+              <div class="runtime-trait-header">
+                <span class="runtime-trait-title">{{ runtimeControls.uiLabels.warmth.title }}</span>
+                <span class="runtime-trait-value">{{ runtimeControls.futureSlots.warmth }}</span>
+              </div>
+              <div class="runtime-slider-wrap">
+                <input
+                  type="range"
+                  min="0"
+                  max="10"
+                  :value="runtimeControls.futureSlots.warmth"
+                  class="runtime-slider"
+                  @input="e => runtimeControls.setWarmth(Number(e.target.value))"
+                />
+                <div class="runtime-slider-anchors">
+                  <span>{{ runtimeControls.uiLabels.warmth.left }}</span>
+                  <span>{{ runtimeControls.uiLabels.warmth.right }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="runtime-trait">
+              <div class="runtime-trait-header">
+                <span class="runtime-trait-title">{{ runtimeControls.uiLabels.convergence.title }}</span>
+              </div>
+              <div class="runtime-segmented">
+                <button
+                  v-for="opt in ['explore', 'guided', 'decisive']"
+                  :key="opt"
+                  class="runtime-segmented-btn"
+                  :class="{ active: runtimeControls.futureSlots.convergenceMode === opt }"
+                  @click="runtimeControls.setConvergenceMode(opt)"
+                >
+                  {{ runtimeControls.uiLabels.convergence.options[opt] }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="runtime-section">
             <div class="runtime-section-title">Future Controls</div>
             <div class="runtime-future-list">
               <div class="runtime-future-item disabled">
-                <span>Warmth</span>
-                <span class="runtime-badge">coming soon</span>
-              </div>
-              <div class="runtime-future-item disabled">
                 <span>Reflection Depth</span>
-                <span class="runtime-badge">coming soon</span>
-              </div>
-              <div class="runtime-future-item disabled">
-                <span>Workflow Strictness</span>
                 <span class="runtime-badge">coming soon</span>
               </div>
               <div class="runtime-future-item disabled">
@@ -621,6 +655,120 @@ function mockFallbackReply() {
   background: var(--surface-panel);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
+}
+
+/* Trait Controls */
+.runtime-trait {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+}
+
+.runtime-trait-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.runtime-trait-title {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.runtime-trait-value {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--action-primary);
+  min-width: 20px;
+  text-align: right;
+}
+
+.runtime-slider-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.runtime-slider {
+  width: 100%;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--surface-panel);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.runtime-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--action-primary);
+  cursor: pointer;
+  border: 2px solid var(--surface-card);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease;
+}
+
+.runtime-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+.runtime-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--action-primary);
+  cursor: pointer;
+  border: 2px solid var(--surface-card);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease;
+}
+
+.runtime-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+}
+
+.runtime-slider-anchors {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.runtime-segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--surface-panel);
+}
+
+.runtime-segmented-btn {
+  flex: 1;
+  padding: 6px 0;
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.runtime-segmented-btn:hover:not(.active) {
+  color: var(--text-primary);
+}
+
+.runtime-segmented-btn.active {
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
 }
 
 /* Responsive safety */
