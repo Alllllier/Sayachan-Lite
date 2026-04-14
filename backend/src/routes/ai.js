@@ -1,4 +1,5 @@
 const Router = require('@koa/router');
+const { chat: runChat } = require('../ai');
 
 const router = new Router();
 
@@ -214,6 +215,29 @@ router.post('/ai/projects/next-action', async (ctx) => {
   } catch (error) {
     console.error('[AI Route] Next Action API call error:', error.message);
     ctx.body = fallback(null, project, 'project');
+  }
+});
+
+// POST /ai/chat - Orchestrated chat entry for AI substrate v0.1
+router.post('/ai/chat', async (ctx) => {
+  const { messages, context } = ctx.request.body;
+
+  const KIMI_KEY = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
+  if (!KIMI_KEY) {
+    console.warn('[AI Route] KIMI_API_KEY not found, using fallback');
+    ctx.body = { reply: '我在这，我们先把当前最重要的一步理清楚。' };
+    return;
+  }
+
+  try {
+    // TODO: extract options (e.g. thinkingEnabled) from request body when strategy is ready
+    const { reply } = await runChat(messages, context);
+    console.log('[AI Route] Kimi chat reply generated, length:', reply?.length);
+    ctx.body = { reply };
+  } catch (error) {
+    console.error('[AI Route] Chat service error:', error.message || error);
+    console.error('[AI Route] Stack:', error.stack || 'no stack');
+    ctx.body = { reply: '我在这，我们先把当前最重要的一步理清楚。' };
   }
 });
 

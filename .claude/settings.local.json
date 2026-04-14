@@ -17,7 +17,9 @@
       "Bash(taskkill:*)",
       "Bash(find . -name *.js -path */server/* -o -path */backend/*)",
       "Bash(find . -maxdepth 3 -name *.js -type f)",
-      "Bash(find . -type f -name *.json -name *.ts -name *.tsx -name *.js -name *.jsx -name *.html -name *.css)"
+      "Bash(find . -type f -name *.json -name *.ts -name *.tsx -name *.js -name *.jsx -name *.html -name *.css)",
+      "Bash(node -e \"require\\('./src/routes/ai'\\)\")",
+      "Bash(node -e ':*)"
     ]
   }
 }

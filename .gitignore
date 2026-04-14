@@ -33,3 +33,5 @@ frontend/dist
 
 # OS generated files
 Thumbs.db
+
+.docs

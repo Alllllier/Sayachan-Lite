@@ -1,12 +1,12 @@
+const dotenv = require('dotenv');
+dotenv.config();
+
 const Koa = require('koa');
 const cors = require('@koa/cors');
 const { bodyParser } = require('@koa/bodyparser');
-const dotenv = require('dotenv');
 const { connectDB } = require('./database');
 const routes = require('./routes');
 const aiRoutes = require('./routes/ai');
-
-dotenv.config();
 
 const app = new Koa();
 const PORT = process.env.PORT || 3001;

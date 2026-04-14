@@ -1,8 +1,11 @@
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, watch, watchEffect } from 'vue'
 import { generateWeeklyReview, recommendFocus, generateActionPlan, generateTaskDrafts } from '../services/aiService'
 import { tasksRef, fetchTasks } from '../services/taskService'
+import { useCockpitSignals } from '../stores/cockpitSignals'
 import EmptyState from './ui/EmptyState.vue'
+
+const cockpitSignals = useCockpitSignals()
 
 const props = defineProps(['notes', 'projects'])
 const emit = defineEmits(['refreshed'])
@@ -15,6 +18,35 @@ const safeProjects = computed(() => Array.isArray(props.projects) ? props.projec
 const recentNotes = computed(() => safeNotes.value.slice(0, 3))
 const recentProjects = computed(() => safeProjects.value.slice(0, 3))
 
+const savedTasks = tasksRef
+
+// Cockpit signals: lightweight dashboard context for global chat
+const activeProjectsCount = computed(() =>
+  safeProjects.value.filter(p => p.status !== 'archived').length
+)
+const activeTasksCount = computed(() =>
+  savedTasks.value.filter(t => t.status !== 'archived' && t.status !== 'completed').length
+)
+const pinnedProjectName = computed(() => {
+  const pinned = safeProjects.value.find(p => p.isPinned && p.status !== 'archived')
+  return pinned?.name || ''
+})
+const currentNextAction = computed(() => {
+  const project = safeProjects.value.find(
+    p => p.status !== 'archived' && p.nextAction && p.nextAction.trim()
+  )
+  return project?.nextAction || ''
+})
+
+watchEffect(() => {
+  cockpitSignals.setSignals({
+    activeProjectsCount: activeProjectsCount.value,
+    activeTasksCount: activeTasksCount.value,
+    pinnedProjectName: pinnedProjectName.value,
+    currentNextAction: currentNextAction.value,
+  })
+})
+
 const weeklyReview = ref('')
 const isLoading = ref(false)
 const focusRecommendation = ref('')
@@ -24,7 +56,6 @@ const isLoadingAction = ref(false)
 const taskDrafts = ref([])
 const isLoadingDrafts = ref(false)
 
-const savedTasks = tasksRef
 const isSavingTasks = ref(false)
 
 const saveSuccess = ref('')
@@ -468,6 +499,7 @@ async function handleGenerateTaskDrafts() {
         </div>
       </div>
     </div>
+
   </div>
 </template>
 

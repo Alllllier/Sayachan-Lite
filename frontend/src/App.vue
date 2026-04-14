@@ -1,3 +1,7 @@
+<script setup>
+import ChatEntry from './components/ChatEntry.vue'
+</script>
+
 <template>
   <div class="app">
     <router-view />
@@ -12,6 +16,7 @@
         <span class="nav-icon">Projects</span>
       </router-link>
     </nav>
+    <ChatEntry />
   </div>
 </template>
 
