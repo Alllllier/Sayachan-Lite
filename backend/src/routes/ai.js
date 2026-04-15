@@ -156,7 +156,7 @@ router.post('/ai/projects/next-action', async (ctx) => {
 项目名称：${name}
 项目描述：${summary}
 当前状态：${status}
-当前下一步：${currentFocus}`
+当前下一步：${currentFocus}
 
 要求：
 - 每条建议必须是具体可执行的动作
