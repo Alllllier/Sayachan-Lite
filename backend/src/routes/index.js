@@ -183,8 +183,7 @@ router.post('/projects', async (ctx) => {
   const project = await Project.create({
     name: body.name,
     summary: body.summary,
-    status: body.status || 'pending',
-    nextAction: body.nextAction || ''
+    status: body.status || 'pending'
   });
   ctx.status = 201;
   ctx.body = project;
@@ -194,9 +193,14 @@ router.post('/projects', async (ctx) => {
 router.put('/projects/:id', async (ctx) => {
   const id = ctx.params.id;
   const body = ctx.request.body;
+  const update = { name: body.name, summary: body.summary, status: body.status };
+  // Phase 1 shadow writing: allow currentFocusTaskId to be set if provided
+  if (body.currentFocusTaskId !== undefined) {
+    update.currentFocusTaskId = body.currentFocusTaskId || null;
+  }
   const project = await Project.findByIdAndUpdate(
     id,
-    { name: body.name, summary: body.summary, status: body.status, nextAction: body.nextAction },
+    update,
     { new: true, runValidators: true }
   );
   if (!project) {
@@ -269,6 +273,14 @@ router.put('/projects/:id/archive', async (ctx) => {
     ctx.status = 404;
     ctx.body = { error: 'Project not found' };
     return;
+  }
+
+  // Phase 1.5: if project has a currentFocusTaskId, clear it
+  if (project.currentFocusTaskId) {
+    await Project.findByIdAndUpdate(project._id, {
+      currentFocusTaskId: null
+    });
+    console.log(`[Project Archive Shadow] Project "${project.name}" currentFocusTaskId cleared on project archive`);
   }
 
   // 2. Cascade: Archive all related tasks
@@ -384,8 +396,7 @@ router.put('/tasks/:id', async (ctx) => {
   const task = await Task.findByIdAndUpdate(id, update, { new: true, runValidators: true });
   ctx.body = task;
 
-  // Focus transition: when a task from project focus is completed
-  // Migrate it from Current Focus to Last Completed and append to focusHistory
+  // Focus transition: when a task from project focus is completed, clear currentFocusTaskId
   const isBecomingCompleted = (body.completed === true || body.status === 'completed') &&
     (existingTask.completed !== true && existingTask.status !== 'completed');
 
@@ -398,12 +409,26 @@ router.put('/tasks/:id', async (ctx) => {
     // Find project by exact ID match (no title/nextAction fuzzy matching)
     const project = await Project.findById(projectId);
     if (project) {
-      const historyEntry = project.nextAction;
+      // Phase 4A: legacy nextAction/focusHistory writing stopped.
+      // Only canonical shadow writing remains.
+      if (project.currentFocusTaskId && String(project.currentFocusTaskId) === String(task._id)) {
+        await Project.findByIdAndUpdate(project._id, {
+          currentFocusTaskId: null
+        });
+        console.log(`[Focus Transition Shadow] Project "${project.name}" currentFocusTaskId cleared on task completion`);
+      }
+    }
+  }
+
+  // Phase 1.5: if task is archived and it is a project's currentFocusTaskId, clear the reference
+  const isBecomingArchived = body.status === 'archived' && existingTask.status !== 'archived';
+  if (isBecomingArchived && task.linkedProjectId) {
+    const project = await Project.findById(task.linkedProjectId);
+    if (project && project.currentFocusTaskId && String(project.currentFocusTaskId) === String(task._id)) {
       await Project.findByIdAndUpdate(project._id, {
-        nextAction: '',
-        $push: { focusHistory: historyEntry }
+        currentFocusTaskId: null
       });
-      console.log(`[Focus Transition] Project "${project.name}" focus completed: "${task.title}", added to history`);
+      console.log(`[Focus Archive Shadow] Project "${project.name}" currentFocusTaskId cleared because focus task was archived`);
     }
   }
 });
@@ -418,6 +443,17 @@ router.delete('/tasks/:id', async (ctx) => {
   } else {
     ctx.status = 204;
     ctx.body = null;
+
+    // Phase 1.5: if deleted task was a project's currentFocusTaskId, clear the reference
+    if (task.linkedProjectId) {
+      const project = await Project.findById(task.linkedProjectId);
+      if (project && project.currentFocusTaskId && String(project.currentFocusTaskId) === String(task._id)) {
+        await Project.findByIdAndUpdate(project._id, {
+          currentFocusTaskId: null
+        });
+        console.log(`[Focus Delete Shadow] Project "${project.name}" currentFocusTaskId cleared because focus task was deleted`);
+      }
+    }
   }
 });
 

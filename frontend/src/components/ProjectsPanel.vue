@@ -9,7 +9,7 @@ const props = defineProps(['projects'])
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
 const projects = ref([])
-const projectForm = ref({ name: '', summary: '', status: 'pending', nextAction: '' })
+const projectForm = ref({ name: '', summary: '', status: 'pending' })
 const editingProjectId = ref(null)
 const loading = ref(false)
 const error = ref(null)
@@ -18,8 +18,6 @@ const aiSuggestions = ref({})
 const aiLoadingProjects = ref(new Set())
 const savedSuggestions = ref(new Set())
 const saveSuccessMessages = ref({})
-const applyingFocus = ref(new Set())
-const savingFocusAsTask = ref(new Set())
 const manualTaskProjects = ref(new Set())
 const addingManualTasks = ref(new Set())
 const manualTaskInputs = ref({})
@@ -39,8 +37,7 @@ const toast = ref(null)
 const toastMessage = ref('')
 const toastType = ref('success') // success, error
 
-// Hotfix-1: Track AI-generated focus provenance (client-side only, no DB schema change)
-const aiGeneratedFocusMap = ref({}) // { [projectId]: boolean }
+// Focus Source Unification: task-only focus, no ephemeral suggestion state
 
 // P0-Fix-1: Store original project data for cancel restore
 const editingOriginalData = ref({})
@@ -73,6 +70,19 @@ function getStatusClass(status) {
     'on_hold': 'status-paused'
   }
   return classMap[status] || 'status-default'
+}
+
+// Focus Source Unification: canonical task-based focus only
+function getCurrentFocusDisplay(project) {
+  if (project.currentFocusTaskId && projectTasks.value[project._id]) {
+    const focusTask = projectTasks.value[project._id].find(
+      t => String(t._id) === String(project.currentFocusTaskId)
+    )
+    if (focusTask?.title) {
+      return focusTask.title
+    }
+  }
+  return ''
 }
 
 const emit = defineEmits(['refreshed'])
@@ -120,7 +130,7 @@ async function createProject() {
     if (!response.ok) throw new Error('Create failed')
     const project = await response.json()
     projects.value.unshift(project)
-    projectForm.value = { name: '', summary: '', status: 'pending', nextAction: '' }
+    projectForm.value = { name: '', summary: '', status: 'pending' }
     emit('refreshed', projects.value)
     showToast('Project created')
     // Initialize empty task list for new project
@@ -151,8 +161,6 @@ async function updateProject(project) {
       return new Date(b.updatedAt) - new Date(a.updatedAt)
     })
     editingProjectId.value = null
-    // Hotfix-1: When user manually edits project, clear AI-generated flag (manual intervention)
-    aiGeneratedFocusMap.value[project._id] = false
     emit('refreshed', projects.value)
     showToast('Project updated')
   } catch (e) {
@@ -248,7 +256,6 @@ function startEditingProject(project) {
   editingOriginalData.value[project._id] = {
     name: project.name,
     summary: project.summary,
-    nextAction: project.nextAction,
     status: project.status
   }
 }
@@ -271,7 +278,6 @@ function cancelEditProject(project) {
   if (project && editingOriginalData.value[project._id]) {
     project.name = editingOriginalData.value[project._id].name
     project.summary = editingOriginalData.value[project._id].summary
-    project.nextAction = editingOriginalData.value[project._id].nextAction
     project.status = editingOriginalData.value[project._id].status
     // Clean up stored original data
     delete editingOriginalData.value[project._id]
@@ -337,65 +343,27 @@ async function saveSuggestionAsTask(projectId, suggestion) {
   }
 }
 
-async function saveCurrentFocusAsTask(project) {
-  if (!project.nextAction || !project.nextAction.trim()) {
-    return
-  }
-  savingFocusAsTask.value.add(project._id)
+async function setTaskAsFocus(project, task) {
+  if (!task || task.status !== 'active') return
   try {
-    // Hotfix-1: Check if this focus was AI-generated
-    const isAIGenerated = aiGeneratedFocusMap.value[project._id] === true
-    const newTask = await saveTask(
-      project.nextAction,
-      isAIGenerated ? 'ai' : 'manual',  // creationMode: ai if from suggestion, manual if user-typed
-      isAIGenerated ? 'project_suggestion' : 'project_focus',  // originModule: distinguish source
-      project._id,       // originId
-      project.name || '',  // originLabel
-      project._id,          // linkedProjectId
-      project.name || ''   // linkedProjectName
-    )
-    if (newTask) {
-      saveSuccessMessages.value[`${project._id}_focus`] = 'Focus saved as task'
-      setTimeout(() => { delete saveSuccessMessages.value[`${project._id}_focus`] }, 2000)
-      // Refresh project tasks to show new task immediately
-      await fetchProjectTasksForCard(project._id)
-    }
-  } catch (e) {
-    error.value = 'Failed to save focus as task'
-  } finally {
-    savingFocusAsTask.value.delete(project._id)
-  }
-}
-
-async function useAsCurrentFocus(project, suggestion) {
-  applyingFocus.value.add(project._id)
-  try {
-    const projectToUpdate = {
-      ...project,
-      nextAction: suggestion,
-      // Auto-move to in_progress if currently pending
-      status: project.status === 'pending' ? 'in_progress' : project.status
-    }
     const response = await fetch(`${API_BASE}/projects/${project._id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(projectToUpdate)
+      body: JSON.stringify({
+        name: project.name,
+        summary: project.summary,
+        status: project.status,
+        currentFocusTaskId: task._id
+      })
     })
     const updated = await response.json()
     const index = projects.value.findIndex(p => p._id === project._id)
-    if (index !== -1) projects.value[index] = updated
-    // Sort: pinned first, then by updatedAt
-    projects.value.sort((a, b) => {
-      if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1
-      return new Date(b.updatedAt) - new Date(a.updatedAt)
-    })
-    // Hotfix-1: Mark this focus as AI-generated since it came from AI suggestion
-    aiGeneratedFocusMap.value[project._id] = true
+    if (index !== -1) {
+      projects.value[index] = updated
+    }
     emit('refreshed', projects.value)
   } catch (e) {
-    error.value = 'Failed to update current focus'
-  } finally {
-    applyingFocus.value.delete(project._id)
+    error.value = 'Failed to set focus'
   }
 }
 
@@ -550,7 +518,6 @@ async function addBatchTasks(project) {
           rows="2"
           class="textarea"
         ></textarea>
-        <input v-model="project.nextAction" placeholder="Current focus" class="input" />
         <select v-model="project.status" class="input">
           <option value="pending">Pending</option>
           <option value="in_progress">In Progress</option>
@@ -572,21 +539,12 @@ async function addBatchTasks(project) {
           <span class="date-meta">{{ new Date(project.updatedAt).toLocaleDateString() }}</span>
         </div>
 
-        <!-- Current Focus - Primary Decision Layer -->
+        <!-- Current Focus - Primary Decision Layer (Task-only) -->
         <div class="focus-section">
           <div class="focus-main">
             <span class="focus-label">Current Focus</span>
-            <span class="focus-value">{{ project.nextAction || 'No active focus' }}</span>
+            <span class="focus-value">{{ getCurrentFocusDisplay(project) || 'No active focus' }}</span>
           </div>
-          <button v-if="project.status !== 'archived' && project.nextAction" @click="saveCurrentFocusAsTask(project)" class="btn btn-primary btn-sm save-focus-btn" :disabled="savingFocusAsTask.has(project._id)">
-            {{ savingFocusAsTask.has(project._id) ? 'Saving...' : 'Save as Task' }}
-          </button>
-        </div>
-
-        <!-- Focus History - Tertiary Trail (De-emphasized) -->
-        <div v-if="project.focusHistory && project.focusHistory.length > 0" class="focus-history compact">
-          <span class="history-label">Previous:</span>
-          <span class="history-trail">{{ project.focusHistory.slice(-2).reverse().join(' → ') }}</span>
         </div>
 
         <!-- Project Tasks Preview -->
@@ -602,6 +560,14 @@ async function addBatchTasks(project) {
               :class="{ completed: task.completed }"
             >
               <span class="task-preview-text">{{ task.title }}</span>
+              <button
+                v-if="!task.completed && task.status !== 'archived' && task.status !== 'completed'"
+                @click="setTaskAsFocus(project, task)"
+                class="btn btn-secondary btn-sm set-focus-btn"
+                :disabled="String(project.currentFocusTaskId) === String(task._id)"
+              >
+                {{ String(project.currentFocusTaskId) === String(task._id) ? 'Current Focus' : 'Set as Focus' }}
+              </button>
             </div>
           </div>
         </div>
@@ -705,12 +671,9 @@ async function addBatchTasks(project) {
               <button @click="closeAISuggestions(project._id)" class="btn-ai-dismiss" title="Close">×</button>
             </div>
           </div>
-          <div v-for="(suggestion, idx) in aiSuggestions[project._id]" :key="idx" :class="['ai-suggestion-item', { applied: project.nextAction === suggestion }]">
+          <div v-for="(suggestion, idx) in aiSuggestions[project._id]" :key="idx" class="ai-suggestion-item">
             <div class="suggestion-content">{{ suggestion }}</div>
             <div class="suggestion-actions">
-              <button @click="useAsCurrentFocus(project, suggestion)" class="btn btn-secondary btn-sm" :disabled="applyingFocus.has(project._id) || project.nextAction === suggestion">
-                {{ project.nextAction === suggestion ? 'Applied' : (applyingFocus.has(project._id) ? 'Setting...' : 'Use as Current Focus') }}
-              </button>
               <button @click="saveSuggestionAsTask(project._id, suggestion)" class="btn btn-secondary btn-sm" :disabled="savedSuggestions.has(suggestion)">
                 {{ savedSuggestions.has(suggestion) ? 'Saved' : 'Save as Task' }}
               </button>
@@ -730,7 +693,6 @@ async function addBatchTasks(project) {
       rows="2"
       class="textarea"
     ></textarea>
-    <input v-model="projectForm.nextAction" placeholder="Current focus" class="input" />
     <select v-model="projectForm.status" class="input">
       <option value="pending">Pending</option>
       <option value="in_progress">In Progress</option>
@@ -1068,11 +1030,6 @@ async function addBatchTasks(project) {
   margin-bottom: 0;
 }
 
-.ai-suggestion-item.applied {
-  background: #e8f5e9;
-  border-left: 2px solid #4caf50;
-}
-
 .suggestion-content {
   font-size: 12px;
   color: #555;
@@ -1181,6 +1138,13 @@ async function addBatchTasks(project) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.set-focus-btn {
+  margin-left: 8px;
+  padding: 4px 10px;
+  font-size: 11px;
+  flex-shrink: 0;
 }
 
 /* Polish-1: Unified compact input area styling */

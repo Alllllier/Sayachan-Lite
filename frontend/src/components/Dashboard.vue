@@ -32,10 +32,18 @@ const pinnedProjectName = computed(() => {
   return pinned?.name || ''
 })
 const currentNextAction = computed(() => {
-  const project = safeProjects.value.find(
-    p => p.status !== 'archived' && p.nextAction && p.nextAction.trim()
+  const focusProject = safeProjects.value.find(
+    p => p.status !== 'archived' && p.currentFocusTaskId
   )
-  return project?.nextAction || ''
+  if (focusProject) {
+    const focusTask = savedTasks.value.find(
+      t => String(t._id) === String(focusProject.currentFocusTaskId)
+    )
+    if (focusTask?.title) {
+      return focusTask.title
+    }
+  }
+  return ''
 })
 
 watchEffect(() => {

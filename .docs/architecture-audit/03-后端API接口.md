@@ -1,6 +1,6 @@
 # Sayachan Lite - 后端 API 接口
 
-> 项目架构审计文档 | 最后更新: 2026-04-15
+> 项目架构审计文档 | 最后更新: 2026-04-16
 
 ---
 
@@ -27,19 +27,19 @@
 | PUT | `/notes/:id/restore` | 恢复笔记 | `routes/index.js:138` |
 | GET | `/projects` | 获取项目列表 | `routes/index.js:170` |
 | POST | `/projects` | 创建项目 | `routes/index.js:181` |
-| PUT | `/projects/:id` | 更新项目 | `routes/index.js:194` |
-| DELETE | `/projects/:id` | 删除项目 | `routes/index.js:211` |
-| PUT | `/projects/:id/pin` | 置顶项目 | `routes/index.js:224` |
-| PUT | `/projects/:id/unpin` | 取消置顶 | `routes/index.js:241` |
-| PUT | `/projects/:id/archive` | 归档项目 | `routes/index.js:258` |
-| PUT | `/projects/:id/restore` | 恢复项目 | `routes/index.js:292` |
-| GET | `/tasks` | 获取任务列表 | `routes/index.js:326` |
-| POST | `/tasks` | 创建任务 | `routes/index.js:344` |
-| PUT | `/tasks/:id` | 更新任务 | `routes/index.js:364` |
-| DELETE | `/tasks/:id` | 删除任务 | `routes/index.js:412` |
-| POST | `/ai/notes/tasks` | AI: 从笔记生成任务 | `routes/ai.js:34` |
-| POST | `/ai/projects/next-action` | AI: 生成项目下一步 | `routes/ai.js:119` |
-| POST | `/ai/chat` | AI: 通用对话聊天 | `routes/ai.js:222` |
+| PUT | `/projects/:id` | 更新项目 | `routes/index.js:193` |
+| DELETE | `/projects/:id` | 删除项目 | `routes/index.js:215` |
+| PUT | `/projects/:id/pin` | 置顶项目 | `routes/index.js:228` |
+| PUT | `/projects/:id/unpin` | 取消置顶 | `routes/index.js:245` |
+| PUT | `/projects/:id/archive` | 归档项目 | `routes/index.js:262` |
+| PUT | `/projects/:id/restore` | 恢复项目 | `routes/index.js:304` |
+| GET | `/tasks` | 获取任务列表 | `routes/index.js:338` |
+| POST | `/tasks` | 创建任务 | `routes/index.js:356` |
+| PUT | `/tasks/:id` | 更新任务 | `routes/index.js:376` |
+| DELETE | `/tasks/:id` | 删除任务 | `routes/index.js:437` |
+| POST | `/ai/notes/tasks` | AI: 从笔记生成任务 | `routes/ai.js:51` |
+| POST | `/ai/projects/next-action` | AI: 生成项目下一步 | `routes/ai.js:136` |
+| POST | `/ai/chat` | AI: 通用对话聊天 | `routes/ai.js:228` |
 
 ---
 
@@ -253,9 +253,7 @@ GET /projects?archived=true  # 仅获取已归档
     "name": "项目名称",
     "summary": "项目描述",
     "status": "in_progress",
-    "nextAction": "当前聚焦点",
-    "lastCompletedAction": "最近完成",
-    "focusHistory": ["已完成项1", "已完成项2"],
+    "currentFocusTaskId": "task-id-or-null",
     "isPinned": false,
     "pinnedAt": null,
     "createdAt": "...",
@@ -277,8 +275,7 @@ Content-Type: application/json
 {
   "name": "项目名称",
   "summary": "项目描述",
-  "status": "pending",
-  "nextAction": "初始聚焦点（可选）"
+  "status": "pending"
 }
 ```
 
@@ -288,7 +285,6 @@ Content-Type: application/json
 | name | string | ✓ | - | 项目名称 |
 | summary | string | ✓ | - | 项目描述 |
 | status | string | ✗ | "pending" | pending/in_progress/completed/on_hold |
-| nextAction | string | ✗ | "" | 当前聚焦点 |
 
 ---
 
@@ -304,7 +300,7 @@ Content-Type: application/json
   "name": "新名称",
   "summary": "新描述",
   "status": "in_progress",
-  "nextAction": "新的聚焦点"
+  "currentFocusTaskId": "task-id-or-null"
 }
 ```
 
@@ -435,18 +431,17 @@ Content-Type: application/json
 }
 ```
 
-**重点：Focus 迁移逻辑**
+**重点：Focus 清理逻辑**
 
-当 Task 满足以下条件时，会触发 Project 的 Focus 迁移：
-1. `completed` 变为 `true` 或 `status` 变为 `"completed"`
+当 Task 满足以下条件时，会触发 Project 的 Focus 清理：
+1. `completed` 变为 `true` 或 `status` 变为 `"completed"`（或任务被归档/删除）
 2. `originModule` 为 `"project"`, `"project_focus"`, 或 `"project_suggestion"`
-3. 有关联的 `linkedProjectId`
+3. 该 Task 是项目当前的 `currentFocusTaskId`
 
-**迁移行为**:
+**清理行为**:
 ```javascript
 // 伪代码
-project.focusHistory.push(project.nextAction);
-project.nextAction = '';
+project.currentFocusTaskId = null;
 ```
 
 **Response**: 更新后的任务对象
@@ -515,8 +510,7 @@ Content-Type: application/json
   "name": "项目名称",
   "summary": "项目描述",
   "status": "in_progress",
-  "nextAction": "当前聚焦点",
-  "focusHistory": ["已完成项1", "已完成项2"]
+  "currentFocusTaskId": "task-id-or-null"
 }
 ```
 
@@ -638,9 +632,7 @@ Content-Type: application/json
   name: { type: String, required: true, trim: true },
   summary: { type: String, required: true },
   status: { type: String, enum: ['pending', 'in_progress', 'completed', 'on_hold', 'archived'], default: 'pending' },
-  nextAction: { type: String, default: '' },
-  lastCompletedAction: { type: String, default: '' },  // deprecated
-  focusHistory: { type: [String], default: [] },
+  currentFocusTaskId: { type: ObjectId, ref: 'Task', default: null },
   isPinned: { type: Boolean, default: false },
   pinnedAt: { type: Date, default: null }
 }
@@ -687,10 +679,10 @@ Content-Type: application/json
 .sort({ createdAt: -1 })
 ```
 
-### 6.2 Focus 迁移触发条件
+### 6.2 Focus 清理触发条件
 
 ```javascript
-// 位于 routes/index.js:387-408
+// 位于 routes/index.js:399-422
 const isBecomingCompleted = 
   (body.completed === true || body.status === 'completed') &&
   (existingTask.completed !== true && existingTask.status !== 'completed');
@@ -699,7 +691,7 @@ const isProjectTask = projectId && task.originId &&
   ['project', 'project_focus', 'project_suggestion'].includes(task.originModule);
 
 if (isBecomingCompleted && isProjectTask) {
-  // 执行 Focus 迁移
+  // 若该任务为项目的 currentFocusTaskId，则清空它
 }
 ```
 

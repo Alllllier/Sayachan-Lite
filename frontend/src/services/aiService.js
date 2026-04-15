@@ -75,120 +75,6 @@ ${text}`
   }
 }
 
-export async function suggestNextAction(project) {
-  const API_KEY = import.meta.env.VITE_GLM_API_KEY
-
-  const fallback = () => {
-    const suggestions = {
-      pending: ['明确里程碑并设定截止日期', '梳理项目依赖关系'],
-      in_progress: ['检查当前进度并更新阻塞项', '协调相关资源推进任务'],
-      completed: ['记录项目成果并归档', '总结经验教训'],
-      on_hold: ['重新评估依赖和时间线', '确定是否需要重启项目']
-    }
-    const projectSuggestions = suggestions[project?.status] || ['明确里程碑并设定截止日期']
-    console.log('[AI Service] Fallback to mock next steps:', projectSuggestions)
-    return { suggestions: projectSuggestions }
-  }
-
-  if (!API_KEY) {
-    console.error('[AI Service] VITE_GLM_API_KEY not found, using fallback')
-    return fallback()
-  }
-
-  const name = project?.name || '(无项目名)'
-  const summary = project?.summary || '(无描述)'
-  const status = project?.status || 'unknown'
-  const nextAction = project?.nextAction || '(无)'
-  // Derive last completed from focusHistory instead of deprecated lastCompletedAction field
-  const lastCompletedAction = project?.focusHistory?.slice(-1)[0] || '(无)'
-
-  // Take recent 3 items from focusHistory (most recent first)
-  const recentHistory = project?.focusHistory && Array.isArray(project.focusHistory)
-    ? project.focusHistory.slice(-3).reverse().join(' → ')
-    : '(无)'
-
-  const promptText = `始终使用简体中文输出。
-
-基于以下项目信息，给出 1-2 条值得推进的下一步建议：
-项目名称：${name}
-项目描述：${summary}
-当前状态：${status}
-当前下一步：${nextAction}
-最近完成：${lastCompletedAction}
-推进轨迹：${recentHistory}
-
-要求：
-- 每条建议必须是具体可执行的动作
-- 简短精炼，适合作为 task 标题
-- 用换行分隔，每条一行
-- 不带编号
-- 不带解释文本
-- 针对"推进"而非"总结"
-- 基于推进轨迹继续向前，避免重复已完成的内容
-- 如果有推进轨迹，理解整体方向后再建议下一步
-
-输出 1-2 条建议：`
-
-  try {
-    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'glm-4.5-air',
-        messages: [{ role: 'user', content: promptText }],
-        max_tokens: 80,
-        temperature: 0.3,
-        thinking: { type: 'disabled' },
-        stream: false
-      })
-    })
-
-    if (!response.ok) {
-      console.error('[AI Service] Next Action API request failed:', response.status)
-      return fallback()
-    }
-
-    const data = await response.json()
-    console.log('[GLM next action response]', data)
-
-    let suggestionsText = ''
-    const messageContent = data?.choices?.[0]?.message?.content
-
-    if (typeof messageContent === 'string') {
-      suggestionsText = messageContent.trim()
-    } else if (Array.isArray(messageContent)) {
-      const textItem = messageContent.find(item => item?.type === 'text')
-      suggestionsText = textItem?.text?.trim() || ''
-    }
-
-    if (!suggestionsText) {
-      console.error('[AI Service] Next Action invalid API response')
-      return fallback()
-    }
-
-    const suggestions = suggestionsText.split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .map(line => line.replace(/^[0-9]+[.、]\s*/, ''))
-      .filter(line => line.length > 0)
-      .slice(0, 2)
-
-    if (suggestions.length === 0) {
-      return fallback()
-    }
-
-    console.log('[AI Service] GLM next action suggestions generated')
-    return { suggestions }
-
-  } catch (error) {
-    console.error('[AI Service] Next Action API call error:', error.message)
-    return fallback()
-  }
-}
-
 export async function generateWeeklyReview(notes, projects) {
   const API_KEY = import.meta.env.VITE_GLM_API_KEY
 
@@ -595,6 +481,38 @@ export async function generateTasksFromNote(note) {
 }
 
 export async function generateTaskDrafts(notes, projects, actionPlan) {
+  const API_KEY = import.meta.env.VITE_GLM_API_KEY
+
+  const fallback = () => {
+    const drafts = [
+      { title: '整理当前上下文并明确下一步', source: 'dashboard', generationMode: 'context_only' },
+      { title: '回顾最近笔记并提取可执行任务', source: 'dashboard', generationMode: 'context_only' },
+      { title: '检查活跃项目中的阻塞项', source: 'dashboard', generationMode: 'context_only' }
+    ]
+    console.log('[AI Service] Fallback to mock task drafts:', drafts)
+    return { drafts }
+  }
+
+  if (!API_KEY) {
+    console.error('[AI Service] VITE_GLM_API_KEY not found, using fallback')
+    return fallback()
+  }
+
+  // Compress input context
+  const recentNotes = (notes || []).slice(0, 5).map(n => {
+    const title = n.title || '(无标题)'
+    const content = (n.content || '').slice(0, 100)
+    return `笔记：${title} - ${content}`
+  }).join('\n')
+
+  const recentProjects = (projects || []).slice(0, 3).map(p => {
+    const name = p.name || '(无项目名)'
+    const summary = p.summary || '(无描述)'
+    return `项目：${name} - ${summary}`
+  }).join('\n')
+
+  const contextText = `最近笔记：\n${recentNotes || '(无)'}\n\n最近项目：\n${recentProjects || '(无)'}`
+
   // Mode selection: action-plan-driven or context-only
   const hasActionPlan = actionPlan && Array.isArray(actionPlan) && actionPlan.length > 0
   let promptText = ''

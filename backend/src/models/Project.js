@@ -15,17 +15,10 @@ const projectSchema = new mongoose.Schema({
     enum: ['pending', 'in_progress', 'completed', 'on_hold', 'archived'],
     default: 'pending'
   },
-  nextAction: {
-    type: String,
-    default: ''
-  },
-  lastCompletedAction: {
-    type: String,
-    default: ''
-  },
-  focusHistory: {
-    type: [String],
-    default: []
+  currentFocusTaskId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Task',
+    default: null
   },
   isPinned: {
     type: Boolean,

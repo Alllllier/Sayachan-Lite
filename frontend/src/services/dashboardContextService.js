@@ -21,10 +21,18 @@ export async function refreshDashboardContext() {
     const activeTasksCount = safeTasks.filter(t => t.status !== 'archived' && t.status !== 'completed').length
     const pinnedProject = safeProjects.find(p => p.isPinned && p.status !== 'archived')
     const pinnedProjectName = pinnedProject?.name || ''
-    const nextActionProject = safeProjects.find(
-      p => p.status !== 'archived' && p.nextAction && p.nextAction.trim()
+
+    // Canonical: task-based focus only
+    const focusProject = safeProjects.find(
+      p => p.status !== 'archived' && p.currentFocusTaskId
     )
-    const currentNextAction = nextActionProject?.nextAction || ''
+    let currentNextAction = ''
+    if (focusProject) {
+      const focusTask = safeTasks.find(
+        t => String(t._id) === String(focusProject.currentFocusTaskId)
+      )
+      currentNextAction = focusTask?.title || ''
+    }
 
     const snapshot = {
       activeProjectsCount,

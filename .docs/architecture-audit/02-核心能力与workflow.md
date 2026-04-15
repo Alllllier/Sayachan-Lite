@@ -37,11 +37,11 @@ Focus → Task → Completion → Memory → Next Focus
 
 | 阶段 | 动作 | 系统行为 |
 |------|------|----------|
-| **1. Focus** | Dashboard 推荐聚焦方向，从 Projects 设定当前聚焦点（Next Action） | AI 基于历史数据推荐；用户手动确认或修改 |
+| **1. Focus** | Dashboard 推荐聚焦方向，从 Projects 设定当前聚焦点（Task-based Focus） | AI 基于项目上下文推荐；用户通过 Task 确认焦点 |
 | **2. Task** | 从 Notes 或 Dashboard AI 生成可执行任务 | 任务自动关联来源（Note/Project/Dashboard） |
-| **3. Completion** | 完成任务 | 自动触发 Focus 迁移：Project 的 Current Focus → History |
-| **4. Memory** | Notes 和 Projects 记录推进轨迹与关键信息 | Focus History 自动追加；Note 记录思考 |
-| **5. Next Focus** | AI 基于历史数据推荐下一聚焦方向 | Dashboard 展示推荐，循环回到第 1 步 |
+| **3. Completion** | 完成任务 | 自动触发 Focus 清理：Project 的 currentFocusTaskId 被清空 |
+| **4. Memory** | Notes 和 Tasks 记录推进轨迹与关键信息 | 已完成的 Task 本身即历史；Note 记录思考 |
+| **5. Next Focus** | AI 基于项目上下文推荐下一聚焦方向 | Dashboard 展示推荐，循环回到第 1 步 |
 
 ### 3.2 Workflow 可视化
 
@@ -56,7 +56,7 @@ Focus → Task → Completion → Memory → Next Focus
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                          FOCUS 设定                                     │
-│              Projects.nextAction ← 当前聚焦方向                         │
+│         Projects.currentFocusTaskId ← 当前聚焦 Task ID                  │
 └─────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
@@ -73,7 +73,7 @@ Focus → Task → Completion → Memory → Next Focus
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                       TASK 完成 (触发 Focus 迁移)                        │
+│                       TASK 完成 (触发 Focus 清理)                        │
 │                                                                         │
 │   Task.completed = true                                                 │
 │        │                                                                │
@@ -81,9 +81,10 @@ Focus → Task → Completion → Memory → Next Focus
 │   ┌─────────────────────────────────────────────────────────┐          │
 │   │  IF task.originModule ∈ ['project', 'project_focus',    │          │
 │   │                         'project_suggestion']           │          │
+│   │     AND task._id == Project.currentFocusTaskId          │          │
 │   │                                                         │          │
-│   │     Project.focusHistory.push(Project.nextAction)       │          │
-│   │     Project.nextAction = ''                             │          │
+│   │     Project.currentFocusTaskId = null                   │          │
+│   │     // 清空当前聚焦，等待新的 Task 关联                  │          │
 │   │                                                         │          │
 │   │  END IF                                                 │          │
 │   └─────────────────────────────────────────────────────────┘          │
@@ -93,14 +94,14 @@ Focus → Task → Completion → Memory → Next Focus
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                          MEMORY 记录                                    │
 │   - Notes: 保存思考、灵感、上下文                                       │
-│   - Projects.focusHistory: 推进轨迹时间线                               │
-│   - Tasks: 已完成的任务存档                                             │
+│   - Tasks: 已完成的任务即推进轨迹，通过 linkedProjectId 关联            │
+│   - Projects: 仅保留当前聚焦 Task 引用（currentFocusTaskId）            │
 └─────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                       NEXT FOCUS (循环)                                 │
-│   Dashboard AI 基于 focusHistory 生成新的推荐 → 回到 FOCUS 设定         │
+│   Dashboard AI 基于项目上下文生成新的推荐 → 回到 FOCUS 设定             │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -131,17 +132,16 @@ Note 创建 → 用户编辑内容 → AI 分析生成 Tasks → Tasks 关联到
 **功能**：
 - 创建/编辑/删除项目
 - 状态管理：`pending` | `in_progress` | `completed` | `on_hold` | `archived`
-- 聚焦点管理：`nextAction`（当前聚焦）
-- 推进轨迹：`focusHistory`（已完成聚焦点数组）
+- 聚焦点管理：`currentFocusTaskId`（关联到具体 Task，canonical）
 - 置顶功能
 - AI 下一步建议
 
-**Focus 迁移机制**：
+**Focus 清理机制**：
 ```javascript
-// 当项目关联的 Task 被完成时触发
-if (task.originModule ∈ ['project', 'project_focus', 'project_suggestion']) {
-  project.focusHistory.push(project.nextAction);  // 当前聚焦移入历史
-  project.nextAction = '';  // 清空当前聚焦，等待新的设定
+// 当项目关联的 Task 被完成/归档/删除时触发
+if (task.originModule ∈ ['project', 'project_focus', 'project_suggestion']
+    && project.currentFocusTaskId === task._id) {
+  project.currentFocusTaskId = null;  // 清空当前聚焦，等待新的 Task 关联
 }
 ```
 
@@ -168,10 +168,10 @@ if (task.originModule ∈ ['project', 'project_focus', 'project_suggestion']) {
 }
 ```
 
-**触发 Focus 迁移的条件**：
+**触发 Focus 清理的条件**：
 - `originModule` 为 `'project'`, `'project_focus'`, 或 `'project_suggestion'`
-- Task 从未完成变为完成状态
-- Task 有关联的 `linkedProjectId`
+- Task 从未完成变为完成状态（或被归档/删除）
+- 该 Task 的 `_id` 恰好是项目的 `currentFocusTaskId`
 
 ### 4.4 Dashboard 模块
 
@@ -272,43 +272,38 @@ ChatEntry.handleSend()
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 5.2 Focus 迁移流转
+### 5.2 Focus 清理流转
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│                          FOCUS 迁移流程                                   │
+│                          FOCUS 清理流程                                   │
 ├──────────────────────────────────────────────────────────────────────────┤
 │                                                                           │
-│   Project.current (nextAction)                                          │
+│   Project.currentFocusTaskId                                             │
 │        │                                                                  │
-│        │  用户设定聚焦点                                                   │
+│        │  用户将某 Task 设为项目 Current Focus                              │
 │        ▼                                                                  │
 │   ┌──────────────────────────────────────────────┐                      │
-│   │  nextAction = "设计数据库模型"                │                      │
-│   │  focusHistory = []                           │                      │
+│   │  currentFocusTaskId = task_123               │                      │
 │   └──────────────────────────────────────────────┘                      │
 │        │                                                                  │
-│        │  生成 Task 并执行...                                                │
+│        │  Task 执行完成 / 被归档 / 被删除                                    │
 │        ▼                                                                  │
-│   Task 完成 (PUT /tasks/:id)                                             │
+│   PUT /tasks/:id 或 DELETE /tasks/:id 或 archive                         │
 │        │                                                                  │
 │        │  后端检测:                                                        │
 │        │  - originModule 匹配 project*                                     │
-│        │  - 状态变为 completed                                             │
+│        │  - 该 task._id == currentFocusTaskId                              │
 │        ▼                                                                  │
 │   ┌──────────────────────────────────────────────┐                      │
-│   │  focusHistory.push(nextAction)               │                      │
-│   │  // ["设计数据库模型"]                       │                      │
-│   │                                              │                      │
-│   │  nextAction = ''                             │                      │
-│   │  // 清空，等待下次设定                       │                      │
+│   │  currentFocusTaskId = null                   │                      │
+│   │  // 清空当前聚焦，等待新的 Task 关联         │                      │
 │   └──────────────────────────────────────────────┘                      │
 │        │                                                                  │
-│        │  用户设定新的聚焦点                                                  │
+│        │  用户设定新的 Current Focus Task                                    │
 │        ▼                                                                  │
 │   ┌──────────────────────────────────────────────┐                      │
-│   │  nextAction = "编写 API 路由"                 │                      │
-│   │  focusHistory = ["设计数据库模型"]            │                      │
+│   │  currentFocusTaskId = task_456               │                      │
 │   └──────────────────────────────────────────────┘                      │
 │        │                                                                  │
 │        ▼                                                                  │
@@ -346,7 +341,6 @@ ChatEntry.handleSend()
 │   │  recommendFocus()           - 聚焦推荐                           │   │
 │   │  generateActionPlan()       - 行动计划                           │   │
 │   │  generateTaskDrafts()       - 任务草稿                           │   │
-│   │  generateTasksFromNote()    - 笔记生成任务                       │   │
 │   └─────────────────────────────────────────────────────────────────┘   │
 │                                                                           │
 │   注: Notes/Projects/Chat AI 已迁移至后端，Dashboard AI 仍为前端直连      │
@@ -374,11 +368,11 @@ ChatEntry.handleSend()
 | 功能 | 前端文件 | 后端文件 |
 |------|----------|----------|
 | Notes CRUD | `views/NotesPage.vue` | `routes/index.js` (lines 20-167) |
-| Projects CRUD | `views/ProjectsPage.vue` | `routes/index.js` (lines 169-323) |
-| Tasks CRUD | `components/Dashboard.vue` | `routes/index.js` (lines 325-422) |
-| Focus 迁移 | - | `routes/index.js` (lines 387-408) |
-| Note AI | `services/aiService.js` | `routes/ai.js` (lines 34-116) |
-| Project AI | `services/aiService.js` | `routes/ai.js` (lines 118-218) |
-| Chat AI | `components/ChatEntry.vue` / `services/chatService.js` / `stores/runtimeControls.js` | `routes/ai.js` (lines 222-240) / `ai/orchestration/chat-service.js` / `ai/personality/core.js` |
+| Projects CRUD | `views/ProjectsPage.vue` | `routes/index.js` (lines 169-349) |
+| Tasks CRUD | `components/Dashboard.vue` | `routes/index.js` (lines 350-491) |
+| Focus 清理 | - | `routes/index.js` (lines 399-422) |
+| Note AI | - | `routes/ai.js` (lines 51-133) |
+| Project AI | - | `routes/ai.js` (lines 135-226) |
+| Chat AI | `components/ChatEntry.vue` / `services/chatService.js` / `stores/runtimeControls.js` | `routes/ai.js` (lines 228-258) / `ai/bridge.js` / `private_core/sayachan-ai-core` |
 | Dashboard Context | `services/dashboardContextService.js` / `stores/cockpitSignals.js` | - |
 | Dashboard AI | `services/aiService.js` | - |

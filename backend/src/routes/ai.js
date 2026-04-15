@@ -1,7 +1,23 @@
 const Router = require('@koa/router');
 const { chat: runChat } = require('../ai/bridge');
+const Task = require('../models/Task');
 
 const router = new Router();
+
+// Phase 3: task-based focus only
+async function getProjectFocusContext(project) {
+  if (project?.currentFocusTaskId) {
+    try {
+      const focusTask = await Task.findById(project.currentFocusTaskId);
+      if (focusTask?.title?.trim()) {
+        return focusTask.title.trim();
+      }
+    } catch (e) {
+      console.error('[AI Route] Failed to resolve focus task:', e.message);
+    }
+  }
+  return '';
+}
 
 // Fallback response when API key is missing or request fails
 function fallback(note, project, type) {
@@ -131,14 +147,8 @@ router.post('/ai/projects/next-action', async (ctx) => {
   const name = project?.name || '(无项目名)';
   const summary = project?.summary || '(无描述)';
   const status = project?.status || 'unknown';
-  const nextAction = project?.nextAction || '(无)';
-  // Derive last completed from focusHistory instead of deprecated lastCompletedAction field
-  const lastCompletedAction = project?.focusHistory?.slice(-1)[0] || '(无)';
-
-  // Take recent 3 items from focusHistory (most recent first)
-  const recentHistory = project?.focusHistory && Array.isArray(project.focusHistory)
-    ? project.focusHistory.slice(-3).reverse().join(' → ')
-    : '(无)';
+  // Phase 3: task-based focus only
+  const nextAction = await getProjectFocusContext(project) || '(无)';
 
   const promptText = `始终使用简体中文输出。
 
@@ -147,8 +157,6 @@ router.post('/ai/projects/next-action', async (ctx) => {
 项目描述：${summary}
 当前状态：${status}
 当前下一步：${nextAction}
-最近完成：${lastCompletedAction}
-推进轨迹：${recentHistory}
 
 要求：
 - 每条建议必须是具体可执行的动作
@@ -157,8 +165,6 @@ router.post('/ai/projects/next-action', async (ctx) => {
 - 不带编号
 - 不带解释文本
 - 针对"推进"而非"总结"
-- 基于推进轨迹继续向前，避免重复已完成的内容
-- 如果有推进轨迹，理解整体方向后再建议下一步
 
 输出 1-2 条建议：`;
 
