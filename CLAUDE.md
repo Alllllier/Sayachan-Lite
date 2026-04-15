@@ -176,10 +176,9 @@ git commit -m "fix(ui): correct button alignment"
 - **前端 Service**: 参考 `frontend/src/services/taskService.js`
 - **组件结构**: 参考 `frontend/src/components/NotesPanel.vue`
 
-### Focus 迁移是什么？
-当 Task 完成时，如果它关联了 Project，会自动：
-1. 将 Project.nextAction 加入 focusHistory
-2. 清空 Project.nextAction
+### Focus 清理是什么？
+当 Task 完成时，如果它关联了 Project 且恰好是当前的 `currentFocusTaskId`，会自动：
+清空 Project.currentFocusTaskId
 
 详见 `03-后端API接口.md` → 3.4 Tasks 接口 → PUT /tasks/:id
 

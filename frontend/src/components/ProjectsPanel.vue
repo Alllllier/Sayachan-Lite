@@ -336,8 +336,9 @@ async function saveSuggestionAsTask(projectId, suggestion) {
     project?.name || ''   // linkedProjectName
   )
   if (newTask) {
-    saveSuccessMessages.value[`${projectId}_focus`] = 'Focus saved as task'
+    saveSuccessMessages.value[`${projectId}_focus`] = 'Saved as task'
     setTimeout(() => { delete saveSuccessMessages.value[`${projectId}_focus`] }, 2000)
+    await fetchProjectTasksForCard(projectId)
   } else {
     savedSuggestions.value.delete(suggestion)
   }

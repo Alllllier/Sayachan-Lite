@@ -147,8 +147,8 @@ router.post('/ai/projects/next-action', async (ctx) => {
   const name = project?.name || '(无项目名)';
   const summary = project?.summary || '(无描述)';
   const status = project?.status || 'unknown';
-  // Phase 3: task-based focus only
-  const nextAction = await getProjectFocusContext(project) || '(无)';
+  // Canonical: task-based focus only
+  const currentFocus = await getProjectFocusContext(project) || '(无)';
 
   const promptText = `始终使用简体中文输出。
 
@@ -156,7 +156,7 @@ router.post('/ai/projects/next-action', async (ctx) => {
 项目名称：${name}
 项目描述：${summary}
 当前状态：${status}
-当前下一步：${nextAction}
+当前下一步：${currentFocus}`
 
 要求：
 - 每条建议必须是具体可执行的动作

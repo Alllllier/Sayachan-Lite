@@ -406,11 +406,10 @@ router.put('/tasks/:id', async (ctx) => {
     ['project', 'project_focus', 'project_suggestion'].includes(task.originModule);
 
   if (isBecomingCompleted && isProjectTask) {
-    // Find project by exact ID match (no title/nextAction fuzzy matching)
+    // Find project by exact ID match (no fuzzy matching)
     const project = await Project.findById(projectId);
     if (project) {
-      // Phase 4A: legacy nextAction/focusHistory writing stopped.
-      // Only canonical shadow writing remains.
+      // Canonical: clear currentFocusTaskId when focus task is completed.
       if (project.currentFocusTaskId && String(project.currentFocusTaskId) === String(task._id)) {
         await Project.findByIdAndUpdate(project._id, {
           currentFocusTaskId: null
