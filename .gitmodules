@@ -1,0 +1,3 @@
+[submodule "backend/private_core/sayachan-ai-core"]
+	path = backend/private_core/sayachan-ai-core
+	url = git@github.com:Alllllier/sayachan-ai-core.git

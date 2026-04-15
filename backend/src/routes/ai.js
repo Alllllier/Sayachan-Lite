@@ -1,5 +1,5 @@
 const Router = require('@koa/router');
-const { chat: runChat } = require('../ai');
+const { chat: runChat } = require('../ai/bridge');
 
 const router = new Router();
 
