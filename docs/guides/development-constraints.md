@@ -146,6 +146,7 @@ Before considering a feature complete, check:
 
 - backend behavior is bounded and matches current architecture rules
 - frontend behavior follows existing patterns instead of creating parallel systems
+- validation depth matches the actual regression risk of the sprint
 - fallbacks exist for AI-dependent behavior
 - docs under `docs/**` were reviewed for sync impact
 - user-visible copy and error states are acceptable
@@ -159,3 +160,4 @@ When changing:
 - backend routes: review `docs/architecture/backend-api.md` and `docs/architecture/runtime-workflow.md`
 - dashboard/chat stores and services: review `docs/architecture/system-baseline.md`
 - style primitives: review `frontend/src/style.css` first
+- testing or UI review workflow: review `docs/guides/testing-and-ui-review.md`

@@ -68,16 +68,26 @@ Execution expectations:
 - render markdown safely; do not leave raw HTML/XSS behavior ambiguous
 - preserve existing note create, update, archive, restore, pin, and delete flows
 
+## Validation Requirements
+
+- required: build or logic validation appropriate to the changed code
+- required: state clearly which validation layers were run
+- browser validation: required only when the sprint changes UI surface behavior, page states, rendering, or interaction quality
+- UI review: required only when the sprint changes visual hierarchy, density, or presentation quality
+
 ## Completion Report Contract
 
 The execution worker must write the result into `docs/pmo/inbox/execution_report.md` using these sections:
 
 1. delivered
 2. validation performed
-3. boundary compliance
-4. unresolved
-5. architecture decisions needed
-6. recommended next sprint slice
+3. browser validation performed or not performed
+4. ui review performed or not performed
+5. unverified areas
+6. boundary compliance
+7. unresolved
+8. architecture decisions needed
+9. recommended next sprint slice
 
 ## Escalate To Architecture Owner If
 

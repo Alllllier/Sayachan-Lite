@@ -27,6 +27,21 @@
 - Markdown output is sanitized by `DOMPurify` before being bound to `v-html`.
 - Existing plain-text notes remain readable because `markdown-it` is configured with `breaks: true`, preserving line-break formatting.
 
+## Browser Validation Performed Or Not Performed
+
+- Not performed for this sprint.
+- Reason: this report predates the current browser-validation policy and no dedicated browser validation step was requested at the time.
+
+## UI Review Performed Or Not Performed
+
+- Not performed for this sprint.
+- Reason: this report predates the current UI review v1 flow and no screenshot review pipeline was requested at the time.
+
+## Unverified Areas
+
+- No browser-level verification was recorded for Notes page state transitions.
+- No UI-noise or hierarchy review was recorded for the updated Notes surface.
+
 ## Boundary Compliance
 
 - **No backend changes** were made; `backend/src/models/Note.js` and `backend/src/routes/index.js` remain untouched.

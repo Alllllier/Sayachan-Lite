@@ -13,6 +13,7 @@ These docs were rebuilt from repository audit on 2026-04-16 rather than copied f
 - `roadmap.md`: shipped milestones and active technical debt
 - `../guides/development-constraints.md`: development and styling constraints
 - `../guides/documentation-sync.md`: documentation update policy
+- `../guides/testing-and-ui-review.md`: validation-layer and UI-review policy
 - `../migration/ai-core-migration-record.md`: private AI core split record
 
 ## Audit Notes

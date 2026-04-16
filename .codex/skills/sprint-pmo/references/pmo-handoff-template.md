@@ -38,6 +38,8 @@ Describe the sprint or architecture reason in two lines or fewer.
 ## 6. Acceptance Checks
 
 - required tests or validation
+- browser validation only when the sprint changes UI surface behavior, page states, rendering, or interaction quality
+- UI review only when the sprint changes visual hierarchy, density, or presentation quality
 - observable completion criteria
 - documentation or status updates needed
 
@@ -53,6 +55,10 @@ Describe the sprint or architecture reason in two lines or fewer.
 Ask Claude to return:
 
 - what changed
+- what validation was run
+- whether browser validation was performed
+- whether UI review was performed
+- what remains unverified
 - what remains
 - what needs human review
 - recommended next sprint slice

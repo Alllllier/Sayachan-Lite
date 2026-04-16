@@ -5,6 +5,28 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
 export const tasksRef = ref([])
 
+export function buildTaskPayload(title, creationMode, originModule = '', originId = null, originLabel = '', linkedProjectId = null, linkedProjectName = '') {
+  return {
+    title,
+    creationMode,
+    originModule,
+    originId,
+    originLabel,
+    linkedProjectId,
+    linkedProjectName
+  }
+}
+
+export function normalizeSavedTask(task) {
+  if (!task) return task
+
+  return {
+    ...task,
+    status: task.status === undefined ? 'active' : task.status,
+    completed: task.completed === undefined ? false : task.completed
+  }
+}
+
 export async function fetchTasks(archived = false) {
   try {
     const url = archived ? `${API_BASE}/tasks?archived=true` : `${API_BASE}/tasks`
@@ -20,30 +42,24 @@ export async function fetchTasks(archived = false) {
 
 export async function saveTask(title, creationMode, originModule = '', originId = null, originLabel = '', linkedProjectId = null, linkedProjectName = '') {
   try {
-    const taskData = {
+    const taskData = buildTaskPayload(
       title,
-      // Canonical semantic fields
       creationMode,
       originModule,
       originId,
       originLabel,
       linkedProjectId,
       linkedProjectName
-    };
+    )
 
     const res = await fetch(`${API_BASE}/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(taskData)
     })
-    const newTask = await res.json()
+    const savedTask = await res.json()
+    const newTask = normalizeSavedTask(savedTask)
     if (newTask) {
-      if (newTask.status === undefined) {
-        newTask.status = 'active'
-      }
-      if (newTask.completed === undefined) {
-        newTask.completed = false
-      }
       tasksRef.value.unshift(newTask)
     }
     return newTask

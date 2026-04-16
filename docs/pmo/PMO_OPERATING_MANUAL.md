@@ -223,7 +223,60 @@ The human owns:
 
 ---
 
-## 8. Baseline Audit References
+## 8. Validation Policy
+
+Validation should be selected by sprint risk, not run blindly for every sprint.
+
+### Default Rule
+
+- do not require browser validation for every sprint
+- require the lightest validation that can catch the most likely regression class
+- if a validation layer is skipped, say so explicitly in the execution report
+
+### Validation Matrix
+
+Use logic or smoke tests when the sprint mainly changes:
+
+- domain rules
+- service behavior
+- route behavior
+- storage contract
+- task/project/focus/archive semantics
+
+Use browser validation when the sprint mainly changes:
+
+- UI surface behavior
+- page-state transitions
+- rendering behavior
+- interaction density
+- layout or hierarchy that code review alone cannot judge safely
+
+Use UI review when the sprint mainly changes:
+
+- visual hierarchy
+- UI noise
+- button density
+- readability
+- editing vs display-state presentation quality
+
+### Current Tooling Direction
+
+- logic and smoke validation: `Vitest`
+- browser validation and UI review v1: `Playwright`
+
+### Reporting Rule
+
+Execution reports should state:
+
+- tests run
+- browser validation performed or not performed
+- UI review performed or not performed
+- unverified areas
+- known regression risk
+
+---
+
+## 9. Baseline Audit References
 
 Use these as the default reference set before planning or compiling execution prompts:
 
@@ -244,7 +297,7 @@ Minimum planning rule:
 
 ---
 
-## 9. First Production Workflow Example
+## 10. First Production Workflow Example
 
 ### Example: Note Markdown Foundation Sprint
 
@@ -268,6 +321,9 @@ PMO handling:
 7. Claude reports:
    - delivered
    - validation performed
+   - browser validation performed or not performed
+   - UI review performed or not performed
+   - unverified areas
    - boundary compliance
    - unresolved
    - architecture decisions needed
@@ -286,7 +342,7 @@ Escalation examples in this sprint:
 
 ---
 
-## 10. Maintenance Rules
+## 11. Maintenance Rules
 
 Keep this manual stable and short.
 

@@ -2,6 +2,34 @@ import { useCockpitSignals } from '../stores/cockpitSignals'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
+export function deriveDashboardSnapshot(projects, tasks) {
+  const safeProjects = Array.isArray(projects) ? projects : []
+  const safeTasks = Array.isArray(tasks) ? tasks : []
+
+  const activeProjectsCount = safeProjects.filter(p => p.status !== 'archived').length
+  const activeTasksCount = safeTasks.filter(t => t.status !== 'archived' && t.status !== 'completed').length
+  const pinnedProject = safeProjects.find(p => p.isPinned && p.status !== 'archived')
+  const pinnedProjectName = pinnedProject?.name || ''
+
+  const focusProject = safeProjects.find(
+    p => p.status !== 'archived' && p.currentFocusTaskId
+  )
+  let currentNextAction = ''
+  if (focusProject) {
+    const focusTask = safeTasks.find(
+      t => String(t._id) === String(focusProject.currentFocusTaskId)
+    )
+    currentNextAction = focusTask?.title || ''
+  }
+
+  return {
+    activeProjectsCount,
+    activeTasksCount,
+    pinnedProjectName,
+    currentNextAction
+  }
+}
+
 export async function refreshDashboardContext() {
   const cockpitSignals = useCockpitSignals()
 
@@ -14,32 +42,7 @@ export async function refreshDashboardContext() {
     const projects = await projectsRes.json()
     const tasks = await tasksRes.json()
 
-    const safeProjects = Array.isArray(projects) ? projects : []
-    const safeTasks = Array.isArray(tasks) ? tasks : []
-
-    const activeProjectsCount = safeProjects.filter(p => p.status !== 'archived').length
-    const activeTasksCount = safeTasks.filter(t => t.status !== 'archived' && t.status !== 'completed').length
-    const pinnedProject = safeProjects.find(p => p.isPinned && p.status !== 'archived')
-    const pinnedProjectName = pinnedProject?.name || ''
-
-    // Canonical: task-based focus only
-    const focusProject = safeProjects.find(
-      p => p.status !== 'archived' && p.currentFocusTaskId
-    )
-    let currentNextAction = ''
-    if (focusProject) {
-      const focusTask = safeTasks.find(
-        t => String(t._id) === String(focusProject.currentFocusTaskId)
-      )
-      currentNextAction = focusTask?.title || ''
-    }
-
-    const snapshot = {
-      activeProjectsCount,
-      activeTasksCount,
-      pinnedProjectName,
-      currentNextAction
-    }
+    const snapshot = deriveDashboardSnapshot(projects, tasks)
 
     cockpitSignals.setSignals(snapshot)
     return snapshot

@@ -74,6 +74,7 @@ Default rule:
 - do not rewrite PMO framing inside the report
 - write outcomes, validation, unresolved items, and escalation points into `execution_report.md`
 - escalate rather than crossing architecture boundaries not approved in the task file
+- only run browser validation when the sprint explicitly requires UI-surface or page-state verification
 
 ---
 

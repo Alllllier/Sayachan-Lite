@@ -67,6 +67,25 @@ During migration and cleanup:
 - do not assume the old `.docs` set reflects current reality
 - do not rely on agent-specific git hooks to enforce doc sync
 
+## Testing And Validation Docs
+
+Testing and validation changes usually belong to governance docs, not architecture baseline docs.
+
+When changing:
+
+- validation toolchain such as `Vitest` or `Playwright`
+- test or UI review commands
+- PMO validation requirements
+- browser-validation decision rules
+- UI-review decision rules
+
+review and update:
+
+- `docs/guides/testing-and-ui-review.md`
+- relevant PMO protocol files under `docs/pmo/**`
+
+Only update `docs/architecture/**` when the testing change reveals or depends on a real architecture-truth change.
+
 ## Repo Hook Scope
 
 The repo-owned pre-commit hook is intentionally narrow:

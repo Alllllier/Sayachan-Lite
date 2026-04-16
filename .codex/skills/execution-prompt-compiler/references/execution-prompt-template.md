@@ -34,6 +34,9 @@ Execution expectations:
 Completion report contract:
 - delivered:
 - validation performed:
+- browser validation performed or not performed:
+- ui review performed or not performed:
+- unverified areas:
 - unresolved:
 - architecture decisions needed:
 - recommended next sprint slice:
@@ -49,3 +52,4 @@ Escalate to the architecture owner if:
 - Keep architecture context short and current
 - Prefer concrete file/module references over abstract areas when known
 - Leave unresolved items visible rather than silently filling them in
+- Only require browser validation when the sprint changes UI surface behavior, page states, rendering, or interaction quality
