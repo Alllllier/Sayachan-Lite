@@ -182,6 +182,10 @@ Codex should escalate early when a task:
 
 Claude should escalate instead of improvising when a prompt would require crossing one of these boundaries.
 
+Reference:
+
+- use `docs/architecture/private-core-boundary.md` for the canonical description of this split
+
 ---
 
 ## 7. Document Ownership

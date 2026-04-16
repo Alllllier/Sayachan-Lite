@@ -7,6 +7,7 @@ These docs were rebuilt from repository audit on 2026-04-16 rather than copied f
 ## Canonical Set
 
 - `system-baseline.md`: current system shape, boundaries, safe zones, and risks
+- `private-core-boundary.md`: public vs private AI core split and bridge responsibilities
 - `runtime-workflow.md`: runtime surfaces and workflow/domain rules
 - `backend-api.md`: audited backend route and model contract summary
 - `roadmap.md`: shipped milestones and active technical debt

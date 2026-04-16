@@ -47,6 +47,10 @@ Boundary rule:
 - `backend/src/ai/bridge.js` is the only intended public bridge into the private core
 - work that changes the bridge contract or private core responsibility split should be treated as architecture-owner scope
 
+Reference:
+
+- see `docs/architecture/private-core-boundary.md` for the canonical boundary record
+
 ## Domain Rules That Matter
 
 ### Notes

@@ -32,3 +32,8 @@ The old architecture docs described a richer `backend/src/ai/*` tree in the publ
 - implementation in private core
 
 Any work that expands the public bridge contract should be reviewed as architecture-sensitive.
+
+## Canonical Reference
+
+Treat `docs/architecture/private-core-boundary.md` as the long-term architecture source of truth.
+This file is the migration record for how that split was introduced.
