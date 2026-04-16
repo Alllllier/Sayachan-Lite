@@ -1,5 +1,12 @@
 <script setup>
-import { ref, reactive, onMounted, defineEmits } from 'vue'
+import { ref, reactive, onMounted, defineEmits, nextTick } from 'vue'
+import { basicSetup } from 'codemirror'
+import { EditorView } from '@codemirror/view'
+import { markdown } from '@codemirror/lang-markdown'
+import MarkdownIt from 'markdown-it'
+import hljs from 'highlight.js'
+import DOMPurify from 'dompurify'
+import 'highlight.js/styles/github.css'
 import { saveTask } from '../services/taskService.js'
 import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
@@ -19,6 +26,11 @@ const taskSuccessMessages = reactive({})
 
 // P0-Fix-1: Store original note data for cancel restore
 const editingOriginalData = ref({})
+
+// Markdown editor refs
+const newEditorRef = ref(null)
+const newEditorView = ref(null)
+const editEditorViews = reactive({})
 
 // Toast notifications
 const toast = ref(null)
@@ -46,6 +58,77 @@ function clearDraft() {
   localStorage.removeItem('sayachan_note_drafts')
 }
 const emit = defineEmits(['refreshed'])
+
+// Markdown renderer with syntax highlighting and XSS protection
+const md = new MarkdownIt({
+  html: false,
+  linkify: true,
+  breaks: true,
+  highlight: (str, lang) => {
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return `<pre class="hljs"><code>${hljs.highlight(str, { language: lang }).value}</code></pre>`
+      } catch (__) {}
+    }
+    return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`
+  }
+})
+
+function renderMarkdown(text) {
+  if (!text) return ''
+  return DOMPurify.sanitize(md.render(text))
+}
+
+// CodeMirror factory
+function createCodeMirror(parent, initialValue, onChange) {
+  return new EditorView({
+    doc: initialValue || '',
+    extensions: [
+      basicSetup,
+      markdown(),
+      EditorView.theme({
+        '&': {
+          fontSize: 'var(--font-size-base)',
+          border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-sm)',
+          marginBottom: 'var(--space-md)',
+          background: 'var(--surface-card)'
+        },
+        '&.cm-focused': {
+          outline: 'none',
+          borderColor: 'var(--border-focus)',
+          boxShadow: 'var(--shadow-focus)'
+        },
+        '.cm-content': {
+          minHeight: '80px',
+          padding: '10px'
+        },
+        '.cm-gutters': {
+          borderRadius: 'var(--radius-sm) 0 0 var(--radius-sm)',
+          background: 'var(--surface-panel)',
+          borderRight: '1px solid var(--border-default)'
+        }
+      }),
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged) {
+          onChange(update.state.doc.toString())
+        }
+      })
+    ],
+    parent
+  })
+}
+
+function bindEditEditor(el, note) {
+  if (!el || editingId.value !== note._id) return
+  if (editEditorViews[note._id]) {
+    // Already bound; avoid recreating on minor re-renders
+    return
+  }
+  editEditorViews[note._id] = createCodeMirror(el, note.content || '', (val) => {
+    note.content = val
+  })
+}
 
 async function fetchNotes() {
   loading.value = true
@@ -77,6 +160,12 @@ async function createNote() {
     const note = await response.json()
     notes.value.unshift(note)
     form.value = { title: '', content: '' }
+    if (newEditorView.value) {
+      const doc = newEditorView.value.state.doc
+      newEditorView.value.dispatch({
+        changes: { from: 0, to: doc.length, insert: '' }
+      })
+    }
     emit('refreshed', notes.value)
     showToast('Note saved')
   } catch (e) {
@@ -107,6 +196,10 @@ async function updateNote(note) {
       if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1
       return new Date(b.updatedAt) - new Date(a.updatedAt)
     })
+    if (editEditorViews[note._id]) {
+      editEditorViews[note._id].destroy()
+      delete editEditorViews[note._id]
+    }
     editingId.value = null
     emit('refreshed', notes.value)
     showToast('Note updated')
@@ -196,6 +289,19 @@ async function unpinNote(note) {
 }
 
 function startEditing(note) {
+  // If switching from another edit, restore that note first
+  if (editingId.value && editingId.value !== note._id) {
+    const oldNote = notes.value.find(n => n._id === editingId.value)
+    if (oldNote && editingOriginalData.value[editingId.value]) {
+      oldNote.title = editingOriginalData.value[editingId.value].title
+      oldNote.content = editingOriginalData.value[editingId.value].content
+      delete editingOriginalData.value[editingId.value]
+    }
+    if (editEditorViews[editingId.value]) {
+      editEditorViews[editingId.value].destroy()
+      delete editEditorViews[editingId.value]
+    }
+  }
   editingId.value = note._id
   // P0-Fix-1: Store original data for restore on cancel
   editingOriginalData.value[note._id] = {
@@ -212,6 +318,10 @@ function cancelEdit(note) {
     // Clean up stored original data
     delete editingOriginalData.value[note._id]
   }
+  if (note && editEditorViews[note._id]) {
+    editEditorViews[note._id].destroy()
+    delete editEditorViews[note._id]
+  }
   editingId.value = null
 }
 
@@ -222,6 +332,13 @@ function closeAITasks(noteId) {
 
 onMounted(() => {
   fetchNotes()
+  nextTick(() => {
+    if (newEditorRef.value) {
+      newEditorView.value = createCodeMirror(newEditorRef.value, '', (val) => {
+        form.value.content = val
+      })
+    }
+  })
 })
 
 async function handleAIGenerateTasks(note) {
@@ -274,12 +391,7 @@ async function saveNoteTaskDraft(noteId, draft) {
   <div class="form-section">
     <h2>{{ editingId ? 'Edit Note' : 'New Note' }}</h2>
     <input v-model="form.title" placeholder="Title" class="input" />
-    <textarea
-      v-model="form.content"
-      placeholder="Content"
-      rows="3"
-      class="textarea"
-    ></textarea>
+    <div ref="newEditorRef" class="codemirror-editor"></div>
     <div class="form-buttons">
       <button @click="createNote" :disabled="loading || editingId" class="btn btn-primary">
         {{ loading ? 'Saving...' : 'Add Note' }}
@@ -323,12 +435,7 @@ async function saveNoteTaskDraft(noteId, draft) {
       </button>
       <div v-if="editingId === note._id && note.status !== 'archived'">
         <input v-model="note.title" placeholder="Title" class="input" />
-        <textarea
-          v-model="note.content"
-          placeholder="Content"
-          rows="3"
-          class="textarea"
-        ></textarea>
+        <div :ref="el => bindEditEditor(el, note)" class="codemirror-editor"></div>
         <div class="card-buttons">
           <button @click="cancelEdit(note)" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
           <button @click="updateNote(note)" :disabled="loading" class="btn btn-primary">Save</button>
@@ -336,7 +443,7 @@ async function saveNoteTaskDraft(noteId, draft) {
       </div>
       <div v-else>
         <h3 class="card-title">{{ note.title }}</h3>
-        <p class="card-content">{{ note.content }}</p>
+        <div class="card-content markdown-body" v-html="renderMarkdown(note.content)"></div>
         <p class="card-meta">{{ new Date(note.updatedAt).toLocaleString() }}</p>
         <div class="card-buttons">
           <template v-if="note.status === 'archived'">
@@ -497,7 +604,6 @@ async function saveNoteTaskDraft(noteId, draft) {
 
 /* button.delete uses global .btn .btn-danger */
 
-
 .ai-tasks {
   margin-top: 12px;
   padding: 10px;
@@ -587,4 +693,86 @@ async function saveNoteTaskDraft(noteId, draft) {
 
 /* .note-card uses .card and .card-accent-green baseline */
 
+/* Markdown display styles */
+.card-content.markdown-body {
+  white-space: normal;
+}
+
+.markdown-body :deep(p) {
+  margin-bottom: 0.75em;
+}
+
+.markdown-body :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.markdown-body :deep(pre) {
+  background: #f6f8fa;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  margin: 0.75em 0;
+}
+
+.markdown-body :deep(code) {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9em;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+.markdown-body :deep(pre code) {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.95em;
+}
+
+.markdown-body :deep(ul), .markdown-body :deep(ol) {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.markdown-body :deep(li) {
+  margin: 0.25em 0;
+}
+
+.markdown-body :deep(blockquote) {
+  border-left: 3px solid var(--border-default);
+  padding-left: var(--space-md);
+  color: var(--text-muted);
+  margin: 0.5em 0;
+}
+
+.markdown-body :deep(h1), .markdown-body :deep(h2), .markdown-body :deep(h3), .markdown-body :deep(h4) {
+  margin: 0.75em 0 0.5em;
+  font-weight: 600;
+}
+
+.markdown-body :deep(a) {
+  color: var(--action-secondary);
+  text-decoration: none;
+}
+
+.markdown-body :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.markdown-body :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.75em 0;
+}
+
+.markdown-body :deep(th), .markdown-body :deep(td) {
+  border: 1px solid var(--border-default);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.markdown-body :deep(th) {
+  background: var(--surface-panel);
+  font-weight: 600;
+}
 </style>
