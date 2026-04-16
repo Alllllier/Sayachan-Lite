@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sprint PMO"
+  short_description: "Run PMO coordination for long-running architecture sprints."
+  default_prompt: "Use $sprint-pmo to prepare a sprint PMO update, handoff, and next sprint proposal."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Model Router"
+  short_description: "Suggest cheaper or stronger model tiers when task mode and model cost do not match."
+  default_prompt: "Use $model-router to check whether the current task should stay on the current model, switch tiers, or use a sub-agent."

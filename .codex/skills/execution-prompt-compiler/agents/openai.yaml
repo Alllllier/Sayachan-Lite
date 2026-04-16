@@ -1,0 +1,4 @@
+interface:
+  display_name: "Execution Prompt Compiler"
+  short_description: "Compile PMO planning into execution-ready Claude sprint prompts."
+  default_prompt: "Use $execution-prompt-compiler to turn the current PMO plan and boundary docs into an execution-ready Claude VS Code sprint prompt."

@@ -1,8 +1,8 @@
-# Claude Execution Report
+# Execution Report
 
 - Task ID: `note-markdown-foundation-v1`
 - Sprint: `Note Markdown Foundation v1`
-- Source outbox file: `docs/pmo/outbox/claude_task.md`
+- Source outbox file: `docs/pmo/outbox/execution_task.md`
 - Report status: `final`
 - Written by: `Claude VS Code`
 - Last updated: `2026-04-16`

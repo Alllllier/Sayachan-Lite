@@ -1,4 +1,4 @@
-# Sayachan Lite - Claude 开发上下文
+﻿# Sayachan Lite - Claude 开发上下文
 
 ## 项目概述
 
