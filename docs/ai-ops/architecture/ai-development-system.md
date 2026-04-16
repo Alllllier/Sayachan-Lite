@@ -21,6 +21,10 @@ This repo uses a three-role AI development model:
 - `docs/ai-ops/**` stores the AI development system itself
 - `.codex/skills/**` stores runnable skill behavior
 
+## Public Private Rule
+
+Use `public-private-development-model.md` when deciding what should remain in the public repo versus what must be documented only in the private core repo.
+
 ## Rule
 
 If a behavior should change at runtime, prefer updating a skill.

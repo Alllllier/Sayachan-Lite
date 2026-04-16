@@ -17,6 +17,11 @@ Use it to maintain the long-lived rules, workflows, and reference assets that go
 - `policies/` - updateable rules that skills and PMO flows should reference
 - `history/` - migration records for major process changes
 
+Important references:
+
+- `architecture/ai-development-system.md`
+- `architecture/public-private-development-model.md`
+
 ## Maintenance Rule
 
 Update this directory when one of these changes:

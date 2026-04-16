@@ -48,8 +48,12 @@ This boundary should be understood as an architecture rule, not as a Git submodu
 
 The private core currently happens to be delivered through a submodule path, but the important long-term fact is the responsibility split, not the submodule mechanism itself.
 
+The public repo should document only the boundary-level facts needed for safe coordination.
+Private-core implementation details should be maintained only in the private repo.
+
 ## Related Docs
 
 - `system-baseline.md`
 - `runtime-workflow.md`
 - `../migration/ai-core-migration-record.md`
+- `../ai-ops/architecture/public-private-development-model.md`
