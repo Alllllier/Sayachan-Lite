@@ -52,6 +52,7 @@
 
 - global floating chat entry
 - backend `/ai/chat` route
+- assistant-message markdown rendering with a safe basic reading subset
 - dashboard context hydration path
 - runtime controls store
 - persona baseline switch

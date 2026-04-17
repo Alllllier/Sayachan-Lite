@@ -42,6 +42,14 @@ This loop is implemented across several surfaces rather than one formal workflow
 - provide a global companion entrypoint
 - consume cockpit signals or hydrate them on demand
 - send runtime controls to the backend chat route
+- render assistant replies as a safe basic markdown reading surface
+- keep user-authored messages on plain-text rendering
+
+### Shared Markdown Rendering
+
+- Notes and Chat now share the same frontend markdown rendering helper
+- the shared helper uses `markdown-it` for rendering, `highlight.js` for fenced code blocks, and `DOMPurify` before `v-html` injection
+- this is a public-runtime rendering concern only; it does not change backend `/ai/chat` contracts or note storage contracts
 
 ## Focus Semantics
 

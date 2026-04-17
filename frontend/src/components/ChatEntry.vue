@@ -6,6 +6,7 @@ import { useRuntimeControls } from '../stores/runtimeControls'
 import avatarUrl from '../assets/avator/temp.jpg'
 import { sendChat } from '../services/chatService'
 import { refreshDashboardContext } from '../services/dashboardContextService'
+import { renderMarkdown } from '../utils/markdown.js'
 
 const chatStore = useChatStore()
 const cockpitSignals = useCockpitSignals()
@@ -147,7 +148,12 @@ function mockFallbackReply() {
             class="chat-message"
             :class="msg.role"
           >
-            <div class="chat-bubble">{{ msg.content }}</div>
+            <div
+              v-if="msg.role === 'assistant'"
+              class="chat-bubble markdown-body"
+              v-html="renderMarkdown(msg.content)"
+            ></div>
+            <div v-else class="chat-bubble">{{ msg.content }}</div>
           </div>
           <div v-if="isHydrating" class="chat-message assistant">
             <div class="chat-bubble chat-bubble--thinking">正在同步当前工作上下文...</div>
@@ -769,6 +775,53 @@ function mockFallbackReply() {
   color: var(--text-primary);
   font-weight: 500;
   box-shadow: var(--shadow-sm);
+}
+
+/* Markdown inside chat bubble - tighten spacing for chat surface */
+.chat-bubble.markdown-body h1,
+.chat-bubble.markdown-body h2,
+.chat-bubble.markdown-body h3,
+.chat-bubble.markdown-body h4 {
+  margin-top: 0.5em;
+  margin-bottom: 0.35em;
+  font-size: 1em;
+}
+
+.chat-bubble.markdown-body h1 {
+  font-size: 1.15em;
+}
+
+.chat-bubble.markdown-body h2 {
+  font-size: 1.08em;
+}
+
+.chat-bubble.markdown-body pre {
+  margin: 0.5em 0;
+  padding: 8px 10px;
+  font-size: 0.85em;
+}
+
+.chat-bubble.markdown-body ul,
+.chat-bubble.markdown-body ol {
+  margin: 0.35em 0;
+  padding-left: 1.25em;
+}
+
+.chat-bubble.markdown-body blockquote {
+  margin: 0.35em 0;
+}
+
+.chat-bubble.markdown-body p {
+  margin-bottom: 0.5em;
+}
+
+.chat-bubble.markdown-body p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-bubble.markdown-body table {
+  margin: 0.5em 0;
+  font-size: 0.9em;
 }
 
 /* Responsive safety */

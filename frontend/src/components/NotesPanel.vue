@@ -3,10 +3,8 @@ import { ref, reactive, onMounted, defineEmits, nextTick } from 'vue'
 import { basicSetup } from 'codemirror'
 import { EditorView } from '@codemirror/view'
 import { markdown } from '@codemirror/lang-markdown'
-import MarkdownIt from 'markdown-it'
-import hljs from 'highlight.js'
-import DOMPurify from 'dompurify'
 import 'highlight.js/styles/github.css'
+import { renderMarkdown } from '../utils/markdown.js'
 import { saveTask } from '../services/taskService.js'
 import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
@@ -58,26 +56,6 @@ function clearDraft() {
   localStorage.removeItem('sayachan_note_drafts')
 }
 const emit = defineEmits(['refreshed'])
-
-// Markdown renderer with syntax highlighting and XSS protection
-const md = new MarkdownIt({
-  html: false,
-  linkify: true,
-  breaks: true,
-  highlight: (str, lang) => {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return `<pre class="hljs"><code>${hljs.highlight(str, { language: lang }).value}</code></pre>`
-      } catch (__) {}
-    }
-    return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`
-  }
-})
-
-function renderMarkdown(text) {
-  if (!text) return ''
-  return DOMPurify.sanitize(md.render(text))
-}
 
 // CodeMirror factory
 function createCodeMirror(parent, initialValue, onChange) {
@@ -693,86 +671,5 @@ async function saveNoteTaskDraft(noteId, draft) {
 
 /* .note-card uses .card and .card-accent-green baseline */
 
-/* Markdown display styles */
-.card-content.markdown-body {
-  white-space: normal;
-}
-
-.markdown-body :deep(p) {
-  margin-bottom: 0.75em;
-}
-
-.markdown-body :deep(p:last-child) {
-  margin-bottom: 0;
-}
-
-.markdown-body :deep(pre) {
-  background: #f6f8fa;
-  padding: 12px;
-  border-radius: var(--radius-sm);
-  overflow-x: auto;
-  margin: 0.75em 0;
-}
-
-.markdown-body :deep(code) {
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-  font-size: 0.9em;
-  background: rgba(0, 0, 0, 0.05);
-  padding: 2px 5px;
-  border-radius: 3px;
-}
-
-.markdown-body :deep(pre code) {
-  background: transparent;
-  padding: 0;
-  border-radius: 0;
-  font-size: 0.95em;
-}
-
-.markdown-body :deep(ul), .markdown-body :deep(ol) {
-  padding-left: 1.5em;
-  margin: 0.5em 0;
-}
-
-.markdown-body :deep(li) {
-  margin: 0.25em 0;
-}
-
-.markdown-body :deep(blockquote) {
-  border-left: 3px solid var(--border-default);
-  padding-left: var(--space-md);
-  color: var(--text-muted);
-  margin: 0.5em 0;
-}
-
-.markdown-body :deep(h1), .markdown-body :deep(h2), .markdown-body :deep(h3), .markdown-body :deep(h4) {
-  margin: 0.75em 0 0.5em;
-  font-weight: 600;
-}
-
-.markdown-body :deep(a) {
-  color: var(--action-secondary);
-  text-decoration: none;
-}
-
-.markdown-body :deep(a:hover) {
-  text-decoration: underline;
-}
-
-.markdown-body :deep(table) {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 0.75em 0;
-}
-
-.markdown-body :deep(th), .markdown-body :deep(td) {
-  border: 1px solid var(--border-default);
-  padding: 6px 10px;
-  text-align: left;
-}
-
-.markdown-body :deep(th) {
-  background: var(--surface-panel);
-  font-weight: 600;
-}
+/* Markdown display uses global .markdown-body baseline from style.css */
 </style>

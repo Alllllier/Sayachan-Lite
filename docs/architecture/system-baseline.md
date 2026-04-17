@@ -81,6 +81,8 @@ Reference:
 
 - chat UI lives in the public repo at `frontend/src/components/ChatEntry.vue`
 - chat sends through backend `/ai/chat`
+- assistant chat messages render through a shared frontend markdown pipeline using `markdown-it` + `DOMPurify` + `highlight.js`
+- user-authored chat messages still render as plain text rather than markdown
 - runtime controls include baseline persona plus `warmth` and `convergenceMode`
 - when dashboard context is not hydrated, chat pulls a snapshot through `dashboardContextService`
 
