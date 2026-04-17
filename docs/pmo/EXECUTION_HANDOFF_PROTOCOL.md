@@ -1,6 +1,6 @@
 # Execution Handoff Protocol
 
-> Repository-native handoff protocol for Codex PMO and the current execution worker
+> Repository-native handoff protocol for Codex PMO and the current execution worker.
 
 ---
 
@@ -13,6 +13,11 @@ Use repo files as the default handoff surface between:
 - Human as architecture owner
 
 This protocol reduces repeated copy-paste and keeps sprint state visible inside the repository.
+
+For full PMO lifecycle sequencing, use:
+
+- [PMO_OPERATING_MANUAL.md](/C:/Users/allie/Desktop/personal_os_lite/docs/pmo/PMO_OPERATING_MANUAL.md)
+- [sprint-lifecycle-workflow.md](/C:/Users/allie/Desktop/personal_os_lite/docs/pmo/workflows/sprint-lifecycle-workflow.md)
 
 ---
 
@@ -28,8 +33,13 @@ Reading this protocol does not change the execution worker into PMO.
 
 ## Canonical Files
 
+- Discussion batches: `docs/pmo/state/discussion_batches/index.md`
+- Idea backlog: `docs/pmo/state/idea_backlog.md`
+- Sprint candidates: `docs/pmo/state/sprint_candidates.md`
 - Current sprint state: `docs/pmo/state/current_sprint.md`
+- Decision log: `docs/pmo/state/decision_log.md`
 - Execution task: `docs/pmo/outbox/execution_task.md`
+- Execution task archive: `docs/pmo/outbox/archive/`
 - Execution report: `docs/pmo/inbox/execution_report.md`
 
 Default rule:
@@ -37,16 +47,21 @@ Default rule:
 - Codex writes to `state/` and `outbox/`
 - The execution worker writes to `inbox/`
 - The execution worker should begin execution from `docs/pmo/outbox/execution_task.md` by default when a PMO handoff is active
+- `docs/pmo/state/current_sprint.md` is the lightweight PMO state card for the active sprint
+- `docs/pmo/outbox/execution_task.md` is the canonical execution contract for the worker
+- `docs/pmo/outbox/archive/` stores prior outbox snapshots when an active sprint needs a replacement follow-up task before closeout
+- when no sprint is actively handing work to the execution worker, `docs/pmo/outbox/execution_task.md` should remain present as a lightweight idle placeholder
 
 ---
 
-## Standard Workflow
+## Handoff Sequence
 
-1. Codex updates `docs/pmo/state/current_sprint.md`
-2. Codex writes the current execution slice into `docs/pmo/outbox/execution_task.md`
-3. Human tells the current execution worker to execute from the outbox file
-4. The execution worker reads the outbox file as the default execution source, performs the approved work, and writes the result into `docs/pmo/inbox/execution_report.md`
-5. Codex reads the inbox report and generates PMO closeout, next sprint proposal, and commit message
+1. Human selects one candidate sprint to start.
+2. Codex updates `docs/pmo/state/current_sprint.md`.
+3. Codex writes the current execution slice into `docs/pmo/outbox/execution_task.md`.
+4. Human tells the current execution worker to execute from the outbox file.
+5. The execution worker reads the outbox file as the default execution source, performs the approved work, and writes the result into `docs/pmo/inbox/execution_report.md`.
+6. Codex reads the inbox report, determines whether commit is appropriate, and then generates PMO closeout, decision-log updates, and the next sprint proposal.
 
 ---
 
@@ -64,9 +79,20 @@ Default rule:
 
 ### Codex
 
+- keep `docs/pmo/state/discussion_batches/index.md` and active batch files current
+- keep batch themes lightweight and clustered rather than over-normalized
+- keep `idea_backlog.md` useful for ongoing discussion, not a dumping ground
+- perform the default PMO-level code audit before promoting work into `sprint_candidates.md`
+- keep `sprint_candidates.md` capped at 3 options
 - keep `current_sprint.md` current
+- remove a selected sprint from `sprint_candidates.md` when it becomes active
+- update `decision_log.md` when planning decisions become durable
+- keep `current_sprint.md` lightweight rather than duplicating the full handoff contract
+- archive the previous outbox contract before replacing it with a follow-up task during the same sprint
 - overwrite `execution_task.md` with the latest active execution slice instead of stacking old tasks
+- do not delete `execution_task.md`; when no active handoff exists, replace it with an idle placeholder state
 - read `execution_report.md` before drafting PMO closeout
+- treat commit as a distinct step from execution and from PMO closeout; do not assume sprint closure automatically means a commit already exists
 
 ### Execution Worker
 
@@ -101,6 +127,7 @@ If the workflow changes, update:
 
 - this protocol
 - `PMO_OPERATING_MANUAL.md`
+- relevant files under `docs/pmo/workflows/`
 - any affected skill instructions
 
 Do not turn this file into a large operating manual.

@@ -21,6 +21,20 @@ This repo uses a three-role AI development model:
 - `docs/ai-ops/**` stores the AI development system itself
 - `.codex/skills/**` stores runnable skill behavior
 
+Within `docs/pmo/state/**`, the current model is:
+
+- `discussion_batches/` for clustered planning conversations, focus tracking, and theme-level possible slices before promotion
+- `idea_backlog.md` for open multi-round planning
+- `sprint_candidates.md` for up to 3 execution-ready sprint options
+- `current_sprint.md` for the one sprint explicitly selected to start
+- `decision_log.md` for durable planning decisions
+
+Within `docs/pmo/outbox/**`, the current model is:
+
+- `execution_task.md` as the canonical current outbox file
+- `archive/` for preserved outbox snapshots when an active sprint shifts from implementation into follow-up validation, report repair, or closeout repair
+- `execution_task.md` remains present even when no sprint is active; in that case it should hold an idle placeholder rather than disappearing
+
 ## Public Private Rule
 
 Use `public-private-development-model.md` when deciding what should remain in the public repo versus what must be documented only in the private core repo.

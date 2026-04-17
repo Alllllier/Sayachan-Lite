@@ -28,6 +28,7 @@ Update this directory when one of these changes:
 
 - agent role split
 - repo-native handoff shape
+- PMO state model
 - documentation ownership boundaries
 - model-routing rules
 - skill growth rules

@@ -42,6 +42,24 @@ Any work that changes one of these should be reviewed as architecture-sensitive:
 - what runtime context is assembled in public vs private code
 - provider or prompt responsibilities moving back into the public repo
 
+## Discussion And Documentation Rule
+
+Discussion does not need to start with a hard public/private split.
+
+Allowed planning pattern:
+
+- early discovery and theme clustering may happen in the public repo PMO flow
+- once a topic is identified as `private-core-owned`, the detailed architecture write-up should move to the private repo
+- the public repo should keep only the minimum coordination record needed for safe boundary management
+
+When a topic is confirmed as private-core-owned:
+
+- detailed design, internal rationale, and implementation-facing architecture notes belong in the private repo documentation set
+- the public repo may keep a short summary, boundary implication, and reference to the private-core-owned topic
+- public PMO files may keep the discussion trail, but should mark the topic as `private-core-owned`
+
+This rule is intended to preserve planning flexibility without letting private-core architecture details drift into the public repo.
+
 ## What This Is Not
 
 This boundary should be understood as an architecture rule, not as a Git submodule rule.
