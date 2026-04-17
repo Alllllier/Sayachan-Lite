@@ -1,98 +1,20 @@
 # Execution Task Outbox
 
-- Task ID: `note-markdown-foundation-v1`
-- Sprint: `Note Markdown Foundation v1`
-- Status: `ready`
-- Prepared by: `Codex`
-- Execution owner: `Claude VS Code`
-- Architecture owner: `Human`
-- Last updated: `2026-04-16`
+- Status: `idle`
+- Last updated: `2026-04-17`
+- Active sprint handoff: `none`
 
-## Sprint Goal
+## Current State
 
-Deliver Note Markdown Foundation v1 for the existing note module: markdown editing in edit state and markdown rendering in display state, while preserving current architecture boundaries and the existing note workflow.
+There is currently no active execution handoff in this file.
 
-## Architecture Context
+The previous outbox for the closed sprint `Chat Markdown Render v1` has been archived.
 
-Sayachan Lite is a frontend-backend split product with a public runtime centered on Notes, Projects, Tasks, Dashboard, and Chat.
-The current note module stores `note.content` as a plain string, uses plain textarea editing, and displays note content as plain text.
-For this sprint, markdown must remain a frontend capability layered onto the existing `note.content` field, not a new backend content system.
-This sprint is a note-surface enhancement, not an AI-core, chat-runtime, or workflow-model sprint.
+Relevant archive:
 
-## Safe Touch Zones
+- `docs/pmo/outbox/archive/chat-markdown-render-v1.md`
+- `docs/pmo/outbox/archive/chat-markdown-render-v1-validation-followup.md`
 
-- `frontend/src/components/NotesPanel.vue`
-- `frontend/src/views/NotesPage.vue` if minor wiring is needed
-- `frontend/package.json` for markdown/editor/render dependencies
-- note-related styles in `frontend/src/style.css` or local scoped styles
-- `backend/src/models/Note.js` only if a minimal compatibility-safe adjustment is strictly necessary
-- note-related handling in `backend/src/routes/index.js` only if required to preserve existing CRUD behavior
+## Next Activation Rule
 
-## Do Not Touch Unless Escalated
-
-- `backend/private_core/sayachan-ai-core`
-- `backend/src/ai/bridge.js`
-- chat runtime surfaces such as `frontend/src/components/ChatEntry.vue`, `frontend/src/services/chatService.js`, `frontend/src/stores/runtimeControls.js`
-- dashboard AI behavior and orchestration paths
-- project/task focus coupling and archive cascade rules in `backend/src/routes/index.js`
-
-## Explicit Non-Goals
-
-- no image upload
-- no split preview
-- no backend markdown rendering service
-- no database model redesign
-- no rich-text editor platform
-- no broad refactor of the note system
-- no project/task/domain workflow changes
-- no AI-core or chat-runtime changes
-
-## Execution Task
-
-Implement Note Markdown Foundation v1 inside the approved safe zones.
-
-Required outcome:
-
-- use CodeMirror as the note editor in edit state
-- render stored markdown in display state
-- support fenced code block rendering with syntax highlighting
-- preserve the existing storage contract: raw markdown remains in `note.content`
-- keep current note CRUD behavior intact
-- preserve compatibility for existing plain-text notes
-
-Execution expectations:
-
-- prefer minimal, local changes over new abstractions
-- choose lean dependencies suitable for Vue 3 + Vite
-- integrate markdown editing into the current note editing flow rather than building a parallel editor system
-- render markdown safely; do not leave raw HTML/XSS behavior ambiguous
-- preserve existing note create, update, archive, restore, pin, and delete flows
-
-## Validation Requirements
-
-- required: build or logic validation appropriate to the changed code
-- required: state clearly which validation layers were run
-- browser validation: required only when the sprint changes UI surface behavior, page states, rendering, or interaction quality
-- UI review: required only when the sprint changes visual hierarchy, density, or presentation quality
-
-## Completion Report Contract
-
-The execution worker must write the result into `docs/pmo/inbox/execution_report.md` using these sections:
-
-1. delivered
-2. validation performed
-3. browser validation performed or not performed
-4. ui review performed or not performed
-5. unverified areas
-6. boundary compliance
-7. unresolved
-8. architecture decisions needed
-9. recommended next sprint slice
-
-## Escalate To Architecture Owner If
-
-- implementation requires changing the note storage model beyond raw markdown in `note.content`
-- safe markdown rendering requires a broader rendering-policy decision
-- work starts to affect chat runtime, dashboard AI, or private AI core boundaries
-- split preview, uploads, attachments, or broader document capabilities become necessary
-- the task stops being a bounded note enhancement and starts becoming an editor-platform decision
+When the human selects the next sprint to start, Codex should overwrite this file with the new active execution contract.

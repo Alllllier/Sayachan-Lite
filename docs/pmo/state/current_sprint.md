@@ -1,43 +1,36 @@
 # Current Sprint State
 
-- Sprint: `Note Markdown Foundation v1`
+- Sprint: `Chat Markdown Render v1`
 - PMO owner: `Codex`
 - Execution owner: `Claude VS Code`
 - Architecture owner: `Human`
-- Status: `completed`
-- Last updated: `2026-04-16`
+- Status: `closed`
+- Last updated: `2026-04-17`
+- Source candidate: `Chat Markdown Render v1`
+- Outbox file: `docs/pmo/outbox/execution_task.md` (`idle`; prior sprint outboxes archived)
+- Inbox file: `docs/pmo/inbox/execution_report.md`
 
 ## Sprint Goal
 
-Deliver Markdown Foundation v1 for the existing Notes module while keeping the current architecture boundaries and note workflow unchanged.
+Render assistant chat output as a safe basic markdown reading surface while preserving existing chat flow, user-message plain-text display, and current backend contracts.
 
-## Current Execution Focus
+## PMO Summary
 
-- complete a minimal markdown editing and rendering loop inside the Notes surface
-- keep `note.content` stored as raw markdown text
-- avoid expanding into a rich-text platform or document system
-
-## Key Boundaries
-
-- this is a public note-surface enhancement, not an AI core sprint
-- do not touch private core, AI bridge, chat runtime, or dashboard AI boundaries
-- do not change project/task/focus domain rules
-- do not change the backend storage contract for `note.content`
-
-## Risks Or Debt To Watch
-
-- markdown rendering safety must stay explicit to avoid raw HTML/XSS ambiguity
-- dependency additions should stay lightweight and local to the Notes surface
-- existing plain-text notes must remain readable
-- the Notes route chunk grew and may need lazy-loading in a later sprint
+- Slice type: `bounded frontend rendering improvement`
+- Closeout decision: `ready to close`
+- Commit state: `not yet committed`
+- Outcome: `assistant chat markdown render shipped and validated without backend or store contract changes`
+- Main PMO concern at execution was kept intact: shared markdown extraction stayed narrow and did not expand into a broader rendering-platform redesign
+- Next preferred candidate remains `Notes Editor Polish v1`
 
 ## Current File Handoff Status
 
-- outbox: `completed`
-- inbox: `final`
+- outbox: `archived`
+- inbox: `reviewed and accepted for closeout`
+- git commit: `pending human decision`
 
 ## Next PMO Action
 
-- read `docs/pmo/inbox/execution_report.md`
-- generate PMO closeout and the next sprint proposal
-- continue retiring legacy naming inside the repo-native handoff flow
+- treat `Chat Markdown Render v1` as closed unless a post-closeout defect appears
+- use `Notes Editor Polish v1` in `docs/pmo/state/sprint_candidates.md` as the primary next selectable sprint
+- keep `Owner-Led Auth And Invite-Gated Tester Accounts` in `docs/pmo/state/idea_backlog.md` as an exploration-stage item, not the next execution slice
