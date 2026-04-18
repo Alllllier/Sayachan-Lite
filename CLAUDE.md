@@ -17,14 +17,14 @@ This file is not the canonical architecture source. Canonical sources live under
 
 ## Immediate Rule
 
-If the human explicitly says to execute the current sprint or current outbox task:
+If the human explicitly says to execute the current sprint or the active PMO task:
 
-1. read `docs/pmo/outbox/execution_task.md` first
+1. read `docs/pmo/state/execution_task.md` first
 2. treat it as the execution contract
 3. optionally read `docs/pmo/state/current_sprint.md` for lightweight sprint state
-4. write the result into `docs/pmo/inbox/execution_report.md`
+4. write the result into `docs/pmo/state/execution_report.md`
 
-Do not start with broad repo exploration when the outbox file already defines the active task.
+Do not start with broad repo exploration when the active execution file already defines the task.
 
 ---
 
@@ -56,44 +56,45 @@ Current stack at a glance:
 
 ### When Executing The Current Sprint
 
-1. `docs/pmo/outbox/execution_task.md`
+1. `docs/pmo/state/execution_task.md`
 2. `docs/pmo/state/current_sprint.md`
-3. `docs/architecture/system-baseline.md`
+3. `docs/pmo/baselines/system-baseline.md`
 4. only the additional docs needed for the assigned slice
 
 ### When Planning Is Still Open
 
-1. `docs/pmo/state/discussion_batches/index.md`
-2. the active batch file under `docs/pmo/state/discussion_batches/`
+1. `docs/pmo/state/discussion_index.md`
+2. the active batch file under `docs/pmo/state/discussions/`
 3. `docs/pmo/state/idea_backlog.md` or `docs/pmo/state/sprint_candidates.md` if relevant
-4. `docs/architecture/system-baseline.md`
+4. `docs/pmo/baselines/system-baseline.md`
 
 ### Core Canonical References
 
-- architecture baseline: `docs/architecture/system-baseline.md`
-- runtime workflow: `docs/architecture/runtime-workflow.md`
-- backend contract baseline: `docs/architecture/backend-api.md`
-- shipped scope and debt: `docs/architecture/roadmap.md`
+- system baseline: `docs/pmo/baselines/system-baseline.md`
+- runtime baseline: `docs/pmo/baselines/runtime-baseline.md`
+- backend contract baseline: `docs/pmo/baselines/backend-api.md`
+- private-core boundary baseline: `docs/pmo/baselines/private-core-boundary.md`
+- shipped scope and debt: `docs/pmo/baselines/roadmap.md`
 - development rules: `docs/guides/development-constraints.md`
-- documentation sync: `docs/guides/documentation-sync.md`
+- documentation sync: `docs/pmo/policies/documentation-sync-guide.md`
 - PMO operating model: `docs/pmo/PMO_OPERATING_MANUAL.md`
-- PMO handoff protocol: `docs/pmo/EXECUTION_HANDOFF_PROTOCOL.md`
+- PMO handoff protocol: `docs/pmo/protocols/execution-handoff-protocol.md`
 
 ---
 
 ## PMO Execution Rules
 
 - `docs/pmo/state/current_sprint.md` is the lightweight PMO state card
-- `docs/pmo/outbox/execution_task.md` is the canonical worker handoff
-- `docs/pmo/inbox/execution_report.md` is the required completion report destination
-- do not treat `current_sprint.md` as a substitute for the outbox execution contract
-- when the outbox is active, execute from it rather than reconstructing the task from scattered context
+- `docs/pmo/state/execution_task.md` is the canonical worker handoff
+- `docs/pmo/state/execution_report.md` is the required completion report destination
+- do not treat `current_sprint.md` as a substitute for the active execution contract
+- when `execution_task.md` is active, execute from it rather than reconstructing the task from scattered context
 
 Repo-native PMO ownership model:
 
-- Codex writes PMO state and outbox
+- Codex writes PMO state and the active execution contract
 - Claude executes the bounded slice
-- Claude writes the inbox report
+- Claude writes the active execution report
 - Human resolves architecture decisions when escalation is required
 
 ---
@@ -148,25 +149,31 @@ Avoid:
 ## Documentation Rules
 
 - treat `docs/**` as canonical
-- treat legacy `.docs/**` as non-canonical historical material
-- do not prefer `.docs/**` over `docs/**`
-- when changing architecture-sensitive behavior, review `docs/guides/documentation-sync.md`
-
-Typical mapping:
-
-- models or routes -> `docs/architecture/backend-api.md`
-- workflow behavior or context flow -> `docs/architecture/runtime-workflow.md`
-- AI boundary or execution-risk zones -> `docs/architecture/system-baseline.md`
-- PMO workflow or handoff changes -> `docs/pmo/**` and `docs/ai-ops/**`
+- treat `docs/_legacy_pmo/**` as legacy historical material unless explicitly needed for reference
+- do not prefer legacy PMO paths over the active `docs/pmo/**` surface
+- when changing truth, PMO runtime, or execution behavior, follow `docs/pmo/policies/documentation-sync-guide.md` instead of inventing an execution-local sync rule
 
 ---
 
 ## Practical Reminders
 
 - when asked to modify UI, check `frontend/src/style.css` first
-- when asked to modify API behavior, review `docs/architecture/backend-api.md`
-- when asked to execute the current sprint, go straight to `docs/pmo/outbox/execution_task.md`
-- when asked to report completion, write to `docs/pmo/inbox/execution_report.md`
+- when asked to modify API behavior, review `docs/pmo/baselines/backend-api.md`
+- when asked to execute the current sprint, go straight to `docs/pmo/state/execution_task.md`
+- when asked to report completion, write to `docs/pmo/state/execution_report.md`
+
+## End-Of-Work Hygiene
+
+Before reporting sprint completion, the execution worker should check for leftover local dev servers that were started for the current sprint.
+
+Default ports to check in this repo:
+
+- `5173` for the frontend dev server
+- `3001` for the backend dev server
+
+If one of these ports is still occupied by a process that was started for the current execution session, shut it down before writing the final completion report.
+
+Do not kill unrelated long-running services just because they happen to use these ports. If ownership is unclear, report the ambiguity instead of forcefully terminating the process.
 
 ---
 
@@ -190,4 +197,4 @@ Typical mapping:
 
 ---
 
-*Updated: 2026-04-17*
+*Updated: 2026-04-18*

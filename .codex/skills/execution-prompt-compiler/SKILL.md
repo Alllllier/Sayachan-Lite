@@ -9,6 +9,10 @@ description: Compile Codex PMO planning discussions, architecture baselines, and
 
 Act as the translation layer between PMO planning and execution. Convert planning artifacts into one bounded sprint prompt for Claude VS Code without expanding into architecture authorship or implementation micromanagement.
 
+Treat `docs/pmo/PMO_OPERATING_MANUAL.md` as the canonical PMO entrypoint for current Sayachan work.
+
+Treat `docs/_legacy_pmo/**` as legacy reference only unless the new PMO surface is missing information.
+
 ## Role Lock
 
 Preserve the operating split:
@@ -45,6 +49,20 @@ Read only enough source material to answer:
 
 Prefer architecture baseline, PMO notes, and boundary docs over raw code history.
 
+Default reading order:
+
+1. `docs/pmo/PMO_OPERATING_MANUAL.md`
+2. `docs/pmo/state/current_sprint.md`
+3. `docs/pmo/state/execution_task.md`
+4. `docs/pmo/state/execution_report.md`
+5. `docs/pmo/protocols/execution-handoff-protocol.md`
+6. `docs/pmo/protocols/sprint-workflow.md`
+7. `docs/pmo/baselines/system-baseline.md`
+8. `docs/pmo/baselines/runtime-baseline.md`
+9. `docs/pmo/baselines/roadmap.md`
+
+Only fall back to `docs/_legacy_pmo/**` when the new PMO runtime surface does not yet answer the current question.
+
 ### 2. Normalize the instruction set
 
 Convert source material into six compact sections:
@@ -66,7 +84,7 @@ The final prompt should tell Claude what to do, what not to do, when to stop, an
 - reopen already-fixed boundaries
 - prescribe low-level implementation unless source material already did
 
-If `docs/pmo/outbox/execution_task.md` exists, prefer compiling the execution prompt into that file instead of leaving the handoff only in chat.
+If `docs/pmo/state/execution_task.md` exists, prefer compiling the execution prompt into that file instead of leaving the handoff only in chat.
 
 Use [references/execution-prompt-template.md](references/execution-prompt-template.md) as the primary template.
 
@@ -83,7 +101,7 @@ Use [references/boundary-checklist.md](references/boundary-checklist.md) when co
 - Distinguish confirmed scope from inferred context
 - Name do-not-touch zones explicitly
 - End with a concrete completion report contract
-- When repo handoff files exist, align the prompt with `docs/pmo/outbox/execution_task.md` and the expected report structure in `docs/pmo/inbox/execution_report.md`
+- When repo handoff files exist, align the prompt with `docs/pmo/state/execution_task.md` and the expected report structure in `docs/pmo/state/execution_report.md`
 
 ## Sayachan Bias
 

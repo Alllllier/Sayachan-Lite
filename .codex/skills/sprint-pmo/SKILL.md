@@ -9,6 +9,10 @@ description: Operate as the PMO command center for long-running architecture pro
 
 Act as the delivery control layer, not the final architecture authority and not the implementation worker. Keep the root response brief, surface only what matters for the current sprint boundary, and push detail into the references only when needed.
 
+Treat `docs/pmo/PMO_OPERATING_MANUAL.md` as the canonical PMO entrypoint.
+
+Treat `docs/_legacy_pmo/**` as legacy reference only unless the new PMO surface is missing information.
+
 ## Operating Model
 
 Treat roles as fixed unless the user says otherwise:
@@ -25,6 +29,15 @@ Default to three outputs in this order:
 
 Prefer repository-native handoff when the repo provides PMO outbox/inbox files. Write PMO state and worker-facing handoff into repo files before falling back to chat copy-paste.
 
+Default PMO runtime set:
+
+- `docs/pmo/state/current_sprint.md`
+- `docs/pmo/state/sprint_candidates.md`
+- `docs/pmo/state/idea_backlog.md`
+- `docs/pmo/state/decision_log.md`
+- `docs/pmo/state/execution_task.md`
+- `docs/pmo/state/execution_report.md`
+
 ## Workflow
 
 ### 1. Build context lightly
@@ -37,6 +50,21 @@ Read only the artifacts needed to answer these questions:
 - What should Claude execute next?
 
 Avoid replaying the full project history. Compress aggressively.
+
+Default reading order:
+
+1. `docs/pmo/PMO_OPERATING_MANUAL.md`
+2. `docs/pmo/state/current_sprint.md`
+3. `docs/pmo/state/sprint_candidates.md`
+4. `docs/pmo/state/idea_backlog.md`
+5. `docs/pmo/state/decision_log.md`
+6. `docs/pmo/protocols/sprint-workflow.md`
+7. `docs/pmo/protocols/execution-handoff-protocol.md`
+8. `docs/pmo/baselines/system-baseline.md`
+9. `docs/pmo/baselines/runtime-baseline.md`
+10. `docs/pmo/baselines/roadmap.md`
+
+Only fall back to `docs/_legacy_pmo/**` when the new PMO runtime surface does not yet answer the current question.
 
 ### 2. Close the sprint
 
@@ -63,7 +91,7 @@ Translate the current state into a handoff that another agent can execute withou
 
 Keep the handoff operational and bounded. Do not duplicate the full sprint summary inside it.
 
-If `docs/pmo/outbox/execution_task.md` exists, prefer updating that file as the canonical worker handoff. If `docs/pmo/state/current_sprint.md` exists, update sprint state there as well.
+If `docs/pmo/state/execution_task.md` exists, prefer updating that file as the canonical worker handoff. If `docs/pmo/state/current_sprint.md` exists, update sprint state there as well.
 
 Use [references/pmo-handoff-template.md](references/pmo-handoff-template.md) for the full structure.
 
@@ -85,7 +113,7 @@ Track only the risks that can change sequencing, architecture safety, or deliver
 
 Use [references/risk-debt-checklist.md](references/risk-debt-checklist.md) when preparing status, handoff, or next-sprint planning.
 
-If `docs/pmo/inbox/execution_report.md` exists, read it before writing PMO closeout or next-sprint planning.
+If `docs/pmo/state/execution_report.md` exists, read it before writing PMO closeout or next-sprint planning.
 
 ## Communication Rules
 

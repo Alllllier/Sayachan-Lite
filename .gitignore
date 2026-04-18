@@ -24,6 +24,8 @@ frontend/dist
 .vscode/*
 !.vscode/extensions.json
 .idea
+.claude/settings.local.json
+.claude/*.lock
 .DS_Store
 *.suo
 *.ntvs*
