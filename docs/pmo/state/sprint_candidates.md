@@ -1,13 +1,13 @@
 # Sprint Candidates
 
-> Up to 3 execution-ready sprint options that the human can choose from before starting implementation.
+> Up to 3 bounded sprint options that are ready for human comparison before activation.
 
-## Usage Rule
+## Working Rules
 
-- keep at most 3 candidates in this file
-- each candidate should already be bounded enough to compile into a Claude execution prompt
-- when one candidate is selected to start, move it into `current_sprint.md`
-- if a new candidate is stronger than an existing one, replace or merge instead of stacking endlessly
+- keep at most 3 active candidates in this file
+- a candidate may be drafted by Codex, but it does not become the active sprint without explicit human selection
+- replace or merge weaker candidates instead of stacking endlessly
+- if a candidate is selected, move it into `current_sprint.md` and write the corresponding `execution_task.md`
 
 ## Candidate Template
 
@@ -27,7 +27,7 @@
 
 ### `Notes Editor Polish v1`
 
-- Status: `candidate`
+- Status: `completed`
 - Why now: `Notes already support markdown editing, but the current editor surface still feels too much like an embedded technical tool. This conflicts with the product's broader non-technical note-taking audience and leaves the markdown note experience under-polished.`
 - Expected outcome: `The CodeMirror-backed note editor feels like a calm writing card rather than a code editor, while existing note editing behavior and markdown capability remain intact.`
 - In scope:
@@ -43,7 +43,8 @@
   - note storage-model changes
   - creation-flow or notes-list restructuring
   - broader page-layout work that belongs to other themes
-- Dependencies: `Bounded frontend-only changes in NotesPanel.vue and adjacent styling, plus browser/UI review for final judgment.`
+- Dependencies: `Bounded frontend changes in frontend/src/components/NotesPanel.vue and adjacent styling, plus browser validation and UI review for final judgment.`
 - Risk level: `medium`
 - Readiness: `ready`
-- Start condition: `Human selects this candidate to start; Codex then writes current_sprint.md and execution_task.md for the bounded polish slice with browser validation and UI review expectations.`
+- Start condition: `Satisfied on 2026-04-18 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the bounded polish slice with browser validation and UI review expectations.`
+- Closeout: `Completed on 2026-04-18. Build validation and Notes UI review path passed. Residual unverified areas remain around long-form comfort, mobile viewport behavior, and deeper markdown interaction regression.`

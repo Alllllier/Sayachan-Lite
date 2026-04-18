@@ -1,36 +1,36 @@
-# Current Sprint State
+# Current Sprint
 
-- Sprint: `Chat Markdown Render v1`
+- Sprint: `idle`
+- Status: `idle`
 - PMO owner: `Codex`
-- Execution owner: `Claude VS Code`
 - Architecture owner: `Human`
-- Status: `closed`
-- Last updated: `2026-04-17`
-- Source candidate: `Chat Markdown Render v1`
-- Outbox file: `docs/pmo/outbox/execution_task.md` (`idle`; prior sprint outboxes archived)
-- Inbox file: `docs/pmo/inbox/execution_report.md`
+- Execution owner: `execution worker`
+- Last updated: `2026-04-18`
 
-## Sprint Goal
+## Current State
 
-Render assistant chat output as a safe basic markdown reading surface while preserving existing chat flow, user-message plain-text display, and current backend contracts.
+No sprint is currently active.
 
-## PMO Summary
+The most recently closed sprint was `Notes Editor Polish v1`.
 
-- Slice type: `bounded frontend rendering improvement`
-- Closeout decision: `ready to close`
-- Commit state: `not yet committed`
-- Outcome: `assistant chat markdown render shipped and validated without backend or store contract changes`
-- Main PMO concern at execution was kept intact: shared markdown extraction stayed narrow and did not expand into a broader rendering-platform redesign
-- Next preferred candidate remains `Notes Editor Polish v1`
+It delivered a calmer writing-card presentation for the CodeMirror-backed Notes editor and passed build validation plus the current Notes UI review path.
 
-## Current File Handoff Status
+The sprint is considered completed with bounded residual unverified areas:
 
-- outbox: `archived`
-- inbox: `reviewed and accepted for closeout`
-- git commit: `pending human decision`
+- long-form writing comfort
+- mobile viewport editor experience
+- deeper markdown interaction regression beyond the exercised review path
+
+No architecture escalation was raised during implementation.
+
+## Last Closed Sprint
+
+- Sprint: `Notes Editor Polish v1`
+- Closeout date: `2026-04-18`
+- Delivery status: `completed and validated with bounded residual unverified areas`
+- Commit state: `not recorded in PMO yet`
 
 ## Next PMO Action
 
-- treat `Chat Markdown Render v1` as closed unless a post-closeout defect appears
-- use `Notes Editor Polish v1` in `docs/pmo/state/sprint_candidates.md` as the primary next selectable sprint
-- keep `Owner-Led Auth And Invite-Gated Tester Accounts` in `docs/pmo/state/idea_backlog.md` as an exploration-stage item, not the next execution slice
+- keep `execution_task.md` and `execution_report.md` in explicit idle state until a new sprint is selected
+- continue discussion / backlog shaping for the next bounded slice before proposing new sprint activation

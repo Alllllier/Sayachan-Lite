@@ -66,25 +66,50 @@ function createCodeMirror(parent, initialValue, onChange) {
       markdown(),
       EditorView.theme({
         '&': {
-          fontSize: 'var(--font-size-base)',
-          border: '1px solid var(--border-default)',
-          borderRadius: 'var(--radius-sm)',
-          marginBottom: 'var(--space-md)',
-          background: 'var(--surface-card)'
+          fontSize: 'var(--font-size-lg)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-md)',
+          background: 'var(--surface-card)',
+          fontFamily: "'Georgia', 'Cambria', 'Times New Roman', serif",
+          lineHeight: '1.7'
         },
         '&.cm-focused': {
           outline: 'none',
           borderColor: 'var(--border-focus)',
-          boxShadow: 'var(--shadow-focus)'
+          boxShadow: '0 0 0 3px rgba(66, 184, 131, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04)'
         },
         '.cm-content': {
-          minHeight: '80px',
-          padding: '10px'
+          minHeight: '120px',
+          padding: 'var(--space-lg) var(--space-xl)'
         },
         '.cm-gutters': {
-          borderRadius: 'var(--radius-sm) 0 0 var(--radius-sm)',
-          background: 'var(--surface-panel)',
-          borderRight: '1px solid var(--border-default)'
+          display: 'none'
+        },
+        '.cm-line': {
+          padding: '2px 0'
+        },
+        '.cm-activeLine': {
+          backgroundColor: 'transparent'
+        },
+        '.cm-activeLineGutter': {
+          backgroundColor: 'transparent'
+        },
+        '.cm-cursor': {
+          borderLeftWidth: '2px',
+          borderLeftColor: 'var(--text-primary)'
+        },
+        '.cm-placeholder': {
+          color: 'var(--text-muted)'
+        },
+        '.cm-scroller': {
+          fontFamily: 'inherit',
+          lineHeight: 'inherit'
+        },
+        '.cm-selectionBackground': {
+          background: 'rgba(66, 184, 131, 0.12)'
+        },
+        '.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+          background: 'rgba(66, 184, 131, 0.18)'
         }
       }),
       EditorView.updateListener.of((update) => {
@@ -468,6 +493,11 @@ async function saveNoteTaskDraft(noteId, draft) {
   padding: 24px;
   background: #f9f9f9;
   margin-bottom: 24px;
+}
+
+/* Editor container spacing */
+.codemirror-editor {
+  margin-bottom: var(--space-md);
 }
 
 .form-section h2, .notes-section h2 {
