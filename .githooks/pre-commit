@@ -2,15 +2,15 @@
 #
 # Repo-owned pre-commit hook for Sayachan Lite.
 # Blocks commits when architecture-sensitive code changes are staged
-# without a matching update under docs/architecture/.
+# without a matching review/update under docs/pmo/baselines/.
 
 STAGED_FILES=$(git diff --cached --name-only)
 
 ARCH_CODE_PATTERN="backend/src/models/.*\.js|backend/src/routes/.*\.js|backend/src/ai/bridge\.js|frontend/src/stores/.*\.js|frontend/src/services/(aiService|chatService|dashboardContextService|taskService)\.js|frontend/src/router/.*\.js|frontend/src/components/ChatEntry\.vue"
-ARCH_DOC_PATTERN="docs/architecture/.*\.md"
+ARCH_DOC_PATTERN="docs/pmo/baselines/.*\.md"
 MANIFEST_PATTERN="backend/package\.json|frontend/package\.json"
 PMO_DOC_PATTERN="docs/pmo/.*\.md|docs/ai-ops/.*\.md"
-PMO_SYNC_PATTERN="docs/guides/documentation-sync\.md"
+PMO_SYNC_PATTERN="docs/pmo/policies/documentation-sync-(policy|guide)\.md"
 
 ARCH_CODE_CHANGED=false
 ARCH_DOC_CHANGED=false
@@ -42,16 +42,17 @@ done
 
 if [ "$ARCH_CODE_CHANGED" = true ] && [ "$ARCH_DOC_CHANGED" = false ]; then
     echo ""
-    echo "WARNING: Architecture-sensitive code changed, but docs/architecture/ was not updated."
+    echo "WARNING: Architecture-sensitive code changed, but docs/pmo/baselines/ was not updated."
     echo ""
     echo "Changed files:"
     echo "$STAGED_FILES" | grep -E "$ARCH_CODE_PATTERN" | sed 's/^/  - /'
     echo ""
     echo "Please review whether one or more of these docs should change:"
-    echo "  - docs/architecture/system-baseline.md"
-    echo "  - docs/architecture/runtime-workflow.md"
-    echo "  - docs/architecture/backend-api.md"
-    echo "  - docs/architecture/roadmap.md"
+    echo "  - docs/pmo/baselines/system-baseline.md"
+    echo "  - docs/pmo/baselines/runtime-baseline.md"
+    echo "  - docs/pmo/baselines/backend-api.md"
+    echo "  - docs/pmo/baselines/private-core-boundary.md"
+    echo "  - docs/pmo/baselines/roadmap.md"
     echo ""
     echo "If the code change does not alter architecture truth, you can bypass with:"
     echo "  git commit --no-verify"
@@ -70,7 +71,7 @@ if [ "$MANIFEST_CHANGED" = true ]; then
     echo "  - routing/state/service contracts"
     echo ""
     echo "If not, commit may proceed normally."
-    echo "If yes, update docs/architecture/** before merging."
+    echo "If yes, update docs/pmo/baselines/** before merging."
     echo ""
 fi
 
@@ -78,10 +79,14 @@ if [ "$PMO_DOC_CHANGED" = true ] && [ "$PMO_SYNC_CHANGED" = false ]; then
     echo ""
     echo "NOTICE: PMO or AI operating docs changed."
     echo ""
-    echo "Please review whether docs/guides/documentation-sync.md should also change:"
+    echo "Please review whether PMO documentation-sync docs should also change:"
     echo "  - PMO workflow or state model changed"
     echo "  - repo-native handoff file set changed"
     echo "  - doc ownership or sync responsibility changed"
+    echo ""
+    echo "Relevant files:"
+    echo "  - docs/pmo/policies/documentation-sync-policy.md"
+    echo "  - docs/pmo/policies/documentation-sync-guide.md"
     echo ""
     echo "This is a reminder only. Commit may proceed if sync rules are unchanged."
     echo ""
