@@ -1,14 +1,16 @@
-# Development Constraints
+# Engineering Conventions
 
-This guide captures the project rules that still appear valid after repo audit.
+This guide collects repository-local engineering conventions that are useful for execution work but do not belong to PMO runtime rules.
 
-## Core Constraints
+Use this document for:
 
-- keep the repo JavaScript-first
-- avoid broad architecture refactors without explicit approval
-- preserve backward compatibility when touching persisted task data
-- every AI feature should continue to have a fallback path
-- keep logs prefixed by module or feature when adding new operational logging
+- code style and naming expectations
+- lightweight API change recording expectations
+- commit message guidance
+- frontend primitive and token reuse expectations
+- domain and data conventions that are implementation-facing
+
+Do not treat this file as a PMO policy document.
 
 ## Code Style
 
@@ -99,7 +101,7 @@ Examples:
 - `fix(task): clear project focus on archive`
 - `docs(pmo): refresh architecture baseline`
 
-## UI Constraints
+## Frontend Primitive Reuse
 
 Use shared tokens and baseline classes from `frontend/src/style.css` whenever they already cover the use case.
 
@@ -116,48 +118,9 @@ Avoid:
 - hardcoding colors that already exist as semantic variables
 - treating layout-only component CSS as a place to redefine shared primitives
 
-## Architecture-Sensitive Areas
-
-Treat these as escalation-heavy zones:
-
-- `backend/src/ai/bridge.js`
-- `backend/private_core/sayachan-ai-core/**`
-- focus/task workflow semantics
-- dashboard-to-chat context contracts
-- task archive cascade rules
-
 ## Domain And Data Conventions
 
 - new persisted task logic should use semantic provenance fields first
 - do not treat legacy task fields as the preferred write path
 - new model fields should have explicit defaults when practical
 - schema changes should be checked against backward compatibility and existing route behavior
-
-## AI Feature Rules
-
-- every AI feature should define a fallback behavior
-- prefer backend mediation for new AI features unless there is a strong reason not to
-- architecture-sensitive AI work must respect the public bridge and private core boundary
-- avoid introducing ambiguous rendering or behavior policy changes without documenting them
-
-## Feature Checklist
-
-Before considering a feature complete, check:
-
-- backend behavior is bounded and matches current architecture rules
-- frontend behavior follows existing patterns instead of creating parallel systems
-- validation depth matches the actual regression risk of the sprint
-- fallbacks exist for AI-dependent behavior
-- docs under `docs/**` were reviewed for sync impact
-- user-visible copy and error states are acceptable
-- no restricted boundary was crossed silently
-
-## Change Hygiene
-
-When changing:
-
-- backend models: review `docs/architecture/backend-api.md`
-- backend routes: review `docs/architecture/backend-api.md` and `docs/architecture/runtime-workflow.md`
-- dashboard/chat stores and services: review `docs/architecture/system-baseline.md`
-- style primitives: review `frontend/src/style.css` first
-- testing or UI review workflow: review `docs/guides/testing-and-ui-review.md`

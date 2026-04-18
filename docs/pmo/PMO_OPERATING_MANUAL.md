@@ -50,6 +50,12 @@ Use this layer for cross-cutting rules:
 
 - `policies/decision-capture-policy.md`
 - `policies/validation-floor-policy.md`
+- `policies/documentation-sync-policy.md`
+- `policies/documentation-sync-guide.md`
+- `policies/testing-and-ui-review-guide.md`
+- `policies/ai-fallback-policy.md`
+- `policies/feature-completion-checklist.md`
+- `policies/architecture-sensitive-areas.md`
 
 ### Baselines
 
@@ -128,6 +134,19 @@ Default behavior:
 - if no relevant legacy note affects the current action, continue normally
 - if a relevant note exists, mention it briefly and continue unless it changes scope, safety, or canonical ownership
 
+## Evolution Rule
+
+`PMO v2` may continue to grow new flows, but that growth should stay disciplined.
+
+- every new process, document, or check should first be placed into the five-layer model:
+  - `state`
+  - `protocols`
+  - `policies`
+  - `baselines`
+  - `history`
+- PMO flow should also keep getting lighter where possible
+- if a step no longer improves clarity, risk control, or delivery stability, it should be simplified or removed rather than preserved by habit
+
 ## Responsibility Split
 
 ### Human
@@ -171,6 +190,24 @@ The execution worker does not become PMO by reading this manual.
 - `current_sprint.md` stays lightweight
 - `execution_task.md` is the active execution contract
 - `execution_report.md` is the active execution return surface
+
+## Policy Touchpoints
+
+Use policies through protocol touchpoints rather than by trying to hold the entire policy set in memory.
+
+- during discussion and promotion:
+  - `policies/decision-capture-policy.md`
+- during candidate shaping, handoff, report reading, and closeout:
+  - `policies/validation-floor-policy.md`
+- when AI-dependent behavior changes:
+  - `policies/ai-fallback-policy.md`
+- when completion feels implementation-complete but still uncertain:
+  - `policies/feature-completion-checklist.md`
+- when a change touches sensitive system zones:
+  - `policies/architecture-sensitive-areas.md`
+- during closeout when truth, PMO runtime, or execution behavior may have changed:
+  - `policies/documentation-sync-policy.md`
+  - `policies/documentation-sync-guide.md`
 
 ## Legacy Note
 

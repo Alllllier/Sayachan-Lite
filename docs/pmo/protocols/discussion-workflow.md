@@ -28,12 +28,13 @@ Use this workflow when:
 3. When a theme still contains multiple plausible execution directions, preserve them under `Possible Slices`.
 4. Keep only one active focus theme at a time.
 5. Deepen discussion only on the active focus theme.
-6. When the result becomes stable, choose one exit path:
+6. When stable judgments or narrowed questions appear, write them back into the active batch instead of relying only on conversation memory.
+7. When the result becomes stable, choose one exit path:
    - retain in `idea_backlog.md`
    - promote into `sprint_candidates.md`
    - write the durable outcome into `decision_log.md`
    - park it for later
-7. If the topic is confirmed as `private-core-owned`, keep only the minimum boundary-safe coordination record in the public PMO and move detailed design work into the private repo documentation set.
+8. If the topic is confirmed as `private-core-owned`, keep only the minimum boundary-safe coordination record in the public PMO and move detailed design work into the private repo documentation set.
 
 ## Stability Standard
 
@@ -59,5 +60,15 @@ Promotion may happen from the theme level or from the possible-slice level, depe
 - keep discussion useful for recall, not exhaustive architecture prose
 - do not let multiple themes drift into simultaneous deep discussion
 - let themes cluster related issues without erasing execution-relevant slice boundaries
+- default to record-first shaping rather than early promotion pressure
+- do not treat the existence of a plausible slice as a reason to rush discussion into candidate state
+- unless the human explicitly asks to converge now, discussion may stay in theme- and slice-shaping mode while the direction is still becoming clear
+- when a stable judgment, sharper current focus, or clearer open question appears, write it back into the active batch during the discussion instead of waiting for a final summary pass
 - once a result is stable, move the long-lived output into formal PMO state instead of leaving discussion as the only source of truth
 - if a topic is `private-core-owned`, keep the public PMO record narrow and boundary-safe rather than letting private-core design detail accumulate in the public repo
+
+## Policy Touchpoints
+
+- when discussion may produce a durable planning conclusion, check `../policies/decision-capture-policy.md`
+- when discussion touches architecture-sensitive or boundary-heavy work, check `../policies/architecture-sensitive-areas.md`
+- when discussion shapes AI-dependent behavior, check `../policies/ai-fallback-policy.md`

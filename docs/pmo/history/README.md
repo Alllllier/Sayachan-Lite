@@ -13,3 +13,6 @@
 当前第一批 history 承接文件包括：
 
 - `legacy-transition-notes.md`
+- `pmo-v2-rebuild-lessons.md`
+- `ai-core-migration-record.md`
+- `pmo-v2-transition-audit-summary.md`

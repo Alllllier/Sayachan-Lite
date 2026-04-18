@@ -11,8 +11,11 @@ Files here should answer:
 Current policy set:
 
 - `POLICY_MODEL.md`
+- `ai-fallback-policy.md`
+- `architecture-sensitive-areas.md`
 - `decision-capture-policy.md`
 - `documentation-sync-policy.md`
 - `documentation-sync-guide.md`
+- `feature-completion-checklist.md`
 - `validation-floor-policy.md`
 - `testing-and-ui-review-guide.md`

@@ -9,7 +9,7 @@ Move deeper chat runtime logic out of the public repo while keeping a stable pub
 ## Current Result
 
 - public bridge: `backend/src/ai/bridge.js`
-- private submodule: `backend/private_core/sayachan-ai-core`
+- private core location: `backend/private_core/sayachan-ai-core`
 
 ## What The Public Repo Still Owns
 
@@ -26,7 +26,10 @@ Move deeper chat runtime logic out of the public repo while keeping a stable pub
 
 ## Important Boundary Note
 
-The old architecture docs described a richer `backend/src/ai/*` tree in the public repo. That is no longer the current truth. The public repo should now be documented as:
+Older architecture docs described a richer `backend/src/ai/*` tree in the public repo.
+That is no longer the active truth.
+
+The public repo should now be understood as:
 
 - bridge in public repo
 - implementation in private core
@@ -35,5 +38,6 @@ Any work that expands the public bridge contract should be reviewed as architect
 
 ## Canonical Reference
 
-Treat `docs/architecture/private-core-boundary.md` as the long-term architecture source of truth.
+Treat `docs/pmo/baselines/private-core-boundary.md` as the active boundary source of truth.
+
 This file is the migration record for how that split was introduced.

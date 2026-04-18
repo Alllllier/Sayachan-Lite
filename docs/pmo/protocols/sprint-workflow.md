@@ -50,6 +50,12 @@ Before a candidate is treated as genuinely ready:
 
 Candidate drafting does not equal candidate confirmation.
 
+Policy touchpoints during shaping:
+
+- validation expectations: `../policies/validation-floor-policy.md`
+- AI fallback expectation: `../policies/ai-fallback-policy.md`
+- architecture-sensitive zones: `../policies/architecture-sensitive-areas.md`
+
 ## Human Gate Rule
 
 - a sprint starts only after explicit human selection
@@ -93,6 +99,14 @@ Closeout should also record one documentation-sync outcome:
 - `no sync needed`
 - `reviewed, no update needed`
 - `update required`
+
+Policy touchpoints during closeout:
+
+- durable decision capture: `../policies/decision-capture-policy.md`
+- validation floor: `../policies/validation-floor-policy.md`
+- completion sanity pass: `../policies/feature-completion-checklist.md`
+- documentation sync: `../policies/documentation-sync-policy.md`
+- documentation sync mapping: `../policies/documentation-sync-guide.md`
 
 ## Commit Rule
 

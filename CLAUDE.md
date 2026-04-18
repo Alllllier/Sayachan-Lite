@@ -47,7 +47,7 @@ Current stack at a glance:
 - frontend: Vue 3 + Vite + Vue Router + Pinia
 - backend: Node.js + Koa + Mongoose
 - database: MongoDB
-- public AI entrypoints: backend `/ai/*` routes plus some frontend-direct Dashboard AI helpers
+- public AI entrypoints: backend `/ai/*` routes plus some frontend-local Dashboard fallback helpers
 - private AI core: `backend/private_core/sayachan-ai-core`
 
 ---
@@ -75,7 +75,10 @@ Current stack at a glance:
 - backend contract baseline: `docs/pmo/baselines/backend-api.md`
 - private-core boundary baseline: `docs/pmo/baselines/private-core-boundary.md`
 - shipped scope and debt: `docs/pmo/baselines/roadmap.md`
-- development rules: `docs/guides/development-constraints.md`
+- engineering conventions: `ENGINEERING_CONVENTIONS.md`
+- architecture-sensitive areas: `docs/pmo/policies/architecture-sensitive-areas.md`
+- AI fallback expectation: `docs/pmo/policies/ai-fallback-policy.md`
+- completion checklist: `docs/pmo/policies/feature-completion-checklist.md`
 - documentation sync: `docs/pmo/policies/documentation-sync-guide.md`
 - PMO operating model: `docs/pmo/PMO_OPERATING_MANUAL.md`
 - PMO handoff protocol: `docs/pmo/protocols/execution-handoff-protocol.md`

@@ -26,20 +26,15 @@
 
 ## 旧 PMO 的当前状态
 
-当前旧 PMO 仍然保留在原路径中。
+当前旧 PMO 已经完成降级处理。
 
-原因不是它仍然是理想结构，而是：
+现在的状态是：
 
-- 还没有完成新 PMO 的切换
-- 旧 PMO 里仍然有 active runtime surface 和历史材料
-- 直接删除或硬切风险太高
+- 新 PMO 的 canonical runtime surface 位于 `docs/pmo/**`
+- 旧 PMO 已迁入 `docs/_legacy_pmo/**`
+- 旧 PMO 不再承担 active runtime surface，只保留历史参考价值
 
 ## 旧 PMO 的后续处理方向
-
-后续更倾向于：
-
-- 新 PMO 在新路径中先稳定运行
-- 旧 PMO 再整体迁入明确的 `legacy` 区
 
 这样做的主要目的不是删除历史，而是：
 
@@ -80,6 +75,6 @@
 
 ## 当前规则
 
-- 在新 PMO 真正跑稳之前，不急着大规模迁移旧文件
-- 在明确切换之前，旧 PMO 仍然可以作为历史参考
-- 一旦新 PMO 成为 active canonical runtime，旧 PMO 应整体降级为 history / legacy，而不是继续与新 PMO 并列长期活跃
+- 当前 active PMO surface 只认 `docs/pmo/**`
+- `docs/_legacy_pmo/**` 仅作历史参考，不应再作为默认读取入口
+- 后续清理工作应优先继续收口历史工作区和旧辅助目录，而不是回退到旧 PMO 结构

@@ -62,3 +62,8 @@ Use for:
 - keep `idea_backlog.md` useful, not a dumping ground
 - do not promote into `sprint_candidates.md` before the slice is genuinely bounded
 - do not treat generic momentum or implied urgency as human authorization to activate a sprint
+
+## Policy Touchpoints
+
+- when promotion creates a durable planning rule or durable decision, check `../policies/decision-capture-policy.md`
+- when an AI-dependent topic is being retained or promoted, check `../policies/ai-fallback-policy.md`

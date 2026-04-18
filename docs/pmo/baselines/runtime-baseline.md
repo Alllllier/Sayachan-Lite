@@ -150,7 +150,7 @@ Current backend-mediated AI surfaces:
 
 ### Frontend-Direct
 
-Current frontend-direct AI surfaces:
+Current frontend-local fallback AI surfaces:
 
 - weekly review
 - focus recommendation
@@ -161,8 +161,8 @@ Current frontend-direct AI surfaces:
 Important current truth:
 
 - these frontend AI helpers still live in `frontend/src/services/aiService.js`
-- they still attempt direct GLM calls through `VITE_GLM_API_KEY`
-- they currently use local fallback behavior only when API key or request flow fails
+- they now run as local fallback-only helpers
+- they do not currently attempt direct GLM calls from the browser
 
 ## Shared Markdown Runtime
 

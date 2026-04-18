@@ -42,13 +42,17 @@ Focus → Task → Completion → Memory → Next Focus
 
 ### 1. 环境变量配置
 
-复制示例文件并填充实际值：
+后端和前端各自维护自己的本地环境文件。
 
 ```bash
-cp .env.example .env
+# backend
+cp backend/.env.example backend/.env
+
+# frontend
+cp frontend/.env.local.example frontend/.env.local
 ```
 
-编辑 `.env` 文件，关键变量说明：
+关键变量说明：
 
 | 变量 | 所属 | 说明 | 默认值 |
 |------|------|--------|--------|
@@ -56,12 +60,12 @@ cp .env.example .env
 | `PORT` | Backend | 后端服务端口 | `3001` |
 | `FRONTEND_ORIGIN` | Backend | CORS 允许的前端地址 | `http://localhost:5173` |
 | `GLM_API_KEY` | Backend | GLM API Key（用于 Notes/Projects AI） | - |
+| `KIMI_API_KEY` | Backend | 可选的 Kimi API Key | - |
 | `VITE_API_BASE_URL` | Frontend | 前端请求的后端地址 | `http://localhost:3001` |
-| `VITE_GLM_API_KEY` | Frontend | **已弃用**，不再需要 | - |
 
 **AI 调用说明**：
 - Notes 的 "AI Tasks" 和 Projects 的 "Generate Next Step" 已迁移至后端代理，通过后端 `GLM_API_KEY` 调用
-- Dashboard 的 Weekly Review / Focus Recommendation / Action Plan 仍为前端直连，需配置前端 API Key（可选）
+- Dashboard 的 Weekly Review / Focus Recommendation / Action Plan 当前固定使用本地 fallback helper，不再依赖前端 API Key
 
 ### 2. 启动后端
 
@@ -184,4 +188,4 @@ npm start
 - [ ] 真实部署验证（Vercel + Render + Atlas）
 - [ ] 用户使用反馈
 - [ ] 核心工作流有效性验证（真实 AI 数据驱动）
-- [ ] Dashboard AI 功能后端代理 - Weekly Review / Focus Recommendation / Action Plan（可选）
+- [ ] Dashboard AI 功能整体重构 - Weekly Review / Focus Recommendation / Action Plan（可选）

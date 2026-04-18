@@ -57,6 +57,12 @@ An active `execution_task.md` should contain at least:
 - execution should escalate rather than crossing architecture or boundary assumptions not approved in the task contract
 - before final completion reporting, execution should check whether sprint-started local dev servers are still occupying expected dev ports and clean them up when ownership is clear
 
+Policy touchpoints during handoff and report review:
+
+- validation expectations and report reading: `../policies/validation-floor-policy.md`
+- AI fallback expectation when the slice changes AI behavior: `../policies/ai-fallback-policy.md`
+- architecture-sensitive zones and escalation-heavy areas: `../policies/architecture-sensitive-areas.md`
+
 ## Report Rule
 
 An active `execution_report.md` should always make clear:

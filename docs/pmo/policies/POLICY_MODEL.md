@@ -13,6 +13,26 @@
 - 如果不单独写出来，就会反复混进 workflow、manual、baseline 或 guide
 - 它回答的是“什么情况下应该这样判断”，而不是“流程下一步是什么”
 
-## 当前第一批 policy
+## 当前 policy 集
 
 - `decision-capture-policy.md`
+- `validation-floor-policy.md`
+- `documentation-sync-policy.md`
+- `documentation-sync-guide.md`
+- `testing-and-ui-review-guide.md`
+- `ai-fallback-policy.md`
+- `feature-completion-checklist.md`
+- `architecture-sensitive-areas.md`
+
+## Policy Touchpoint Map
+
+| Policy | Main touchpoints |
+|---|---|
+| `decision-capture-policy.md` | `discussion-workflow.md`, `promotion-workflow.md`, `sprint-workflow.md` |
+| `validation-floor-policy.md` | `sprint-workflow.md`, `execution-handoff-protocol.md`, `PMO_OPERATING_MANUAL.md` |
+| `documentation-sync-policy.md` | `sprint-workflow.md`, `PMO_OPERATING_MANUAL.md` |
+| `documentation-sync-guide.md` | `documentation-sync-policy.md`, `sprint-workflow.md`, `CLAUDE.md` |
+| `testing-and-ui-review-guide.md` | `validation-floor-policy.md`, `sprint-workflow.md`, `CLAUDE.md` |
+| `ai-fallback-policy.md` | `discussion-workflow.md`, `promotion-workflow.md`, `sprint-workflow.md`, `execution-handoff-protocol.md`, `PMO_OPERATING_MANUAL.md` |
+| `feature-completion-checklist.md` | `sprint-workflow.md`, `PMO_OPERATING_MANUAL.md`, `CLAUDE.md` |
+| `architecture-sensitive-areas.md` | `discussion-workflow.md`, `sprint-workflow.md`, `execution-handoff-protocol.md`, `PMO_OPERATING_MANUAL.md`, `CLAUDE.md` |
