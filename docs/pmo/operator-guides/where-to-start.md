@@ -17,6 +17,7 @@ flowchart TD
     B -- "一个稳定结果需要正式分流" --> D["先看<br/>protocols/promotion-workflow.md"]
     B -- "比较或启动 sprint candidate" --> E["先看<br/>state/sprint_candidates.md<br/>再看 protocols/sprint-workflow.md"]
     B -- "一个很小且边界清楚的修复要直接开工" --> E2["先看<br/>protocols/sprint-workflow.md<br/>确认是否适合 micro-fix fast path"]
+    B -- "closeout 后立刻发现一个很小的尾差问题" --> E3["先看<br/>state/current_sprint.md<br/>再看 protocols/sprint-workflow.md<br/>确认是否适合 post-closeout tweak"]
     B -- "执行当前 active sprint" --> F["先看<br/>state/execution_task.md"]
     B -- "阅读 execution 返回内容" --> G["先看<br/>state/execution_report.md"]
     B -- "安全地 close 一个 sprint" --> H["先看<br/>protocols/sprint-workflow.md"]
@@ -35,6 +36,7 @@ flowchart TD
 | 要决定去 backlog / candidate / decision | `protocols/promotion-workflow.md` | 这是正式分流 contract |
 | 要看当前候选冲刺 | `state/sprint_candidates.md` | 候选列表就是 runtime state |
 | 一个很小且边界清楚的修复要直接开工 | `protocols/sprint-workflow.md` | 先确认是否满足 micro-fix fast path 条件 |
+| closeout 后立刻发现一个很小的尾差问题 | `state/current_sprint.md` | 先看最近关闭 sprint，再判断是否适合 post-closeout tweak |
 | 要启动冲刺 | `protocols/sprint-workflow.md` | human gate 和 activation 规则都在这里 |
 | 要执行当前冲刺 | `state/execution_task.md` | 它就是 execution contract |
 | 要读执行返回 | `state/execution_report.md` | 它就是 execution return surface |

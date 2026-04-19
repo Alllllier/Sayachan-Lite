@@ -8,11 +8,11 @@
 
 There is no active execution report waiting for PMO review right now.
 
-The most recent active report for `Overflow Trigger Vertical-Ellipsis Alignment` has already been read for PMO closeout and archived in `history/reports/`.
+The most recent active report for `Overflow Trigger SVG Kebab Alignment` has already been read for PMO closeout and archived in `history/reports/`.
 
 ## Last Closed Report Summary
 
-- Sprint: `Overflow Trigger Vertical-Ellipsis Alignment`
+- Sprint: `Overflow Trigger SVG Kebab Alignment`
 - Report outcome: `completed with bounded residual unverified areas`
 - PMO read result: `closeout complete`
 

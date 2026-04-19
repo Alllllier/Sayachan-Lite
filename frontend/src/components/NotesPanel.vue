@@ -466,9 +466,13 @@ async function saveNoteTaskDraft(noteId, draft) {
             <button @click="deleteNote(note._id)" class="btn btn-danger delete">Delete</button>
           </template>
           <template v-else>
+            <button @click.stop="handleAIGenerateTasks(note)" class="btn-ai-icon" :disabled="aiLoadingNotes.has(note._id)" title="Generate with AI">
+              <span v-if="aiLoadingNotes.has(note._id)" class="icon-loading">⋯</span>
+              <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+            </button>
             <div class="task-menu-container">
               <button @click.stop="toggleNoteMenu(note._id)" class="task-menu-btn" :class="{ active: menuOpenNoteId === note._id }" title="Actions">
-                <span class="menu-icon">⋮</span>
+                <svg class="menu-icon-svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/></svg>
               </button>
               <div v-if="menuOpenNoteId === note._id" class="task-menu-dropdown" @click.stop>
                 <button @click="startEditing(note)" class="menu-item">Edit</button>
@@ -476,10 +480,6 @@ async function saveNoteTaskDraft(noteId, draft) {
                 <button @click="deleteNote(note._id)" class="menu-item delete">Delete</button>
               </div>
             </div>
-            <button @click.stop="handleAIGenerateTasks(note)" class="btn-ai-icon" :disabled="aiLoadingNotes.has(note._id)" title="Generate with AI">
-              <span v-if="aiLoadingNotes.has(note._id)" class="icon-loading">⋯</span>
-              <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-            </button>
           </template>
         </div>
         <!-- AI Tasks - Hidden for archived notes -->
@@ -748,11 +748,6 @@ async function saveNoteTaskDraft(noteId, draft) {
 
 .task-menu-btn.active {
   background: #e5e5e5;
-}
-
-.menu-icon {
-  font-size: 18px;
-  line-height: 1;
 }
 
 .task-menu-dropdown {

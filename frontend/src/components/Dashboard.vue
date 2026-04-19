@@ -411,7 +411,7 @@ async function handleGenerateTaskDrafts() {
           >{{ getSourceLetter(task) }}</span>
           <div class="task-menu-container">
             <button @click="toggleTaskMenu(task._id)" class="task-menu-btn" :class="{ active: taskMenuOpen === task._id }" @click.stop title="Actions">
-              <span class="menu-icon">⋮</span>
+              <svg class="menu-icon-svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/></svg>
             </button>
             <div v-if="taskMenuOpen === task._id" class="task-menu-dropdown" @click.stop>
               <button @click="handleTaskArchive(task)" class="menu-item">{{ showArchived ? 'Restore' : 'Archive' }}</button>
@@ -889,11 +889,6 @@ async function handleGenerateTaskDrafts() {
 
 .task-menu-btn.active {
   background: #e5e5e5;
-}
-
-.menu-icon {
-  font-size: 18px;
-  line-height: 1;
 }
 
 .task-menu-dropdown {
