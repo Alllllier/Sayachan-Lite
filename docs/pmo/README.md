@@ -12,6 +12,10 @@
 - `baselines/`
 - `history/`
 
+另外补充一层面向 PMO 系统使用者的说明层：
+
+- `operator-guides/`
+
 ## 当前原则
 
 - 先建新 PMO，不在旧 PMO 上继续修补。

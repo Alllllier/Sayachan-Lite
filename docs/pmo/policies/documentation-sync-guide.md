@@ -30,6 +30,10 @@ Check first:
 - the affected file under `docs/pmo/protocols/**`
 - the affected file under `docs/pmo/policies/**` when a cross-cutting rule changed
 
+Then do a weak companion check:
+
+- `docs/pmo/operator-guides/**` when human-facing system explanation, navigation, or diagrams may now be stale
+
 ### If execution behavior changed
 
 Check first:
@@ -37,6 +41,10 @@ Check first:
 - `CLAUDE.md`
 - `docs/pmo/protocols/execution-handoff-protocol.md`
 - `docs/pmo/state/execution_task.md` or `docs/pmo/state/execution_report.md` only when canonical runtime semantics changed
+
+Then do a weak companion check:
+
+- `docs/pmo/operator-guides/**` when execution-facing diagrams or operator reading guidance may now be misleading
 
 ### If validation expectations changed
 
@@ -56,6 +64,13 @@ When documentation sync is triggered:
    - `no sync needed`
    - `reviewed, no update needed`
    - `update required`
+
+Record that outcome in the active PMO closeout surface:
+
+- normally in `docs/pmo/state/current_sprint.md`
+- and in `docs/pmo/state/execution_report.md` when the execution return should carry the review result or pending follow-up for PMO closeout
+
+If `docs/pmo/operator-guides/**` was part of the review, it should usually be treated as a weak companion outcome inside the same documentation-sync pass, not as a separate blocking sync regime.
 
 Do not widen the review scope just because older docs mention similar material.
 

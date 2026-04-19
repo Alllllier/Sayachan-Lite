@@ -24,6 +24,7 @@ Use for:
 
 - retained ideas worth keeping in formal PMO state
 - issues that still need shaping, dependency clarification, or boundary clarification
+- parked future work that should stay visible without pretending it is ready soon
 
 ### `sprint_candidates.md`
 
@@ -56,12 +57,17 @@ Use for:
    - a durable decision
 3. Write the normalized result into the correct PMO state file.
 4. If a durable decision was produced, ensure it is written into `decision_log.md` rather than left only in discussion records.
+5. If the topic is being parked, record the parking location explicitly:
+   - `idea_backlog.md` when it remains future work worth revisiting
+   - `decision_log.md` when the parking outcome is actually a durable deferral or rejection
+   - the discussion batch only when the material is still too raw for normalized PMO state
 
 ## Working Rules
 
 - keep `idea_backlog.md` useful, not a dumping ground
 - do not promote into `sprint_candidates.md` before the slice is genuinely bounded
 - do not treat generic momentum or implied urgency as human authorization to activate a sprint
+- do not hide parked follow-up inside candidate notes or handoff prose without also routing it into its durable home
 
 ## Policy Touchpoints
 

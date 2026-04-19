@@ -6,6 +6,7 @@
 
 - keep entries compact and easy to re-triage
 - use this file for retained ideas that are still shaping, blocked, or exploring
+- use this file for parked future work that should remain visible without pretending it is near-term
 - move execution-ready items into `sprint_candidates.md`
 - move durable planning conclusions into `decision_log.md`
 
@@ -15,12 +16,14 @@
 
 - Type: `bug | feature | architecture | future-lab | cleanup`
 - Source: `discussion | audit | execution report | roadmap`
+- Source reference:
 - Problem / Opportunity:
 - Why now:
 - Current status: `open | exploring | blocked | parked`
 - Dependencies:
 - Risks / unknowns:
 - Suggested next action:
+- Reopen trigger:
 
 ## Active Entries
 

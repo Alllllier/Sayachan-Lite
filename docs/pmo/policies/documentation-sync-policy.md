@@ -18,6 +18,9 @@ The current strong sync surfaces are:
 
 `docs/ai-ops/**` is currently not treated as a mandatory strong sync surface for normal PMO closeout.
 
+`docs/pmo/operator-guides/**` is not a strong sync surface.
+It is a human-facing explanation layer and should be reviewed as a weak sync companion when canonical PMO behavior changes.
+
 ## Trigger Types
 
 ### Truth Trigger
@@ -46,6 +49,10 @@ Primary review targets:
 
 - `docs/pmo/**`
 
+Weak companion review target when operator-facing explanation may now be stale:
+
+- `docs/pmo/operator-guides/**`
+
 ### Execution Entry Trigger
 
 Run documentation review when a change alters:
@@ -60,6 +67,10 @@ Primary review targets:
 - `CLAUDE.md`
 - `docs/pmo/protocols/execution-handoff-protocol.md`
 - `docs/pmo/PMO_OPERATING_MANUAL.md` when canonical ownership or reading order changes
+
+Weak companion review target when human-facing usage guidance may now be misleading:
+
+- `docs/pmo/operator-guides/**`
 
 ## Allowed Outcomes
 
@@ -86,11 +97,20 @@ If unsure, perform the review and record `reviewed, no update needed` rather tha
 
 `docs/ai-ops/**` is currently a weak sync surface.
 
+`docs/pmo/operator-guides/**` is also currently a weak sync surface.
+
 That means:
 
 - it may still be useful background
 - it should not block normal PMO closeout
 - it should be revisited in a later dedicated refactor
+
+For `docs/pmo/operator-guides/**`, that means:
+
+- review it when canonical PMO runtime, workflow, execution-entry behavior, or reading/navigation guidance changed
+- keep it aligned enough that a human operator is not misled
+- do not treat it as canonical truth over `state/`, `protocols/`, `policies/`, or `baselines/`
+- do not block normal closeout solely because operator guides were not updated yet
 
 Reference:
 

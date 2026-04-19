@@ -37,7 +37,8 @@ This workflow covers the sprint lifecycle:
 7. If the human wants the change recorded now, commit preparation and commit can happen as a separate repository action.
 8. During closeout, Codex checks whether the sprint produced a durable decision that belongs in `decision_log.md`.
 9. During closeout, Codex checks whether the sprint triggered documentation sync review under `policies/documentation-sync-policy.md`.
-10. PMO updates the next planning surface after closeout.
+10. PMO routes any deferred or parked follow-up into `idea_backlog.md` or `decision_log.md` instead of leaving it only in sprint artifacts.
+11. PMO updates the next planning surface after closeout.
 
 ## Planning Rule
 
@@ -66,6 +67,7 @@ Policy touchpoints during shaping:
 
 - `current_sprint.md` should stay lightweight and act as runtime state, not a second execution brief
 - detailed touch zones, non-goals, validation expectations, and escalation points belong in `execution_task.md`
+- `execution_task.md` should identify where the sprint came from so discussion, backlog, and handoff stay traceable
 - `execution_task.md` should contain only the current active execution contract, not stacked stale tasks
 - if no sprint is active, keep both `current_sprint.md` and `execution_task.md` in explicit `idle` state rather than silently leaving stale content
 
@@ -93,6 +95,12 @@ PMO closeout should separate:
 - deferred follow-up or residual risks
 
 Closeout should be based on explicit execution report content, not assumption.
+
+Closeout should also make the routing outcome explicit for anything intentionally left out of the sprint:
+
+- `parked in idea_backlog`
+- `recorded in decision_log`
+- `kept active for follow-up execution`
 
 Closeout should also record one documentation-sync outcome:
 

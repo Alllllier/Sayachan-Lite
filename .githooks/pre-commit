@@ -11,12 +11,16 @@ ARCH_DOC_PATTERN="docs/pmo/baselines/.*\.md"
 MANIFEST_PATTERN="backend/package\.json|frontend/package\.json"
 PMO_DOC_PATTERN="docs/pmo/.*\.md|docs/ai-ops/.*\.md"
 PMO_SYNC_PATTERN="docs/pmo/policies/documentation-sync-(policy|guide)\.md"
+EXECUTION_ENTRY_PATTERN="CLAUDE\.md|docs/pmo/protocols/execution-handoff-protocol\.md|docs/pmo/state/execution_task\.md|docs/pmo/state/execution_report\.md"
+OPERATOR_GUIDE_PATTERN="docs/pmo/operator-guides/.*\.md"
 
 ARCH_CODE_CHANGED=false
 ARCH_DOC_CHANGED=false
 MANIFEST_CHANGED=false
 PMO_DOC_CHANGED=false
 PMO_SYNC_CHANGED=false
+EXECUTION_ENTRY_CHANGED=false
+OPERATOR_GUIDE_CHANGED=false
 
 for file in $STAGED_FILES; do
     if echo "$file" | grep -qE "$ARCH_CODE_PATTERN"; then
@@ -37,6 +41,14 @@ for file in $STAGED_FILES; do
 
     if echo "$file" | grep -qE "$PMO_SYNC_PATTERN"; then
         PMO_SYNC_CHANGED=true
+    fi
+
+    if echo "$file" | grep -qE "$EXECUTION_ENTRY_PATTERN"; then
+        EXECUTION_ENTRY_CHANGED=true
+    fi
+
+    if echo "$file" | grep -qE "$OPERATOR_GUIDE_PATTERN"; then
+        OPERATOR_GUIDE_CHANGED=true
     fi
 done
 
@@ -89,6 +101,37 @@ if [ "$PMO_DOC_CHANGED" = true ] && [ "$PMO_SYNC_CHANGED" = false ]; then
     echo "  - docs/pmo/policies/documentation-sync-guide.md"
     echo ""
     echo "This is a reminder only. Commit may proceed if sync rules are unchanged."
+    echo ""
+fi
+
+if [ "$EXECUTION_ENTRY_CHANGED" = true ] && [ "$PMO_SYNC_CHANGED" = false ]; then
+    echo ""
+    echo "NOTICE: Execution entry or repo-native handoff files changed."
+    echo ""
+    echo "Please review whether documentation-sync docs should also change:"
+    echo "  - execution entry instructions changed"
+    echo "  - active handoff or report semantics changed"
+    echo "  - worker-facing default behavior changed"
+    echo "  - closeout hygiene or reporting expectations changed"
+    echo ""
+    echo "Relevant files:"
+    echo "  - docs/pmo/policies/documentation-sync-policy.md"
+    echo "  - docs/pmo/policies/documentation-sync-guide.md"
+    echo ""
+    echo "This is a reminder only. Commit may proceed if sync rules are unchanged."
+    echo ""
+fi
+
+if [ "$PMO_DOC_CHANGED" = true ] && [ "$OPERATOR_GUIDE_CHANGED" = false ]; then
+    echo ""
+    echo "NOTICE: Canonical PMO docs changed, but operator guides were not updated."
+    echo ""
+    echo "Please review whether docs/pmo/operator-guides/** should also change:"
+    echo "  - human-facing system explanation changed"
+    echo "  - reading/navigation guidance changed"
+    echo "  - diagrams may now be stale"
+    echo ""
+    echo "This is a weak-sync reminder only. Commit may proceed if operator guides remain accurate enough."
     echo ""
 fi
 

@@ -8,12 +8,14 @@
 - a candidate may be drafted by Codex, but it does not become the active sprint without explicit human selection
 - replace or merge weaker candidates instead of stacking endlessly
 - if a candidate is selected, move it into `current_sprint.md` and write the corresponding `execution_task.md`
+- keep source trace visible so the selected sprint can be tied back to its discussion, backlog, or decision context
 
 ## Candidate Template
 
 ### `<sprint name>`
 
 - Status: `candidate`
+- Source reference:
 - Why now:
 - Expected outcome:
 - In scope:

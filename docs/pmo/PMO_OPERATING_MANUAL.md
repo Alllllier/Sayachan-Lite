@@ -24,6 +24,9 @@ This file is intentionally narrower than the old PMO manual.
 - `baselines/`
 - `history/`
 
+In addition, `operator-guides/` may hold human-facing system explanations and operator navigation aids.
+It is a companion layer, not a canonical contract layer.
+
 ### Runtime State
 
 Use this layer for active PMO state:
@@ -43,6 +46,16 @@ Use this layer for flow contracts:
 - `protocols/promotion-workflow.md`
 - `protocols/sprint-workflow.md`
 - `protocols/execution-handoff-protocol.md`
+
+### Operator Guides
+
+Use this layer for human-facing system explanations and operator navigation:
+
+- `operator-guides/where-to-start.md`
+- `operator-guides/pmo-system-map.md`
+- `operator-guides/pmo-master-flow.md`
+- `operator-guides/policy-trigger-map.md`
+- `operator-guides/pmo-role-swimlane.md`
 
 ### Policies
 
@@ -84,6 +97,32 @@ When operating the active PMO loop, the minimum runtime set is:
 
 These are the files that should reflect current PMO state, not the old PMO files.
 
+## Intake And Routing Map
+
+Use this routing map when a new idea, bugfix discussion, or future architecture concept enters PMO.
+
+1. Capture the discussion entry in `state/discussion_index.md` and the active batch under `state/discussions/`.
+2. Keep the topic in discussion while the shape, boundary, and likely slice are still unstable.
+3. When the result stabilizes, promote it by intent:
+   - `state/idea_backlog.md` for retained work that is worth keeping visible but is not ready to start
+   - `state/sprint_candidates.md` for bounded slices that are ready for human comparison
+   - `state/decision_log.md` for durable decisions, explicit deferrals, or rejected paths
+4. After explicit human sprint selection, move the selected candidate into `state/current_sprint.md` and write the active execution contract into `state/execution_task.md`.
+5. Execution returns into `state/execution_report.md`, then PMO closes out the sprint and syncs any durable decision or deferred follow-up back into the formal state files.
+6. Parked future work must not live only inside the handoff or the report:
+   - if it is stable enough to keep for later, record it in `state/idea_backlog.md` with status `parked`
+   - if it is a durable deferral or rejected path, record it in `state/decision_log.md`
+   - if it is still too raw for formal state, keep it in the discussion batch with explicit `parked` status and next review trigger
+
+The intended operating path is:
+
+`discussion -> stabilized result -> sprint candidate -> execution handoff -> execution report -> closeout`
+
+with side exits to:
+
+- `idea_backlog.md` for retained or parked future work
+- `decision_log.md` for durable decisions and explicit deferrals
+
 ## Minimum Reading Order
 
 ### When checking current PMO state
@@ -94,6 +133,16 @@ Read in this order:
 2. `state/sprint_candidates.md`
 3. `state/idea_backlog.md`
 4. `state/decision_log.md`
+
+### When triaging new intake
+
+Read in this order:
+
+1. `state/discussion_index.md`
+2. the active batch under `state/discussions/`
+3. `state/idea_backlog.md`
+4. `state/sprint_candidates.md`
+5. `state/decision_log.md`
 
 ### When operating an active sprint
 
@@ -186,6 +235,7 @@ The execution worker does not become PMO by reading this manual.
 - sprint selection remains human-gated
 - candidate drafting does not equal candidate confirmation
 - durable planning conclusions should not remain trapped only in discussion or sprint notes
+- parked future work should not remain trapped only in `execution_task.md` or `execution_report.md`
 - validation must be stated explicitly, not assumed silently
 - `current_sprint.md` stays lightweight
 - `execution_task.md` is the active execution contract

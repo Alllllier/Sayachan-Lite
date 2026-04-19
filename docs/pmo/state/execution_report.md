@@ -19,3 +19,4 @@ When a new sprint is actively handed off, the execution worker should replace th
 - what project-specific review was or was not performed
 - what remains unverified
 - what risks or escalations still matter
+- what documentation-sync outcome PMO should record during closeout

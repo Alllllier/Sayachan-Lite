@@ -4,6 +4,12 @@
 - Sprint: `<selected sprint name>`
 - Last updated: `<YYYY-MM-DD>`
 
+## Source Trace
+
+- Candidate source:
+- Related discussion batch:
+- Related backlog or decision entries:
+
 ## Objective
 
 - what this execution slice is meant to deliver
@@ -15,6 +21,11 @@
 ## Non-Goals
 
 - things this slice must not expand into
+
+## Deferred Or Parked Follow-Up
+
+- explicitly note future work that should stay out of this sprint
+- state whether PMO should route it back to `idea_backlog.md` or `decision_log.md` after closeout
 
 ## Acceptance Checks
 

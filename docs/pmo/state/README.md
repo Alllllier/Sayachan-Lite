@@ -9,6 +9,15 @@
 - 尽量少写长篇解释
 - 主要回答“当前状态是什么”
 
+推荐按下面的路由理解这一层：
+
+`discussion_index.md` + `discussions/` 承载新 intake 与讨论聚类，
+`idea_backlog.md` 承载保留或 parked 的未来工作，
+`sprint_candidates.md` 承载可比较的候选冲刺，
+`current_sprint.md` + `execution_task.md` 承载已选中的执行切片，
+`execution_report.md` 承载执行返回，
+`decision_log.md` 承载 durable decision、explicit deferral 与 rejected path。
+
 后续会在这里放入最小状态集合，例如：
 
 - `current_sprint`

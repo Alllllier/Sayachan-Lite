@@ -35,6 +35,7 @@ Reading this protocol does not give the execution worker PMO selection authority
 4. The execution worker treats `execution_task.md` as the active execution source.
 5. The execution worker writes outcomes, validation, unresolved items, and escalations into `execution_report.md`.
 6. Codex reads `execution_report.md` and decides whether the sprint is ready for closeout, needs follow-up, or must remain active.
+7. Any deferred or parked follow-up that should survive the sprint must be routed back into `idea_backlog.md` or `decision_log.md` during closeout rather than left only in the report.
 
 ## Minimum Handoff Content
 
@@ -56,6 +57,7 @@ An active `execution_task.md` should contain at least:
 - `execution_report.md` must remain stable enough for PMO closeout review
 - execution should escalate rather than crossing architecture or boundary assumptions not approved in the task contract
 - before final completion reporting, execution should check whether sprint-started local dev servers are still occupying expected dev ports and clean them up when ownership is clear
+- future work that is intentionally out of scope for the sprint should be named explicitly so PMO can park or promote it after report review
 
 Policy touchpoints during handoff and report review:
 

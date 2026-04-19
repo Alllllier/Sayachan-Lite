@@ -4,6 +4,12 @@
 - Last updated:
 - Status: `active | stable | promoted | parked | archived`
 
+## Intake Record
+
+- Intake type: `idea | bugfix | architecture | mixed`
+- Source channel: `human discussion | audit | execution report | roadmap | other`
+- Why now:
+
 ## Why This Discussion Exists
 
 - why this batch was opened
@@ -25,6 +31,8 @@
 - Why separate:
 - Current maturity: `not-shaped | emerging | candidate-likely | promoted | parked`
 - Likely target: `idea_backlog | sprint_candidates | decision_log | undecided`
+- Parking trigger:
+- Reopen signal:
 
 ## Open Questions
 
@@ -38,3 +46,4 @@
 
 - where the stable result went
 - what remains in discussion
+- if parked, where it was parked and what should trigger re-triage

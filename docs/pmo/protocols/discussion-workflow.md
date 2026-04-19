@@ -21,6 +21,12 @@ Use this workflow when:
 - the topic is not yet execution-ready
 - multiple related issues need clustering before planning
 
+Common intake types:
+
+- new ideas or product opportunities
+- bugfix discussions that still need repro clarity, scope shaping, or prioritization
+- future architecture concepts that are directionally important but not yet implementation-ready
+
 ## Standard Sequence
 
 1. Record the discussion in `state/discussion_index.md` and the active batch file under `state/discussions/`.
@@ -33,8 +39,17 @@ Use this workflow when:
    - retain in `idea_backlog.md`
    - promote into `sprint_candidates.md`
    - write the durable outcome into `decision_log.md`
-   - park it for later
+   - park it for later with an explicit review trigger
 8. If the topic is confirmed as `private-core-owned`, keep only the minimum boundary-safe coordination record in the public PMO and move detailed design work into the private repo documentation set.
+
+## Exit Routing Rule
+
+Choose the exit path based on what became stable:
+
+- Use `idea_backlog.md` when the topic should stay visible as future work, including parked ideas, bugs, or architecture concepts that are not ready to start.
+- Use `sprint_candidates.md` only when the slice is bounded enough to compare for near-term execution.
+- Use `decision_log.md` when the discussion produced a durable rule, explicit deferral, or rejected path that future PMO work should not rediscover.
+- Keep the item in the discussion batch with `parked` status only when it is not yet normalized enough for formal PMO state.
 
 ## Stability Standard
 
@@ -65,6 +80,7 @@ Promotion may happen from the theme level or from the possible-slice level, depe
 - unless the human explicitly asks to converge now, discussion may stay in theme- and slice-shaping mode while the direction is still becoming clear
 - when a stable judgment, sharper current focus, or clearer open question appears, write it back into the active batch during the discussion instead of waiting for a final summary pass
 - once a result is stable, move the long-lived output into formal PMO state instead of leaving discussion as the only source of truth
+- if a topic is parked, record why it is parked and what would cause it to be reopened
 - if a topic is `private-core-owned`, keep the public PMO record narrow and boundary-safe rather than letting private-core design detail accumulate in the public repo
 
 ## Policy Touchpoints

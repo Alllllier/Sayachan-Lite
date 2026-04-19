@@ -155,6 +155,7 @@ Avoid:
 - treat `docs/_legacy_pmo/**` as legacy historical material unless explicitly needed for reference
 - do not prefer legacy PMO paths over the active `docs/pmo/**` surface
 - when changing truth, PMO runtime, or execution behavior, follow `docs/pmo/policies/documentation-sync-guide.md` instead of inventing an execution-local sync rule
+- when reporting sprint completion, include the documentation-sync review outcome in the repo-native PMO closeout
 
 ---
 
