@@ -20,7 +20,7 @@ const showArchived = ref(false)
 const aiTasksByNote = reactive({})
 const aiLoadingNotes = ref(new Set())
 const savedTaskDrafts = ref(new Set())
-const taskSuccessMessages = reactive({})
+const menuOpenNoteId = ref(null)
 
 // P0-Fix-1: Store original note data for cancel restore
 const editingOriginalData = ref({})
@@ -42,6 +42,18 @@ function showToast(message, type = 'success') {
   setTimeout(() => {
     toast.value = false
   }, 3000)
+}
+
+function toggleNoteMenu(noteId) {
+  if (menuOpenNoteId.value === noteId) {
+    menuOpenNoteId.value = null
+  } else {
+    menuOpenNoteId.value = noteId
+  }
+}
+
+function closeNoteMenu() {
+  menuOpenNoteId.value = null
 }
 
 // Local draft cache
@@ -378,8 +390,7 @@ async function saveNoteTaskDraft(noteId, draft) {
     ''               // linkedProjectName
   )
   if (newTask) {
-    taskSuccessMessages[noteId] = 'Task saved'
-    setTimeout(() => { delete taskSuccessMessages[noteId] }, 2000)
+    showToast('Task saved')
   } else {
     savedTaskDrafts.value.delete(draft)
   }
@@ -421,7 +432,7 @@ async function saveNoteTaskDraft(noteId, draft) {
       </div>
     </div>
     <EmptyState v-if="notes.length === 0" :title="showArchived ? 'No archived notes' : 'No notes yet'" />
-    <div v-for="note in notes" :key="note._id" :class="['card', 'card-accent-green', 'note-card', { archived: note.status === 'archived' }]">
+    <div v-for="note in notes" :key="note._id" :class="['card', 'card-accent-green', 'note-card', { archived: note.status === 'archived' }]" @click="closeNoteMenu">
       <div v-if="note.status === 'archived'" class="archived-badge">Archived</div>
       <button
         v-else
@@ -455,13 +466,20 @@ async function saveNoteTaskDraft(noteId, draft) {
             <button @click="deleteNote(note._id)" class="btn btn-danger delete">Delete</button>
           </template>
           <template v-else>
-            <button @click="startEditing(note)" class="btn btn-secondary">Edit</button>
-            <button @click="archiveNote(note)" class="btn btn-archive" title="Archive note">Archive</button>
-            <button @click="deleteNote(note._id)" class="btn btn-danger delete">Delete</button>
-            <button @click="handleAIGenerateTasks(note)" class="btn-ai-icon" :disabled="aiLoadingNotes.has(note._id)" title="Generate with AI">
+            <button @click.stop="handleAIGenerateTasks(note)" class="btn-ai-icon" :disabled="aiLoadingNotes.has(note._id)" title="Generate with AI">
               <span v-if="aiLoadingNotes.has(note._id)" class="icon-loading">⋯</span>
               <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
             </button>
+            <div class="task-menu-container">
+              <button @click.stop="toggleNoteMenu(note._id)" class="task-menu-btn" :class="{ active: menuOpenNoteId === note._id }" title="Actions">
+                <span class="menu-icon">⋯</span>
+              </button>
+              <div v-if="menuOpenNoteId === note._id" class="task-menu-dropdown" @click.stop>
+                <button @click="startEditing(note)" class="menu-item">Edit</button>
+                <button @click="archiveNote(note)" class="menu-item">Archive</button>
+                <button @click="deleteNote(note._id)" class="menu-item delete">Delete</button>
+              </div>
+            </div>
           </template>
         </div>
         <!-- AI Tasks - Hidden for archived notes -->
@@ -469,7 +487,6 @@ async function saveNoteTaskDraft(noteId, draft) {
           <div class="ai-tasks-header">
             <strong>AI Tasks ({{ aiTasksByNote[note._id].length }})</strong>
             <div class="ai-tasks-actions">
-              <span v-if="taskSuccessMessages[note._id]" class="save-success">{{ taskSuccessMessages[note._id] }}</span>
               <button @click="closeAITasks(note._id)" class="btn-ai-dismiss" title="Close">×</button>
             </div>
           </div>
@@ -703,4 +720,75 @@ async function saveNoteTaskDraft(noteId, draft) {
 /* .note-card uses .card and .card-accent-green baseline */
 
 /* Markdown display uses global .markdown-body baseline from style.css */
+
+/* Task Menu - Overflow pattern */
+.task-menu-container {
+  position: relative;
+  margin-left: 4px;
+}
+
+.task-menu-btn {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: background 0.15s;
+}
+
+.task-menu-btn:hover {
+  background: #f5f5f5;
+}
+
+.task-menu-btn.active {
+  background: #e5e5e5;
+}
+
+.menu-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.task-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 120px;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.menu-item {
+  width: 100%;
+  padding: 10px 16px;
+  background: white;
+  border: none;
+  text-align: left;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.menu-item:hover {
+  background: #f5f5f5;
+}
+
+.menu-item.delete {
+  color: #dc2626;
+}
+
+.menu-item.delete:hover {
+  background: #fee2e2;
+}
 </style>

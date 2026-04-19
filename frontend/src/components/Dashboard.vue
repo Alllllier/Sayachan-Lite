@@ -4,6 +4,7 @@ import { generateWeeklyReview, recommendFocus, generateActionPlan, generateTaskD
 import { tasksRef, fetchTasks } from '../services/taskService'
 import { useCockpitSignals } from '../stores/cockpitSignals'
 import EmptyState from './ui/EmptyState.vue'
+import Toast from './ui/Toast.vue'
 
 const cockpitSignals = useCockpitSignals()
 
@@ -65,14 +66,21 @@ const taskDrafts = ref([])
 const isLoadingDrafts = ref(false)
 
 const isSavingTasks = ref(false)
-
-const saveSuccess = ref('')
-const reviewSuccess = ref('')
-const focusSuccess = ref('')
-const actionSuccess = ref('')
-const draftsSuccess = ref('')
-const taskActionSuccess = ref('')
 const taskMenuOpen = ref(null)
+
+// Toast notifications
+const toast = ref(null)
+const toastMessage = ref('')
+const toastType = ref('success')
+
+function showToast(message, type = 'success') {
+  toastMessage.value = message
+  toastType.value = type
+  toast.value = true
+  setTimeout(() => {
+    toast.value = false
+  }, 3000)
+}
 
 // P0-2: Task Expand
 const expandedTasks = ref(new Set())
@@ -80,7 +88,6 @@ const expandedTasks = ref(new Set())
 // P0-1: Quick Add Task
 const quickAddInput = ref('')
 const isQuickAdding = ref(false)
-const quickAddSuccess = ref('')
 
 // P0-B: Archive visibility toggle
 const showArchived = ref(false)
@@ -112,14 +119,12 @@ async function handleQuickAddTask() {
     const newTask = await res.json()
     if (newTask) {
       tasksRef.value.unshift(newTask)
-      quickAddSuccess.value = 'Task added'
+      showToast('Task added')
       quickAddInput.value = ''
-      setTimeout(() => { quickAddSuccess.value = '' }, 2000)
     }
   } catch (e) {
     console.error('Failed to quick add task:', e)
-    quickAddSuccess.value = 'Failed to add'
-    setTimeout(() => { quickAddSuccess.value = '' }, 2000)
+    showToast('Failed to add', 'error')
   } finally {
     isQuickAdding.value = false
   }
@@ -136,8 +141,7 @@ async function handleTaskComplete(task) {
     const updated = await res.json()
     task.status = updated.status
     task.completed = updated.completed
-    taskActionSuccess.value = newStatus === 'completed' ? 'Task completed' : 'Task reactivated'
-    setTimeout(() => { taskActionSuccess.value = '' }, 2000)
+    showToast(newStatus === 'completed' ? 'Task completed' : 'Task reactivated')
     // Notify parent to refresh data (for project focus transition)
     emit('refreshed')
   } catch (e) {
@@ -158,8 +162,7 @@ async function handleTaskArchive(task) {
     if (taskMenuOpen.value === task._id) {
       taskMenuOpen.value = null
     }
-    taskActionSuccess.value = newStatus === 'archived' ? 'Task archived' : 'Task restored'
-    setTimeout(() => { taskActionSuccess.value = '' }, 2000)
+    showToast(newStatus === 'archived' ? 'Task archived' : 'Task restored')
   } catch (e) {
     console.error('Failed to archive task:', e)
   }
@@ -178,8 +181,7 @@ async function handleTaskDelete(task) {
     if (taskMenuOpen.value === task._id) {
       taskMenuOpen.value = null
     }
-    taskActionSuccess.value = 'Task deleted'
-    setTimeout(() => { taskActionSuccess.value = '' }, 2000)
+    showToast('Task deleted')
   } catch (e) {
     console.error('Failed to delete task:', e)
   }
@@ -289,12 +291,10 @@ async function handleSaveDraftsAsTasks() {
       })
     }
     await fetchTasks()
-    saveSuccess.value = `Saved ${taskDrafts.value.length} task(s)`
+    showToast(`Saved ${taskDrafts.value.length} task(s)`)
     taskDrafts.value = []
-    setTimeout(() => { saveSuccess.value = '' }, 3000)
   } catch (e) {
-    saveSuccess.value = 'Failed to save tasks'
-    setTimeout(() => { saveSuccess.value = '' }, 3000)
+    showToast('Failed to save tasks', 'error')
   } finally {
     isSavingTasks.value = false
   }
@@ -302,12 +302,10 @@ async function handleSaveDraftsAsTasks() {
 
 async function handleGenerateReview() {
   isLoading.value = true
-  reviewSuccess.value = ''
   try {
     const { review } = await generateWeeklyReview(safeNotes.value, safeProjects.value)
     weeklyReview.value = review
-    reviewSuccess.value = 'Review generated'
-    setTimeout(() => { reviewSuccess.value = '' }, 2000)
+    showToast('Review generated')
   } catch (e) {
     weeklyReview.value = 'Failed to generate review'
   } finally {
@@ -317,12 +315,10 @@ async function handleGenerateReview() {
 
 async function handleRecommendFocus() {
   isLoadingFocus.value = true
-  focusSuccess.value = ''
   try {
     const { recommendation } = await recommendFocus(safeNotes.value, safeProjects.value)
     focusRecommendation.value = recommendation
-    focusSuccess.value = 'Focus recommended'
-    setTimeout(() => { focusSuccess.value = '' }, 2000)
+    showToast('Focus recommended')
   } catch (e) {
     focusRecommendation.value = 'Failed to get recommendation'
   } finally {
@@ -332,7 +328,6 @@ async function handleRecommendFocus() {
 
 async function handleGenerateActionPlan() {
   isLoadingAction.value = true
-  actionSuccess.value = ''
   try {
     const { actions } = await generateActionPlan(
       safeNotes.value,
@@ -340,8 +335,7 @@ async function handleGenerateActionPlan() {
       focusRecommendation.value || undefined
     )
     actionPlan.value = actions
-    actionSuccess.value = 'Action plan generated'
-    setTimeout(() => { actionSuccess.value = '' }, 2000)
+    showToast('Action plan generated')
   } catch (e) {
     actionPlan.value = ['Failed to generate action plan']
   } finally {
@@ -351,7 +345,6 @@ async function handleGenerateActionPlan() {
 
 async function handleGenerateTaskDrafts() {
   isLoadingDrafts.value = true
-  draftsSuccess.value = ''
   try {
     const { drafts } = await generateTaskDrafts(
       safeNotes.value,
@@ -359,8 +352,7 @@ async function handleGenerateTaskDrafts() {
       actionPlan.value || undefined
     )
     taskDrafts.value = drafts
-    draftsSuccess.value = 'Drafts generated'
-    setTimeout(() => { draftsSuccess.value = '' }, 2000)
+    showToast('Drafts generated')
   } catch (e) {
     taskDrafts.value = [{ title: 'Failed to generate drafts', source: 'error' }]
   } finally {
@@ -370,6 +362,8 @@ async function handleGenerateTaskDrafts() {
 </script>
 
 <template>
+  <Toast :message="toastMessage" :type="toastType" :visible="toast" />
+
   <div class="dashboard">
     <h2 class="dashboard-title">Today</h2>
 
@@ -382,14 +376,12 @@ async function handleGenerateTaskDrafts() {
         :disabled="isQuickAdding"
         class="input quick-add-input"
       />
-      <div v-if="quickAddSuccess" class="quick-add-success">{{ quickAddSuccess }}</div>
     </div>
 
     <div class="tasks-execution-zone">
       <div class="zone-header">
         <h3 class="zone-title">Saved Tasks</h3>
         <div class="zone-controls">
-          <div v-if="taskActionSuccess" class="task-action-success">{{ taskActionSuccess }}</div>
           <div class="archive-toggle">
             <button
               @click="showArchived = false"
@@ -459,7 +451,6 @@ async function handleGenerateTaskDrafts() {
         <button @click="handleGenerateReview" class="btn btn-ai ai-btn" :disabled="isLoading">
           {{ isLoading ? 'Generating...' : 'Generate Review' }}
         </button>
-        <div v-if="reviewSuccess" class="step-success">{{ reviewSuccess }}</div>
         <div v-if="weeklyReview" class="weekly-review">{{ weeklyReview }}</div>
       </div>
 
@@ -470,7 +461,6 @@ async function handleGenerateTaskDrafts() {
         <button @click="handleRecommendFocus" class="btn btn-ai ai-btn" :disabled="isLoadingFocus">
           {{ isLoadingFocus ? 'Analyzing...' : 'Get Focus' }}
         </button>
-        <div v-if="focusSuccess" class="step-success">{{ focusSuccess }}</div>
         <div v-if="focusRecommendation" class="focus-recommendation">{{ focusRecommendation }}</div>
       </div>
 
@@ -481,7 +471,6 @@ async function handleGenerateTaskDrafts() {
         <button @click="handleGenerateActionPlan" class="btn btn-ai ai-btn" :disabled="isLoadingAction">
           {{ isLoadingAction ? 'Generating...' : 'Create Plan' }}
         </button>
-        <div v-if="actionSuccess" class="step-success">{{ actionSuccess }}</div>
         <div v-if="actionPlan.length > 0" class="action-plan">
           <div class="action-item" v-for="(action, idx) in actionPlan" :key="idx">{{ idx + 1 }}. {{ action }}</div>
         </div>
@@ -494,7 +483,6 @@ async function handleGenerateTaskDrafts() {
         <button @click="handleGenerateTaskDrafts" class="btn btn-ai ai-btn" :disabled="isLoadingDrafts">
           {{ isLoadingDrafts ? 'Generating...' : 'Create Drafts' }}
         </button>
-        <div v-if="draftsSuccess" class="step-success">{{ draftsSuccess }}</div>
         <div v-if="taskDrafts.length > 0" class="task-drafts">
           <div class="draft-item" v-for="(draft, idx) in taskDrafts" :key="idx">
             <span class="draft-title">{{ draft.title }}</span>
@@ -503,7 +491,6 @@ async function handleGenerateTaskDrafts() {
           <button @click="handleSaveDraftsAsTasks" class="btn btn-primary save-btn" :disabled="isSavingTasks">
             {{ isSavingTasks ? 'Saving...' : 'Save to Tasks' }}
           </button>
-          <div v-if="saveSuccess" class="save-success">{{ saveSuccess }}</div>
         </div>
       </div>
     </div>

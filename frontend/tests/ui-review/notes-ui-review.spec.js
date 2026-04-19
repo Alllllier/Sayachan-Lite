@@ -134,6 +134,7 @@ test.describe('Notes UI review v1', () => {
     await expect(page.getByText('AI Tasks (2)')).toBeVisible()
     await captureReviewShot(page, testInfo, 'notes-ai-expanded')
 
+    await page.locator('button[title="Actions"]').first().click()
     await page.getByRole('button', { name: 'Edit' }).first().click()
     await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
     await captureReviewShot(page, testInfo, 'notes-edit-state')

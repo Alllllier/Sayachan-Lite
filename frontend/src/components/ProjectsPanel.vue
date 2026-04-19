@@ -17,18 +17,16 @@ const showArchived = ref(false)
 const aiSuggestions = ref({})
 const aiLoadingProjects = ref(new Set())
 const savedSuggestions = ref(new Set())
-const saveSuccessMessages = ref({})
+const menuOpenProjectId = ref(null)
 const manualTaskProjects = ref(new Set())
 const addingManualTasks = ref(new Set())
 const manualTaskInputs = ref({})
-const manualTaskSuccess = ref({})
 
 // Unified Task Capture (Single/Batch mode)
 const taskCaptureOpen = ref(new Set()) // 记录哪些 project 打开了 capture 区域
 const taskCaptureMode = ref({}) // { [projectId]: 'single' | 'batch' }
 const batchTaskInputs = ref({})
 const addingBatchTasks = ref(new Set())
-const batchTaskSuccess = ref({})
 const projectTasks = ref({})
 const loadingProjectTasks = ref(new Set())
 
@@ -49,6 +47,18 @@ function showToast(message, type = 'success') {
   setTimeout(() => {
     toast.value = false
   }, 3000)
+}
+
+function toggleProjectMenu(projectId) {
+  if (menuOpenProjectId.value === projectId) {
+    menuOpenProjectId.value = null
+  } else {
+    menuOpenProjectId.value = projectId
+  }
+}
+
+function closeProjectMenu() {
+  menuOpenProjectId.value = null
 }
 
 // Status mapping: internal enum → user-friendly language and color
@@ -336,8 +346,7 @@ async function saveSuggestionAsTask(projectId, suggestion) {
     project?.name || ''   // linkedProjectName
   )
   if (newTask) {
-    saveSuccessMessages.value[`${projectId}_focus`] = 'Saved as task'
-    setTimeout(() => { delete saveSuccessMessages.value[`${projectId}_focus`] }, 2000)
+    showToast('Saved as task')
     await fetchProjectTasksForCard(projectId)
   } else {
     savedSuggestions.value.delete(suggestion)
@@ -416,12 +425,11 @@ async function addManualTask(project) {
       project.name         // linkedProjectName
     )
     if (newTask) {
-      manualTaskSuccess.value[project._id] = 'Task added'
+      showToast('Task added')
       // Close capture area after successful save
       closeTaskCapture(project._id)
       // Refresh project tasks
       await fetchProjectTasksForCard(project._id)
-      setTimeout(() => { delete manualTaskSuccess.value[project._id] }, 2000)
     }
   } catch (e) {
     error.value = 'Failed to add task'
@@ -460,12 +468,11 @@ async function addBatchTasks(project) {
       if (newTask) successCount++
     }
 
-    batchTaskSuccess.value[project._id] = `Added ${successCount} task(s)`
+    showToast(`Added ${successCount} task(s)`)
     // Close capture area after successful batch save
     closeTaskCapture(project._id)
     // Refresh project tasks
     await fetchProjectTasksForCard(project._id)
-    setTimeout(() => { delete batchTaskSuccess.value[project._id] }, 2000)
   } catch (e) {
     error.value = 'Failed to add tasks'
   } finally {
@@ -495,7 +502,7 @@ async function addBatchTasks(project) {
       </div>
     </div>
     <EmptyState v-if="projects.length === 0" :title="showArchived ? 'No archived projects' : 'No projects yet'" />
-    <div v-for="project in projects" :key="project._id" :class="['card', 'card-accent-blue', 'project-card', { archived: project.status === 'archived' }]">
+    <div v-for="project in projects" :key="project._id" :class="['card', 'card-accent-blue', 'project-card', { archived: project.status === 'archived' }]" @click="closeProjectMenu">
       <div v-if="project.status === 'archived'" class="archived-badge">Archived</div>
       <button
         v-else
@@ -624,7 +631,6 @@ async function addBatchTasks(project) {
               <button @click="addManualTask(project)" class="btn btn-primary btn-sm save-task-btn" :disabled="addingManualTasks.has(project._id)">
                 {{ addingManualTasks.has(project._id) ? 'Saving...' : 'Save' }}
               </button>
-              <div v-if="manualTaskSuccess[project._id]" class="manual-task-success">{{ manualTaskSuccess[project._id] }}</div>
             </div>
           </div>
 
@@ -641,7 +647,6 @@ async function addBatchTasks(project) {
               <button @click="addBatchTasks(project)" class="btn btn-primary btn-sm save-task-btn" :disabled="addingBatchTasks.has(project._id)">
                 {{ addingBatchTasks.has(project._id) ? 'Saving...' : 'Save All' }}
               </button>
-              <div v-if="batchTaskSuccess[project._id]" class="batch-task-success">{{ batchTaskSuccess[project._id] }}</div>
             </div>
           </div>
         </div>
@@ -653,13 +658,20 @@ async function addBatchTasks(project) {
             <button @click="deleteProject(project._id)" class="btn btn-danger secondary-btn delete-btn">Delete</button>
           </template>
           <template v-else>
-            <button @click="startEditingProject(project)" class="btn btn-secondary secondary-btn">Edit</button>
-            <button @click="archiveProject(project)" class="btn btn-archive secondary-btn" title="Archive project">Archive</button>
-            <button @click="deleteProject(project._id)" class="btn btn-danger secondary-btn delete-btn">Delete</button>
-            <button @click="handleAISuggest(project)" class="btn-ai-icon" :disabled="aiLoadingProjects.has(project._id)" title="Generate with AI">
+            <button @click.stop="handleAISuggest(project)" class="btn-ai-icon" :disabled="aiLoadingProjects.has(project._id)" title="Generate with AI">
               <span v-if="aiLoadingProjects.has(project._id)" class="icon-loading">⋯</span>
               <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
             </button>
+            <div class="task-menu-container">
+              <button @click.stop="toggleProjectMenu(project._id)" class="task-menu-btn" :class="{ active: menuOpenProjectId === project._id }" title="Actions">
+                <span class="menu-icon">⋯</span>
+              </button>
+              <div v-if="menuOpenProjectId === project._id" class="task-menu-dropdown" @click.stop>
+                <button @click="startEditingProject(project)" class="menu-item">Edit</button>
+                <button @click="archiveProject(project)" class="menu-item">Archive</button>
+                <button @click="deleteProject(project._id)" class="menu-item delete">Delete</button>
+              </div>
+            </div>
           </template>
         </div>
 
@@ -668,7 +680,6 @@ async function addBatchTasks(project) {
           <div class="ai-suggestions-header">
             <strong>AI Suggestions ({{ aiSuggestions[project._id].length }})</strong>
             <div class="ai-suggestions-actions">
-              <span v-if="saveSuccessMessages[`${project._id}_focus`]" class="save-success">{{ saveSuccessMessages[`${project._id}_focus`] }}</span>
               <button @click="closeAISuggestions(project._id)" class="btn-ai-dismiss" title="Close">×</button>
             </div>
           </div>
@@ -1280,5 +1291,76 @@ async function addBatchTasks(project) {
 .batch-task-success {
   color: #10b981;
   font-size: 11px;
+}
+
+/* Task Menu - Overflow pattern */
+.task-menu-container {
+  position: relative;
+  margin-left: 4px;
+}
+
+.task-menu-btn {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: background 0.15s;
+}
+
+.task-menu-btn:hover {
+  background: #f5f5f5;
+}
+
+.task-menu-btn.active {
+  background: #e5e5e5;
+}
+
+.menu-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.task-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 120px;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.menu-item {
+  width: 100%;
+  padding: 10px 16px;
+  background: white;
+  border: none;
+  text-align: left;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.menu-item:hover {
+  background: #f5f5f5;
+}
+
+.menu-item.delete {
+  color: #dc2626;
+}
+
+.menu-item.delete:hover {
+  background: #fee2e2;
 }
 </style>

@@ -74,3 +74,16 @@
 - Risks / unknowns: `Refreshing dependencies too casually could destabilize a currently working stack, but leaving them unattended for too long increases drift, validation confusion, and environment mismatch risk. The right scope boundary between 'clarify invocation' and 'actually upgrade versions' is still open.`
 - Suggested next action: `Later, shape this into a bounded maintenance pass that first audits frontend and backend dependency age, repo-native script coverage, and the safest upgrade candidates before any broad version bumping starts.`
 - Reopen trigger: `A human explicitly wants a tooling/dependency maintenance sprint, or repeated validation/tooling confusion starts appearing across frontend or backend execution work.`
+
+### `Cross-Surface Frontend Validation Buildout`
+
+- Type: `cleanup`
+- Source: `audit`
+- Source reference: `UI Noise Reduction And Toast Consolidation closeout`
+- Problem / Opportunity: `Current repo-native browser/UI review coverage is still surface-skewed. Notes has a usable Playwright review path, but Projects and Dashboard do not yet have equivalent first-class UI review coverage, which leaves cross-surface cleanup work partially verified even when implementation itself is bounded and correct.`
+- Why now: `Recent UI cleanup work showed that validation gaps are now more about coverage structure than about one-off execution mistakes. Keeping this visible now reduces the chance that future cross-surface UI work keeps closing out with the same predictable unverified areas.`
+- Current status: `parked`
+- Dependencies: `A future bounded validation buildout that decides which frontend surfaces deserve repo-native browser review coverage first, how that coverage should be grouped, and how it should fit alongside build checks and manual review.`
+- Risks / unknowns: `If this expands too broadly, it could turn into a testing-system rewrite instead of a practical coverage pass. If it stays invisible, PMO will keep accepting avoidable browser-review gaps across non-Notes surfaces.`
+- Suggested next action: `Later, shape this into a bounded frontend validation pass that first maps the highest-value missing UI review surfaces (likely Projects and Dashboard), then adds repo-native browser review coverage incrementally rather than trying to redesign all testing at once.`
+- Reopen trigger: `A human explicitly wants a frontend validation sprint, or repeated UI closeouts keep landing with the same Projects/Dashboard browser-review gaps.`

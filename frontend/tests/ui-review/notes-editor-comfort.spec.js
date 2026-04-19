@@ -72,6 +72,7 @@ test.describe('Notes Editor Comfort Fixes', () => {
     await installNotesMocks(page)
     await page.goto('/notes')
 
+    await page.locator('button[title="Actions"]').first().click()
     await page.getByRole('button', { name: 'Edit' }).first().click()
     await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
 
@@ -101,6 +102,7 @@ test.describe('Notes Editor Comfort Fixes', () => {
     await installNotesMocks(page)
     await page.goto('/notes')
 
+    await page.locator('button[title="Actions"]').first().click()
     await page.getByRole('button', { name: 'Edit' }).first().click()
     const editor = page.locator('.note-card .cm-editor').first()
 
