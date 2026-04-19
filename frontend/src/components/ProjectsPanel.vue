@@ -1474,6 +1474,7 @@ async function addBatchTasks(project) {
 /* Task Row Interactions */
 .task-preview-item.can-focus {
   cursor: pointer;
+  user-select: none;
 }
 
 @media (min-width: 481px) {
