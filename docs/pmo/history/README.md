@@ -16,3 +16,8 @@
 - `pmo-v2-rebuild-lessons.md`
 - `ai-core-migration-record.md`
 - `pmo-v2-transition-audit-summary.md`
+
+另外，历史层也可以包含结构化归档子层，例如：
+
+- `candidates/`
+  - 承接已经退出 `state/sprint_candidates.md` 的 completed candidate 记录

@@ -35,7 +35,7 @@
 
 - Name: `Notes editor comfort fixes`
 - Why separate: `This slice focuses on concrete writing usability: text scale, line wrapping behavior, and long-form comfort.`
-- Current maturity: `emerging`
+- Current maturity: `ready`
 - Likely target: `sprint_candidates`
 - Parking trigger: `If the product identity discussion remains unresolved but the comfort problems are agreed as the only near-term priority.`
 - Reopen signal: `If comfort fixes alone leave the editor still feeling generic or visually off-tone.`
@@ -77,7 +77,7 @@
 
 ## Promotion Outcome
 
-- No promotion yet.
-- Continue narrow follow-up discussion until the sprint cut is clearer.
+- `slice-001` has now been promoted into `state/sprint_candidates.md` as `Notes Editor Comfort Fixes`.
+- Continue using this batch only for residual follow-up discussion that is not already captured by the new candidate or the deferred style-refresh path.
 - The scope deferral for rendered-surface identity work is now normalized in `state/decision_log.md`.
 - The broader Sayachan style-refresh direction is now parked in `state/idea_backlog.md` for future visibility.

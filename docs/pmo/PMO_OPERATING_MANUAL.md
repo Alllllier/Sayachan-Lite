@@ -83,6 +83,7 @@ Use this layer for system truth and PMO truth:
 Use this layer for historical explanation and legacy transition:
 
 - `history/legacy-transition-notes.md`
+- `history/candidates/README.md`
 
 ## Canonical Runtime Set
 
