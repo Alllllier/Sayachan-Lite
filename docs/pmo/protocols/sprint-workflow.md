@@ -60,27 +60,6 @@ Under this fast path:
 This fast path is for small, execution-ready corrections, not for scope-discovery work.
 If boundary questions or competing implementation directions appear, return to the normal discussion / candidate route instead of stretching the fast path.
 
-## Post-Closeout Tweak Path
-
-Use a post-closeout tweak when all of the following are true:
-
-- the issue is discovered immediately after a just-closed sprint or micro-fix through real usage or spot-checking
-- it is a same-scope tail correction rather than a new slice
-- the desired correction is already clear and does not need renewed discussion shaping
-- the correction does not reopen architecture, data-model, or workflow-semantics questions
-
-Under this path:
-
-1. PMO does not reopen `state/current_sprint.md` as a new active sprint.
-2. PMO does not write a new active contract into `state/execution_task.md`.
-3. PMO does not require a full structured execution return in `state/execution_report.md`.
-4. Instead, PMO records the tweak as a light note under the most recent closed sprint in `state/current_sprint.md`.
-5. The execution worker may implement the tweak directly from the clarified human instruction or PMO note, then return only a short completion note with validation status.
-6. PMO updates the tweak note in `state/current_sprint.md` once the correction lands.
-
-This path is for tiny same-scope tail corrections, not for new feature work.
-If the fix starts changing scope, needs more than one or two iterations, or exposes a new planning question, upgrade it back to the micro-fix fast path or the normal discussion / candidate route.
-
 ## Planning Rule
 
 Before a candidate is treated as genuinely ready:
@@ -118,6 +97,8 @@ Policy touchpoints during shaping:
 - `execution_task.md` should identify where the sprint came from so discussion, backlog, and handoff stay traceable
 - `execution_task.md` should contain only the current active execution contract, not stacked stale tasks
 - if no sprint is active, keep both `current_sprint.md` and `execution_task.md` in explicit `idle` state rather than silently leaving stale content
+- if human review during execution produces same-scope correction requests, keep them inside the active execution loop by default rather than reopening PMO immediately
+- only rewrite `execution_task.md` during active execution when the human-review correction materially changes scope, non-goals, or validation expectations
 
 ## Validation Rule
 
@@ -130,9 +111,14 @@ Execution reports should always state:
 - what project-specific review was performed or intentionally skipped
 - what remains unverified
 - what regression or follow-up risk still exists
+- any same-scope human-review corrections that changed the delivered result after the first implementation pass
+- any human-review-directed changes that slightly exceeded the original handoff wording
 
 This workflow does not assume browser validation or UI review as universal defaults.
 But when a sprint changes UI behavior, rendering, interaction density, or presentation quality, the report should make clear whether browser validation or UI review was expected and whether it actually happened.
+
+`execution_report.md` should be treated as the final execution record up until PMO closeout, not as a frozen first-pass snapshot.
+If human review triggers further same-scope refinement before closeout, the worker should update the same report instead of starting a new PMO cycle.
 
 ## Closeout Rule
 
@@ -162,8 +148,6 @@ After closeout, the selected candidate entry in `state/sprint_candidates.md` sho
 
 After PMO reads a detailed execution report, archive that report into `../history/reports/` before resetting `state/execution_report.md` to idle.
 
-When a change qualifies as a post-closeout tweak, PMO may keep the runtime surfaces idle and append a lightweight tweak note under the most recent closed sprint instead of reopening the full execution loop.
-
 Operational closeout pass:
 
 1. Read the active `state/execution_report.md` and determine the closeout status.
@@ -179,16 +163,7 @@ Operational closeout pass:
 9. Set `state/current_sprint.md` back to `idle` when no sprint remains active, using `../state/templates/current-sprint.idle.template.md` as the reset shape.
 10. Explicitly record commit state instead of assuming it.
 
-Post-closeout tweak rule:
-
-- keep the tweak attached to the most recent closed sprint rather than opening a fresh active sprint
-- record only:
-  - what the tweak corrects
-  - why it still belongs to the just-closed sprint
-  - whether it has landed
-  - what validation, if any, was performed
-- prefer no more than 1 to 2 tweaks per just-closed sprint
-- if additional follow-up keeps appearing, stop treating it as a tweak and reopen it as a micro-fix or a normal PMO item
+If a new issue is discovered only after PMO closeout has already completed, route it back into PMO as a new micro-fix or a normal discussion item instead of trying to patch the closed sprint retrospectively.
 
 Policy touchpoints during closeout:
 

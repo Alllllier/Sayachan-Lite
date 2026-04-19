@@ -30,6 +30,10 @@ const addingBatchTasks = ref(new Set())
 const projectTasks = ref({})
 const loadingProjectTasks = ref(new Set())
 
+// Project task preview expansion and filter state
+const expandedProjects = ref(new Set())
+const previewFilter = ref({}) // { [projectId]: 'active' | 'completed' }
+
 // Toast notifications
 const toast = ref(null)
 const toastMessage = ref('')
@@ -377,6 +381,45 @@ async function setTaskAsFocus(project, task) {
   }
 }
 
+function getActiveTasks(projectId) {
+  const tasks = projectTasks.value[projectId] || []
+  return tasks.filter(t => t.status === 'active')
+}
+
+function getCompletedTasks(projectId) {
+  const tasks = projectTasks.value[projectId] || []
+  return tasks.filter(t => t.status === 'completed')
+}
+
+function getPreviewFilter(projectId) {
+  return previewFilter.value[projectId] || 'active'
+}
+
+function getPreviewTasks(projectId) {
+  const filter = getPreviewFilter(projectId)
+  const tasks = filter === 'active' ? getActiveTasks(projectId) : getCompletedTasks(projectId)
+  if (expandedProjects.value.has(projectId)) {
+    return tasks
+  }
+  return tasks.slice(0, 3)
+}
+
+function toggleProjectPreview(projectId) {
+  if (expandedProjects.value.has(projectId)) {
+    expandedProjects.value.delete(projectId)
+  } else {
+    expandedProjects.value.add(projectId)
+  }
+}
+
+function setPreviewFilter(projectId, filter) {
+  previewFilter.value[projectId] = filter
+}
+
+function isFocusTask(project, task) {
+  return String(project.currentFocusTaskId) === String(task._id)
+}
+
 function openTaskCapture(projectId) {
   taskCaptureOpen.value.add(projectId)
   // 默认从 single 模式开始
@@ -556,26 +599,49 @@ async function addBatchTasks(project) {
         </div>
 
         <!-- Project Tasks Preview -->
-        <div v-if="projectTasks[project._id] && projectTasks[project._id].length > 0" class="project-tasks-preview">
+        <div v-if="getActiveTasks(project._id).length > 0 || getCompletedTasks(project._id).length > 0" class="project-tasks-preview" :class="{ 'preview-expanded': expandedProjects.has(project._id) }">
           <div class="tasks-preview-header">
-            <span class="tasks-preview-title">Tasks ({{ projectTasks[project._id].length }})</span>
+            <div class="preview-header-left">
+              <span class="tasks-preview-title">Tasks</span>
+              <div class="preview-filter-switch">
+                <button
+                  @click.stop="setPreviewFilter(project._id, 'active')"
+                  class="filter-btn"
+                  :class="{ active: getPreviewFilter(project._id) === 'active' }"
+                >
+                  Active
+                </button>
+                <button
+                  @click.stop="setPreviewFilter(project._id, 'completed')"
+                  class="filter-btn"
+                  :class="{ active: getPreviewFilter(project._id) === 'completed' }"
+                >
+                  Completed
+                </button>
+              </div>
+            </div>
+            <button
+              @click.stop="toggleProjectPreview(project._id)"
+              class="btn btn-secondary btn-sm preview-toggle-btn"
+            >
+              {{ expandedProjects.has(project._id) ? '收起' : '展开' }}
+            </button>
           </div>
+
           <div class="tasks-preview-list">
             <div
-              v-for="task in projectTasks[project._id].slice(0, 3)"
+              v-for="task in getPreviewTasks(project._id)"
               :key="task._id"
               class="task-preview-item"
-              :class="{ completed: task.completed }"
+              :class="{
+                completed: task.status === 'completed' || task.status === 'archived',
+                'is-focus': isFocusTask(project, task),
+                'can-focus': task.status === 'active'
+              }"
+              @click.stop="task.status === 'active' ? setTaskAsFocus(project, task) : null"
             >
               <span class="task-preview-text">{{ task.title }}</span>
-              <button
-                v-if="!task.completed && task.status !== 'archived' && task.status !== 'completed'"
-                @click="setTaskAsFocus(project, task)"
-                class="btn btn-secondary btn-sm set-focus-btn"
-                :disabled="String(project.currentFocusTaskId) === String(task._id)"
-              >
-                {{ String(project.currentFocusTaskId) === String(task._id) ? 'Current Focus' : 'Set as Focus' }}
-              </button>
+              <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
             </div>
           </div>
         </div>
@@ -1116,6 +1182,12 @@ async function addBatchTasks(project) {
   margin-bottom: 8px;
 }
 
+.preview-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .tasks-preview-title {
   font-size: 12px;
   font-weight: 500;
@@ -1357,5 +1429,86 @@ async function addBatchTasks(project) {
 
 .menu-item.delete:hover {
   background: #fee2e2;
+}
+
+/* Preview Toggle Button */
+.preview-toggle-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+/* Preview Filter Switch - Lightweight unified segmented control */
+.preview-filter-switch {
+  display: inline-flex;
+  gap: 0;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  background: #e9ecef;
+  padding: 3px;
+}
+
+.filter-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  margin: 0 1px;
+}
+
+.filter-btn:hover:not(.active) {
+  color: #555;
+}
+
+.filter-btn.active {
+  background: white;
+  color: #333;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Task Row Interactions */
+.task-preview-item.can-focus {
+  cursor: pointer;
+}
+
+.task-preview-item.can-focus:hover {
+  background: #f0f7f4;
+}
+
+.task-preview-item.is-focus {
+  border-left-color: #42b883;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.focus-badge {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #42b883;
+  background: rgba(66, 184, 131, 0.1);
+  border-radius: 12px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Expanded state: no text truncation */
+.preview-expanded .task-preview-text {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* Mobile: hide row-level focus badge; rely on top Current Focus section for semantics */
+@media (max-width: 480px) {
+  .task-preview-item.is-focus .focus-badge {
+    display: none;
+  }
 }
 </style>

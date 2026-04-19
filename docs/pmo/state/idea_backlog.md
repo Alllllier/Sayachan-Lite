@@ -87,3 +87,29 @@
 - Risks / unknowns: `If this expands too broadly, it could turn into a testing-system rewrite instead of a practical coverage pass. If it stays invisible, PMO will keep accepting avoidable browser-review gaps across non-Notes surfaces.`
 - Suggested next action: `Later, shape this into a bounded frontend validation pass that first maps the highest-value missing UI review surfaces (likely Projects and Dashboard), then adds repo-native browser review coverage incrementally rather than trying to redesign all testing at once.`
 - Reopen trigger: `A human explicitly wants a frontend validation sprint, or repeated UI closeouts keep landing with the same Projects/Dashboard browser-review gaps.`
+
+### `Frontend Bundle Weight Review`
+
+- Type: `cleanup`
+- Source: `execution report`
+- Source reference: `docs/_legacy_pmo/inbox/execution_report.md`
+- Problem / Opportunity: `The frontend has carried existing chunk-size warnings since earlier Notes / CodeMirror work, but that bundle-weight concern never got promoted into a formal PMO item. With CodeMirror now established in Notes, the product may need a later bundle review to confirm whether the current dependency shape, loading path, or editor-related imports are still the right tradeoff.`
+- Why now: `Legacy execution reporting already noted chunk-size warnings as an existing condition, and later Notes work kept building on the same editor stack without turning bundle weight into a tracked cleanup topic. Recording it now prevents the concern from living only as a half-remembered implementation detail.`
+- Current status: `parked`
+- Dependencies: `A bounded future frontend performance / bundle-hygiene window that can inspect build output, chunk composition, and whether CodeMirror-related costs should stay as-is, be lazily loaded, or be otherwise reshaped.`
+- Risks / unknowns: `The current warning may still be acceptable for the product stage, and a premature optimization pass could add complexity without real user benefit. But if bundle weight keeps growing invisibly, future frontend work may inherit a performance cost that nobody formally re-evaluated.`
+- Suggested next action: `Later, run a bounded frontend bundle review that checks current build output and identifies whether Notes/CodeMirror-related weight is still an acceptable tradeoff or should become a focused optimization slice.`
+- Reopen trigger: `A human explicitly wants a frontend performance/bundle review, or future build output keeps surfacing chunk-size warnings that start affecting delivery confidence.`
+
+### `Repo-Native Claude Launch From PMO`
+
+- Type: `cleanup`
+- Source: `discussion`
+- Source reference: `Human discussion on 2026-04-19 about using PowerShell to launch Claude from the current PMO handoff`
+- Problem / Opportunity: `Codex PMO already writes repo-native execution contracts, but starting Claude execution still depends on a manual human bridge. A future repo-native launcher path could let PMO start Claude from PowerShell against the current `execution_task.md`, while still keeping `execution_report.md` as the formal return surface.`
+- Why now: `The current Codex -> PMO -> Claude loop is working, but repeated manual launching is still a visible source of friction. The environment already exposes a callable Claude CLI, so the idea is practical enough to keep visible even if we are not implementing it now.`
+- Current status: `parked`
+- Dependencies: `A later bounded workflow pass that confirms the safest Claude CLI invocation pattern, how the launcher should target the active repo-native handoff, and how to preserve report-writing discipline without replacing PMO review.`
+- Risks / unknowns: `If automated too early, this could create a brittle launcher flow or blur the line between PMO activation, execution, and report review. It also depends on the Claude CLI being stable enough for predictable PowerShell-driven execution.`
+- Suggested next action: `Later, evaluate a minimal launcher shape where PMO starts Claude from PowerShell using the active `execution_task.md`, keeps `execution_report.md` as the only formal return surface, and avoids introducing a second unofficial execution channel.`
+- Reopen trigger: `A human explicitly wants to prototype or formalize a PowerShell-based Claude launch path from PMO.`

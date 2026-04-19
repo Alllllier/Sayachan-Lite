@@ -2,7 +2,7 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-04-19`
+- Last updated: `2026-04-20`
 
 ## Current State
 
@@ -12,10 +12,10 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Overflow Trigger SVG Kebab Alignment`
+- Sprint: `Project Task Preview Expansion And Focus Simplification`
 - Outcome: `completed with bounded residual unverified areas`
 - Report surface: `docs/pmo/state/execution_report.md`
 
 ## Next Activation Rule
 
-- wait for explicit human sprint selection, a clearly bounded micro-fix activation, or a justified post-closeout tweak before writing a new active execution contract here
+- wait for explicit human sprint selection or a clearly bounded micro-fix activation before writing a new active execution contract here

@@ -67,7 +67,7 @@
 - A parallel runtime-state judgment has now emerged: `current_sprint.md` should be reduced to a true state card that stays shorter than `execution_task.md` and `execution_report.md`, rather than continuing to accumulate semi-narrative sprint summaries.
 - A helper-layer judgment has now emerged as well: `CLAUDE.md` should stay a narrow execution entrypoint and only gain new rules when they materially change default worker behavior, prevent recurring repo-specific mistakes, or encode a high-value repo-native default that execution workers are likely to miss otherwise.
 - A closeout-history judgment has now emerged too: execution-report archives should behave more like mechanical report snapshots than second narrative summaries, so closeout preserves the return in history without requiring a fresh round of prose-heavy rewriting.
-- A further friction judgment has now emerged from real post-closeout usage: some tiny same-scope corrections discovered immediately after testing should not reopen the whole micro-fix runtime loop, and instead should use a lighter post-closeout tweak path attached to the most recent closed sprint.
+- A further friction judgment has now emerged from real execution usage: same-scope human-review corrections should usually stay inside the active execution loop and be absorbed into the final `execution_report.md` rather than creating a new PMO path before closeout.
 - The most promising near-term reduction targets are:
   - lowering `discussion_index.md` maintenance frequency
   - keeping `current_sprint.md` lighter than `execution_task.md` and `execution_report.md`
@@ -88,8 +88,8 @@
 - `CLAUDE.md` now carries an explicit growth boundary so it stays a narrow execution entrypoint rather than a second PMO manual.
 - `history/reports/` now uses a thinner, more mechanical archive snapshot pattern through:
   - `history/reports/execution-report-archive.template.md`
-- very small same-scope tail corrections can now use a `post-closeout tweak` path through:
+- human-review refinements are now expected to remain inside the active execution loop through:
   - `protocols/sprint-workflow.md`
   - `PMO_OPERATING_MANUAL.md`
-  - `state/templates/current-sprint.idle.template.md`
+  - `CLAUDE.md`
 - Keep this batch only as historical context unless future PMO usage reveals another concrete document-load problem that is not already covered by the stabilized rules above.

@@ -22,17 +22,6 @@
 - Documentation sync outcome:
 - Residual note:
 
-## Post-Closeout Tweaks
-
-- `none`
-
-Optional tweak entry shape:
-
-- Tweak:
-- Reason it still belongs to the last closed sprint:
-- Status: `pending | landed`
-- Validation note:
-
 ## Next PMO Action
 
 - keep `execution_task.md` in explicit idle state until a new sprint or micro-fix is activated

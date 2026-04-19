@@ -7,6 +7,14 @@
 ## Delivered
 
 - what was implemented or changed
+- if human review requested same-scope follow-up refinements before closeout, include the final delivered result here rather than freezing the first-pass implementation summary
+
+## Human Review Adjustments
+
+- Any human-review-directed refinement after the first implementation pass: `yes | no`
+- If yes, what changed after review:
+- Did any review-directed change slightly exceed the original handoff wording: `yes | no`
+- If yes, describe the deviation so PMO can judge it during closeout:
 
 ## Validation Layers Performed
 

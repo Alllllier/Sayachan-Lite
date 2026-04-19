@@ -133,12 +133,6 @@ There is also a narrow fast path for small execution-ready fixes:
 
 Use it only when the issue is already concrete, the scope is small, and no new discussion or candidate comparison is needed.
 
-There is also a lighter tail-correction path for issues discovered immediately after closeout:
-
-`just-closed sprint -> post-closeout tweak -> update last closed sprint note`
-
-Use it only when the correction is tiny, same-scope, and does not justify reopening the full execution loop.
-
 ## Minimum Reading Order
 
 ### When checking current PMO state
@@ -178,15 +172,6 @@ Read in this order:
 2. `state/execution_task.md`
 3. `protocols/sprint-workflow.md`
 4. only the additional docs needed for the bounded fix
-
-### When using a post-closeout tweak
-
-Read in this order:
-
-1. `state/current_sprint.md`
-2. the most recent closed sprint note under that file
-3. `protocols/sprint-workflow.md`
-4. only the touched implementation files needed for the tiny correction
 
 ### When checking system truth
 
@@ -275,7 +260,7 @@ The execution worker does not become PMO by reading this manual.
 - `current_sprint.md` is a state card, not a narrative summary surface
 - `execution_task.md` is the active execution contract
 - `execution_report.md` is the active execution return surface
-- `post-closeout tweaks` are attached to the most recent closed sprint note rather than reopening the full runtime trio
+- human-review refinements stay inside the active execution loop unless they force a real PMO scope or decision change
 
 ## Policy Touchpoints
 

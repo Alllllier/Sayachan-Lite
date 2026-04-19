@@ -5,7 +5,7 @@
 - PMO owner: `Codex`
 - Architecture owner: `Human`
 - Execution owner: `execution worker`
-- Last updated: `2026-04-19`
+- Last updated: `2026-04-20`
 
 ## Current State
 
@@ -15,18 +15,14 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Overflow Trigger SVG Kebab Alignment`
-- Closeout date: `2026-04-19`
+- Sprint: `Project Task Preview Expansion And Focus Simplification`
+- Closeout date: `2026-04-20`
 - Delivery status: `completed with bounded residual unverified areas`
 - Commit state: `not recorded in PMO yet`
 - Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `The SVG kebab trigger landed on Notes, Projects, and Dashboard, but Projects and Dashboard still do not have equivalent browser-level UI review coverage.`
-
-## Post-Closeout Tweaks
-
-- `none`
+- Residual note: `Projects task preview redesign landed and browser review covered the key active/mobile states, but completed-task rendering with real completed data and multi-project mixed-state coverage remain only partially validated.`
 
 ## Next PMO Action
 
-- keep `execution_task.md` in explicit idle state until a new sprint, micro-fix, or post-closeout tweak is activated
-- decide whether the next PMO move is a new discussion, a candidate activation, or follow-up validation coverage work
+- keep `execution_task.md` in explicit idle state until a new sprint or micro-fix is activated
+- decide whether the next PMO move is a new discussion, a candidate activation, a micro-fix, or archive cleanup

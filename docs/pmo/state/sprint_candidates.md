@@ -29,6 +29,32 @@
 
 ## Current Candidates
 
+### `Project Task Preview Expansion And Focus Simplification`
+
+- Status: `completed`
+- Source reference: `state/discussions/discussion_batch_005.md`
+- Why now: `The current project-card task preview is too limited to support real task steering and still carries a dedicated Set as Focus button that adds action noise. The discussion has now stabilized a bounded redesign that makes the preview more useful without turning the card into a full task manager.`
+- Expected outcome: `Project cards become more useful and calmer at the same time: collapsed previews show up to three active tasks, expanded previews reveal the full task surface through an explicit expand/collapse control, active/completed tasks are separated through a lighter one-control switch, and setting project focus happens directly through task-row click with a clear Current Focus badge instead of a separate button.`
+- In scope:
+  - update `ProjectsPanel.vue` task preview so collapsed state shows up to 3 active tasks only
+  - add one changing `展开 / 收起` control for the preview container
+  - make expanded state show full task titles instead of truncation
+  - add a lighter one-control switch between `active` and `completed` task groups in expanded state
+  - remove the dedicated `Set as Focus` button from task preview rows
+  - make task-row click on active tasks set the project's current focus
+  - show a `Current Focus` badge on the focused task row
+- Out of scope:
+  - broader ProjectsPanel redesign outside the preview block
+  - changes to task storage, backend task/project contracts, or focus-clearing semantics
+  - dashboard task-list interaction redesign
+  - task editing, inline completion controls, or richer task-management behavior inside the project card
+  - new AI behavior or new project/task data fields
+- Dependencies: `Bounded frontend work in ProjectsPanel.vue plus validation of project-focus behavior and preview-state behavior after implementation.`
+- Risk level: `medium`
+- Readiness: `ready`
+- Start condition: `Satisfied on 2026-04-19 by explicit human selection; PMO activated current_sprint.md and execution_task.md for this bounded ProjectsPanel interaction redesign while keeping the candidate visible until closeout.`
+- Closeout: `Completed on 2026-04-20. The Projects card preview now supports collapsed vs expanded task viewing, an always-visible active/completed segmented filter, direct row-click focus setting, and mobile-specific hiding of the redundant row-level Current Focus badge. Residual unverified areas remain around real completed-task rendering in browser review, hover interactions, and multi-project mixed-state coverage.`
+
 ### `UI Noise Reduction And Toast Consolidation`
 
 - Status: `completed`

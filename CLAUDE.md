@@ -17,14 +17,9 @@ This file is not the canonical architecture source. Canonical sources live under
 
 ## Immediate Rule
 
-If the human explicitly says to execute the current sprint or the active PMO task:
+If the human explicitly says to execute the current sprint or active PMO task, read `docs/pmo/state/execution_task.md` first, treat it as the execution contract, and write the result into `docs/pmo/state/execution_report.md`.
 
-1. read `docs/pmo/state/execution_task.md` first
-2. treat it as the execution contract
-3. optionally read `docs/pmo/state/current_sprint.md` for lightweight sprint state
-4. write the result into `docs/pmo/state/execution_report.md`
-
-Do not start with broad repo exploration when the active execution file already defines the task.
+Do not start with broad repo exploration when the active handoff already defines the task.
 
 Treat natural execution prompts such as:
 
@@ -36,8 +31,6 @@ Treat natural execution prompts such as:
 - `按当前任务做`
 
 as execution-start authority for the active PMO handoff unless the human clearly signals that planning is still open.
-
-When these phrases appear and an active PMO sprint exists, start from `docs/pmo/state/execution_task.md` rather than searching for a legacy outbox/inbox path or reconstructing intent from older PMO terms.
 
 ---
 
@@ -86,12 +79,8 @@ Current stack at a glance:
 - system baseline: `docs/pmo/baselines/system-baseline.md`
 - runtime baseline: `docs/pmo/baselines/runtime-baseline.md`
 - backend contract baseline: `docs/pmo/baselines/backend-api.md`
-- private-core boundary baseline: `docs/pmo/baselines/private-core-boundary.md`
-- shipped scope and debt: `docs/pmo/baselines/roadmap.md`
 - engineering conventions: `ENGINEERING_CONVENTIONS.md`
 - architecture-sensitive areas: `docs/pmo/policies/architecture-sensitive-areas.md`
-- AI fallback expectation: `docs/pmo/policies/ai-fallback-policy.md`
-- completion checklist: `docs/pmo/policies/feature-completion-checklist.md`
 - documentation sync: `docs/pmo/policies/documentation-sync-guide.md`
 - PMO operating model: `docs/pmo/PMO_OPERATING_MANUAL.md`
 - PMO handoff protocol: `docs/pmo/protocols/execution-handoff-protocol.md`
@@ -102,9 +91,10 @@ Current stack at a glance:
 
 - `docs/pmo/state/current_sprint.md` is the lightweight PMO state card
 - `docs/pmo/state/execution_task.md` is the canonical worker handoff
-- `docs/pmo/state/execution_report.md` is the required completion report destination
+- `docs/pmo/state/execution_report.md` is the mutable completion report surface until PMO closeout
 - do not treat `current_sprint.md` as a substitute for the active execution contract
-- when `execution_task.md` is active, execute from it rather than reconstructing the task from scattered context
+- same-scope human-review fixes should stay inside the current execution loop; update the same report instead of starting a new PMO cycle yourself
+- if a human-review request slightly exceeds the original handoff wording but is still clearly same-scope and directly instructed, you may implement it and must mark that deviation explicitly in `execution_report.md`
 
 Repo-native PMO ownership model:
 
@@ -151,14 +141,14 @@ Avoid:
 - hardcoding colors already represented by semantic variables
 - redefining shared primitives in scoped styles when layout-only styles would suffice
 
-For browser validation or UI review:
+### UI Review Defaults
 
 - prefer repo-defined scripts in `frontend/package.json` first
-- for this repo, prefer `npm run test:ui-review` from `frontend/` instead of bare `npx playwright ...`
-- do not use bare `npx playwright` when the project only declares `@playwright/test`, because it can install a mismatched Playwright version on the fly
-- if a direct Playwright invocation is truly needed, use the project-local test runner rather than a freshly resolved global package
+- for this repo, prefer `npm run test:ui-review` from `frontend/` over bare `npx playwright ...`
+- if the existing script does not cover the surface you changed, add or adjust a repo-native script in `frontend/package.json` first, then run that script instead of inventing a one-off Playwright command
+- prefer the already-installed system Chrome/browser path; do not download a fresh Playwright-managed Chromium build unless the human explicitly approves it or the task clearly requires browser-managed parity
 
-For success feedback on frontend surfaces:
+### Success Feedback Defaults
 
 - prefer the shared `Toast` component as the default success-feedback path
 - do not add a new local inline success-message state unless the task explicitly needs a persistent in-context confirmation that would become unclear as a transient toast
@@ -191,9 +181,6 @@ For success feedback on frontend surfaces:
 
 - when asked to modify UI, check `frontend/src/style.css` first
 - when asked to modify API behavior, review `docs/pmo/baselines/backend-api.md`
-- when asked to execute the current sprint, go straight to `docs/pmo/state/execution_task.md`
-- when the human uses shorthand like `开始施工` or `开始做`, treat it the same way: read `docs/pmo/state/execution_task.md` first if PMO execution is already active
-- when asked to report completion, write to `docs/pmo/state/execution_report.md`
 
 ## End-Of-Work Hygiene
 
