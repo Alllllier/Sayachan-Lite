@@ -23,3 +23,5 @@
   - 承接已经退出 `state/sprint_candidates.md` 的 completed candidate 记录
 - `reports/`
   - 承接已经退出 `state/execution_report.md` active surface 的已读 execution report
+
+这些结构化子层仍然属于 `history/`，但它们的用途是保存已退出 active surface 的运行记录，而不是迁移说明本身。
