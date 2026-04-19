@@ -1476,8 +1476,10 @@ async function addBatchTasks(project) {
   cursor: pointer;
 }
 
-.task-preview-item.can-focus:hover {
-  background: #f0f7f4;
+@media (min-width: 481px) {
+  .task-preview-item.can-focus:hover {
+    background: #f0f7f4;
+  }
 }
 
 .task-preview-item.is-focus {
