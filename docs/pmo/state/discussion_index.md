@@ -6,8 +6,11 @@
 
 - keep only one primary `exploration` batch active at a time unless parallel exploration is truly necessary
 - a narrow `follow-up` batch may be active alongside the primary exploration batch when it comes from closeout, execution return, or real usage and does not replace the main exploration thread
-- use this file to track batch status, current focus, and promotion direction
+- use this file to track batch status, current focus, and promotion direction at the lifecycle level rather than as a step-by-step discussion log
 - do not put full discussion content here; detailed discussion belongs in `state/discussions/`
+- treat this file as a lifecycle index, not an incremental discussion journal
+- update it when a batch is opened, promoted, parked, archived, or otherwise changes lifecycle state in a meaningful way
+- do not update it for every new judgment, narrowed question, or intermediate refinement that already lives clearly in the batch file itself
 
 ## Entry Template
 
@@ -20,4 +23,6 @@
 | Batch | Mode | Topic | Current focus | Status | Last updated | Promotion direction |
 | --- | --- | --- | --- | --- | --- | --- |
 | `discussion_batch_001` | `exploration` | `Dashboard time cues and panel action noise` | `Define the day-phase model behind a text-led homepage rhythm cue so Sayachan can explain the user's present phase before any specific copy is written.` | `active` | `2026-04-18` | `undecided` |
-| `discussion_batch_002` | `follow-up` | `Notes editor comfort and identity follow-up` | `Decide how the Notes editor should resolve concrete comfort issues exposed by real use, while shaping a more distinctive Sayachan writing feel before promoting the work into execution.` | `active` | `2026-04-19` | `likely sprint_candidates` |
+| `discussion_batch_002` | `follow-up` | `Notes editor comfort and identity follow-up` | `Keep the discussion only as historical context for the promoted comfort-fix slice and the deferred rendered-surface identity decision.` | `stable` | `2026-04-19` | `promoted to sprint_candidates plus deferred planning records` |
+| `discussion_batch_003` | `follow-up` | `Button noise and success-message consistency` | `Keep the batch for residual discussion after the promotion of the combined UI noise-reduction candidate.` | `stable` | `2026-04-19` | `promoted to sprint_candidates` |
+| `discussion_batch_004` | `follow-up` | `PMO document load reduction` | `Keep the batch as context for the stabilized PMO减负 rules already normalized into runtime and workflow docs.` | `stable` | `2026-04-19` | `normalized into canonical PMO docs` |

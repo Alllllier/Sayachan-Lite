@@ -158,6 +158,12 @@ For browser validation or UI review:
 - do not use bare `npx playwright` when the project only declares `@playwright/test`, because it can install a mismatched Playwright version on the fly
 - if a direct Playwright invocation is truly needed, use the project-local test runner rather than a freshly resolved global package
 
+For success feedback on frontend surfaces:
+
+- prefer the shared `Toast` component as the default success-feedback path
+- do not add a new local inline success-message state unless the task explicitly needs a persistent in-context confirmation that would become unclear as a transient toast
+- if a surface already mixes toast plus local inline success labels for routine success events, prefer consolidating toward toast rather than extending the mixed pattern
+
 ---
 
 ## AI Feature Rules
@@ -176,6 +182,8 @@ For browser validation or UI review:
 - do not prefer legacy PMO paths over the active `docs/pmo/**` surface
 - when changing truth, PMO runtime, or execution behavior, follow `docs/pmo/policies/documentation-sync-guide.md` instead of inventing an execution-local sync rule
 - when reporting sprint completion, include the documentation-sync review outcome in the repo-native PMO closeout
+- keep this file narrow: add a new rule here only when it changes the default execution path, prevents a recurring repo-specific mistake, or encodes a high-value repo-native default that workers are likely to miss otherwise
+- do not use this file as a second PMO manual or as a dumping ground for ordinary product judgments that already belong in `docs/pmo/**`
 
 ---
 

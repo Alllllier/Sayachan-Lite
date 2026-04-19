@@ -257,6 +257,7 @@ The execution worker does not become PMO by reading this manual.
 - parked future work should not remain trapped only in `execution_task.md` or `execution_report.md`
 - validation must be stated explicitly, not assumed silently
 - `current_sprint.md` stays lightweight
+- `current_sprint.md` is a state card, not a narrative summary surface
 - `execution_task.md` is the active execution contract
 - `execution_report.md` is the active execution return surface
 

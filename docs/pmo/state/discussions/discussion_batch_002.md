@@ -2,7 +2,7 @@
 
 - Topic: `Notes editor comfort and identity follow-up`
 - Last updated: `2026-04-19`
-- Status: `active`
+- Status: `stable`
 - Discussion mode: `follow-up`
 
 ## Intake Record
@@ -81,3 +81,4 @@
 - Continue using this batch only for residual follow-up discussion that is not already captured by the new candidate or the deferred style-refresh path.
 - The scope deferral for rendered-surface identity work is now normalized in `state/decision_log.md`.
 - The broader Sayachan style-refresh direction is now parked in `state/idea_backlog.md` for future visibility.
+- This batch no longer needs to occupy the active follow-up slot unless the human explicitly reopens the rendered-surface identity path or a new Notes comfort issue appears that is not already covered by the promoted or deferred records.

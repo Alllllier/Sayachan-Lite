@@ -1,29 +1,20 @@
 # Execution Report
 
-- Status: `idle`
-- Sprint: `idle`
+- Status: `awaiting-report`
+- Sprint: `UI Noise Reduction And Toast Consolidation`
 - Last updated: `2026-04-19`
 
 ## Current State
 
-There is no active execution report waiting for PMO review right now.
+This file is waiting for the execution worker's completion report for `UI Noise Reduction And Toast Consolidation`.
 
-The most recent active report for `Notes Editor Font Family Alignment` has already been read for PMO closeout.
+The worker should replace this placeholder with a structured report using the active execution-report contract.
 
-## Last Closed Report Summary
+## Report Focus For This Sprint
 
-- Sprint: `Notes Editor Font Family Alignment`
-- Report outcome: `completed with bounded residual unverified areas`
-- PMO read result: `closeout complete`
-
-## Next Use
-
-The execution worker should replace this placeholder with a structured report that states:
-
-- what was delivered
-- what validation was performed
-- whether project-specific review was actually needed for this sprint
-- what project-specific review was performed or intentionally skipped
-- what remains unverified
-- what risks or escalations still matter
+- what changed in `NotesPanel.vue`, `ProjectsPanel.vue`, and `Dashboard.vue`
+- whether the new overflow pattern remained discoverable and visually calmer
+- whether the shared toast path now covers the intended success-feedback flows
+- what browser/UI review was actually performed across the affected surfaces
+- what remains unverified or still noisy
 - what documentation-sync outcome PMO should record during closeout

@@ -65,6 +65,24 @@ Use one of these modes when opening a batch:
    - park it for later with an explicit review trigger
 10. If the topic is confirmed as `private-core-owned`, keep only the minimum boundary-safe coordination record in the public PMO and move detailed design work into the private repo documentation set.
 
+## `discussion_index.md` Update Rule
+
+Treat `state/discussion_index.md` as a lifecycle index rather than a step-by-step discussion log.
+
+Update the index when:
+
+- a new batch is opened
+- a batch changes lifecycle status in a meaningful way, such as `active -> stable`, `active -> promoted`, `active -> parked`, or `stable -> archived`
+- the promotion direction becomes meaningfully clearer
+- the current focus changes at a real phase level rather than through ordinary sentence-level discussion refinement
+
+Do not update the index when:
+
+- the batch gains one more stable judgment
+- an open question is sharpened
+- a slice becomes clearer inside the batch
+- normal discussion detail is progressing without a real lifecycle change
+
 ## Exit Routing Rule
 
 Choose the exit path based on what became stable:
@@ -106,6 +124,7 @@ Promotion may happen from the theme level or from the possible-slice level, depe
 - do not treat the existence of a plausible slice as a reason to rush discussion into candidate state
 - unless the human explicitly asks to converge now, discussion may stay in theme- and slice-shaping mode while the direction is still becoming clear
 - when a stable judgment, sharper current focus, or clearer open question appears, write it back into the active batch during the discussion instead of waiting for a final summary pass
+- let the batch file absorb normal discussion refinement; do not mirror every refinement into `discussion_index.md`
 - once a result is stable, move the long-lived output into formal PMO state instead of leaving discussion as the only source of truth
 - if a topic is parked, record why it is parked and what would cause it to be reopened
 - if a new follow-up topic appears after closeout or real usage, it is valid to open a new discussion batch instead of forcing it into backlog or candidate immediately

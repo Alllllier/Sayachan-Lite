@@ -29,6 +29,30 @@
 
 ## Current Candidates
 
+### `UI Noise Reduction And Toast Consolidation`
+
+- Status: `active`
+- Source reference: `state/discussions/discussion_batch_003.md`
+- Why now: `Recent product review surfaced two linked UI consistency problems: low-frequency management actions are overexposed as always-visible buttons, and success feedback is still fragmented across toast plus many local inline implementations. Treating them as one bounded cleanup keeps the next UI polish pass coherent instead of splitting the same noise-reduction goal into separate sprints.`
+- Expected outcome: `Notes, Projects, and the Dashboard task list feel quieter and more consistent because low-frequency management actions move behind a shared overflow pattern, while frontend success feedback defaults to the shared toast path instead of mixed inline local-state confirmations.`
+- In scope:
+  - move `edit`, `archive`, and `delete` into a trailing overflow menu on `NotesPanel.vue` and `ProjectsPanel.vue`
+  - keep `pin` and AI actions directly visible on note and project cards
+  - use a vertical-ellipsis trailing trigger placed after the AI action on note and project cards
+  - keep overflow menu order consistent as `Edit -> Archive -> Delete`
+  - align the `Dashboard.vue` saved-task overflow trigger with the same vertical-ellipsis language
+  - replace current inline success confirmations in `NotesPanel.vue`, `ProjectsPanel.vue`, and `Dashboard.vue` with the shared toast path where no persistent in-context confirmation is actually needed
+  - preserve current product behavior while changing presentation and feedback delivery
+- Out of scope:
+  - broader Dashboard AI workflow redesign
+  - new action types, new AI behavior, or task/project/note data-model changes
+  - broad visual restyling outside the overflow and toast consistency pass
+  - a global component-system rewrite for every possible action menu in the app
+- Dependencies: `Bounded frontend work across Notes, Projects, Dashboard, and the shared toast path, plus browser/UI review of action discoverability and feedback behavior after implementation.`
+- Risk level: `medium`
+- Readiness: `ready`
+- Start condition: `Satisfied on 2026-04-19 by explicit human selection; PMO activated current_sprint.md and execution_task.md for this bounded consistency pass while keeping the candidate visible until closeout.`
+
 ### `Notes Editor Comfort Fixes`
 
 - Status: `completed`

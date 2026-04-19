@@ -86,6 +86,11 @@ Policy touchpoints during shaping:
 ## Handoff Rule
 
 - `current_sprint.md` should stay lightweight and act as runtime state, not a second execution brief
+- `current_sprint.md` should mainly answer:
+  - which sprint is active right now
+  - what the sprint is broadly trying to do
+  - what the most recent closed sprint was
+  - what the next PMO action is
 - a selected candidate may remain visible in `state/sprint_candidates.md` during execution so the near-term comparison surface keeps its immediate context
 - a micro-fix fast path handoff may come from direct PMO activation instead of `state/sprint_candidates.md`, but it still needs an explicit bounded contract in `execution_task.md`
 - detailed touch zones, non-goals, validation expectations, and escalation points belong in `execution_task.md`
@@ -139,7 +144,7 @@ After PMO reads a detailed execution report, archive that report into `../histor
 Operational closeout pass:
 
 1. Read the active `state/execution_report.md` and determine the closeout status.
-2. Record the closeout judgment in `state/current_sprint.md`.
+2. Record the closeout judgment in `state/current_sprint.md` as a short runtime summary, not a second full report.
 3. Record the documentation-sync outcome in `state/current_sprint.md`.
 4. Update the selected entry in `state/sprint_candidates.md`:
    - `completed` if it is being retained for near-term context
