@@ -34,6 +34,9 @@
 
 同时，这一层现在也承载与运行态文件对应的模板：
 
+- `templates/current-sprint.idle.template.md`
+- `templates/execution-task.idle.template.md`
+- `templates/execution-report.idle.template.md`
 - `templates/execution-task.template.md`
 - `templates/execution-report.template.md`
 - `templates/discussion-batch.template.md`

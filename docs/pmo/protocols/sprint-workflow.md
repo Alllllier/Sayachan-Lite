@@ -151,9 +151,9 @@ Operational closeout pass:
    - or archive it later if candidate-surface space is needed
 5. Route any durable decisions or deferred follow-up into `state/decision_log.md` or `state/idea_backlog.md`.
 6. Archive the detailed execution return into `../history/reports/` before resetting `state/execution_report.md` to idle.
-7. Reset `state/execution_task.md` to idle when no sprint remains active.
-8. Reset `state/execution_report.md` to idle after the detailed report has been archived.
-9. Set `state/current_sprint.md` back to `idle` when no sprint remains active.
+7. Reset `state/execution_task.md` to idle when no sprint remains active, using `../state/templates/execution-task.idle.template.md` as the reset shape.
+8. Reset `state/execution_report.md` to idle after the detailed report has been archived, using `../state/templates/execution-report.idle.template.md` as the reset shape.
+9. Set `state/current_sprint.md` back to `idle` when no sprint remains active, using `../state/templates/current-sprint.idle.template.md` as the reset shape.
 10. Explicitly record commit state instead of assuming it.
 
 Policy touchpoints during closeout:

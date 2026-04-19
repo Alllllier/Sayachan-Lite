@@ -24,6 +24,7 @@ frontend/dist
 .vscode/*
 !.vscode/extensions.json
 .idea
+.codex/config.toml
 .claude/settings.local.json
 .claude/*.lock
 .DS_Store

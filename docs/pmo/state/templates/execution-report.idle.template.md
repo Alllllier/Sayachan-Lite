@@ -1,20 +1,18 @@
-# Execution Report
+# Execution Report Idle Template
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-04-19`
+- Last updated: `<YYYY-MM-DD>`
 
 ## Current State
 
 There is no active execution report waiting for PMO review right now.
 
-The most recent active report for `Overflow Trigger Vertical-Ellipsis Alignment` has already been read for PMO closeout and archived in `history/reports/`.
-
 ## Last Closed Report Summary
 
-- Sprint: `Overflow Trigger Vertical-Ellipsis Alignment`
-- Report outcome: `completed with bounded residual unverified areas`
-- PMO read result: `closeout complete`
+- Sprint:
+- Report outcome:
+- PMO read result:
 
 ## Next Use
 

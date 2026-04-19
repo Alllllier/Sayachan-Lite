@@ -1,8 +1,8 @@
-# Execution Task
+# Execution Task Idle Template
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-04-19`
+- Last updated: `<YYYY-MM-DD>`
 
 ## Current State
 
@@ -12,8 +12,8 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Overflow Trigger Vertical-Ellipsis Alignment`
-- Outcome: `completed with bounded residual unverified areas`
+- Sprint:
+- Outcome:
 - Report surface: `docs/pmo/state/execution_report.md`
 
 ## Next Activation Rule
