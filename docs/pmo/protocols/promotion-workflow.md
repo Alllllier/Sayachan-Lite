@@ -61,6 +61,10 @@ Use for:
    - `idea_backlog.md` when it remains future work worth revisiting
    - `decision_log.md` when the parking outcome is actually a durable deferral or rejection
    - the discussion batch only when the material is still too raw for normalized PMO state
+6. If the same result produces both a durable deferral and a future work direction worth keeping visible:
+   - write the deferral or scope rule into `decision_log.md`
+   - write the future work item into `idea_backlog.md`
+   - do not force PMO to choose only one container when the decision and the retained work serve different purposes
 
 ## Working Rules
 
@@ -68,6 +72,7 @@ Use for:
 - do not promote into `sprint_candidates.md` before the slice is genuinely bounded
 - do not treat generic momentum or implied urgency as human authorization to activate a sprint
 - do not hide parked follow-up inside candidate notes or handoff prose without also routing it into its durable home
+- when a topic is deferred out of the current slice but still matters later, treat `decision_log.md` as the memory of the decision and `idea_backlog.md` as the memory of the work
 
 ## Policy Touchpoints
 

@@ -54,6 +54,20 @@ This policy should be checked at least:
 - during sprint closeout
 - whenever a human clarifies a planning rule that future PMO work should remember
 
+## Deferral And Visibility Rule
+
+When a discussion or closeout produces both:
+
+- a durable deferral decision about what should not be done now
+- and a future work direction that should remain visible
+
+default to a split capture:
+
+- write the durable planning conclusion into `state/decision_log.md`
+- write the future work item into `state/idea_backlog.md` if PMO should be able to rediscover it without rereading the original discussion
+
+Use this split when the decision and the future work are related but not identical. `decision_log.md` remembers the rule or deferral. `idea_backlog.md` remembers the work.
+
 ## Example Guidance
 
 Good decision-log outcomes include:
@@ -62,3 +76,4 @@ Good decision-log outcomes include:
 - an exploration should stay in backlog and not move into candidate state yet
 - sprint selection remains human-gated
 - a rejected path should not be reconsidered unless new evidence appears
+- rendered-surface identity work is deferred out of a narrow follow-up and held for a later broader style refresh

@@ -63,9 +63,21 @@
 - It came from real usage after closeout, not from open-ended pre-sprint ideation.
 - The concrete comfort issues are already real enough to justify a likely sprint candidate.
 - However, the style and identity dimension still benefits from PMO discussion before execution, so the topic should not be forced straight into handoff.
-- A likely next step is promotion into `sprint_candidates.md` once PMO decides whether comfort and identity belong in one bounded sprint or two adjacent slices.
+- A stable product judgment has now emerged: the Notes editor should respect the reading experience of the eventual rendered note instead of treating the editor as a separate oversized presentation surface.
+- This does not mean the editing surface must visually duplicate rendered markdown one-to-one.
+- It does mean that core writing structure such as text scale, line wrapping behavior, and paragraph density should stay broadly aligned with how the note will actually be read after rendering.
+- Under that judgment, horizontal scroll as a normal writing path is directionally wrong for this surface, and oversized editor typography should be treated as a comfort and fidelity problem rather than merely a cosmetic preference.
+- A more specific styling judgment has now emerged from the discussion: the default editor text scale should tighten to `14px`, line height should move toward `1.6`, and the normal writing path should prefer wrapped continuous text instead of horizontal scrolling.
+- The desired editing feel is therefore not "larger and looser than reading mode," but "close to rendered reading mode with only a small writing-friendly buffer."
+- A further scope judgment has now emerged: for this follow-up, style identity should be expressed more strongly in the rendered note surface than in the editing surface.
+- Under that judgment, the editor should currently stay close to the narrower comfort fix set plus the previously shipped polish direction, rather than expanding into a larger new styling pass inside edit mode.
+- A stronger scope decision has now emerged: this follow-up should stop at the editing-surface comfort fixes.
+- Rendered-surface identity work should not be folded into this follow-up sprint and is instead reserved for a later broader Sayachan style refresh.
+- A likely next step is promotion into `sprint_candidates.md` for the comfort-fix slice only, while the rendered identity topic remains outside this batch's immediate execution scope.
 
 ## Promotion Outcome
 
 - No promotion yet.
 - Continue narrow follow-up discussion until the sprint cut is clearer.
+- The scope deferral for rendered-surface identity work is now normalized in `state/decision_log.md`.
+- The broader Sayachan style-refresh direction is now parked in `state/idea_backlog.md` for future visibility.

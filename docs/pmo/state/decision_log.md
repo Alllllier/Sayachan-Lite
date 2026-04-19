@@ -32,3 +32,12 @@
 - Decision: `Candidate drafting and PMO momentum do not authorize automatic sprint activation. A sprint starts only after explicit human selection.`
 - Reason: `Recent PMO testing showed that generic "continue" language can be over-read by the host and cause premature sprint activation if the selection gate is not written down clearly.`
 - Follow-up: `Keep this rule explicit in current_sprint.md, sprint workflow, and any future host behavior layer.`
+
+### `Rendered note identity work is deferred into a broader Sayachan style refresh`
+
+- Date: `2026-04-19`
+- Type: `deferred`
+- Scope: `Notes follow-up discussion_batch_002 and future Sayachan presentation planning`
+- Decision: `The current Notes follow-up should stop at editing-surface comfort fixes. Rendered-surface identity changes should not be folded into this follow-up and are instead deferred into a later broader Sayachan style refresh.`
+- Reason: `The current discussion stabilized the editing-side comfort corrections enough to bound a near-term slice, but the stronger visual identity direction belongs to a wider product-level styling pass rather than a narrow editor follow-up.`
+- Follow-up: `Keep the future style-refresh work visible in idea_backlog.md and avoid re-expanding the Notes comfort slice into rendered-surface identity work unless the broader refresh is intentionally reopened.`
