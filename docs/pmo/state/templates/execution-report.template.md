@@ -12,9 +12,15 @@
 
 - explicit validation layers that were actually performed
 
-## Project-Specific Review Performed Or Not Performed
+## Project-Specific Review
 
-- any surface-specific review that was done or intentionally not done
+- Required for this sprint: `yes | no`
+- Performed: `yes | no`
+- If performed, reviewed surfaces or states:
+- If skipped, why skipping was acceptable:
+
+This section is for review that depends on the product surface, not for every sprint by default.
+Examples may include browser validation or UI review when the sprint changes interaction quality, rendering, or presentation.
 
 ## Unverified Areas
 

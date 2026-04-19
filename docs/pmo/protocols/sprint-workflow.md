@@ -78,11 +78,13 @@ Choose validation according to project risk and surface type.
 Execution reports should always state:
 
 - what validation was performed
-- what project-specific review was or was not performed
+- whether project-specific review was required for the sprint
+- what project-specific review was performed or intentionally skipped
 - what remains unverified
 - what regression or follow-up risk still exists
 
 This workflow does not assume browser validation or UI review as universal defaults.
+But when a sprint changes UI behavior, rendering, interaction density, or presentation quality, the report should make clear whether browser validation or UI review was expected and whether it actually happened.
 
 ## Closeout Rule
 

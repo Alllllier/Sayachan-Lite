@@ -13,6 +13,7 @@ flowchart TD
     A["你现在想做什么？"] --> B{"当前场景"}
 
     B -- "有一个新的想法 / bug / 架构话题进入 PMO" --> C["先看<br/>state/discussion_index.md<br/>然后看当前 discussion batch"]
+    B -- "closeout 后或真实使用后出现一个单点 follow-up 话题" --> C2["先看<br/>state/discussion_index.md<br/>然后看当前 follow-up batch"]
     B -- "一个稳定结果需要正式分流" --> D["先看<br/>protocols/promotion-workflow.md"]
     B -- "比较或启动 sprint candidate" --> E["先看<br/>state/sprint_candidates.md<br/>再看 protocols/sprint-workflow.md"]
     B -- "执行当前 active sprint" --> F["先看<br/>state/execution_task.md"]
@@ -28,6 +29,7 @@ flowchart TD
 | 场景 | 第一份该看的文件 | 为什么 |
 |---|---|---|
 | 新话题刚进入 PMO | `state/discussion_index.md` | 先确认当前 discussion 运行面 |
+| closeout 后或真实使用后冒出单点 follow-up 话题 | `state/discussion_index.md` | 先判断是否已有 follow-up batch，没有的话新开一个 |
 | 需要看 discussion 细节 | `state/discussions/*.md` | 细节只在 batch 里，不在 index 里 |
 | 要决定去 backlog / candidate / decision | `protocols/promotion-workflow.md` | 这是正式分流 contract |
 | 要看当前候选冲刺 | `state/sprint_candidates.md` | 候选列表就是 runtime state |

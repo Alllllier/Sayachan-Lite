@@ -35,6 +35,7 @@
 
 - validation layers expected for this slice
 - project-specific review expectations when relevant
+- if browser validation or UI review is expected, state which surfaces or page states matter
 
 ## Escalation Points
 

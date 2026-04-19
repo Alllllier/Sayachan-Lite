@@ -18,8 +18,8 @@
 
 ```mermaid
 flowchart TD
-    A["PMO 处于 idle 或开放 planning 状态"] --> B["出现新的 intake 或继续已有 planning 话题"]
-    B --> C["读取 discussion_index + 当前 discussion batch"]
+    A["PMO 处于 idle 或开放 planning 状态"] --> B["出现新的 intake、closeout follow-up，或继续已有 planning 话题"]
+    B --> C["读取 discussion_index + 当前 relevant discussion batch"]
     C --> D["整理 theme、slice 和 open question"]
     D --> E{"已经稳定到可以离开 discussion 吗？"}
 

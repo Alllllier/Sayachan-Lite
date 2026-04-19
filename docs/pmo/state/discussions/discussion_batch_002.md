@@ -1,0 +1,71 @@
+# Discussion Batch `discussion_batch_002`
+
+- Topic: `Notes editor comfort and identity follow-up`
+- Last updated: `2026-04-19`
+- Status: `active`
+- Discussion mode: `follow-up`
+
+## Intake Record
+
+- Intake type: `mixed`
+- Origin trigger: `closeout finding | real usage feedback`
+- Source channel: `human discussion`
+- Why now: `The previous Notes editor polish sprint improved the editor directionally, but real usage revealed concrete comfort and presentation issues that are too specific for backlog parking and still too product-shaped for immediate execution handoff.`
+- Related sprint or closeout: `Notes Editor Polish v1 closeout residuals and post-sprint real usage feedback`
+
+## Why This Discussion Exists
+
+- The CodeMirror-backed Notes editor is clearer and calmer than before, but real writing use exposed concrete comfort issues that matter to day-to-day note-taking.
+- The main exposed problems are not only implementation defects; they also touch product feel and writing identity, so PMO should discuss the shape before promoting the work into execution.
+- The discussion should stay narrow and practical instead of being forced into a broad multi-theme exploration batch.
+
+## Theme Summary
+
+### `theme-001`
+
+- Summary: `Clarify how the Notes editor should resolve concrete writing comfort issues while gaining a more distinctive Sayachan writing identity rather than remaining a generic cleaned-up editor shell.`
+- Why grouped: `The immediate problems and the style question are tightly linked: typography, wrapping behavior, spacing, and tonal framing all affect whether the editor feels calm, usable, and recognizably Sayachan during actual note-taking.`
+- Current focus: `yes`
+- Status: `in_focus`
+- For follow-up mode, the concrete issue exposed was: `real usage revealed that the editor still feels oversized in text scale, can drift into horizontal scrolling instead of supporting natural line wrapping, and remains visually cleaner than before without yet feeling like a distinctive Sayachan writing surface.`
+
+## Possible Slices
+
+### `slice-001`
+
+- Name: `Notes editor comfort fixes`
+- Why separate: `This slice focuses on concrete writing usability: text scale, line wrapping behavior, and long-form comfort.`
+- Current maturity: `emerging`
+- Likely target: `sprint_candidates`
+- Parking trigger: `If the product identity discussion remains unresolved but the comfort problems are agreed as the only near-term priority.`
+- Reopen signal: `If comfort fixes alone leave the editor still feeling generic or visually off-tone.`
+
+### `slice-002`
+
+- Name: `Notes editor visual identity pass`
+- Why separate: `This slice focuses on the surface feeling intentional and distinctive rather than merely less technical.`
+- Current maturity: `emerging`
+- Likely target: `sprint_candidates`
+- Parking trigger: `If comfort repairs should ship first and identity shaping needs a second bounded pass.`
+- Reopen signal: `If the comfort fixes stabilize but the editor still lacks a clear Sayachan writing character.`
+
+## Open Questions
+
+- What text scale feels calm and composition-friendly for long-form note writing without becoming tiny or clinical?
+- Should the default editing experience strongly prefer line wrapping for normal note writing, even if that means moving away from more code-like editor behavior?
+- What visual signals would make the editor feel like a Sayachan writing surface rather than a generic softened CodeMirror container?
+- How much personality should the editor carry before it starts competing with note content?
+- Should comfort fixes and identity shaping ship together in one bounded sprint, or should they be split into two slices?
+
+## Current PMO Judgment
+
+- This topic is a legitimate `follow-up` discussion rather than a broad exploration batch.
+- It came from real usage after closeout, not from open-ended pre-sprint ideation.
+- The concrete comfort issues are already real enough to justify a likely sprint candidate.
+- However, the style and identity dimension still benefits from PMO discussion before execution, so the topic should not be forced straight into handoff.
+- A likely next step is promotion into `sprint_candidates.md` once PMO decides whether comfort and identity belong in one bounded sprint or two adjacent slices.
+
+## Promotion Outcome
+
+- No promotion yet.
+- Continue narrow follow-up discussion until the sprint cut is clearer.

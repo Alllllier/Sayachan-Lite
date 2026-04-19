@@ -3,12 +3,15 @@
 - Topic:
 - Last updated:
 - Status: `active | stable | promoted | parked | archived`
+- Discussion mode: `exploration | follow-up`
 
 ## Intake Record
 
 - Intake type: `idea | bugfix | architecture | mixed`
+- Origin trigger: `new topic | closeout finding | execution report | real usage feedback | audit | roadmap | other`
 - Source channel: `human discussion | audit | execution report | roadmap | other`
 - Why now:
+- Related sprint or closeout:
 
 ## Why This Discussion Exists
 
@@ -22,6 +25,7 @@
 - Why grouped:
 - Current focus: `yes | no`
 - Status: `clustered | in_focus | stable | promoted | parked`
+- For follow-up mode, the concrete issue exposed was:
 
 ## Possible Slices
 

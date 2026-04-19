@@ -89,6 +89,9 @@ When a sprint includes validation, the completion report should state:
 - tests run
 - browser validation performed or not performed
 - UI review performed or not performed
+- whether browser validation or UI review was actually needed for this sprint
+- if performed, which surfaces or states were reviewed
+- if skipped, why skipping was acceptable
 - unverified areas
 - known regression risk
 
