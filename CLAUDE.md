@@ -26,6 +26,19 @@ If the human explicitly says to execute the current sprint or the active PMO tas
 
 Do not start with broad repo exploration when the active execution file already defines the task.
 
+Treat natural execution prompts such as:
+
+- `开始施工`
+- `开始做`
+- `开始实现`
+- `去施工`
+- `按当前 sprint 做`
+- `按当前任务做`
+
+as execution-start authority for the active PMO handoff unless the human clearly signals that planning is still open.
+
+When these phrases appear and an active PMO sprint exists, start from `docs/pmo/state/execution_task.md` rather than searching for a legacy outbox/inbox path or reconstructing intent from older PMO terms.
+
 ---
 
 ## Current Project Shape
@@ -164,6 +177,7 @@ Avoid:
 - when asked to modify UI, check `frontend/src/style.css` first
 - when asked to modify API behavior, review `docs/pmo/baselines/backend-api.md`
 - when asked to execute the current sprint, go straight to `docs/pmo/state/execution_task.md`
+- when the human uses shorthand like `开始施工` or `开始做`, treat it the same way: read `docs/pmo/state/execution_task.md` first if PMO execution is already active
 - when asked to report completion, write to `docs/pmo/state/execution_report.md`
 
 ## End-Of-Work Hygiene

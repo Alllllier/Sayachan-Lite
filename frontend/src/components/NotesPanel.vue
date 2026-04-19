@@ -64,14 +64,15 @@ function createCodeMirror(parent, initialValue, onChange) {
     extensions: [
       basicSetup,
       markdown(),
+      EditorView.lineWrapping,
       EditorView.theme({
         '&': {
-          fontSize: 'var(--font-size-lg)',
+          fontSize: '14px',
           border: '1px solid var(--border-subtle)',
           borderRadius: 'var(--radius-md)',
           background: 'var(--surface-card)',
           fontFamily: "'Georgia', 'Cambria', 'Times New Roman', serif",
-          lineHeight: '1.7'
+          lineHeight: '1.6'
         },
         '&.cm-focused': {
           outline: 'none',

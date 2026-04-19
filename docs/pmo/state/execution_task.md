@@ -2,7 +2,7 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-04-18`
+- Last updated: `2026-04-19`
 
 ## Current State
 
@@ -12,8 +12,8 @@ This file should be overwritten only when a new sprint is explicitly selected an
 
 ## Last Closed Sprint
 
-- Sprint: `Notes Editor Polish v1`
-- Outcome: `completed`
+- Sprint: `Notes Editor Comfort Fixes`
+- Outcome: `completed and validated with bounded residual unverified areas`
 - Report surface: `docs/pmo/state/execution_report.md`
 
 ## Next Activation Rule

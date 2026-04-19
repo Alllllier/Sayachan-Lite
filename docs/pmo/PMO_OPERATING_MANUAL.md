@@ -84,6 +84,7 @@ Use this layer for historical explanation and legacy transition:
 
 - `history/legacy-transition-notes.md`
 - `history/candidates/README.md`
+- `history/reports/README.md`
 
 ## Canonical Runtime Set
 
@@ -108,9 +109,11 @@ Use this routing map when a new idea, bugfix discussion, or future architecture 
    - `state/idea_backlog.md` for retained work that is worth keeping visible but is not ready to start
    - `state/sprint_candidates.md` for bounded slices that are ready for human comparison
    - `state/decision_log.md` for durable decisions, explicit deferrals, or rejected paths
-4. After explicit human sprint selection, move the selected candidate into `state/current_sprint.md` and write the active execution contract into `state/execution_task.md`.
-5. Execution returns into `state/execution_report.md`, then PMO closes out the sprint and syncs any durable decision or deferred follow-up back into the formal state files.
-6. Parked future work must not live only inside the handoff or the report:
+4. After explicit human sprint selection, activate the selected sprint in `state/current_sprint.md` and write the active execution contract into `state/execution_task.md`.
+5. The selected candidate may remain visible in `state/sprint_candidates.md` while the sprint is active, then be marked `completed` after closeout before later archival if space is needed.
+6. Execution returns into `state/execution_report.md`, then PMO closes out the sprint and syncs any durable decision or deferred follow-up back into the formal state files.
+7. After PMO reads a detailed execution report, archive that report into `history/reports/` before resetting `state/execution_report.md` to idle.
+8. Parked future work must not live only inside the handoff or the report:
    - if it is stable enough to keep for later, record it in `state/idea_backlog.md` with status `parked`
    - if it is a durable deferral or rejected path, record it in `state/decision_log.md`
    - if it is still too raw for formal state, keep it in the discussion batch with explicit `parked` status and next review trigger
@@ -250,6 +253,7 @@ Use policies through protocol touchpoints rather than by trying to hold the enti
   - `policies/decision-capture-policy.md`
 - during candidate shaping, handoff, report reading, and closeout:
   - `policies/validation-floor-policy.md`
+  - `protocols/sprint-workflow.md`
 - when AI-dependent behavior changes:
   - `policies/ai-fallback-policy.md`
 - when completion feels implementation-complete but still uncertain:

@@ -21,3 +21,5 @@
 
 - `candidates/`
   - 承接已经退出 `state/sprint_candidates.md` 的 completed candidate 记录
+- `reports/`
+  - 承接已经退出 `state/execution_report.md` active surface 的已读 execution report

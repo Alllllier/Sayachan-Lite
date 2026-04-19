@@ -8,14 +8,15 @@
 - a candidate may be drafted by Codex, but it does not become the active sprint without explicit human selection
 - replace or merge weaker candidates instead of stacking endlessly
 - when a new candidate needs space, archive older completed entries into `../history/candidates/` before pushing the file past 3 total items
-- if a candidate is selected, move it into `current_sprint.md` and write the corresponding `execution_task.md`
+- if a candidate is selected, keep it visible here while also activating `current_sprint.md` and writing the corresponding `execution_task.md`
+- after sprint closeout, update the selected candidate entry to `completed` before later archival into `../history/candidates/` when space is needed
 - keep source trace visible so the selected sprint can be tied back to its discussion, backlog, or decision context
 
 ## Candidate Template
 
 ### `<sprint name>`
 
-- Status: `candidate`
+- Status: `candidate | active | completed`
 - Source reference:
 - Why now:
 - Expected outcome:
@@ -30,7 +31,7 @@
 
 ### `Notes Editor Comfort Fixes`
 
-- Status: `candidate`
+- Status: `completed`
 - Source reference: `state/discussions/discussion_batch_002.md; state/decision_log.md; state/idea_backlog.md`
 - Why now: `Real usage after Notes Editor Polish v1 exposed concrete comfort issues that directly affect day-to-day writing fidelity: the editor text still reads too large, normal note writing can drift into horizontal scrolling, and the editing surface remains slightly misaligned with the rendered reading experience.`
 - Expected outcome: `The Notes editor becomes a calmer and more trustworthy writing surface for long-form note-taking by tightening text scale, restoring wrapped continuous writing flow, and aligning edit-mode reading structure more closely with rendered notes without reopening broader style work.`
@@ -49,4 +50,5 @@
 - Dependencies: `Bounded frontend changes in the Notes editor surface, plus execution review of realistic writing states after implementation.`
 - Risk level: `low`
 - Readiness: `ready`
-- Start condition: `A human explicitly selects this candidate as the next sprint and activates a bounded execution task that keeps rendered-surface identity work out of scope.`
+- Start condition: `Satisfied on 2026-04-19 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the bounded comfort-fix slice while keeping the candidate visible until closeout.`
+- Closeout: `Completed on 2026-04-19. The bounded comfort targets landed in NotesPanel.vue, build validation plus Notes-focused browser/UI review passed, and residual unverified areas remain around very long writing comfort, mobile wrapping behavior, and deeper edit/render parity.`

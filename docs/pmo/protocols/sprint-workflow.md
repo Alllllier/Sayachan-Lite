@@ -21,13 +21,14 @@ This workflow covers the sprint lifecycle:
 - `state/execution_task.md`
 - `state/execution_report.md`
 - `state/decision_log.md`
+- `history/reports/`
 
 ## Standard Sequence
 
 1. Codex prepares at most 3 bounded sprint candidates.
 2. Human explicitly selects one candidate to start.
 3. Codex updates `current_sprint.md` with the selected sprint.
-4. Codex writes the active execution contract into `execution_task.md`.
+4. Codex keeps the selected candidate visible in `state/sprint_candidates.md` while the sprint is active, then writes the active execution contract into `execution_task.md`.
 5. The execution worker implements only the approved slice and returns a structured report in `execution_report.md`.
 6. Codex reads the report and determines whether the sprint is:
    - ready for closeout
@@ -66,6 +67,7 @@ Policy touchpoints during shaping:
 ## Handoff Rule
 
 - `current_sprint.md` should stay lightweight and act as runtime state, not a second execution brief
+- a selected candidate may remain visible in `state/sprint_candidates.md` during execution so the near-term comparison surface keeps its immediate context
 - detailed touch zones, non-goals, validation expectations, and escalation points belong in `execution_task.md`
 - `execution_task.md` should identify where the sprint came from so discussion, backlog, and handoff stay traceable
 - `execution_task.md` should contain only the current active execution contract, not stacked stale tasks
@@ -109,6 +111,25 @@ Closeout should also record one documentation-sync outcome:
 - `no sync needed`
 - `reviewed, no update needed`
 - `update required`
+
+After closeout, the selected candidate entry in `state/sprint_candidates.md` should be updated to `completed` if it is being retained there for near-term context, rather than being removed immediately by default.
+
+After PMO reads a detailed execution report, archive that report into `../history/reports/` before resetting `state/execution_report.md` to idle.
+
+Operational closeout pass:
+
+1. Read the active `state/execution_report.md` and determine the closeout status.
+2. Record the closeout judgment in `state/current_sprint.md`.
+3. Record the documentation-sync outcome in `state/current_sprint.md`.
+4. Update the selected entry in `state/sprint_candidates.md`:
+   - `completed` if it is being retained for near-term context
+   - or archive it later if candidate-surface space is needed
+5. Route any durable decisions or deferred follow-up into `state/decision_log.md` or `state/idea_backlog.md`.
+6. Archive the detailed execution return into `../history/reports/` before resetting `state/execution_report.md` to idle.
+7. Reset `state/execution_task.md` to idle when no sprint remains active.
+8. Reset `state/execution_report.md` to idle after the detailed report has been archived.
+9. Set `state/current_sprint.md` back to `idle` when no sprint remains active.
+10. Explicitly record commit state instead of assuming it.
 
 Policy touchpoints during closeout:
 
