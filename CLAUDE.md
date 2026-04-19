@@ -151,6 +151,13 @@ Avoid:
 - hardcoding colors already represented by semantic variables
 - redefining shared primitives in scoped styles when layout-only styles would suffice
 
+For browser validation or UI review:
+
+- prefer repo-defined scripts in `frontend/package.json` first
+- for this repo, prefer `npm run test:ui-review` from `frontend/` instead of bare `npx playwright ...`
+- do not use bare `npx playwright` when the project only declares `@playwright/test`, because it can install a mismatched Playwright version on the fly
+- if a direct Playwright invocation is truly needed, use the project-local test runner rather than a freshly resolved global package
+
 ---
 
 ## AI Feature Rules

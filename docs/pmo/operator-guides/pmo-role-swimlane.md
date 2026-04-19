@@ -18,6 +18,7 @@
 flowchart LR
     subgraph H["Human"]
         H1["提出新话题<br/>或审阅 candidate 集合"]
+        H1b["明确要求现在就做一个<br/>边界清楚的小修复"]
         H2{"是否明确选择启动 sprint？"}
         H3["处理 architecture-sensitive<br/>或 high-risk escalation"]
         H4{"现在是否要求执行 commit？"}
@@ -30,6 +31,7 @@ flowchart LR
         C4["分流到 idea_backlog.md"]
         C5["分流到 sprint_candidates.md"]
         C6["分流到 decision_log.md"]
+        C6b["直接走 micro-fix fast path<br/>更新 current_sprint + execution_task"]
         C7["更新 current_sprint.md"]
         C8["写入 execution_task.md"]
         C9["读取 execution_report.md"]
@@ -48,12 +50,14 @@ flowchart LR
     end
 
     H1 --> C1
+    H1b --> C6b
     C1 --> C2
     C2 --> C3
     C3 -- "否" --> C2
     C3 -- "Backlog" --> C4
     C3 -- "Candidate" --> C5
     C3 -- "Decision" --> C6
+    C6b --> C8
 
     C5 --> H2
     H2 -- "否" --> C5

@@ -19,7 +19,9 @@
 ```mermaid
 flowchart TD
     A["PMO 处于 idle 或开放 planning 状态"] --> B["出现新的 intake、closeout follow-up，或继续已有 planning 话题"]
+    A --> B2["出现一个边界清楚的小修复，且 human 明确要立刻施工"]
     B --> C["读取 discussion_index + 当前 relevant discussion batch"]
+    B2 --> N
     C --> D["整理 theme、slice 和 open question"]
     D --> E{"已经稳定到可以离开 discussion 吗？"}
 
@@ -91,7 +93,7 @@ flowchart TD
 ## 阅读提示
 
 - `discussion-workflow.md` 和 `promotion-workflow.md` 负责这张图左侧的 intake 与分流部分。
-- `sprint-workflow.md` 负责 sprint selection、closeout 与 commit separation。
+- `sprint-workflow.md` 负责 sprint selection、micro-fix fast path、closeout 与 commit separation。
 - `execution-handoff-protocol.md` 负责 handoff 与 execution return contract。
 - `validation-floor-policy.md` 规定 PMO 在 closeout 时如何解读 validation evidence。
 - `documentation-sync-policy.md` 与 `documentation-sync-guide.md` 规定 execution 之后的 doc review。

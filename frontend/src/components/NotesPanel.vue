@@ -71,7 +71,7 @@ function createCodeMirror(parent, initialValue, onChange) {
           border: '1px solid var(--border-subtle)',
           borderRadius: 'var(--radius-md)',
           background: 'var(--surface-card)',
-          fontFamily: "'Georgia', 'Cambria', 'Times New Roman', serif",
+          fontFamily: 'var(--font-family-base)',
           lineHeight: '1.6'
         },
         '&.cm-focused': {

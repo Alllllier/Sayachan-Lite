@@ -8,17 +8,17 @@
 
 There is no active execution report waiting for PMO review right now.
 
-The most recent active report for `Notes Editor Comfort Fixes` has already been read for PMO closeout.
+The most recent active report for `Notes Editor Font Family Alignment` has already been read for PMO closeout.
 
 ## Last Closed Report Summary
 
-- Sprint: `Notes Editor Comfort Fixes`
-- Report outcome: `completed and validated with bounded residual unverified areas`
+- Sprint: `Notes Editor Font Family Alignment`
+- Report outcome: `completed with bounded residual unverified areas`
 - PMO read result: `closeout complete`
 
 ## Next Use
 
-When a new sprint is actively handed off, the execution worker should replace this idle placeholder with a structured report that states:
+The execution worker should replace this placeholder with a structured report that states:
 
 - what was delivered
 - what validation was performed

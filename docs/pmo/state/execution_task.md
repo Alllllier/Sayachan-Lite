@@ -8,14 +8,14 @@
 
 There is no active execution handoff right now.
 
-This file should be overwritten only when a new sprint is explicitly selected and handed off into execution.
+This file should be overwritten only when a new sprint or micro-fix is explicitly activated and handed off into execution.
 
 ## Last Closed Sprint
 
-- Sprint: `Notes Editor Comfort Fixes`
-- Outcome: `completed and validated with bounded residual unverified areas`
+- Sprint: `Notes Editor Font Family Alignment`
+- Outcome: `completed with bounded residual unverified areas`
 - Report surface: `docs/pmo/state/execution_report.md`
 
 ## Next Activation Rule
 
-- wait for explicit human sprint selection before writing a new active execution contract here
+- wait for explicit human sprint selection or a clearly bounded micro-fix activation before writing a new active execution contract here

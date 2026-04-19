@@ -127,6 +127,12 @@ with side exits to:
 - `idea_backlog.md` for retained or parked future work
 - `decision_log.md` for durable decisions and explicit deferrals
 
+There is also a narrow fast path for small execution-ready fixes:
+
+`micro-fix -> direct execution handoff -> execution report -> closeout`
+
+Use it only when the issue is already concrete, the scope is small, and no new discussion or candidate comparison is needed.
+
 ## Minimum Reading Order
 
 ### When checking current PMO state
@@ -157,6 +163,15 @@ Read in this order:
 3. `state/execution_report.md`
 4. `protocols/sprint-workflow.md`
 5. `protocols/execution-handoff-protocol.md`
+
+### When using the micro-fix fast path
+
+Read in this order:
+
+1. `state/current_sprint.md`
+2. `state/execution_task.md`
+3. `protocols/sprint-workflow.md`
+4. only the additional docs needed for the bounded fix
 
 ### When checking system truth
 

@@ -41,6 +41,25 @@ This workflow covers the sprint lifecycle:
 10. PMO routes any deferred or parked follow-up into `idea_backlog.md` or `decision_log.md` instead of leaving it only in sprint artifacts.
 11. PMO updates the next planning surface after closeout.
 
+## Micro-Fix Fast Path
+
+Use a micro-fix fast path when all of the following are true:
+
+- the issue is already concrete and does not need new discussion shaping
+- the scope is small enough that candidate comparison would add little value
+- the change does not introduce architecture-sensitive ambiguity
+- the human is clearly asking to execute the bounded fix now
+
+Under this fast path:
+
+1. Codex may activate `state/current_sprint.md` directly without first creating a new discussion batch or candidate entry.
+2. Codex writes a bounded execution contract into `state/execution_task.md`.
+3. The execution worker still returns a structured result in `state/execution_report.md`.
+4. PMO still performs normal closeout, documentation-sync review, and follow-up routing after execution.
+
+This fast path is for small, execution-ready corrections, not for scope-discovery work.
+If boundary questions or competing implementation directions appear, return to the normal discussion / candidate route instead of stretching the fast path.
+
 ## Planning Rule
 
 Before a candidate is treated as genuinely ready:
@@ -68,6 +87,7 @@ Policy touchpoints during shaping:
 
 - `current_sprint.md` should stay lightweight and act as runtime state, not a second execution brief
 - a selected candidate may remain visible in `state/sprint_candidates.md` during execution so the near-term comparison surface keeps its immediate context
+- a micro-fix fast path handoff may come from direct PMO activation instead of `state/sprint_candidates.md`, but it still needs an explicit bounded contract in `execution_task.md`
 - detailed touch zones, non-goals, validation expectations, and escalation points belong in `execution_task.md`
 - `execution_task.md` should identify where the sprint came from so discussion, backlog, and handoff stay traceable
 - `execution_task.md` should contain only the current active execution contract, not stacked stale tasks

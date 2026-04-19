@@ -61,3 +61,16 @@
 - Risks / unknowns: `The future refresh could sprawl, mix unrelated surfaces, or reopen editor-surface scope prematurely if it is not framed as a broader presentation pass.`
 - Suggested next action: `Reopen this item when Sayachan is ready for a bounded style-refresh discussion that covers rendered note identity and other higher-level presentation surfaces together.`
 - Reopen trigger: `A human explicitly decides to start or discuss a broader Sayachan style refresh rather than a narrow Notes comfort fix.`
+
+### `Frontend And Backend Dependency Hygiene Refresh`
+
+- Type: `cleanup`
+- Source: `audit`
+- Source reference: `Notes editor comfort-fix and font-family micro-fix execution follow-up`
+- Problem / Opportunity: `Both frontend and backend toolchains may be drifting behind current dependency and invocation expectations, which can make repo-native validation fragile even when the product code itself is fine. The Playwright invocation confusion exposed this risk on the frontend side, and similar issues may exist on the backend side as well.`
+- Why now: `Recent execution showed that tooling version age is manageable only when repo-native invocation rules remain clear. Keeping this work visible now prevents the dependency/tooling refresh from being forgotten until it becomes a larger maintenance problem.`
+- Current status: `parked`
+- Dependencies: `A bounded future maintenance window to review pinned versions, repo-native test commands, and whether frontend/backend execution scripts still reflect the intended local toolchain.`
+- Risks / unknowns: `Refreshing dependencies too casually could destabilize a currently working stack, but leaving them unattended for too long increases drift, validation confusion, and environment mismatch risk. The right scope boundary between 'clarify invocation' and 'actually upgrade versions' is still open.`
+- Suggested next action: `Later, shape this into a bounded maintenance pass that first audits frontend and backend dependency age, repo-native script coverage, and the safest upgrade candidates before any broad version bumping starts.`
+- Reopen trigger: `A human explicitly wants a tooling/dependency maintenance sprint, or repeated validation/tooling confusion starts appearing across frontend or backend execution work.`
