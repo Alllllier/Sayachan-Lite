@@ -41,3 +41,12 @@
 - Decision: `The current Notes follow-up should stop at editing-surface comfort fixes. Rendered-surface identity changes should not be folded into this follow-up and are instead deferred into a later broader Sayachan style refresh.`
 - Reason: `The current discussion stabilized the editing-side comfort corrections enough to bound a near-term slice, but the stronger visual identity direction belongs to a wider product-level styling pass rather than a narrow editor follow-up.`
 - Follow-up: `Keep the future style-refresh work visible in idea_backlog.md and avoid re-expanding the Notes comfort slice into rendered-surface identity work unless the broader refresh is intentionally reopened.`
+
+### `Archive is orthogonal to lifecycle status across task, project, and note`
+
+- Date: `2026-04-20`
+- Type: `approved`
+- Scope: `Task, project, and note model semantics plus future parent-child/reference planning`
+- Decision: `Archive should be treated as a separate dimension rather than as one more lifecycle status value. Task lifecycle should move toward \`active | completed\`; project status should express progress only; note should follow the same archive-separation rule even if its lifecycle remains simple for now. Container archive behavior must not overwrite the object's own lifecycle semantics.`
+- Reason: `Project archive/restore exposed that mixing lifecycle meaning and archive meaning inside one status field causes semantics loss, especially when restoring completed tasks. The same ambiguity would likely recur as soon as project-subproject, project-note, or note-note relationships become real.`
+- Follow-up: `Use this rule as the design boundary for shaping the next execution slice. The immediate implementation candidate is a task/project/note archive-model alignment pass, while any legacy-data compatibility should stay minimal and development-stage appropriate.`

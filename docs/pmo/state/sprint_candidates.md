@@ -29,77 +29,76 @@
 
 ## Current Candidates
 
-### `Project Task Preview Expansion And Focus Simplification`
+### `Archive And Lifecycle Model Alignment`
 
 - Status: `completed`
-- Source reference: `state/discussions/discussion_batch_005.md`
-- Why now: `The current project-card task preview is too limited to support real task steering and still carries a dedicated Set as Focus button that adds action noise. The discussion has now stabilized a bounded redesign that makes the preview more useful without turning the card into a full task manager.`
-- Expected outcome: `Project cards become more useful and calmer at the same time: collapsed previews show up to three active tasks, expanded previews reveal the full task surface through an explicit expand/collapse control, active/completed tasks are separated through a lighter one-control switch, and setting project focus happens directly through task-row click with a clear Current Focus badge instead of a separate button.`
+- Source reference: `state/discussions/discussion_batch_006.md; state/decision_log.md`
+- Why now: `Recent project archive/restore behavior exposed a real semantics failure: completed tasks can be flattened back to active because archive is currently modeled as a lifecycle status value. Human discussion has now stabilized a broader rule that archive should be orthogonal to lifecycle status across task, project, and note before more parent-child and reference relationships land.`
+- Expected outcome: `Task, project, and note gain a cleaner archive model where lifecycle status and archive visibility are no longer mixed together. Project archive/restore stops destroying task completion history, and future sub-project, project-note, and note-note relationships can build on one consistent archive rule instead of inheriting today's ambiguity.`
 - In scope:
-  - update `ProjectsPanel.vue` task preview so collapsed state shows up to 3 active tasks only
-  - add one changing `展开 / 收起` control for the preview container
-  - make expanded state show full task titles instead of truncation
-  - add a lighter one-control switch between `active` and `completed` task groups in expanded state
-  - remove the dedicated `Set as Focus` button from task preview rows
-  - make task-row click on active tasks set the project's current focus
-  - show a `Current Focus` badge on the focused task row
+  - reshape `task` so lifecycle status no longer uses `archived` as one status value
+  - reshape `project` so progress status is separate from archive state
+  - align `note` to the same archive-separation principle
+  - update route/query/archive/restore behavior to preserve lifecycle semantics while still supporting archive filtering
+  - apply the minimum compatibility handling needed for development-stage legacy rows that still encode archive as status
+  - validate the updated model through backend and frontend paths that cover archive, restore, and archive-aware listing behavior
 - Out of scope:
-  - broader ProjectsPanel redesign outside the preview block
-  - changes to task storage, backend task/project contracts, or focus-clearing semantics
-  - dashboard task-list interaction redesign
-  - task editing, inline completion controls, or richer task-management behavior inside the project card
-  - new AI behavior or new project/task data fields
-- Dependencies: `Bounded frontend work in ProjectsPanel.vue plus validation of project-focus behavior and preview-state behavior after implementation.`
+  - broader project hierarchy execution such as full sub-project support
+  - project-note mounting or note-note reference features themselves
+  - unrelated task-focus redesign or project-card UI redesign outside what model alignment requires
+  - production-grade migration tooling for historical test data beyond the agreed minimal compatibility behavior
+- Dependencies: `A bounded implementation plan that keeps the archive/lifecycle split coherent across model, route, and UI layers without widening into unrelated relationship features.`
+- Risk level: `high`
+- Readiness: `almost-ready`
+- Start condition: `Satisfied on 2026-04-20 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the bounded cross-model archive/lifecycle alignment slice while keeping the candidate visible during execution.`
+- Closeout: `Completed on 2026-04-20. Archive is now modeled separately from lifecycle status across task, project, and note, project and note restore behavior preserves task lifecycle semantics, and a follow-up blocker fix corrected restore-task query scoping. Residual validation gaps remain around browser-level archive UI review and live backend integration coverage, but the bounded implementation slice was accepted and a future archive-surface audit was parked in idea_backlog.`
+
+### `Task Project Note Behavior-Lock Testing`
+
+- Status: `completed`
+- Source reference: `state/discussions/discussion_batch_007.md; task-project-note-behavior-audit.md; state/idea_backlog.md`
+- Why now: `Recent archive/lifecycle work plus the follow-up audit both showed that task, project, note, and dashboard-context behavior now spans enough real runtime semantics that simplification should not start from intuition alone. A dedicated behavior-lock sprint is now the safest way to preserve current product outcomes while creating room for a later cleanup pass.`
+- Expected outcome: `The current intended behavior across task, project, note, and dashboard-context surfaces becomes explicit and test-backed. The sprint should maximize behavior coverage while minimizing implementation coupling, so a later simplification refactor can remove legacy seams such as `linkedProjectId` and stale compatibility values without guessing which behaviors matter.`
+- In scope:
+  - add backend behavior tests for archive/restore semantics across note and project flows
+  - add backend tests for current project-task relation boundaries, including the difference between project reads and project archive/restore cascades
+  - add backend tests for focus-clearing behavior in the currently real completion/archive/delete paths
+  - add frontend behavior tests for Projects preview branching, Dashboard saved-task behavior, and dashboard-context snapshot semantics
+  - keep browser/UI review bounded to high-value archive/project/dashboard checks rather than trying to build full visual-e2e coverage
+  - explicitly document which currently real behaviors are locked as must-preserve and which suspicious or legacy shapes remain only compatibility-era reads
+- Out of scope:
+  - the later simplification refactor itself
+  - field removal or relation-model changes such as removing `linkedProjectId`
+  - converting `focus-clearing` to the simpler symmetric rule yet
+  - broad dashboard-context architecture redesign
+  - production-grade migration work for legacy development-stage data
+- Dependencies: `Stable discussion context from discussion_batch_007 plus the audit findings in task-project-note-behavior-audit.md.`
 - Risk level: `medium`
 - Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-19 by explicit human selection; PMO activated current_sprint.md and execution_task.md for this bounded ProjectsPanel interaction redesign while keeping the candidate visible until closeout.`
-- Closeout: `Completed on 2026-04-20. The Projects card preview now supports collapsed vs expanded task viewing, an always-visible active/completed segmented filter, direct row-click focus setting, and mobile-specific hiding of the redundant row-level Current Focus badge. Residual unverified areas remain around real completed-task rendering in browser review, hover interactions, and multi-project mixed-state coverage.`
+- Start condition: `Satisfied on 2026-04-20 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the test-first half of the two-sprint cleanup plan while keeping the candidate visible during execution.`
+- Follow-on note: `If this candidate is selected and completed successfully, the expected next PMO move is a second simplification-refactor candidate rather than a fresh blank-slate discussion. That later slice should stay flexible until sprint-one testing confirms the real behavior boundaries, but its currently visible direction includes removing `linkedProjectId`, retiring stale `originModule` compatibility values, deleting clearly dead legacy task fields, simplifying focus-clearing, and reducing dashboard snapshot drift.`
+- Closeout: `Completed on 2026-04-20. Backend and frontend behavior-lock coverage now exists for the key task/project/note/archive paths plus chat hydration and dashboard saved-task behavior. The sprint also clarified that dashboard-context truth remains only partially locked, and browser-level repo-native UI review is currently unavailable because the script points at a missing spec file. The later simplification-refactor candidate remains the intended next move.`
 
-### `UI Noise Reduction And Toast Consolidation`
+### `Task Project Note Simplification Refactor`
 
-- Status: `completed`
-- Source reference: `state/discussions/discussion_batch_003.md`
-- Why now: `Recent product review surfaced two linked UI consistency problems: low-frequency management actions are overexposed as always-visible buttons, and success feedback is still fragmented across toast plus many local inline implementations. Treating them as one bounded cleanup keeps the next UI polish pass coherent instead of splitting the same noise-reduction goal into separate sprints.`
-- Expected outcome: `Notes, Projects, and the Dashboard task list feel quieter and more consistent because low-frequency management actions move behind a shared overflow pattern, while frontend success feedback defaults to the shared toast path instead of mixed inline local-state confirmations.`
+- Status: `active`
+- Source reference: `state/discussions/discussion_batch_007.md; task-project-note-behavior-audit.md; state/idea_backlog.md`
+- Why now: `The behavior-lock sprint is complete, so the next cleanup slice no longer has to infer which current outcomes matter. The remaining high-value work is now structural: simplify the implementation, unify the runtime meaning of project-related task, and remove legacy seams under the protection of the locked behavior suite.`
+- Expected outcome: `Task, project, and note keep the now-locked external behavior while the implementation becomes materially simpler and more coherent. The slice should unify project-task relation semantics, move `linkedProjectId` out of the primary runtime path, retire stale compatibility-era origin values, remove dead legacy task fields, simplify focus-clearing, and reduce dashboard snapshot drift without turning cockpit signals into a permanent context subsystem.`
 - In scope:
-  - move `edit`, `archive`, and `delete` into a trailing overflow menu on `NotesPanel.vue` and `ProjectsPanel.vue`
-  - keep `pin` and AI actions directly visible on note and project cards
-  - use a vertical-ellipsis trailing trigger placed after the AI action on note and project cards
-  - keep overflow menu order consistent as `Edit -> Archive -> Delete`
-  - align the `Dashboard.vue` saved-task overflow trigger with the same vertical-ellipsis language
-  - replace current inline success confirmations in `NotesPanel.vue`, `ProjectsPanel.vue`, and `Dashboard.vue` with the shared toast path where no persistent in-context confirmation is actually needed
-  - preserve current product behavior while changing presentation and feedback delivery
+  - replace `linkedProjectId` implementation duties with `originModule + originId` where behavior parity can be preserved
+  - unify the runtime rule for project-related task boundaries rather than keeping read/cascade semantics split across different relation definitions
+  - simplify focus-clearing around whether a focused task remains valid focus
+  - remove dead or denormalized task fields once behavior-lock coverage proves they are not active dependencies
+  - retire `project_focus` and `project_suggestion` from canonical runtime handling if they remain compatibility-only
+  - reduce dashboard snapshot drift through bounded simplification rather than broader architecture work
 - Out of scope:
-  - broader Dashboard AI workflow redesign
-  - new action types, new AI behavior, or task/project/note data-model changes
-  - broad visual restyling outside the overflow and toast consistency pass
-  - a global component-system rewrite for every possible action menu in the app
-- Dependencies: `Bounded frontend work across Notes, Projects, Dashboard, and the shared toast path, plus browser/UI review of action discoverability and feedback behavior after implementation.`
-- Risk level: `medium`
+  - no new first-class relationship system yet
+  - no note-note, note-project, or project-project feature execution
+  - no context-layer architecture project
+  - no production-grade migration system for development-stage data
+  - no broad AI runtime redesign
+- Dependencies: `Completed behavior-lock coverage from Task Project Note Behavior-Lock Testing, stabilized discussion context in discussion_batch_007, and the audit findings in task-project-note-behavior-audit.md.`
+- Risk level: `high`
 - Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-19 by explicit human selection; PMO activated current_sprint.md and execution_task.md for this bounded consistency pass while keeping the candidate visible until closeout.`
-- Closeout: `Completed on 2026-04-19. Notes, Projects, and Dashboard landed the intended overflow/toast cleanup, but only Notes received browser-level UI review coverage; Projects overflow behavior, Dashboard toast behavior, overflow discoverability, and touch-device interaction remain bounded unverified areas.`
-
-### `Notes Editor Comfort Fixes`
-
-- Status: `completed`
-- Source reference: `state/discussions/discussion_batch_002.md; state/decision_log.md; state/idea_backlog.md`
-- Why now: `Real usage after Notes Editor Polish v1 exposed concrete comfort issues that directly affect day-to-day writing fidelity: the editor text still reads too large, normal note writing can drift into horizontal scrolling, and the editing surface remains slightly misaligned with the rendered reading experience.`
-- Expected outcome: `The Notes editor becomes a calmer and more trustworthy writing surface for long-form note-taking by tightening text scale, restoring wrapped continuous writing flow, and aligning edit-mode reading structure more closely with rendered notes without reopening broader style work.`
-- In scope:
-  - reduce the default editing text scale to the newly discussed target range centered on `14px`
-  - tighten editor line height toward `1.6` so the writing rhythm stays calm without feeling oversized
-  - make wrapped continuous writing the default path for normal note content instead of horizontal scrolling
-  - preserve the previously shipped polish direction while adjusting comfort and fidelity details
-  - validate the result through Notes-focused browser validation and UI review of real writing states
-- Out of scope:
-  - rendered-note identity or presentation styling changes
-  - broader Sayachan style refresh work
-  - new markdown affordances, toolbar ideas, or preview modes
-  - notes architecture, storage, or creation-flow changes
-  - wider Notes page redesign beyond the bounded comfort fixes
-- Dependencies: `Bounded frontend changes in the Notes editor surface, plus execution review of realistic writing states after implementation.`
-- Risk level: `low`
-- Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-19 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the bounded comfort-fix slice while keeping the candidate visible until closeout.`
-- Closeout: `Completed on 2026-04-19. The bounded comfort targets landed in NotesPanel.vue, build validation plus Notes-focused browser/UI review passed, and residual unverified areas remain around very long writing comfort, mobile wrapping behavior, and deeper edit/render parity.`
+- Start condition: `Satisfied on 2026-04-20 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the simplification-refactor half of the two-sprint cleanup plan while keeping the candidate visible during execution.`

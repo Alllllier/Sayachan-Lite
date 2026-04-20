@@ -6,6 +6,7 @@ import { useRuntimeControls } from '../stores/runtimeControls'
 import avatarUrl from '../assets/avator/temp.jpg'
 import { sendChat } from '../services/chatService'
 import { refreshDashboardContext } from '../services/dashboardContextService'
+import { resolveChatContextSnapshot } from './chatEntry.behavior.js'
 import { renderMarkdown } from '../utils/markdown.js'
 
 const chatStore = useChatStore()
@@ -63,7 +64,11 @@ async function handleSend(presetText) {
   if (!cockpitSignals.hasHydrated) {
     isHydrating.value = true
     try {
-      chatContext = await refreshDashboardContext()
+      chatContext = await resolveChatContextSnapshot({
+        cockpitSignals,
+        currentContext: context.value,
+        refreshDashboardContext
+      })
     } catch (e) {
       console.error('Failed to hydrate context:', e)
     } finally {

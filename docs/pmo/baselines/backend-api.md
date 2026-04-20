@@ -1,6 +1,6 @@
 # Backend API Baseline
 
-> Audited against `backend/src/routes/index.js`, `backend/src/routes/ai.js`, and current Mongoose models on `2026-04-18`.
+> Audited against `backend/src/routes/index.js`, `backend/src/routes/ai.js`, and current Mongoose models on `2026-04-20`.
 
 ## Purpose
 
@@ -24,13 +24,13 @@ Current Note fields:
 - `title`
 - `content`
 - `status`
+- `archived`
 - `isPinned`
 - `pinnedAt`
 
 Allowed Note statuses:
 
 - `active`
-- `archived`
 
 Timestamps are enabled.
 
@@ -41,6 +41,7 @@ Current Project fields:
 - `name`
 - `summary`
 - `status`
+- `archived`
 - `currentFocusTaskId`
 - `isPinned`
 - `pinnedAt`
@@ -51,7 +52,6 @@ Allowed Project statuses:
 - `in_progress`
 - `completed`
 - `on_hold`
-- `archived`
 
 Timestamps are enabled.
 
@@ -63,24 +63,19 @@ Preferred Task contract fields:
 - `creationMode`
 - `originModule`
 - `originId`
-- `originLabel`
-- `linkedProjectId`
-- `linkedProjectName`
 - `status`
+- `archived`
 - `completed`
 
-Legacy compatibility fields still present:
+Legacy compatibility still tolerated in route logic:
 
-- `source`
-- `sourceDetail`
-- `projectId`
-- `projectName`
+- legacy rows with `linkedProjectId`
+- legacy rows that still encode archive through `status='archived'`
 
 Allowed Task statuses:
 
 - `active`
 - `completed`
-- `archived`
 
 Timestamps are enabled.
 
@@ -112,8 +107,8 @@ Current behavior truth:
 - default list excludes archived notes
 - `?archived=true` returns archived notes only
 - sort order is pinned first, then `pinnedAt`, then `updatedAt`
-- archive cascades to note-origin tasks
-- restore restores those archived note-origin tasks
+- archive sets `Note.archived=true` and cascades archive visibility to note-origin tasks
+- restore sets `Note.archived=false` and restores those note-origin tasks without flattening task lifecycle status
 
 ### Projects
 
@@ -130,8 +125,9 @@ Current behavior truth:
 
 - `currentFocusTaskId` can be shadow-written through `PUT /projects/:id`
 - archive clears `currentFocusTaskId`
-- archive cascades to related tasks by `linkedProjectId` or `originId`
-- restore restores archived related tasks to active
+- archive primarily cascades through canonical project provenance (`originModule='project'` plus `originId=<projectId>`) while still tolerating legacy linked or origin-only rows
+- archive sets `Project.archived=true` without rewriting project progress status
+- restore sets `Project.archived=false` and restores archived related tasks without flattening task lifecycle status
 
 ### Tasks
 
@@ -144,12 +140,16 @@ Current behavior truth:
 
 - default list excludes archived tasks
 - `?archived=true` returns archived tasks only
-- `?projectId=...` filters by `linkedProjectId`
+- `?projectId=...` uses canonical project provenance (`originModule='project'` plus `originId=<projectId>`) while still tolerating legacy linked rows
 - task creation treats semantic provenance fields as canonical
-- updating a task can change `status` and `completed`
-- completing a focused project-linked task can clear `Project.currentFocusTaskId`
-- archiving a focused task can clear `Project.currentFocusTaskId`
-- deleting a focused task can clear `Project.currentFocusTaskId`
+- updating a task can change `status`, `completed`, and `archived`
+- restore-style updates on legacy `status='archived'` task rows normalize them into:
+  - `archived=false`
+  - `status='active'`
+  - `completed=false`
+- completing a focused canonical project task can clear `Project.currentFocusTaskId`
+- archiving a focused task clears `Project.currentFocusTaskId`
+- deleting a focused task clears `Project.currentFocusTaskId`
 
 ### AI
 
@@ -168,7 +168,11 @@ Current behavior truth:
 - `/ai/chat` is the public API entrypoint into private-core chat execution
 - task-project coupling still lives mainly in route logic, not in a separate domain service layer
 - changing archive semantics, focus-clearing behavior, or bridge usage should be treated as architecture-sensitive work
-- semantic task provenance fields should remain the preferred write path over legacy compatibility fields
+- semantic task provenance fields should remain the canonical write path over legacy compatibility reads
+- legacy rows that still encode archive inside `status='archived'` are normalized through route compatibility instead of a full migration
+- a small manual cleanup entry now exists for bulk normalization of legacy archived Task rows:
+  - `backend/scripts/normalizeLegacyArchivedTasks.js`
+  - `npm run normalize:legacy-archived-tasks`
 
 ## What This Baseline Does Not Do
 

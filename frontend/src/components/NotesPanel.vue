@@ -382,12 +382,9 @@ async function saveNoteTaskDraft(noteId, draft) {
   const note = notes.value.find(n => n._id === noteId)
   const newTask = await saveTask(
     draft,
-    'ai',           // creationMode
-    'note',         // originModule
-    note._id,       // originId
-    note.title,      // originLabel
-    null,            // linkedProjectId
-    ''               // linkedProjectName
+    'ai',
+    'note',
+    note._id
   )
   if (newTask) {
     showToast('Task saved')
@@ -432,8 +429,8 @@ async function saveNoteTaskDraft(noteId, draft) {
       </div>
     </div>
     <EmptyState v-if="notes.length === 0" :title="showArchived ? 'No archived notes' : 'No notes yet'" />
-    <div v-for="note in notes" :key="note._id" :class="['card', 'card-accent-green', 'note-card', { archived: note.status === 'archived' }]" @click="closeNoteMenu">
-      <div v-if="note.status === 'archived'" class="archived-badge">Archived</div>
+    <div v-for="note in notes" :key="note._id" :class="['card', 'card-accent-green', 'note-card', { archived: note.archived }]" @click="closeNoteMenu">
+      <div v-if="note.archived" class="archived-badge">Archived</div>
       <button
         v-else
         @click="note.isPinned ? unpinNote(note) : pinNote(note)"
@@ -448,7 +445,7 @@ async function saveNoteTaskDraft(noteId, draft) {
           <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
         </svg>
       </button>
-      <div v-if="editingId === note._id && note.status !== 'archived'">
+      <div v-if="editingId === note._id && !note.archived">
         <input v-model="note.title" placeholder="Title" class="input" />
         <div :ref="el => bindEditEditor(el, note)" class="codemirror-editor"></div>
         <div class="card-buttons">
@@ -461,7 +458,7 @@ async function saveNoteTaskDraft(noteId, draft) {
         <div class="card-content markdown-body" v-html="renderMarkdown(note.content)"></div>
         <p class="card-meta">{{ new Date(note.updatedAt).toLocaleString() }}</p>
         <div class="card-buttons">
-          <template v-if="note.status === 'archived'">
+          <template v-if="note.archived">
             <button @click="restoreNote(note)" class="btn btn-primary">Restore</button>
             <button @click="deleteNote(note._id)" class="btn btn-danger delete">Delete</button>
           </template>
@@ -483,7 +480,7 @@ async function saveNoteTaskDraft(noteId, draft) {
           </template>
         </div>
         <!-- AI Tasks - Hidden for archived notes -->
-        <div v-if="note.status !== 'archived' && aiTasksByNote[note._id] && aiTasksByNote[note._id].length > 0" class="ai-tasks">
+        <div v-if="!note.archived && aiTasksByNote[note._id] && aiTasksByNote[note._id].length > 0" class="ai-tasks">
           <div class="ai-tasks-header">
             <strong>AI Tasks ({{ aiTasksByNote[note._id].length }})</strong>
             <div class="ai-tasks-actions">

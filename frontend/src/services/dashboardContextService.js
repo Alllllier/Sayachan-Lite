@@ -6,13 +6,13 @@ export function deriveDashboardSnapshot(projects, tasks) {
   const safeProjects = Array.isArray(projects) ? projects : []
   const safeTasks = Array.isArray(tasks) ? tasks : []
 
-  const activeProjectsCount = safeProjects.filter(p => p.status !== 'archived').length
-  const activeTasksCount = safeTasks.filter(t => t.status !== 'archived' && t.status !== 'completed').length
-  const pinnedProject = safeProjects.find(p => p.isPinned && p.status !== 'archived')
+  const activeProjectsCount = safeProjects.filter(p => !p.archived).length
+  const activeTasksCount = safeTasks.filter(t => !t.archived && t.status !== 'completed').length
+  const pinnedProject = safeProjects.find(p => p.isPinned && !p.archived)
   const pinnedProjectName = pinnedProject?.name || ''
 
   const focusProject = safeProjects.find(
-    p => p.status !== 'archived' && p.currentFocusTaskId
+    p => !p.archived && p.currentFocusTaskId
   )
   let currentNextAction = ''
   if (focusProject) {

@@ -1,6 +1,12 @@
 <script setup>
 import { ref, onMounted, defineEmits, defineProps, watch } from 'vue'
 import { saveTask, fetchProjectTasks } from '../services/taskService.js'
+import {
+  canSetProjectFocus,
+  getProjectFocusTitle,
+  getProjectPreviewTasks,
+  getProjectTaskBuckets
+} from './projectsPanel.behavior.js'
 import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
 
@@ -88,15 +94,7 @@ function getStatusClass(status) {
 
 // Focus Source Unification: canonical task-based focus only
 function getCurrentFocusDisplay(project) {
-  if (project.currentFocusTaskId && projectTasks.value[project._id]) {
-    const focusTask = projectTasks.value[project._id].find(
-      t => String(t._id) === String(project.currentFocusTaskId)
-    )
-    if (focusTask?.title) {
-      return focusTask.title
-    }
-  }
-  return ''
+  return getProjectFocusTitle(project, projectTasks.value[project._id] || [])
 }
 
 const emit = defineEmits(['refreshed'])
@@ -308,7 +306,7 @@ async function fetchProjectTasksForCard(projectId) {
   loadingProjectTasks.value.add(projectId)
   try {
     const project = projects.value.find(p => p._id === projectId)
-    const archived = project?.status === 'archived'
+    const archived = project?.archived === true
     const tasks = await fetchProjectTasks(projectId, archived)
     projectTasks.value[projectId] = tasks
   } catch (e) {
@@ -344,12 +342,9 @@ async function saveSuggestionAsTask(projectId, suggestion) {
   const project = projects.value.find(p => p._id === projectId)
   const newTask = await saveTask(
     suggestion,
-    'ai',           // creationMode
-    'project',       // originModule
-    projectId,         // originId
-    project?.name || '',  // originLabel
-    projectId,          // linkedProjectId
-    project?.name || ''   // linkedProjectName
+    'ai',
+    'project',
+    projectId
   )
   if (newTask) {
     showToast('Saved as task')
@@ -384,18 +379,15 @@ async function setTaskAsFocus(project, task) {
 }
 
 function getActiveTasks(projectId) {
-  const tasks = projectTasks.value[projectId] || []
-  return tasks.filter(t => t.status === 'active')
+  return getProjectTaskBuckets(projectTasks.value[projectId] || []).active
 }
 
 function getCompletedTasks(projectId) {
-  const tasks = projectTasks.value[projectId] || []
-  return tasks.filter(t => t.status === 'completed')
+  return getProjectTaskBuckets(projectTasks.value[projectId] || []).completed
 }
 
 function getArchivedTasks(projectId) {
-  const tasks = projectTasks.value[projectId] || []
-  return tasks.filter(t => t.status === 'archived')
+  return getProjectTaskBuckets(projectTasks.value[projectId] || []).archived
 }
 
 function getPreviewFilter(projectId) {
@@ -404,20 +396,12 @@ function getPreviewFilter(projectId) {
 
 function getPreviewTasks(projectId) {
   const project = projects.value.find(p => p._id === projectId)
-  if (project?.status === 'archived') {
-    const tasks = getArchivedTasks(projectId)
-    if (expandedProjects.value.has(projectId)) {
-      return tasks
-    }
-    return tasks.slice(0, 3)
-  }
-
-  const filter = getPreviewFilter(projectId)
-  const tasks = filter === 'active' ? getActiveTasks(projectId) : getCompletedTasks(projectId)
-  if (expandedProjects.value.has(projectId)) {
-    return tasks
-  }
-  return tasks.slice(0, 3)
+  return getProjectPreviewTasks(
+    project,
+    projectTasks.value[projectId] || [],
+    getPreviewFilter(projectId),
+    expandedProjects.value.has(projectId)
+  )
 }
 
 function toggleProjectPreview(projectId) {
@@ -476,12 +460,9 @@ async function addManualTask(project) {
   try {
     const newTask = await saveTask(
       taskTitle,
-      'manual',        // creationMode
-      'project',       // originModule
-      project._id,       // originId
-      project.name,      // originLabel
-      project._id,          // linkedProjectId
-      project.name         // linkedProjectName
+      'manual',
+      'project',
+      project._id
     )
     if (newTask) {
       showToast('Task added')
@@ -517,12 +498,9 @@ async function addBatchTasks(project) {
     for (const title of taskTitles) {
       const newTask = await saveTask(
         title,
-        'manual',        // creationMode
-        'project',       // originModule
-        project._id,       // originId
-        project.name,      // originLabel
-        project._id,          // linkedProjectId
-        project.name         // linkedProjectName
+        'manual',
+        'project',
+        project._id
       )
       if (newTask) successCount++
     }
@@ -561,9 +539,9 @@ async function addBatchTasks(project) {
       </div>
     </div>
     <EmptyState v-if="projects.length === 0" :title="showArchived ? 'No archived projects' : 'No projects yet'" />
-    <div v-for="project in projects" :key="project._id" :class="['card', 'card-accent-blue', 'project-card', { archived: project.status === 'archived' }]" @click="closeProjectMenu">
+    <div v-for="project in projects" :key="project._id" :class="['card', 'card-accent-blue', 'project-card', { archived: project.archived }]" @click="closeProjectMenu">
       <button
-        v-if="project.status !== 'archived'"
+        v-if="!project.archived"
         @click="project.isPinned ? unpinProject(project) : pinProject(project)"
         class="pin-icon-btn"
         :class="{ pinned: project.isPinned }"
@@ -576,7 +554,7 @@ async function addBatchTasks(project) {
           <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
         </svg>
       </button>
-      <div v-if="editingProjectId === project._id && project.status !== 'archived'">
+      <div v-if="editingProjectId === project._id && !project.archived">
          <input v-model="project.name" placeholder="Project name" class="input" />
         <textarea
           v-model="project.summary"
@@ -618,7 +596,7 @@ async function addBatchTasks(project) {
           <div class="tasks-preview-header">
             <div class="preview-header-left">
               <span class="tasks-preview-title">Tasks</span>
-              <div v-if="project.status !== 'archived'" class="preview-filter-switch">
+              <div v-if="!project.archived" class="preview-filter-switch">
                 <button
                   @click.stop="setPreviewFilter(project._id, 'active')"
                   class="filter-btn"
@@ -649,11 +627,11 @@ async function addBatchTasks(project) {
               :key="task._id"
               class="task-preview-item"
               :class="{
-                completed: task.status === 'completed' || task.status === 'archived',
+                completed: task.status === 'completed' || task.archived,
                 'is-focus': isFocusTask(project, task),
-                'can-focus': task.status === 'active'
+                'can-focus': task.status === 'active' && !task.archived
               }"
-              @click.stop="task.status === 'active' ? setTaskAsFocus(project, task) : null"
+              @click.stop="canSetProjectFocus(task) ? setTaskAsFocus(project, task) : null"
             >
               <span class="task-preview-text">{{ task.title }}</span>
               <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
@@ -662,7 +640,7 @@ async function addBatchTasks(project) {
         </div>
 
         <!-- Main Action: Add Task / Cancel (Hidden for archived projects) -->
-        <div v-if="project.status !== 'archived'" class="card-buttons main-actions">
+        <div v-if="!project.archived" class="card-buttons main-actions">
           <button
             v-if="!taskCaptureOpen.has(project._id)"
             @click="openTaskCapture(project._id)"
@@ -680,7 +658,7 @@ async function addBatchTasks(project) {
         </div>
 
         <!-- Task Capture Area: Single/Batch Mode Switch (shown below the main button, hidden for archived) -->
-        <div v-if="project.status !== 'archived' && taskCaptureOpen.has(project._id)" class="task-capture-area">
+        <div v-if="!project.archived && taskCaptureOpen.has(project._id)" class="task-capture-area">
           <!-- Mode Switch -->
           <div class="capture-mode-switch">
             <button
@@ -734,7 +712,7 @@ async function addBatchTasks(project) {
 
         <!-- Secondary Actions -->
         <div class="card-buttons secondary-actions">
-          <template v-if="project.status === 'archived'">
+          <template v-if="project.archived">
             <button @click="restoreProject(project)" class="btn btn-primary secondary-btn">Restore</button>
             <button @click="deleteProject(project._id)" class="btn btn-danger secondary-btn delete-btn">Delete</button>
           </template>
@@ -757,7 +735,7 @@ async function addBatchTasks(project) {
         </div>
 
         <!-- AI Suggestions - Hidden for archived projects -->
-        <div v-if="project.status !== 'archived' && aiSuggestions[project._id] && aiSuggestions[project._id].length > 0" class="ai-suggestions">
+        <div v-if="!project.archived && aiSuggestions[project._id] && aiSuggestions[project._id].length > 0" class="ai-suggestions">
           <div class="ai-suggestions-header">
             <strong>AI Suggestions ({{ aiSuggestions[project._id].length }})</strong>
             <div class="ai-suggestions-actions">

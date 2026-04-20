@@ -12,8 +12,12 @@ const projectSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'in_progress', 'completed', 'on_hold', 'archived'],
+    enum: ['pending', 'in_progress', 'completed', 'on_hold'],
     default: 'pending'
+  },
+  archived: {
+    type: Boolean,
+    default: false
   },
   currentFocusTaskId: {
     type: mongoose.Schema.Types.ObjectId,

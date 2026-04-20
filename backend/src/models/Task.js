@@ -6,7 +6,6 @@ const taskSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  // New semantic fields
   creationMode: {
     type: String,
     enum: ['ai', 'manual'],
@@ -20,41 +19,14 @@ const taskSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     default: null
   },
-  originLabel: {
-    type: String,
-    default: ''
-  },
-  linkedProjectId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project',
-    default: null
-  },
-  linkedProjectName: {
-    type: String,
-    default: ''
-  },
-  // Legacy fields for compatibility
-  source: {
-    type: String,
-    required: false // No longer required, for migration
-  },
-  sourceDetail: {
-    type: String,
-    default: ''
-  },
-  projectId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project',
-    default: null
-  },
-  projectName: {
-    type: String,
-    default: ''
-  },
   status: {
     type: String,
-    enum: ['active', 'completed', 'archived'],
+    enum: ['active', 'completed'],
     default: 'active'
+  },
+  archived: {
+    type: Boolean,
+    default: false
   },
   completed: {
     type: Boolean,

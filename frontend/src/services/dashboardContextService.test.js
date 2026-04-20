@@ -5,13 +5,13 @@ describe('dashboardContextService smoke tests', () => {
   it('counts only non-archived projects and non-archived non-completed tasks', () => {
     const snapshot = deriveDashboardSnapshot(
       [
-        { _id: 'project-1', status: 'active', name: 'Alpha' },
-        { _id: 'project-2', status: 'archived', name: 'Beta' }
+        { _id: 'project-1', status: 'pending', archived: false, name: 'Alpha' },
+        { _id: 'project-2', status: 'pending', archived: true, name: 'Beta' }
       ],
       [
-        { _id: 'task-1', status: 'active', title: 'Do work' },
-        { _id: 'task-2', status: 'completed', title: 'Done work' },
-        { _id: 'task-3', status: 'archived', title: 'Old work' }
+        { _id: 'task-1', status: 'active', archived: false, title: 'Do work' },
+        { _id: 'task-2', status: 'completed', archived: false, title: 'Done work' },
+        { _id: 'task-3', status: 'active', archived: true, title: 'Old work' }
       ]
     )
 
@@ -24,8 +24,8 @@ describe('dashboardContextService smoke tests', () => {
   it('ignores archived pinned projects when deriving pinnedProjectName', () => {
     const snapshot = deriveDashboardSnapshot(
       [
-        { _id: 'project-1', status: 'archived', name: 'Archived Pin', isPinned: true },
-        { _id: 'project-2', status: 'active', name: 'Live Pin', isPinned: true }
+        { _id: 'project-1', status: 'pending', archived: true, name: 'Archived Pin', isPinned: true },
+        { _id: 'project-2', status: 'pending', archived: false, name: 'Live Pin', isPinned: true }
       ],
       []
     )
@@ -36,12 +36,12 @@ describe('dashboardContextService smoke tests', () => {
   it('derives currentNextAction from task-based project focus only', () => {
     const snapshot = deriveDashboardSnapshot(
       [
-        { _id: 'project-1', status: 'active', name: 'Focused Project', currentFocusTaskId: 'task-2' },
-        { _id: 'project-2', status: 'archived', name: 'Archived Project', currentFocusTaskId: 'task-1' }
+        { _id: 'project-1', status: 'pending', archived: false, name: 'Focused Project', currentFocusTaskId: 'task-2' },
+        { _id: 'project-2', status: 'pending', archived: true, name: 'Archived Project', currentFocusTaskId: 'task-1' }
       ],
       [
-        { _id: 'task-1', status: 'active', title: 'Wrong task' },
-        { _id: 'task-2', status: 'active', title: 'Correct focus task' }
+        { _id: 'task-1', status: 'active', archived: false, title: 'Wrong task' },
+        { _id: 'task-2', status: 'active', archived: false, title: 'Correct focus task' }
       ]
     )
 
@@ -51,7 +51,7 @@ describe('dashboardContextService smoke tests', () => {
   it('returns empty currentNextAction when the focused task is missing', () => {
     const snapshot = deriveDashboardSnapshot(
       [
-        { _id: 'project-1', status: 'active', name: 'Focused Project', currentFocusTaskId: 'missing-task' }
+        { _id: 'project-1', status: 'pending', archived: false, name: 'Focused Project', currentFocusTaskId: 'missing-task' }
       ],
       []
     )

@@ -21,6 +21,7 @@ PMO_DOC_CHANGED=false
 PMO_SYNC_CHANGED=false
 EXECUTION_ENTRY_CHANGED=false
 OPERATOR_GUIDE_CHANGED=false
+BLOCK_COMMIT=false
 
 for file in $STAGED_FILES; do
     if echo "$file" | grep -qE "$ARCH_CODE_PATTERN"; then
@@ -69,7 +70,7 @@ if [ "$ARCH_CODE_CHANGED" = true ] && [ "$ARCH_DOC_CHANGED" = false ]; then
     echo "If the code change does not alter architecture truth, you can bypass with:"
     echo "  git commit --no-verify"
     echo ""
-    exit 1
+    BLOCK_COMMIT=true
 fi
 
 if [ "$MANIFEST_CHANGED" = true ]; then
@@ -133,6 +134,10 @@ if [ "$PMO_DOC_CHANGED" = true ] && [ "$OPERATOR_GUIDE_CHANGED" = false ]; then
     echo ""
     echo "This is a weak-sync reminder only. Commit may proceed if operator guides remain accurate enough."
     echo ""
+fi
+
+if [ "$BLOCK_COMMIT" = true ]; then
+    exit 1
 fi
 
 exit 0

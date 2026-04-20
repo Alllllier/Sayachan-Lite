@@ -143,15 +143,27 @@
 - Suggested next action: `Later, evaluate a minimal launcher shape where PMO starts Claude from PowerShell using the active `execution_task.md`, keeps `execution_report.md` as the only formal return surface, and avoids introducing a second unofficial execution channel.`
 - Reopen trigger: `A human explicitly wants to prototype or formalize a PowerShell-based Claude launch path from PMO.`
 
-### `Project Archive Restore Task Status Preservation`
+### `Task Project Note Behavior-Locked Simplification Pass`
 
-- Type: `bug`
+- Type: `cleanup`
 - Source: `execution report`
-- Source reference: `docs/pmo/history/reports/archived-project-panel-task-visibility-fix.md`
-- Problem / Opportunity: `Project-level archive/restore currently flattens task lifecycle state. When a project is archived, both active and completed tasks are rewritten to archived; when the project is restored, all archived tasks are rewritten to active. This destroys the original completed-task history and turns a workflow-state operation into silent semantics loss.`
-- Why now: `The issue surfaced directly during closeout of the archived-project-panel micro-fix and was confirmed by human testing. It is important enough to preserve immediately, but it crosses backend workflow semantics and needs fresh PMO discussion before execution resumes.`
-- Current status: `open`
-- Dependencies: `A bounded discussion on the intended archive/restore semantics for project-linked tasks, plus a safe backend implementation shape that can preserve pre-archive task state without destabilizing existing data or task workflows.`
-- Risks / unknowns: `A minimal fix may require schema expansion or alternative persistence logic, and the right fallback behavior for legacy archived tasks is not yet settled. If handled casually, this could introduce data migration confusion or new inconsistencies between active, completed, and archived task meaning.`
-- Suggested next action: `Reopen this as a focused PMO discussion on project/task archive semantics before handing off any backend fix. Start by deciding whether restore must preserve each task's pre-archive lifecycle state exactly, then shape the smallest safe implementation from there.`
-- Reopen trigger: `A human explicitly wants to discuss or fix project archive/restore task-status preservation.`
+- Source reference: `docs/pmo/state/execution_report.md for Archive And Lifecycle Model Alignment`
+- Problem / Opportunity: `Task, project, and note behavior has now been shaped through several feature and semantics passes, and the implementation is at risk of becoming harder to reason about than the product surface actually requires. The opportunity is to lock current intended behavior in tests first, then simplify the implementation toward the smallest code that still preserves those behaviors.`
+- Why now: `The archive/lifecycle alignment sprint just closed, so the intended semantics are still fresh enough to capture in behavior tests before more incremental changes make the current contract harder to pin down.`
+- Current status: `parked`
+- Dependencies: `A bounded future refactor pass that first defines or expands behavior coverage for archive, restore, completion semantics, list filtering, project task preview, and other currently intended note/project/task interactions before simplifying backend and frontend code paths.`
+- Risks / unknowns: `If the behavior contract is not written down clearly enough first, the refactor could accidentally simplify away real product rules. If the effort is framed too broadly, it could sprawl into redesign instead of a behavior-locked cleanup.`
+- Suggested next action: `Later, shape this into a test-driven refactor sprint: first capture the currently intended behavior in targeted tests, then simplify the implementation toward the smallest code that still passes that behavior suite, and finally rerun the same tests as the acceptance gate.`
+- Reopen trigger: `A human explicitly wants a behavior-locked simplification pass for note/project/task, or future changes make this area feel too risky to touch without stronger test coverage and cleanup.`
+
+### `Npx Validation Fallback Rules`
+
+- Type: `cleanup`
+- Source: `discussion`
+- Problem / Opportunity: `Current repo rules around `npx` usage are still too coarse. Recent execution showed that fully blocking bare `npx playwright test` avoided one class of workflow drift, but also created a new problem when repo-native validation paths were broken and the worker had no clearly sanctioned fallback. Backend test invocation and frontend Vite/Playwright validation also have meaningfully different operational constraints, so one flat rule is likely too simplistic.`
+- Why now: `This issue has now affected real execution quality and reporting clarity. It should stay visible as a separate workflow/policy topic rather than being improvised case by case.`
+- Current status: `parked`
+- Dependencies: `A later bounded discussion or policy pass that distinguishes repo-native default paths, forbidden bypasses, and acceptable fallback usage across backend tests, frontend unit tests, and frontend browser review flows.`
+- Risks / unknowns: `If the rule stays too strict, workers lose safe fallback options when scripts drift or break. If it becomes too loose, validation discipline will erode and repo-native paths will stop mattering. The right split between `npx` as forbidden bypass and `npx` as explicit fallback still needs careful treatment.`
+- Suggested next action: `Later, run a bounded workflow discussion focused specifically on `npx` validation rules, with separate treatment for backend test execution, frontend unit-test execution, and browser/UI review flows.`
+- Reopen trigger: `A human explicitly wants to refine validation-command policy, or another sprint is blocked or distorted by unclear `npx` fallback rules.`

@@ -4,16 +4,14 @@ import { ref } from 'vue'
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
 export const tasksRef = ref([])
+export const activeTasksSnapshotRef = ref([])
 
-export function buildTaskPayload(title, creationMode, originModule = '', originId = null, originLabel = '', linkedProjectId = null, linkedProjectName = '') {
+export function buildTaskPayload(title, creationMode, originModule = '', originId = null) {
   return {
     title,
     creationMode,
     originModule,
-    originId,
-    originLabel,
-    linkedProjectId,
-    linkedProjectName
+    originId
   }
 }
 
@@ -23,6 +21,7 @@ export function normalizeSavedTask(task) {
   return {
     ...task,
     status: task.status === undefined ? 'active' : task.status,
+    archived: task.archived === undefined ? false : task.archived,
     completed: task.completed === undefined ? false : task.completed
   }
 }
@@ -33,6 +32,9 @@ export async function fetchTasks(archived = false) {
     const res = await fetch(url)
     const tasks = await res.json()
     tasksRef.value = tasks
+    if (!archived) {
+      activeTasksSnapshotRef.value = tasks
+    }
     return tasksRef.value
   } catch (e) {
     console.error('Failed to fetch tasks:', e)
@@ -40,16 +42,13 @@ export async function fetchTasks(archived = false) {
   }
 }
 
-export async function saveTask(title, creationMode, originModule = '', originId = null, originLabel = '', linkedProjectId = null, linkedProjectName = '') {
+export async function saveTask(title, creationMode, originModule = '', originId = null) {
   try {
     const taskData = buildTaskPayload(
       title,
       creationMode,
       originModule,
-      originId,
-      originLabel,
-      linkedProjectId,
-      linkedProjectName
+      originId
     )
 
     const res = await fetch(`${API_BASE}/tasks`, {
@@ -61,12 +60,42 @@ export async function saveTask(title, creationMode, originModule = '', originId 
     const newTask = normalizeSavedTask(savedTask)
     if (newTask) {
       tasksRef.value.unshift(newTask)
+      if (!newTask.archived) {
+        activeTasksSnapshotRef.value = [newTask, ...activeTasksSnapshotRef.value]
+      }
     }
     return newTask
   } catch (e) {
     console.error('Failed to save task:', e)
     return null
   }
+}
+
+export function syncTaskIntoActiveSnapshot(task) {
+  if (!task?._id) return
+
+  if (task.archived) {
+    activeTasksSnapshotRef.value = activeTasksSnapshotRef.value.filter(
+      existingTask => existingTask?._id !== task._id
+    )
+    return
+  }
+
+  const nextTasks = activeTasksSnapshotRef.value.some(existingTask => existingTask?._id === task._id)
+    ? activeTasksSnapshotRef.value.map(existingTask => (
+        existingTask?._id === task._id
+          ? { ...existingTask, ...task }
+          : existingTask
+      ))
+    : [task, ...activeTasksSnapshotRef.value]
+
+  activeTasksSnapshotRef.value = nextTasks
+}
+
+export function removeTaskFromActiveSnapshot(taskId) {
+  activeTasksSnapshotRef.value = activeTasksSnapshotRef.value.filter(
+    task => task?._id !== taskId
+  )
 }
 
 export async function fetchProjectTasks(projectId, archived = false) {

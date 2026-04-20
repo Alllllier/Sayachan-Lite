@@ -5,7 +5,9 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node src/server.js"
+    "dev": "node src/server.js",
+    "test": "node --test",
+    "normalize:legacy-archived-tasks": "node scripts/normalizeLegacyArchivedTasks.js"
   },
   "keywords": [],
   "author": "",

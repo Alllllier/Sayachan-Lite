@@ -1,7 +1,15 @@
 <script setup>
 import { computed, ref, onMounted, watch, watchEffect } from 'vue'
 import { generateWeeklyReview, recommendFocus, generateActionPlan, generateTaskDrafts } from '../services/aiService'
-import { tasksRef, fetchTasks } from '../services/taskService'
+import {
+  activeTasksSnapshotRef,
+  fetchTasks,
+  removeTaskFromActiveSnapshot,
+  saveTask,
+  syncTaskIntoActiveSnapshot,
+  tasksRef
+} from '../services/taskService'
+import { applyDashboardTaskUpdate, removeDashboardTask } from './dashboard.behavior.js'
 import { useCockpitSignals } from '../stores/cockpitSignals'
 import EmptyState from './ui/EmptyState.vue'
 import Toast from './ui/Toast.vue'
@@ -20,24 +28,25 @@ const recentNotes = computed(() => safeNotes.value.slice(0, 3))
 const recentProjects = computed(() => safeProjects.value.slice(0, 3))
 
 const savedTasks = tasksRef
+const activeTasksForContext = activeTasksSnapshotRef
 
 // Cockpit signals: lightweight dashboard context for global chat
 const activeProjectsCount = computed(() =>
-  safeProjects.value.filter(p => p.status !== 'archived').length
+  safeProjects.value.filter(p => !p.archived).length
 )
 const activeTasksCount = computed(() =>
-  savedTasks.value.filter(t => t.status !== 'archived' && t.status !== 'completed').length
+  activeTasksForContext.value.filter(t => !t.archived && t.status !== 'completed').length
 )
 const pinnedProjectName = computed(() => {
-  const pinned = safeProjects.value.find(p => p.isPinned && p.status !== 'archived')
+  const pinned = safeProjects.value.find(p => p.isPinned && !p.archived)
   return pinned?.name || ''
 })
 const currentNextAction = computed(() => {
   const focusProject = safeProjects.value.find(
-    p => p.status !== 'archived' && p.currentFocusTaskId
+    p => !p.archived && p.currentFocusTaskId
   )
   if (focusProject) {
-    const focusTask = savedTasks.value.find(
+    const focusTask = activeTasksForContext.value.find(
       t => String(t._id) === String(focusProject.currentFocusTaskId)
     )
     if (focusTask?.title) {
@@ -105,20 +114,8 @@ async function handleQuickAddTask() {
 
   isQuickAdding.value = true
   try {
-    const res = await fetch(`${API_BASE}/tasks`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title,
-        creationMode: 'manual',
-        originModule: 'dashboard',
-        originId: null,
-        originLabel: ''
-      })
-    })
-    const newTask = await res.json()
+    const newTask = await saveTask(title, 'manual', 'dashboard', null)
     if (newTask) {
-      tasksRef.value.unshift(newTask)
       showToast('Task added')
       quickAddInput.value = ''
     }
@@ -139,8 +136,8 @@ async function handleTaskComplete(task) {
       body: JSON.stringify({ completed: newStatus === 'completed', status: newStatus })
     })
     const updated = await res.json()
-    task.status = updated.status
-    task.completed = updated.completed
+    savedTasks.value = applyDashboardTaskUpdate(savedTasks.value, updated)
+    syncTaskIntoActiveSnapshot(updated)
     showToast(newStatus === 'completed' ? 'Task completed' : 'Task reactivated')
     // Notify parent to refresh data (for project focus transition)
     emit('refreshed')
@@ -151,18 +148,20 @@ async function handleTaskComplete(task) {
 
 async function handleTaskArchive(task) {
   try {
-    const newStatus = task.status === 'archived' ? 'active' : 'archived'
-    await fetch(`${API_BASE}/tasks/${task._id}`, {
+    const willArchive = !task.archived
+    const res = await fetch(`${API_BASE}/tasks/${task._id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus })
+      body: JSON.stringify(willArchive ? { archived: true } : { archived: false })
     })
-    savedTasks.value = savedTasks.value.filter(t => t._id !== task._id)
+    const updated = await res.json()
+    savedTasks.value = removeDashboardTask(savedTasks.value, updated._id)
+    syncTaskIntoActiveSnapshot(updated)
     // Fix: Clear menu open state when task is archived/restored
     if (taskMenuOpen.value === task._id) {
       taskMenuOpen.value = null
     }
-    showToast(newStatus === 'archived' ? 'Task archived' : 'Task restored')
+    showToast(updated.archived ? 'Task archived' : 'Task restored')
   } catch (e) {
     console.error('Failed to archive task:', e)
   }
@@ -176,7 +175,8 @@ async function handleTaskDelete(task) {
     await fetch(`${API_BASE}/tasks/${task._id}`, {
       method: 'DELETE'
     })
-    savedTasks.value = savedTasks.value.filter(t => t._id !== task._id)
+    savedTasks.value = removeDashboardTask(savedTasks.value, task._id)
+    removeTaskFromActiveSnapshot(task._id)
     // Fix: Clear menu open state when task is deleted
     if (taskMenuOpen.value === task._id) {
       taskMenuOpen.value = null
@@ -260,37 +260,32 @@ function getProvenanceClass(task) {
 // Hotfix-1: Helper to get tooltip text for source dot
 function getSourceTooltip(task) {
   if (task.creationMode === 'ai') {
-    if (task.originModule === 'project_suggestion') {
-      return 'AI suggestion → Focus'
-    }
     return 'AI generated'
-  }
-  if (task.originModule === 'project_focus') {
-    return 'Manual focus'
   }
   if (task.originModule === 'dashboard') {
     return 'Dashboard quick add'
   }
-  return task.originModule || 'Manual'
+  if (task.originModule === 'note') {
+    return 'Note task'
+  }
+  if (task.originModule === 'project') {
+    return 'Project task'
+  }
+  return 'Manual'
 }
 
 async function handleSaveDraftsAsTasks() {
   isSavingTasks.value = true
   try {
     for (const draft of taskDrafts.value) {
-      await fetch(`${API_BASE}/tasks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: draft.title,
-          creationMode: draft.creationMode || draft.source || 'manual',
-          originModule: draft.originModule || '',
-          originId: draft.originId || null,
-          originLabel: draft.originLabel || ''
-        })
-      })
+      await saveTask(
+        draft.title,
+        draft.creationMode || 'ai',
+        draft.originModule || 'dashboard',
+        draft.originId || null
+      )
     }
-    await fetchTasks()
+    await fetchTasks(showArchived.value)
     showToast(`Saved ${taskDrafts.value.length} task(s)`)
     taskDrafts.value = []
   } catch (e) {

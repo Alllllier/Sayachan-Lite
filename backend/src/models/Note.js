@@ -12,8 +12,12 @@ const noteSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'archived'],
+    enum: ['active'],
     default: 'active'
+  },
+  archived: {
+    type: Boolean,
+    default: false
   },
   isPinned: {
     type: Boolean,

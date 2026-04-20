@@ -1,6 +1,6 @@
 # Runtime Baseline
 
-> Audited against the live repository on `2026-04-18`.
+> Audited against the live repository on `2026-04-20`.
 
 ## Purpose
 
@@ -41,7 +41,7 @@ Projects currently do all of the following:
 Tasks currently do all of the following:
 
 - store executable work items
-- preserve provenance and optional project linkage
+- preserve provenance
 - reflect workflow transition through `status` and `completed`
 - participate in focus-clearing side effects when the focused task changes state
 
@@ -84,6 +84,11 @@ Current dashboard-to-chat context flow:
 
 This is currently a runtime bridge, not a deeper formal context architecture.
 
+Current lightweight truth rule:
+
+- cockpit signals should represent active-work truth
+- archived-task browsing should not redefine cockpit counts or next-action semantics
+
 ## Runtime Control Flow
 
 Chat runtime controls currently work like this:
@@ -102,7 +107,8 @@ Important current implications:
 
 - focus is task-based, not free-text
 - setting focus happens through project-task relations
-- completing, archiving, or deleting the current focus task can clear project focus
+- completing a focused canonical project task can clear project focus
+- archiving or deleting the current focus task clears project focus
 
 ## Task Provenance Runtime
 
@@ -111,14 +117,11 @@ Preferred runtime provenance fields are:
 - `creationMode`
 - `originModule`
 - `originId`
-- `originLabel`
-- `linkedProjectId`
-- `linkedProjectName`
 
 Current practical shapes include:
 
 - note-generated task
-- project-linked task
+- project-origin task
 - dashboard quick-add task
 
 ## Archive And Restore Runtime
@@ -134,9 +137,9 @@ Current note archive flow:
 
 Current project archive flow:
 
-- archiving a project archives related tasks by project linkage or origin
+- archiving a project archives related tasks by canonical project provenance, while still tolerating bounded legacy linkage compatibility
 - project archive also clears `currentFocusTaskId`
-- restoring a project restores archived related tasks to active
+- restoring a project restores archived related tasks while preserving lifecycle semantics
 
 ## AI Invocation Matrix
 
