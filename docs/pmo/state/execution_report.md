@@ -10,8 +10,8 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Task Project Note Runtime Residue Cleanup`
-- Report outcome: `completed and archived to history/reports/task-project-note-runtime-residue-cleanup.md`
+- Sprint: `Backend Helper Guardrail Tests`
+- Report outcome: `completed and archived to history/reports/backend-helper-guardrail-tests.md`
 - PMO read result: `accepted for closeout`
 
 ## Next Use

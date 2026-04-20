@@ -282,12 +282,14 @@ test('project restore restores archived canonical project tasks while keeping li
       target: Task,
       key: 'find',
       value: async (query) => {
-        assert.deepEqual(query, {
-          $and: [
-            { originModule: 'project', originId: 'project-1' },
-            { archived: true }
-          ]
-        });
+        assert.equal(
+          hasClause(query, (clause) => clause.originModule === 'project' && clause.originId === 'project-1'),
+          true
+        );
+        assert.equal(
+          hasClause(query, (clause) => clause.archived === true),
+          true
+        );
 
         return [
           createDoc({ _id: 'task-project', status: 'active', archived: true, completed: false }),

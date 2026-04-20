@@ -1,4 +1,4 @@
-# Current Sprint Idle Template
+# Current Sprint
 
 - Sprint: `idle`
 - Status: `idle`
@@ -15,12 +15,12 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Task Project Note Runtime Residue Cleanup`
+- Sprint: `Backend Helper Guardrail Tests`
 - Closeout date: `2026-04-20`
 - Delivery status: `completed`
 - Commit state: `not committed yet`
-- Documentation sync outcome: `update required and completed`
-- Residual note: `The bounded runtime residue cleanup succeeded: legacy archived-task compatibility, Note.status, and the remaining route-level project-task legacy tolerances were removed, backend tests passed, and discussion_batch_008 now remains open mainly for the larger paused testing/validation-baseline topic rather than for further runtime residue on this specific seam.`
+- Documentation sync outcome: `reviewed, no update needed`
+- Residual note: `A narrow direct helper/module guardrail layer now protects buildArchiveFilter, projectTaskReadFilter, and projectTaskCascadeFilter without changing runtime semantics; discussion_batch_009 now retains only broader backend-testing architecture context rather than an active helper-slice execution need.`
 
 ## Next PMO Action
 

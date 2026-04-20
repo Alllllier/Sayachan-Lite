@@ -58,12 +58,13 @@ Use one of these modes when opening a batch:
 6. Deepen discussion only on the active focus theme.
 7. For `follow-up` mode, prefer one narrow theme and write the concrete residual issue directly instead of pretending the topic is broader than it is.
 8. When stable judgments or narrowed questions appear, write them back into the active batch instead of relying only on conversation memory.
-9. When the result becomes stable, choose one exit path:
+9. If a possible slice becomes large enough, persistent enough, or distinct enough that it now deserves its own ongoing discussion thread, PMO may split it into a new `follow-up` discussion batch instead of keeping all further shaping inside the parent batch.
+10. When the result becomes stable, choose one exit path:
    - retain in `idea_backlog.md`
    - promote into `sprint_candidates.md`
    - write the durable outcome into `decision_log.md`
    - park it for later with an explicit review trigger
-10. If the topic is confirmed as `private-core-owned`, keep only the minimum boundary-safe coordination record in the public PMO and move detailed design work into the private repo documentation set.
+11. If the topic is confirmed as `private-core-owned`, keep only the minimum boundary-safe coordination record in the public PMO and move detailed design work into the private repo documentation set.
 
 ## `discussion_index.md` Update Rule
 
@@ -114,6 +115,17 @@ If the topic is already one concrete residual issue, one theme with one likely n
 
 Promotion may happen from the theme level or from the possible-slice level, depending on which level has become stable first.
 
+Slice split-out is also valid when:
+
+- a slice has become meaningfully more durable or deeper than the parent batch's remaining focus
+- the slice now has its own likely promotion path or sustained discussion horizon
+- continuing to keep it nested would blur two different planning conversations
+
+When a slice is split into a new discussion batch:
+
+- the new batch should inherit enough source trace, current judgment, and open-question context to stand on its own without forcing re-reading of the entire parent batch
+- the parent batch should keep only the narrower cross-reference and high-level continuity note rather than duplicating the full discussion body
+
 ## Working Rules
 
 - keep discussion useful for recall, not exhaustive architecture prose
@@ -124,6 +136,7 @@ Promotion may happen from the theme level or from the possible-slice level, depe
 - do not treat the existence of a plausible slice as a reason to rush discussion into candidate state
 - unless the human explicitly asks to converge now, discussion may stay in theme- and slice-shaping mode while the direction is still becoming clear
 - when a stable judgment, sharper current focus, or clearer open question appears, write it back into the active batch during the discussion instead of waiting for a final summary pass
+- during active discussion, PMO may propose a write-back and treat it as the default next step unless the human explicitly objects; the purpose is to preserve discussion state without repeatedly interrupting the conversation for routine approval
 - let the batch file absorb normal discussion refinement; do not mirror every refinement into `discussion_index.md`
 - once a result is stable, move the long-lived output into formal PMO state instead of leaving discussion as the only source of truth
 - if a topic is parked, record why it is parked and what would cause it to be reopened

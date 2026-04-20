@@ -1,4 +1,4 @@
-# Execution Task Idle Template
+# Execution Task
 
 - Status: `idle`
 - Sprint: `idle`
@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Task Project Note Runtime Residue Cleanup`
-- Outcome: `completed and closed out`
-- Report surface: `docs/pmo/history/reports/task-project-note-runtime-residue-cleanup.md`
+- Sprint: `Backend Helper Guardrail Tests`
+- Outcome: `completed and accepted for closeout`
+- Report surface: `docs/pmo/state/execution_report.md`
 
 ## Next Activation Rule
 

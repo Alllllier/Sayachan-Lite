@@ -105,19 +105,20 @@ Use this routing map when a new idea, bugfix discussion, or future architecture 
 
 1. Capture the discussion entry in `state/discussion_index.md` and the active batch under `state/discussions/`.
 2. Keep the topic in discussion while the shape, boundary, and likely slice are still unstable.
-3. When the result stabilizes, promote it by intent:
+3. If a slice inside an active batch grows into its own durable planning conversation, PMO may split that slice into a new `follow-up` discussion batch rather than forcing it to remain nested indefinitely.
+4. When the result stabilizes, promote it by intent:
    - `state/idea_backlog.md` for retained work that is worth keeping visible but is not ready to start
    - `state/sprint_candidates.md` for bounded slices that are ready for human comparison
    - `state/decision_log.md` for durable decisions, explicit deferrals, or rejected paths
-4. After explicit human sprint selection, activate the selected sprint in `state/current_sprint.md` and write the active execution contract into `state/execution_task.md`.
-5. The selected candidate may remain visible in `state/sprint_candidates.md` while the sprint is active, then be marked `completed` after closeout before later archival if space is needed.
-6. Execution returns into `state/execution_report.md`, then PMO closes out the sprint and syncs any durable decision or deferred follow-up back into the formal state files.
-7. After PMO reads a detailed execution report, archive that report into `history/reports/` before resetting `state/execution_report.md` to idle.
-8. Parked future work must not live only inside the handoff or the report:
+5. After explicit human sprint selection, activate the selected sprint in `state/current_sprint.md` and write the active execution contract into `state/execution_task.md`.
+6. The selected candidate may remain visible in `state/sprint_candidates.md` while the sprint is active, then be marked `completed` after closeout before later archival if space is needed.
+7. Execution returns into `state/execution_report.md`, then PMO closes out the sprint and syncs any durable decision or deferred follow-up back into the formal state files.
+8. After PMO reads a detailed execution report, archive that report into `history/reports/` before resetting `state/execution_report.md` to idle.
+9. Parked future work must not live only inside the handoff or the report:
    - if it is stable enough to keep for later, record it in `state/idea_backlog.md` with status `parked`
    - if it is a durable deferral or rejected path, record it in `state/decision_log.md`
    - if it is still too raw for formal state, keep it in the discussion batch with explicit `parked` status and next review trigger
-9. When work retained in `state/idea_backlog.md` is later completed through execution, remove the finished work item from backlog unless it still represents unfinished future work. Keep durable conclusions in `state/decision_log.md` and rely on `history/reports/` for the execution history.
+10. When work retained in `state/idea_backlog.md` is later completed through execution, remove the finished work item from backlog unless it still represents unfinished future work. Keep durable conclusions in `state/decision_log.md` and rely on `history/reports/` for the execution history.
 
 The intended operating path is:
 
@@ -263,6 +264,7 @@ Any execution worker variant, including delegated or sub-agent workers, should d
 - `execution_task.md` is the active execution contract
 - `execution_report.md` is the active execution return surface
 - human-review refinements stay inside the active execution loop unless they force a real PMO scope or decision change
+- during live discussion, routine PMO write-backs are default-on once proposed; unless the human explicitly objects, Codex should treat the write-back as approved so discussion momentum is not repeatedly interrupted by low-risk recording steps
 
 ## Policy Touchpoints
 

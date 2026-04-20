@@ -29,54 +29,53 @@
 
 ## Current Candidates
 
-### `Task Project Note Runtime Residue Cleanup`
+### `Backend Runtime And Route Contract Test Baseline`
 
 - Status: `completed`
-- Source reference: `state/discussions/discussion_batch_008.md`
-- Why now: `The main simplification sprint already landed, and human discussion has now explicitly judged several remaining runtime residues as no longer worth carrying in an early-stage personal codebase. This creates a narrow opportunity to fully remove the most obvious compatibility tails before they fossilize into the cleaned runtime.`
-- Expected outcome: `The runtime becomes materially cleaner by removing the now-unnecessary `status='archived'` compatibility chain, retiring `Note.status`, and deleting the remaining route-level project-task legacy tolerances that are no longer justified now that canonical provenance writes have long been stable.`
+- Source reference: `state/discussions/discussion_batch_009.md`
+- Why now: `Recent backend refactors proved that runtime semantics in this project are now important enough to deserve a broader default protection net, but the next useful step is still bounded: strengthen backend behavior coverage around high-frequency list/filter semantics and establish a light route-contract baseline before expanding into helper-level testing.`
+- Expected outcome: `Backend testing becomes materially more durable by filling the thinnest high-value gap in runtime behavior coverage and by introducing a small but stable route-contract baseline around status codes, canonical response shape, and key missing-resource behavior. The result should make future backend refactors safer for both runtime semantics and frontend/backend coordination without turning the repo into a heavy test stack.`
 - In scope:
-  - remove the legacy archived-task compatibility chain from query, normalization, and restore handling
-  - retire `Note.status` so note archive semantics are expressed through `note.archived`
-  - remove route-level tolerance for legacy `linkedProjectId` rows
-  - remove project archive/restore tolerance for `origin-only` legacy rows
-  - keep validation focused on preserving the cleaned runtime behavior after these removals
+  - expand backend list/filter behavior coverage for high-frequency `task`, `project`, and `note` reads
+  - add a first-pass route contract baseline for high-frequency routes, including key success status codes, minimal canonical response shape, and bounded `404` behavior for important id-based routes
+  - keep using the current Node built-in test runner (`node --test`)
+  - preserve the distinction between runtime behavior protection and route contract protection rather than merging them into one vague test bucket
 - Out of scope:
-  - larger backend test architecture buildout
-  - frontend/browser validation baseline work
+  - broad helper/module test expansion
+  - changing backend test framework
+  - frontend test coverage buildout
   - repo-native UI review repair
-  - new product behavior or relationship-model design
-- Dependencies: `Stable post-refactor runtime from Task Project Note Simplification Refactor plus explicit residue judgments captured in discussion_batch_008.`
+  - broader cross-surface validation baseline work
+- Dependencies: `Stable runtime semantics after Task Project Note Simplification Refactor and Runtime Residue Cleanup, plus the backend-testing judgments now captured in discussion_batch_009.`
 - Risk level: `medium`
 - Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-20 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the bounded runtime residue cleanup slice while keeping the candidate visible during execution.`
-- Closeout: `Completed on 2026-04-20. The slice removed the legacy archived-task compatibility chain, retired Note.status, removed route-level tolerance for legacy linkedProjectId and origin-only project residue, updated backend tests to reflect the canonical runtime shape, and synced backend/runtime baselines. Broader testing/validation baseline work remains intentionally outside this sprint and stays parked in discussion_batch_008.`
+- Start condition: `Satisfied on 2026-04-20 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the first-pass backend testing slice while keeping the candidate visible during execution.`
+- Follow-on note: `A later follow-up may add a narrow helper/module guardrail layer, most likely centered on `buildArchiveFilter`, `projectTaskReadFilter`, and `projectTaskCascadeFilter`. `normalizeTask` and `normalizeNote` remain intentionally deferred from that first pass because they sit closer to the route-contract and runtime-behavior layers and could create unnecessary overlap if tested too early.`
+- Closeout: `Completed on 2026-04-20. The slice added backend list/filter coverage for the high-frequency task/project/note reads, introduced a light route-contract baseline around status codes, canonical response shape, and key 404 behavior, and then tightened a few query-shape-coupled assertions into clause-level contract checks. No runtime semantics changed, and the later helper/module guardrail layer remains the intended follow-on direction in discussion_batch_009.`
 
-### `Task Project Note Behavior-Lock Testing`
+### `Backend Helper Guardrail Tests`
 
 - Status: `completed`
-- Source reference: `state/discussions/discussion_batch_007.md; task-project-note-behavior-audit.md; state/idea_backlog.md`
-- Why now: `Recent archive/lifecycle work plus the follow-up audit both showed that task, project, note, and dashboard-context behavior now spans enough real runtime semantics that simplification should not start from intuition alone. A dedicated behavior-lock sprint is now the safest way to preserve current product outcomes while creating room for a later cleanup pass.`
-- Expected outcome: `The current intended behavior across task, project, note, and dashboard-context surfaces becomes explicit and test-backed. The sprint should maximize behavior coverage while minimizing implementation coupling, so a later simplification refactor can remove legacy seams such as `linkedProjectId` and stale compatibility values without guessing which behaviors matter.`
+- Source reference: `state/discussions/discussion_batch_009.md`
+- Why now: `The first backend testing slice has already landed runtime behavior and route contract protection. The next narrow, still-bounded step is to add a small helper/module guardrail layer for the most semantically important backend helpers without widening into a broad internal unit-test sweep.`
+- Expected outcome: `A very small set of backend helper tests directly protects the highest-value rule-bearing helpers so future refactors can localize failures faster without over-freezing internal implementation details. The result should strengthen backend refactor safety while preserving the existing boundary that keeps helper testing much narrower than route behavior and route contract coverage.`
 - In scope:
-  - add backend behavior tests for archive/restore semantics across note and project flows
-  - add backend tests for current project-task relation boundaries, including the difference between project reads and project archive/restore cascades
-  - add backend tests for focus-clearing behavior in the currently real completion/archive/delete paths
-  - add frontend behavior tests for Projects preview branching, Dashboard saved-task behavior, and dashboard-context snapshot semantics
-  - keep browser/UI review bounded to high-value archive/project/dashboard checks rather than trying to build full visual-e2e coverage
-  - explicitly document which currently real behaviors are locked as must-preserve and which suspicious or legacy shapes remain only compatibility-era reads
+  - add direct tests for `buildArchiveFilter`
+  - add direct tests for `projectTaskReadFilter`
+  - add direct tests for `projectTaskCascadeFilter`
+  - keep the helper layer intentionally small and semantics-oriented
 - Out of scope:
-  - the later simplification refactor itself
-  - field removal or relation-model changes such as removing `linkedProjectId`
-  - converting `focus-clearing` to the simpler symmetric rule yet
-  - broad dashboard-context architecture redesign
-  - production-grade migration work for legacy development-stage data
-- Dependencies: `Stable discussion context from discussion_batch_007 plus the audit findings in task-project-note-behavior-audit.md.`
-- Risk level: `medium`
+  - direct tests for `normalizeTask`
+  - direct tests for `normalizeNote`
+  - broad helper/module coverage expansion
+  - frontend testing work
+  - repo-native UI review work
+  - runtime behavior redesign
+- Dependencies: `Completed first-pass backend runtime/contract testing baseline plus the helper-layer judgments now captured in discussion_batch_009.`
+- Risk level: `low`
 - Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-20 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the test-first half of the two-sprint cleanup plan while keeping the candidate visible during execution.`
-- Follow-on note: `If this candidate is selected and completed successfully, the expected next PMO move is a second simplification-refactor candidate rather than a fresh blank-slate discussion. That later slice should stay flexible until sprint-one testing confirms the real behavior boundaries, but its currently visible direction includes removing `linkedProjectId`, retiring stale `originModule` compatibility values, deleting clearly dead legacy task fields, simplifying focus-clearing, and reducing dashboard snapshot drift.`
-- Closeout: `Completed on 2026-04-20. Backend and frontend behavior-lock coverage now exists for the key task/project/note/archive paths plus chat hydration and dashboard saved-task behavior. The sprint also clarified that dashboard-context truth remains only partially locked, and browser-level repo-native UI review is currently unavailable because the script points at a missing spec file. The later simplification-refactor candidate remains the intended next move.`
+- Start condition: `Satisfied on 2026-04-20 by explicit human selection; PMO activated current_sprint.md and execution_task.md for this narrow helper/module guardrail slice while keeping the candidate visible during execution.`
+- Closeout: `Completed on 2026-04-20. The slice added a narrow direct guardrail layer for buildArchiveFilter, projectTaskReadFilter, and projectTaskCascadeFilter without touching production runtime code, left normalizeTask and normalizeNote intentionally deferred, and passed the backend suite with 18 tests green. No runtime semantics changed, so documentation sync remained reviewed with no updates required.`
 
 ### `Task Project Note Simplification Refactor`
 

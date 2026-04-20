@@ -142,11 +142,51 @@
   - repo-native UI review repair
   - stable validation expectations for execution workers
   all now look like part of one larger unfinished testing-baseline topic.
+- The current repo already has three distinct validation/tool stacks, and future discussion should treat them as separate layers rather than one generic `testing` topic:
+  - backend behavior/runtime protection:
+    - command surface: `backend/package.json -> npm test`
+    - underlying tool: Node built-in test runner via `node --test`
+    - current files: `backend/test/routes.behavior-lock.test.js`, `backend/test/routes.restore-scoping.test.js`
+  - frontend behavior/state protection:
+    - command surface: `frontend/package.json -> npm test`
+    - underlying tool: `vitest`
+    - current files include `frontend/src/services/taskService.test.js`, `frontend/src/services/dashboardContextService.test.js`, `frontend/src/components/chatEntry.behavior.test.js`, `frontend/src/components/dashboard.behavior.test.js`, and `frontend/src/components/projectsPanel.behavior.test.js`
+  - repo-native browser/UI review:
+    - command surface: `frontend/package.json -> npm run test:ui-review` and `npm run test:ui-review:headed`
+    - underlying tool: `Playwright`
+    - current repo-native UI review path is intentionally narrow and currently fragile, centered on `tests/ui-review/notes-ui-review.spec.js`
+- PMO should therefore keep the future `cross-surface test and validation baseline buildout` discussion explicitly split across:
+  - backend test architecture buildout
+  - frontend test coverage buildout
+  - repo-native UI review baseline
+  rather than treating all three as one undifferentiated test surface.
+- Human discussion then stabilized a first-pass `minimum viable baseline` for those three layers:
+  - backend behavior/runtime protection:
+    - keep using `backend/package.json -> npm test` backed by `node --test`
+    - the near-term goal is not exhaustive route coverage, but a stable habit where any runtime-rule change is expected to carry backend behavior protection
+    - this layer should primarily protect archive/restore semantics, project-task relation rules, focus-clearing, list/filter behavior, and other backend-owned runtime semantics
+  - frontend behavior/state protection:
+    - keep using `frontend/package.json -> npm test` backed by `vitest`
+    - the near-term goal is not full component coverage, but stable behavior tests for high-value panels, services, derived state, and active/archived branching logic
+    - this layer should primarily protect panel behavior, service logic, and frontend-side state derivation rather than visual polish itself
+  - repo-native browser/UI review:
+    - keep using repo-native `Playwright` entrypoints (`npm run test:ui-review` / `npm run test:ui-review:headed`)
+    - the near-term goal is not full end-to-end automation, but a reliable browser review path for high-value UI/surface changes
+    - this layer should primarily protect real rendered layout, interaction density, and browser-visible UI regressions that logic tests alone cannot catch
+- Human discussion also clarified the key PMO framing rule for this future topic:
+  - the main missing piece is not tool replacement
+  - it is a stable baseline for which category of change should trigger which validation layer by default
+- The resulting minimum baseline expectation is:
+  - backend/runtime-rule changes should default to backend test validation
+  - frontend behavior/state changes should default to frontend `vitest` validation
+  - clear UI/surface/layout changes should default to repo-native browser/UI review when available
+  - temporary validation added by workers should be judged by whether it protects a durable recurring behavior or is only a one-off debugging aid
 
 ## Promotion Outcome
 
 - `slice-001` has now been promoted, executed, and closed successfully as `Task Project Note Runtime Residue Cleanup`.
 - `slice-004` should remain paused at discussion level for now; human direction is to return to the larger cross-surface test/validation baseline topic only after the narrower runtime residue cleanup has been executed or otherwise resolved.
+- `slice-003` has now been split out into `discussion_batch_009` so backend test architecture can be shaped independently instead of staying nested under the broader cross-surface baseline topic.
 - Keep this batch open as the follow-up container for both:
   - the now-completed runtime residue cleanup as historical context
   - the larger paused testing/validation-baseline topic that should be revisited later
