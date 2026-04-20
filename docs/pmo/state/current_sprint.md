@@ -1,7 +1,7 @@
 # Current Sprint
 
-- Sprint: `Task Project Note Simplification Refactor`
-- Status: `active`
+- Sprint: `idle`
+- Status: `idle`
 - PMO owner: `Codex`
 - Architecture owner: `Human`
 - Execution owner: `execution worker`
@@ -9,20 +9,20 @@
 
 ## Current State
 
-- Type: `candidate activation`
-- Goal: `Simplify the task/project/note runtime under the locked behavior suite by unifying project-task relation semantics, removing legacy seams, and reducing implementation drift without changing the intended product outcomes.`
-- Active handoff: `docs/pmo/state/execution_task.md`
+- Type: `no active sprint`
+- Goal: `Await the next candidate selection or discussion-to-candidate promotion.`
+- Active handoff: `none`
 
 ## Last Closed Sprint
 
-- Sprint: `Task Project Note Behavior-Lock Testing`
+- Sprint: `Task Project Note Simplification Refactor`
 - Closeout date: `2026-04-20`
-- Delivery status: `completed with bounded validation gaps accepted`
-- Commit state: `not recorded in PMO yet`
-- Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `Behavior-lock coverage now exists for the key task/project/note/archive paths, but browser-level UI review remained unavailable because the repo-native UI review script points to a missing spec, and dashboard-context truth remains only partially locked. The later simplification-refactor slice remains the expected next PMO move.`
+- Delivery status: `completed with bounded legacy compatibility retained`
+- Commit state: `committed and pushed to main as 1ddd8c2`
+- Documentation sync outcome: `update required and completed`
+- Residual note: `The simplification slice completed successfully, including a same-sprint backend organization cleanup and manual legacy archived-task normalization in both Render and local development environments. Remaining follow-up space is mostly around future cleanup of bounded legacy compatibility, Note status inertia, and the broken repo-native UI review path.`
 
 ## Next PMO Action
 
-- execute the bounded simplification-refactor slice through `execution_task.md`
-- return the implementation and validation result in `execution_report.md` for PMO closeout review
+- select the next sprint candidate when a new bounded execution slice is ready
+- continue discussion or audit work if more shaping is needed before the next activation

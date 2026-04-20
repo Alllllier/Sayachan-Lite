@@ -81,7 +81,7 @@
 
 ### `Task Project Note Simplification Refactor`
 
-- Status: `active`
+- Status: `completed`
 - Source reference: `state/discussions/discussion_batch_007.md; task-project-note-behavior-audit.md; state/idea_backlog.md`
 - Why now: `The behavior-lock sprint is complete, so the next cleanup slice no longer has to infer which current outcomes matter. The remaining high-value work is now structural: simplify the implementation, unify the runtime meaning of project-related task, and remove legacy seams under the protection of the locked behavior suite.`
 - Expected outcome: `Task, project, and note keep the now-locked external behavior while the implementation becomes materially simpler and more coherent. The slice should unify project-task relation semantics, move `linkedProjectId` out of the primary runtime path, retire stale compatibility-era origin values, remove dead legacy task fields, simplify focus-clearing, and reduce dashboard snapshot drift without turning cockpit signals into a permanent context subsystem.`
@@ -102,3 +102,4 @@
 - Risk level: `high`
 - Readiness: `ready`
 - Start condition: `Satisfied on 2026-04-20 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the simplification-refactor half of the two-sprint cleanup plan while keeping the candidate visible during execution.`
+- Closeout: `Completed on 2026-04-20. The runtime now uses canonical project provenance as the primary task relation path, removes the main dead and denormalized Task fields from the active schema and write path, simplifies focus-clearing, reduces dashboard snapshot drift, and moves route helper clusters into a dedicated backend helper module. Bounded legacy compatibility remains for old linked-project and archived-status rows, and the repo-native browser review path is still broken, but the simplification slice and its post-refactor organization cleanup were accepted.`
