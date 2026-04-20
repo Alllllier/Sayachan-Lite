@@ -19,6 +19,19 @@ export function getProjectPreviewTasks(project, tasks, filter = 'active', expand
   return expanded ? previewTasks : previewTasks.slice(0, 3)
 }
 
+export function getProjectPrimaryPreviewTasks(project, tasks, filter = 'active', expanded = false) {
+  if (project?.archived) {
+    return []
+  }
+
+  return getProjectPreviewTasks(project, tasks, filter, expanded)
+}
+
+export function getProjectArchivedPreviewTasks(project, tasks, expanded = false) {
+  const buckets = getProjectTaskBuckets(tasks)
+  return expanded ? buckets.archived : buckets.archived.slice(0, 3)
+}
+
 export function canSetProjectFocus(task) {
   return task?.status === 'active' && task?.archived !== true
 }

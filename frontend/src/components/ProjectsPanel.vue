@@ -3,8 +3,9 @@ import { ref, onMounted, defineEmits, defineProps, watch } from 'vue'
 import { saveTask, fetchProjectTasks } from '../services/taskService.js'
 import {
   canSetProjectFocus,
+  getProjectArchivedPreviewTasks,
   getProjectFocusTitle,
-  getProjectPreviewTasks,
+  getProjectPrimaryPreviewTasks,
   getProjectTaskBuckets
 } from './projectsPanel.behavior.js'
 import Toast from './ui/Toast.vue'
@@ -394,12 +395,21 @@ function getPreviewFilter(projectId) {
   return previewFilter.value[projectId] || 'active'
 }
 
-function getPreviewTasks(projectId) {
+function getPrimaryPreviewTasks(projectId) {
   const project = projects.value.find(p => p._id === projectId)
-  return getProjectPreviewTasks(
+  return getProjectPrimaryPreviewTasks(
     project,
     projectTasks.value[projectId] || [],
     getPreviewFilter(projectId),
+    expandedProjects.value.has(projectId)
+  )
+}
+
+function getArchivedPreviewTasks(projectId) {
+  const project = projects.value.find(p => p._id === projectId)
+  return getProjectArchivedPreviewTasks(
+    project,
+    projectTasks.value[projectId] || [],
     expandedProjects.value.has(projectId)
   )
 }
@@ -622,19 +632,43 @@ async function addBatchTasks(project) {
           </div>
 
           <div class="tasks-preview-list">
-            <div
-              v-for="task in getPreviewTasks(project._id)"
-              :key="task._id"
-              class="task-preview-item"
-              :class="{
-                completed: task.status === 'completed' || task.archived,
-                'is-focus': isFocusTask(project, task),
-                'can-focus': task.status === 'active' && !task.archived
-              }"
-              @click.stop="canSetProjectFocus(task) ? setTaskAsFocus(project, task) : null"
-            >
-              <span class="task-preview-text">{{ task.title }}</span>
-              <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
+            <div v-if="getPrimaryPreviewTasks(project._id).length > 0" class="preview-task-section">
+              <div
+                v-for="task in getPrimaryPreviewTasks(project._id)"
+                :key="task._id"
+                class="task-preview-item"
+                :class="{
+                  completed: task.status === 'completed',
+                  'is-focus': isFocusTask(project, task),
+                  'can-focus': task.status === 'active' && !task.archived
+                }"
+                @click.stop="canSetProjectFocus(task) ? setTaskAsFocus(project, task) : null"
+              >
+                <span class="task-preview-text">{{ task.title }}</span>
+                <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
+              </div>
+            </div>
+
+            <div v-if="getArchivedPreviewTasks(project._id).length > 0" class="preview-task-section preview-task-section-archived">
+              <div class="preview-section-label">Archived</div>
+              <div
+                v-for="task in getArchivedPreviewTasks(project._id)"
+                :key="task._id"
+                class="task-preview-item archived"
+                :class="{
+                  completed: task.status === 'completed',
+                  'is-focus': isFocusTask(project, task)
+                }"
+              >
+                <span class="task-preview-text">{{ task.title }}</span>
+                <div class="task-preview-meta">
+                  <span class="task-preview-state-chip" :class="task.status === 'completed' ? 'state-completed' : 'state-active'">
+                    {{ task.status === 'completed' ? 'Completed' : 'Active' }}
+                  </span>
+                  <span class="task-preview-state-chip state-archived">Archived</span>
+                  <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1179,9 +1213,30 @@ async function addBatchTasks(project) {
   gap: 4px;
 }
 
+.preview-task-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.preview-task-section-archived {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #d8dee6;
+}
+
+.preview-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #7a8494;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .task-preview-item {
   display: flex;
   align-items: center;
+  gap: 8px;
   padding: 6px 8px;
   background: white;
   border-radius: 4px;
@@ -1190,9 +1245,18 @@ async function addBatchTasks(project) {
 }
 
 .task-preview-item.completed {
-  opacity: 0.6;
-  text-decoration: line-through;
+  opacity: 0.75;
   border-left-color: #ccc;
+}
+
+.task-preview-item.completed .task-preview-text {
+  text-decoration: line-through;
+}
+
+.task-preview-item.archived {
+  opacity: 0.72;
+  border-left-color: #b7c0cd;
+  background: #f3f5f7;
 }
 
 .task-preview-text {
@@ -1201,6 +1265,38 @@ async function addBatchTasks(project) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.task-preview-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.task-preview-state-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.task-preview-state-chip.state-active {
+  background: #eaf6ef;
+  color: #2f7d55;
+}
+
+.task-preview-state-chip.state-completed {
+  background: #eef0f3;
+  color: #667085;
+}
+
+.task-preview-state-chip.state-archived {
+  background: #f1ecff;
+  color: #6f54c9;
 }
 
 .set-focus-btn {

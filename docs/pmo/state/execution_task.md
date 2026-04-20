@@ -12,7 +12,7 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Backend Helper Guardrail Tests`
+- Sprint: `Project Surface Display Semantics Cleanup`
 - Outcome: `completed and accepted for closeout`
 - Report surface: `docs/pmo/state/execution_report.md`
 

@@ -29,29 +29,35 @@
 
 ## Current Candidates
 
-### `Backend Runtime And Route Contract Test Baseline`
+### `Project Surface Display Semantics Cleanup`
 
 - Status: `completed`
-- Source reference: `state/discussions/discussion_batch_009.md`
-- Why now: `Recent backend refactors proved that runtime semantics in this project are now important enough to deserve a broader default protection net, but the next useful step is still bounded: strengthen backend behavior coverage around high-frequency list/filter semantics and establish a light route-contract baseline before expanding into helper-level testing.`
-- Expected outcome: `Backend testing becomes materially more durable by filling the thinnest high-value gap in runtime behavior coverage and by introducing a small but stable route-contract baseline around status codes, canonical response shape, and key missing-resource behavior. The result should make future backend refactors safer for both runtime semantics and frontend/backend coordination without turning the repo into a heavy test stack.`
+- Source reference: `state/discussions/discussion_batch_010.md`
+- Why now: `The archive/lifecycle model cleanup made task state semantics correct, but it also exposed that the current project surface still carries older display assumptions and now blurs `status` with `archived`, especially around archived-project task visibility. Human direction is to fix that surface semantics first before expanding frontend automated coverage.`
+- Expected outcome: `The project and archived-project surfaces will display the now-correct `status + archived` model clearly without broad UI churn. Archived tasks will move into an explicit secondary section, lifecycle differences will remain visible per task, and currently liked interaction constraints such as archived-task non-interactivity and archived-project narrow actions will be preserved. The result should remove mixed/blurry project-surface behavior and give later frontend testing a more stable target.`
 - In scope:
-  - expand backend list/filter behavior coverage for high-frequency `task`, `project`, and `note` reads
-  - add a first-pass route contract baseline for high-frequency routes, including key success status codes, minimal canonical response shape, and bounded `404` behavior for important id-based routes
-  - keep using the current Node built-in test runner (`node --test`)
-  - preserve the distinction between runtime behavior protection and route contract protection rather than merging them into one vague test bucket
+  - clarify project-surface display semantics for tasks after `archived` was separated from lifecycle `status`
+  - ensure archived tasks on `Project` and `Archived Project` surfaces live in their own secondary archived section rather than disappearing or being merged back into the main active/completed groups
+  - keep archived-section tasks visually expressing lifecycle per item instead of splitting the archived section into separate `active` and `completed` subgroups
+  - preserve current liked UI affordances:
+    - completed tasks continue using strikethrough treatment
+    - archived tasks remain non-interactive by default, especially with respect to focus selection
+    - archived projects keep the narrow action set centered on `restore`, `delete`, and task expansion
+  - make archived-project task display explicitly show both dimensions at once:
+    - `completed + archived` keeps completed styling while remaining non-interactive
+    - `active + archived` remains non-interactive without inheriting completed styling
 - Out of scope:
-  - broad helper/module test expansion
-  - changing backend test framework
-  - frontend test coverage buildout
+  - broader frontend test coverage buildout
+  - dashboard surface redesign
+  - notes-surface redesign
   - repo-native UI review repair
-  - broader cross-surface validation baseline work
-- Dependencies: `Stable runtime semantics after Task Project Note Simplification Refactor and Runtime Residue Cleanup, plus the backend-testing judgments now captured in discussion_batch_009.`
+  - broad restyling or interaction redesign beyond the narrow project-surface semantics cleanup
+- Dependencies: `Completed archive/lifecycle model cleanup and the display-semantics judgments now captured in discussion_batch_010.`
 - Risk level: `medium`
 - Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-20 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the first-pass backend testing slice while keeping the candidate visible during execution.`
-- Follow-on note: `A later follow-up may add a narrow helper/module guardrail layer, most likely centered on `buildArchiveFilter`, `projectTaskReadFilter`, and `projectTaskCascadeFilter`. `normalizeTask` and `normalizeNote` remain intentionally deferred from that first pass because they sit closer to the route-contract and runtime-behavior layers and could create unnecessary overlap if tested too early.`
-- Closeout: `Completed on 2026-04-20. The slice added backend list/filter coverage for the high-frequency task/project/note reads, introduced a light route-contract baseline around status codes, canonical response shape, and key 404 behavior, and then tightened a few query-shape-coupled assertions into clause-level contract checks. No runtime semantics changed, and the later helper/module guardrail layer remains the intended follow-on direction in discussion_batch_009.`
+- Start condition: `Satisfied on 2026-04-20 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the narrow project-surface semantics slice while keeping the candidate visible during execution.`
+- Follow-on note: `A later frontend-testing slice should follow this cleanup rather than precede it, because panel behavior coverage will be more valuable once the project-surface state semantics are no longer mixed or blurry.`
+- Closeout: `Completed on 2026-04-20. The slice separated archived preview tasks into their own project-surface section, preserved lifecycle visibility per task item without splitting archived tasks into a second active/completed grouping, and kept the liked affordances intact: completed-task strikethrough, archived-task non-interactivity, and archived-project narrow actions. A narrow projectsPanel behavior test update was added, while broader frontend testing and repo-native UI review work remain deferred in discussion_batch_010.`
 
 ### `Backend Helper Guardrail Tests`
 

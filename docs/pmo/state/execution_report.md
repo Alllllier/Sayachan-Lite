@@ -10,8 +10,8 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Backend Helper Guardrail Tests`
-- Report outcome: `completed and archived to history/reports/backend-helper-guardrail-tests.md`
+- Sprint: `Project Surface Display Semantics Cleanup`
+- Report outcome: `completed and archived to history/reports/project-surface-display-semantics-cleanup.md`
 - PMO read result: `accepted for closeout`
 
 ## Next Use

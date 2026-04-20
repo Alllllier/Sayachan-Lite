@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  getProjectArchivedPreviewTasks,
   canSetProjectFocus,
   getProjectFocusTitle,
+  getProjectPrimaryPreviewTasks,
   getProjectPreviewTasks,
   getProjectTaskBuckets
 } from './projectsPanel.behavior.js'
@@ -50,6 +52,25 @@ describe('projectsPanel behavior locks', () => {
     const archivedProject = { _id: 'project-1', archived: true }
 
     expect(getProjectPreviewTasks(archivedProject, mixedTasks, 'active', true).map(task => task._id)).toEqual([
+      'task-3'
+    ])
+  })
+
+  it('keeps archived tasks in a separate preview branch from the primary active/completed list', () => {
+    const activeProject = { _id: 'project-1', archived: false }
+    const archivedProject = { _id: 'project-1', archived: true }
+
+    expect(getProjectPrimaryPreviewTasks(activeProject, mixedTasks, 'active', true).map(task => task._id)).toEqual([
+      'task-1',
+      'task-4',
+      'task-5',
+      'task-6'
+    ])
+    expect(getProjectArchivedPreviewTasks(activeProject, mixedTasks, true).map(task => task._id)).toEqual([
+      'task-3'
+    ])
+    expect(getProjectPrimaryPreviewTasks(archivedProject, mixedTasks, 'active', true)).toEqual([])
+    expect(getProjectArchivedPreviewTasks(archivedProject, mixedTasks, true).map(task => task._id)).toEqual([
       'task-3'
     ])
   })

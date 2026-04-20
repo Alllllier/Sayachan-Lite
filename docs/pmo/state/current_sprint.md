@@ -15,14 +15,14 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Backend Helper Guardrail Tests`
+- Sprint: `Project Surface Display Semantics Cleanup`
 - Closeout date: `2026-04-20`
 - Delivery status: `completed`
 - Commit state: `not committed yet`
 - Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `A narrow direct helper/module guardrail layer now protects buildArchiveFilter, projectTaskReadFilter, and projectTaskCascadeFilter without changing runtime semantics; discussion_batch_009 now retains only broader backend-testing architecture context rather than an active helper-slice execution need.`
+- Residual note: `The project surface now separates archived tasks into their own secondary section while preserving completed-task strikethrough, archived-task non-interactivity, and archived-project narrow actions; broader frontend testing and repo-native UI review remain for later discussion in discussion_batch_010.`
 
 ## Next PMO Action
 
 - keep `execution_task.md` in explicit idle state until a new sprint or micro-fix is activated
-- decide whether the next PMO move is a new discussion, a candidate activation, a micro-fix, or archive cleanup
+- decide whether the next PMO move is continued frontend testing discussion, UI-review baseline shaping, a new candidate activation, or archive cleanup

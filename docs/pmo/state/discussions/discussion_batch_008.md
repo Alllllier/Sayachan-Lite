@@ -181,12 +181,41 @@
   - frontend behavior/state changes should default to frontend `vitest` validation
   - clear UI/surface/layout changes should default to repo-native browser/UI review when available
   - temporary validation added by workers should be judged by whether it protects a durable recurring behavior or is only a one-off debugging aid
+- Human discussion then clarified the likely first priority inside the still-open `frontend test coverage buildout` subline:
+  - frontend testing should likely prioritize `panel behavior` before the service layer is expanded for its own sake
+  - the reason is that the currently important frontend services, especially `taskService` and `dashboardContextService`, are better understood as support layers for panel behavior and derived UI state rather than as the primary product surface themselves
+  - PMO should therefore treat `taskService` and `dashboardContextService` as service/derived-state support for the front-end panel layer, not as a reason to invert priority away from `ProjectsPanel`, `NotesPanel`, and `Dashboard`
+- Human discussion then surfaced a display-semantics issue that should block immediate frontend test buildout on the project surface:
+  - after `archived` was separated from lifecycle `status`, task combinations now include both `active + archived` and `completed + archived`
+  - the older UI had effectively grown around a world where `completed + archived` did not exist as a first-class visible combination, so some current project-surface display logic now reads as mixed and semantically blurry
+- Human judgment is now clear on the desired high-level surface semantics:
+  - `Dashboard` should continue treating `archived=true` primarily as `leave the current workspace / current work surface`
+  - `Project` should not treat `archived=true` as total disappearance; on the project surface it should mean `secondary visibility / downgraded visibility`
+  - `Archived Project` should also continue to expose task context rather than becoming an empty shell
+- Human discussion then clarified the preferred project-surface grouping rule:
+  - on `Project` and `Archived Project` surfaces, archived tasks should appear in their own secondary/archived section rather than being merged back into the main active/completed task groups
+  - inside that archived section, tasks should *not* be split again into separate `active` and `completed` subgroups
+  - instead, each archived task should keep its own lifecycle marker/badge so the UI cleanly expresses `status + archived` without collapsing the two concepts together
+- PMO should therefore treat the frontend requirement as:
+  - make the UI explicitly support and display the distinction between lifecycle `status` and archive state
+  - remove current mixed/blurry behavior that comes from older assumptions about the task state space
+  - prefer a simpler archived section with per-task lifecycle indication over a heavier four-quadrant or double-group structure
+- Human judgment is that this clarified UI rule is sufficient for the current product:
+  - once the project-facing UI stops conflating `status` and `archived`, the model itself is already expressive enough
+  - this means the immediate next frontend work is better framed as `display semantics cleanup` before broader frontend test coverage is built out
 
 ## Promotion Outcome
 
 - `slice-001` has now been promoted, executed, and closed successfully as `Task Project Note Runtime Residue Cleanup`.
 - `slice-004` should remain paused at discussion level for now; human direction is to return to the larger cross-surface test/validation baseline topic only after the narrower runtime residue cleanup has been executed or otherwise resolved.
 - `slice-003` has now been split out into `discussion_batch_009` so backend test architecture can be shaped independently instead of staying nested under the broader cross-surface baseline topic.
+- inside `slice-004`, backend testing should now be treated as the already-landed subline:
+  - backend runtime/route baseline work was promoted into `discussion_batch_009`, executed in two bounded slices, and is no longer the active unresolved part of the broader cross-surface baseline topic
+  - the remaining active work inside `slice-004` is therefore:
+    - frontend test coverage buildout
+    - repo-native UI review baseline
+    - worker validation baseline
+- the frontend/testing-display branch inside `slice-004` has now also been split out into `discussion_batch_010` so frontend display semantics and frontend testing coverage can be shaped independently instead of remaining nested inside the broader cross-surface parent container
 - Keep this batch open as the follow-up container for both:
   - the now-completed runtime residue cleanup as historical context
   - the larger paused testing/validation-baseline topic that should be revisited later
