@@ -70,6 +70,8 @@ Use for:
 ## Working Rules
 
 - keep `idea_backlog.md` useful, not a dumping ground
+- do not keep completed work items in `idea_backlog.md` just to preserve history; once the work itself is done, remove it from backlog unless it still represents unfinished future work
+- when completed backlog-origin work leaves behind a durable planning conclusion, capture that conclusion in `decision_log.md` and rely on `history/reports/` for execution history
 - do not promote into `sprint_candidates.md` before the slice is genuinely bounded
 - do not treat generic momentum or implied urgency as human authorization to activate a sprint
 - do not hide parked follow-up inside candidate notes or handoff prose without also routing it into its durable home

@@ -12,8 +12,8 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Project Task Preview Expansion And Focus Simplification`
-- Outcome: `completed with bounded residual unverified areas`
+- Sprint: `Archived Project Panel Task Visibility Fix`
+- Outcome: `completed with bounded follow-up deferred to discussion`
 - Report surface: `docs/pmo/state/execution_report.md`
 
 ## Next Activation Rule

@@ -117,6 +117,7 @@ Use this routing map when a new idea, bugfix discussion, or future architecture 
    - if it is stable enough to keep for later, record it in `state/idea_backlog.md` with status `parked`
    - if it is a durable deferral or rejected path, record it in `state/decision_log.md`
    - if it is still too raw for formal state, keep it in the discussion batch with explicit `parked` status and next review trigger
+9. When work retained in `state/idea_backlog.md` is later completed through execution, remove the finished work item from backlog unless it still represents unfinished future work. Keep durable conclusions in `state/decision_log.md` and rely on `history/reports/` for the execution history.
 
 The intended operating path is:
 

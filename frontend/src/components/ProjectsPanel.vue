@@ -110,6 +110,8 @@ async function fetchProjects() {
     const response = await fetch(url)
     const fetchedProjects = await response.json()
     projects.value = fetchedProjects
+    // Refresh tasks for all projects to avoid stale cache when tab/status changes
+    await Promise.all(fetchedProjects.map(p => fetchProjectTasksForCard(p._id)))
     emit('refreshed', projects.value)
   } catch (e) {
     error.value = 'Failed to load projects'
@@ -122,11 +124,9 @@ async function fetchProjects() {
 watch(() => props.projects, (newProjects) => {
   if (Array.isArray(newProjects)) {
     projects.value = [...newProjects]
-    // Fetch tasks for all projects
+    // Refresh tasks for all projects to avoid stale cache when status changes
     projects.value.forEach(project => {
-      if (!projectTasks.value[project._id]) {
-        fetchProjectTasksForCard(project._id)
-      }
+      fetchProjectTasksForCard(project._id)
     })
   }
 }, { deep: true })
@@ -307,7 +307,9 @@ function closeAISuggestions(projectId) {
 async function fetchProjectTasksForCard(projectId) {
   loadingProjectTasks.value.add(projectId)
   try {
-    const tasks = await fetchProjectTasks(projectId)
+    const project = projects.value.find(p => p._id === projectId)
+    const archived = project?.status === 'archived'
+    const tasks = await fetchProjectTasks(projectId, archived)
     projectTasks.value[projectId] = tasks
   } catch (e) {
     console.error('Failed to fetch project tasks:', e)
@@ -391,11 +393,25 @@ function getCompletedTasks(projectId) {
   return tasks.filter(t => t.status === 'completed')
 }
 
+function getArchivedTasks(projectId) {
+  const tasks = projectTasks.value[projectId] || []
+  return tasks.filter(t => t.status === 'archived')
+}
+
 function getPreviewFilter(projectId) {
   return previewFilter.value[projectId] || 'active'
 }
 
 function getPreviewTasks(projectId) {
+  const project = projects.value.find(p => p._id === projectId)
+  if (project?.status === 'archived') {
+    const tasks = getArchivedTasks(projectId)
+    if (expandedProjects.value.has(projectId)) {
+      return tasks
+    }
+    return tasks.slice(0, 3)
+  }
+
   const filter = getPreviewFilter(projectId)
   const tasks = filter === 'active' ? getActiveTasks(projectId) : getCompletedTasks(projectId)
   if (expandedProjects.value.has(projectId)) {
@@ -546,9 +562,8 @@ async function addBatchTasks(project) {
     </div>
     <EmptyState v-if="projects.length === 0" :title="showArchived ? 'No archived projects' : 'No projects yet'" />
     <div v-for="project in projects" :key="project._id" :class="['card', 'card-accent-blue', 'project-card', { archived: project.status === 'archived' }]" @click="closeProjectMenu">
-      <div v-if="project.status === 'archived'" class="archived-badge">Archived</div>
       <button
-        v-else
+        v-if="project.status !== 'archived'"
         @click="project.isPinned ? unpinProject(project) : pinProject(project)"
         class="pin-icon-btn"
         :class="{ pinned: project.isPinned }"
@@ -599,11 +614,11 @@ async function addBatchTasks(project) {
         </div>
 
         <!-- Project Tasks Preview -->
-        <div v-if="getActiveTasks(project._id).length > 0 || getCompletedTasks(project._id).length > 0" class="project-tasks-preview" :class="{ 'preview-expanded': expandedProjects.has(project._id) }">
+        <div v-if="getActiveTasks(project._id).length > 0 || getCompletedTasks(project._id).length > 0 || getArchivedTasks(project._id).length > 0" class="project-tasks-preview" :class="{ 'preview-expanded': expandedProjects.has(project._id) }">
           <div class="tasks-preview-header">
             <div class="preview-header-left">
               <span class="tasks-preview-title">Tasks</span>
-              <div class="preview-filter-switch">
+              <div v-if="project.status !== 'archived'" class="preview-filter-switch">
                 <button
                   @click.stop="setPreviewFilter(project._id, 'active')"
                   class="filter-btn"
@@ -851,20 +866,6 @@ async function addBatchTasks(project) {
 
 .project-card.archived .focus-value {
   color: var(--text-secondary);
-}
-
-.archived-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: var(--text-muted);
-  color: var(--text-inverse);
-  padding: var(--space-xs) 10px;
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 /* Pin Icon Button - Top right, no border */

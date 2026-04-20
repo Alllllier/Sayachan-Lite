@@ -71,4 +71,16 @@ describe('taskService smoke tests', () => {
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?projectId=project-42')
     expect(tasks).toEqual([{ _id: 'project-task' }])
   })
+
+  it('fetches archived project tasks with archived flag', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: async () => ([{ _id: 'archived-project-task', status: 'archived' }])
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const tasks = await fetchProjectTasks('project-42', true)
+
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?projectId=project-42&archived=true')
+    expect(tasks).toEqual([{ _id: 'archived-project-task', status: 'archived' }])
+  })
 })

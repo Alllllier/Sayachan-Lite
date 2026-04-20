@@ -144,9 +144,10 @@ Avoid:
 ### UI Review Defaults
 
 - prefer repo-defined scripts in `frontend/package.json` first
-- for this repo, prefer `npm run test:ui-review` from `frontend/` over bare `npx playwright ...`
-- if the existing script does not cover the surface you changed, add or adjust a repo-native script in `frontend/package.json` first, then run that script instead of inventing a one-off Playwright command
-- prefer the already-installed system Chrome/browser path; do not download a fresh Playwright-managed Chromium build unless the human explicitly approves it or the task clearly requires browser-managed parity
+- do not run bare `npx playwright test ...` commands in this repo when validating product changes
+- for this repo, use repo-native Playwright scripts from `frontend/package.json`, such as `npm run test:ui-review`, instead of inventing one-off test invocations
+- if the existing repo-native script does not cover the surface you changed, add or adjust a repo-native script in `frontend/package.json` first, then run that script
+- bare `npx playwright` use is only acceptable for clearly non-suite utility actions such as one-off inspection or screenshot capture when that does not bypass the repo-native validation path
 
 ### Success Feedback Defaults
 

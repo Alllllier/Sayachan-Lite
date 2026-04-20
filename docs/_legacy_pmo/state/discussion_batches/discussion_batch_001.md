@@ -5,9 +5,9 @@
 ## Batch Metadata
 
 - Batch ID: `batch-001`
-- Status: `open`
+- Status: `completed`
 - Current focus theme: `None selected`
-- Promotion status: `partially promoted`
+- Promotion status: `completed`
 
 ## Theme Status Rule
 
@@ -104,3 +104,6 @@
 - Current discussion resumed on 2026-04-17 around `theme-001 / notes editor polish v1` to test slice-level progression toward candidate readiness.
 - Adjacent near-term cleanup noted by owner: Dashboard frontend-direct AI calls and frontend API key exposure should be unified and refactored later, but this is not blocking the current auth-model discussion because the deployment environment does not currently provide a frontend AI key.
 - `theme-004` has been promoted into `idea_backlog.md` as a discussion-stage formal PMO item.
+- `theme-002` has been retained in `docs/pmo/state/idea_backlog.md` as `Creation And List-Surface Interaction Consistency` during legacy cleanup.
+- `theme-003` has been retained in `docs/pmo/state/idea_backlog.md` as `Sayachan Dev-Mode Self-Knowledge Boundary` during legacy cleanup.
+- This legacy batch is now closed and should remain only as historical reference rather than an active PMO discussion surface.

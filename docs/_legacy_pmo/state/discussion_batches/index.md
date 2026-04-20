@@ -27,8 +27,8 @@
 ### `batch-001`
 
 - Title: `Current product and architecture issues set`
-- Status: `open`
+- Status: `completed`
 - Current focus theme: `None selected`
 - Source date: `2026-04-17`
 - File: `docs/pmo/state/discussion_batches/discussion_batch_001.md`
-- Notes: `Initial live test of the clustered discussion workflow.`
+- Notes: `Legacy clustered discussion batch retained as historical record after relevant outcomes were promoted into formal PMO state and remaining themes were moved into idea_backlog.md during legacy cleanup.`

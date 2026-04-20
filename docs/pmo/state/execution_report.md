@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Project Task Preview Expansion And Focus Simplification`
-- Report outcome: `completed with bounded residual unverified areas`
-- PMO read result: `closeout complete`
+- Sprint: `Archived Project Panel Task Visibility Fix`
+- Report outcome: `completed with bounded follow-up deferred to discussion`
+- PMO read result: `closeout complete; follow-up routed to idea_backlog`
 
 ## Next Use
 

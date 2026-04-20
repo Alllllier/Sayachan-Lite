@@ -7,6 +7,9 @@
 - keep entries compact and easy to re-triage
 - use this file for retained ideas that are still shaping, blocked, or exploring
 - use this file for parked future work that should remain visible without pretending it is near-term
+- remove an item from `idea_backlog.md` once the work itself has been completed and no further backlog visibility is needed
+- when a completed backlog item produced a durable planning rule or deferral, capture that in `decision_log.md` instead of keeping the finished work item in backlog
+- rely on archived execution reports in `history/reports/` as the historical record of completed backlog-origin work rather than turning `idea_backlog.md` into a completed-work ledger
 - move execution-ready items into `sprint_candidates.md`
 - move durable planning conclusions into `decision_log.md`
 
@@ -48,6 +51,32 @@
 - Dependencies: `A bounded first-phase design for user model, invite model, auth flow, account-scoped data access, and owner-only private-core capability boundaries.`
 - Risks / unknowns: `Auth mechanism, session shape, migration path for existing single-user data, and enforcement strategy for owner-only private-core entrypoints.`
 - Suggested next action: `Turn the current discussion conclusion into a bounded implementation design, then reassess promotion into sprint_candidates.md.`
+
+### `Sayachan Dev-Mode Self-Knowledge Boundary`
+
+- Type: `future-lab`
+- Source: `discussion`
+- Source reference: `docs/_legacy_pmo/state/discussion_batches/discussion_batch_001.md theme-003`
+- Problem / Opportunity: `Sayachan may eventually participate more directly in her own development workflow, but that would likely require a development-only self-knowledge surface containing selected architecture and product context. The opportunity is to let Sayachan reason with a bounded internal map of her own system without collapsing production behavior and development scaffolding into the same runtime path.`
+- Why now: `This idea has already been important enough to preserve once, and keeping it in formal PMO state prevents it from remaining trapped in a legacy clustered batch. It also marks a real future-lab direction for AI-assisted development even though the shape is still far from execution-ready.`
+- Current status: `parked`
+- Dependencies: `A clearer decision on whether dev-mode self-knowledge should exist at all, what minimal architecture context would be included, how the knowledge source would be mounted or refreshed, and what hard separation would exist between development-only context and any production-facing runtime path.`
+- Risks / unknowns: `This could blur the boundary between tool support and runtime identity, leak unstable internal architecture into the wrong execution surfaces, or create unsafe assumptions about what Sayachan 'knows' about herself. The hot-pluggable knowledge shape, trust model, update discipline, and developer-only enforcement boundary are all still unresolved.`
+- Suggested next action: `Reopen this as a bounded architecture discussion focused first on whether a dev-only self-knowledge layer should exist, then define the smallest safe boundary before discussing implementation shape.`
+- Reopen trigger: `A human explicitly wants to explore Sayachan's development-mode self-knowledge or dev-only architecture memory boundary.`
+
+### `Creation And List-Surface Interaction Consistency`
+
+- Type: `feature`
+- Source: `discussion`
+- Source reference: `docs/_legacy_pmo/state/discussion_batches/discussion_batch_001.md theme-002`
+- Problem / Opportunity: `Creation entry points and list-surface visibility patterns are still inconsistent across Notes, Projects, and project task lists, which adds navigation friction and weakens interaction predictability on high-frequency surfaces. The product would benefit from a more coherent rule for where creation starts, how list density is handled, and how content remains discoverable across adjacent work surfaces.`
+- Why now: `This theme was important enough to be preserved in the legacy batch and still appears likely to be resolved in the near term, even though it is not the highest-priority active task right now. Recording it in formal PMO state keeps it visible until there is room to close it properly.`
+- Current status: `parked`
+- Dependencies: `A bounded follow-up discussion that decides which inconsistencies matter most first, what cross-surface interaction rule should unify Notes, Projects, and task lists, and whether the work should be shaped as one consistency pass or multiple smaller UI slices.`
+- Risks / unknowns: `If framed too broadly, this could sprawl into a full information architecture rethink instead of a practical consistency pass. The right boundary between creation-entry consistency, task visibility, list density, and surface-specific behavior is still unresolved.`
+- Suggested next action: `Reopen this as a near-term product discussion, identify the highest-friction inconsistency first, and then shape the work into one or more bounded UI slices for later execution.`
+- Reopen trigger: `A human explicitly wants to revisit creation-flow or list-surface consistency across Notes, Projects, and task lists, or adjacent UI work exposes the same inconsistency again.`
 
 ### `Broader Sayachan Style Refresh`
 
@@ -113,3 +142,16 @@
 - Risks / unknowns: `If automated too early, this could create a brittle launcher flow or blur the line between PMO activation, execution, and report review. It also depends on the Claude CLI being stable enough for predictable PowerShell-driven execution.`
 - Suggested next action: `Later, evaluate a minimal launcher shape where PMO starts Claude from PowerShell using the active `execution_task.md`, keeps `execution_report.md` as the only formal return surface, and avoids introducing a second unofficial execution channel.`
 - Reopen trigger: `A human explicitly wants to prototype or formalize a PowerShell-based Claude launch path from PMO.`
+
+### `Project Archive Restore Task Status Preservation`
+
+- Type: `bug`
+- Source: `execution report`
+- Source reference: `docs/pmo/history/reports/archived-project-panel-task-visibility-fix.md`
+- Problem / Opportunity: `Project-level archive/restore currently flattens task lifecycle state. When a project is archived, both active and completed tasks are rewritten to archived; when the project is restored, all archived tasks are rewritten to active. This destroys the original completed-task history and turns a workflow-state operation into silent semantics loss.`
+- Why now: `The issue surfaced directly during closeout of the archived-project-panel micro-fix and was confirmed by human testing. It is important enough to preserve immediately, but it crosses backend workflow semantics and needs fresh PMO discussion before execution resumes.`
+- Current status: `open`
+- Dependencies: `A bounded discussion on the intended archive/restore semantics for project-linked tasks, plus a safe backend implementation shape that can preserve pre-archive task state without destabilizing existing data or task workflows.`
+- Risks / unknowns: `A minimal fix may require schema expansion or alternative persistence logic, and the right fallback behavior for legacy archived tasks is not yet settled. If handled casually, this could introduce data migration confusion or new inconsistencies between active, completed, and archived task meaning.`
+- Suggested next action: `Reopen this as a focused PMO discussion on project/task archive semantics before handing off any backend fix. Start by deciding whether restore must preserve each task's pre-archive lifecycle state exactly, then shape the smallest safe implementation from there.`
+- Reopen trigger: `A human explicitly wants to discuss or fix project archive/restore task-status preservation.`

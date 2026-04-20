@@ -69,9 +69,13 @@ export async function saveTask(title, creationMode, originModule = '', originId 
   }
 }
 
-export async function fetchProjectTasks(projectId) {
+export async function fetchProjectTasks(projectId, archived = false) {
   try {
-    const res = await fetch(`${API_BASE}/tasks?projectId=${projectId}`)
+    let url = `${API_BASE}/tasks?projectId=${projectId}`
+    if (archived) {
+      url += '&archived=true'
+    }
+    const res = await fetch(url)
     const tasks = await res.json()
     return tasks
   } catch (e) {

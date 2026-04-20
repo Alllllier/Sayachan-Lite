@@ -15,12 +15,12 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Project Task Preview Expansion And Focus Simplification`
+- Sprint: `Archived Project Panel Task Visibility Fix`
 - Closeout date: `2026-04-20`
-- Delivery status: `completed with bounded residual unverified areas`
+- Delivery status: `completed with bounded follow-up deferred to discussion`
 - Commit state: `not recorded in PMO yet`
 - Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `Projects task preview redesign landed and browser review covered the key active/mobile states, but completed-task rendering with real completed data and multi-project mixed-state coverage remain only partially validated.`
+- Residual note: `Archived project card visibility and task-preview behavior were corrected, but project archive/restore task-status preservation surfaced as a separate backend-semantics issue and was routed back into idea_backlog for later discussion.`
 
 ## Next PMO Action
 
