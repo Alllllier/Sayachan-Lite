@@ -1,4 +1,4 @@
-# Execution Report
+# Execution Report Idle Template
 
 - Status: `idle`
 - Sprint: `idle`
@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Task Project Note Simplification Refactor`
-- Report outcome: `completed with bounded legacy compatibility retained`
-- PMO read result: `closeout complete; runtime simplification accepted`
+- Sprint: `Task Project Note Runtime Residue Cleanup`
+- Report outcome: `completed and archived to history/reports/task-project-note-runtime-residue-cleanup.md`
+- PMO read result: `accepted for closeout`
 
 ## Next Use
 

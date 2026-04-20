@@ -10,7 +10,6 @@ const {
   combineFilters,
   deriveProjectLifecycleStatus,
   isProjectOwnedTask,
-  isRestoreIntent,
   normalizeNote,
   normalizeProject,
   normalizeTask,
@@ -44,7 +43,6 @@ router.post('/notes', async (ctx) => {
   const note = await Note.create({
     title: body.title,
     content: body.content || '',
-    status: 'active',
     archived: false
   });
   ctx.status = 201;
@@ -121,7 +119,7 @@ router.put('/notes/:id/archive', async (ctx) => {
 
   const note = await Note.findByIdAndUpdate(
     id,
-    { archived: true, status: 'active' },
+    { archived: true },
     { new: true, runValidators: true }
   );
 
@@ -147,7 +145,7 @@ router.put('/notes/:id/restore', async (ctx) => {
 
   const note = await Note.findByIdAndUpdate(
     id,
-    { archived: false, status: 'active' },
+    { archived: false },
     { new: true, runValidators: true }
   );
 
@@ -357,17 +355,10 @@ router.put('/tasks/:id', async (ctx) => {
   }
 
   const normalizedExistingTask = normalizeTask(existingTask);
-  const restoringLegacyArchivedTask = isRestoreIntent(body) && existingTask.status === 'archived';
 
   if (body.status !== undefined) {
-    if (body.status === 'archived') {
-      update.archived = true;
-      update.status = normalizedExistingTask.status;
-      update.completed = normalizedExistingTask.status === 'completed';
-    } else {
-      update.status = body.status;
-      update.archived = body.archived === true ? true : false;
-    }
+    update.status = body.status;
+    update.archived = body.archived === true ? true : false;
   }
   if (body.archived !== undefined) {
     update.archived = Boolean(body.archived);
@@ -378,12 +369,6 @@ router.put('/tasks/:id', async (ctx) => {
     if (update.archived === undefined) {
       update.archived = false;
     }
-  }
-
-  if (restoringLegacyArchivedTask) {
-    update.archived = false;
-    update.status = 'active';
-    update.completed = false;
   }
 
   const task = await Task.findByIdAndUpdate(id, update, { new: true, runValidators: true });

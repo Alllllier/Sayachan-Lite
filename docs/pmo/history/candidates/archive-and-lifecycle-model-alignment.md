@@ -1,0 +1,23 @@
+### `Archive And Lifecycle Model Alignment`
+
+- Status: `completed`
+- Source reference: `state/discussions/discussion_batch_006.md; state/decision_log.md`
+- Why now: `Recent project archive/restore behavior exposed a real semantics failure: completed tasks can be flattened back to active because archive is currently modeled as a lifecycle status value. Human discussion has now stabilized a broader rule that archive should be orthogonal to lifecycle status across task, project, and note before more parent-child and reference relationships land.`
+- Expected outcome: `Task, project, and note gain a cleaner archive model where lifecycle status and archive visibility are no longer mixed together. Project archive/restore stops destroying task completion history, and future sub-project, project-note, and note-note relationships can build on one consistent archive rule instead of inheriting today's ambiguity.`
+- In scope:
+  - reshape `task` so lifecycle status no longer uses `archived` as one status value
+  - reshape `project` so progress status is separate from archive state
+  - align `note` to the same archive-separation principle
+  - update route/query/archive/restore behavior to preserve lifecycle semantics while still supporting archive filtering
+  - apply the minimum compatibility handling needed for development-stage legacy rows that still encode archive as status
+  - validate the updated model through backend and frontend paths that cover archive, restore, and archive-aware listing behavior
+- Out of scope:
+  - broader project hierarchy execution such as full sub-project support
+  - project-note mounting or note-note reference features themselves
+  - unrelated task-focus redesign or project-card UI redesign outside what model alignment requires
+  - production-grade migration tooling for historical test data beyond the agreed minimal compatibility behavior
+- Dependencies: `A bounded implementation plan that keeps the archive/lifecycle split coherent across model, route, and UI layers without widening into unrelated relationship features.`
+- Risk level: `high`
+- Readiness: `almost-ready`
+- Start condition: `Satisfied on 2026-04-20 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the bounded cross-model archive/lifecycle alignment slice while keeping the candidate visible during execution.`
+- Closeout: `Completed on 2026-04-20. Archive is now modeled separately from lifecycle status across task, project, and note, project and note restore behavior preserves task lifecycle semantics, and a follow-up blocker fix corrected restore-task query scoping. Residual validation gaps remain around browser-level archive UI review and live backend integration coverage, but the bounded implementation slice was accepted and a future archive-surface audit was parked in idea_backlog.`

@@ -1,4 +1,4 @@
-# Execution Task
+# Execution Task Idle Template
 
 - Status: `idle`
 - Sprint: `idle`
@@ -8,15 +8,14 @@
 
 There is no active execution handoff right now.
 
-## Next Use
+This file should be overwritten only when a new sprint or micro-fix is explicitly activated and handed off into execution.
 
-When the next candidate is selected, replace this placeholder with a bounded execution handoff that states:
+## Last Closed Sprint
 
-- the sprint objective
-- the source trace back to candidate/discussion/backlog/decision context
-- safe touch zones and non-goals
-- any allowed intentional redo areas
-- acceptance checks
-- validation expectations
-- escalation points
-- the completion report contract for PMO closeout
+- Sprint: `Task Project Note Runtime Residue Cleanup`
+- Outcome: `completed and closed out`
+- Report surface: `docs/pmo/history/reports/task-project-note-runtime-residue-cleanup.md`
+
+## Next Activation Rule
+
+- wait for explicit human sprint selection or a clearly bounded micro-fix activation before writing a new active execution contract here

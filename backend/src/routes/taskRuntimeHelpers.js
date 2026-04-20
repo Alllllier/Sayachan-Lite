@@ -1,19 +1,9 @@
 function buildArchiveFilter(archived) {
   if (archived === 'true') {
-    return {
-      $or: [
-        { archived: true },
-        { status: 'archived' }
-      ]
-    };
+    return { archived: true };
   }
 
-  return {
-    $and: [
-      { archived: { $ne: true } },
-      { status: { $ne: 'archived' } }
-    ]
-  };
+  return { archived: { $ne: true } };
 }
 
 function combineFilters(...filters) {
@@ -39,37 +29,20 @@ function projectTaskRelationFilter(projectId) {
   };
 }
 
-function legacyLinkedProjectFilter(projectId) {
-  return {
-    linkedProjectId: projectId
-  };
-}
-
 function projectTaskReadFilter(projectId) {
-  return {
-    $or: [
-      projectTaskRelationFilter(projectId),
-      legacyLinkedProjectFilter(projectId)
-    ]
-  };
+  return projectTaskRelationFilter(projectId);
 }
 
 function projectTaskCascadeFilter(projectId) {
-  return {
-    $or: [
-      projectTaskRelationFilter(projectId),
-      legacyLinkedProjectFilter(projectId),
-      { originId: projectId }
-    ]
-  };
+  return projectTaskRelationFilter(projectId);
 }
 
 function isArchivedEntity(entity) {
-  return entity?.archived === true || entity?.status === 'archived';
+  return entity?.archived === true;
 }
 
 function deriveTaskLifecycleStatus(task) {
-  if (task?.status && task.status !== 'archived') {
+  if (task?.status) {
     return task.status;
   }
 
@@ -82,14 +55,6 @@ function deriveProjectLifecycleStatus(project) {
   }
 
   return 'pending';
-}
-
-function deriveNoteLifecycleStatus(note) {
-  if (note?.status && note.status !== 'archived') {
-    return note.status;
-  }
-
-  return 'active';
 }
 
 function normalizeTask(task) {
@@ -128,20 +93,14 @@ function normalizeNote(note) {
   }
 
   const normalized = note.toObject ? note.toObject() : { ...note };
-
   return {
     ...normalized,
-    status: deriveNoteLifecycleStatus(normalized),
     archived: isArchivedEntity(normalized)
   };
 }
 
 function isProjectOwnedTask(task) {
   return task?.originModule === 'project' && task?.originId;
-}
-
-function isRestoreIntent(body = {}) {
-  return body.archived === false || body.status === 'active' || body.completed === false;
 }
 
 async function clearFocusForTask(Project, taskId, reason) {
@@ -221,13 +180,10 @@ module.exports = {
   buildArchiveFilter,
   clearFocusForTask,
   combineFilters,
-  deriveNoteLifecycleStatus,
   deriveProjectLifecycleStatus,
   deriveTaskLifecycleStatus,
   isArchivedEntity,
   isProjectOwnedTask,
-  isRestoreIntent,
-  legacyLinkedProjectFilter,
   normalizeNote,
   normalizeProject,
   normalizeTask,

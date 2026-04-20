@@ -10,11 +10,6 @@ const noteSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  status: {
-    type: String,
-    enum: ['active'],
-    default: 'active'
-  },
   archived: {
     type: Boolean,
     default: false

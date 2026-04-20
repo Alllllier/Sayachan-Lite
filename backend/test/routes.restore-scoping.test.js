@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const Task = require('../src/models/Task');
 const routes = require('../src/routes/index.js');
 
-test('restoreTasks keeps caller scope when adding archived-task matching', async () => {
+test('restoreTasks keeps canonical project scope when reading archived tasks', async () => {
   const originalFind = Task.find;
   let capturedQuery = null;
 
@@ -15,26 +15,19 @@ test('restoreTasks keeps caller scope when adding archived-task matching', async
 
   try {
     const modifiedCount = await routes.__test__.restoreTasks({
-      $or: [
-        { linkedProjectId: 'project-1' },
-        { originId: 'project-1' }
-      ]
+      originModule: 'project',
+      originId: 'project-1'
     });
 
     assert.equal(modifiedCount, 0);
     assert.deepEqual(capturedQuery, {
       $and: [
         {
-          $or: [
-            { linkedProjectId: 'project-1' },
-            { originId: 'project-1' }
-          ]
+          originModule: 'project',
+          originId: 'project-1'
         },
         {
-          $or: [
-            { archived: true },
-            { status: 'archived' }
-          ]
+          archived: true
         }
       ]
     });

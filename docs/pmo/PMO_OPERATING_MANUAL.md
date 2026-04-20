@@ -249,6 +249,7 @@ The execution worker owns:
 - writing structured execution results back into `execution_report.md`
 
 The execution worker does not become PMO by reading this manual.
+Any execution worker variant, including delegated or sub-agent workers, should default to `state/execution_task.md` as the canonical execution source. Later direct instructions should stay narrow and clarify or correct the active loop rather than replacing the handoff contract silently.
 
 ## Core Operating Rules
 

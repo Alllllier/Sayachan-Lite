@@ -137,7 +137,7 @@ Current note archive flow:
 
 Current project archive flow:
 
-- archiving a project archives related tasks by canonical project provenance, while still tolerating bounded legacy linkage compatibility
+- archiving a project archives related tasks by canonical project provenance only
 - project archive also clears `currentFocusTaskId`
 - restoring a project restores archived related tasks while preserving lifecycle semantics
 

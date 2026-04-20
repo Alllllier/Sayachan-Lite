@@ -29,29 +29,28 @@
 
 ## Current Candidates
 
-### `Archive And Lifecycle Model Alignment`
+### `Task Project Note Runtime Residue Cleanup`
 
 - Status: `completed`
-- Source reference: `state/discussions/discussion_batch_006.md; state/decision_log.md`
-- Why now: `Recent project archive/restore behavior exposed a real semantics failure: completed tasks can be flattened back to active because archive is currently modeled as a lifecycle status value. Human discussion has now stabilized a broader rule that archive should be orthogonal to lifecycle status across task, project, and note before more parent-child and reference relationships land.`
-- Expected outcome: `Task, project, and note gain a cleaner archive model where lifecycle status and archive visibility are no longer mixed together. Project archive/restore stops destroying task completion history, and future sub-project, project-note, and note-note relationships can build on one consistent archive rule instead of inheriting today's ambiguity.`
+- Source reference: `state/discussions/discussion_batch_008.md`
+- Why now: `The main simplification sprint already landed, and human discussion has now explicitly judged several remaining runtime residues as no longer worth carrying in an early-stage personal codebase. This creates a narrow opportunity to fully remove the most obvious compatibility tails before they fossilize into the cleaned runtime.`
+- Expected outcome: `The runtime becomes materially cleaner by removing the now-unnecessary `status='archived'` compatibility chain, retiring `Note.status`, and deleting the remaining route-level project-task legacy tolerances that are no longer justified now that canonical provenance writes have long been stable.`
 - In scope:
-  - reshape `task` so lifecycle status no longer uses `archived` as one status value
-  - reshape `project` so progress status is separate from archive state
-  - align `note` to the same archive-separation principle
-  - update route/query/archive/restore behavior to preserve lifecycle semantics while still supporting archive filtering
-  - apply the minimum compatibility handling needed for development-stage legacy rows that still encode archive as status
-  - validate the updated model through backend and frontend paths that cover archive, restore, and archive-aware listing behavior
+  - remove the legacy archived-task compatibility chain from query, normalization, and restore handling
+  - retire `Note.status` so note archive semantics are expressed through `note.archived`
+  - remove route-level tolerance for legacy `linkedProjectId` rows
+  - remove project archive/restore tolerance for `origin-only` legacy rows
+  - keep validation focused on preserving the cleaned runtime behavior after these removals
 - Out of scope:
-  - broader project hierarchy execution such as full sub-project support
-  - project-note mounting or note-note reference features themselves
-  - unrelated task-focus redesign or project-card UI redesign outside what model alignment requires
-  - production-grade migration tooling for historical test data beyond the agreed minimal compatibility behavior
-- Dependencies: `A bounded implementation plan that keeps the archive/lifecycle split coherent across model, route, and UI layers without widening into unrelated relationship features.`
-- Risk level: `high`
-- Readiness: `almost-ready`
-- Start condition: `Satisfied on 2026-04-20 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the bounded cross-model archive/lifecycle alignment slice while keeping the candidate visible during execution.`
-- Closeout: `Completed on 2026-04-20. Archive is now modeled separately from lifecycle status across task, project, and note, project and note restore behavior preserves task lifecycle semantics, and a follow-up blocker fix corrected restore-task query scoping. Residual validation gaps remain around browser-level archive UI review and live backend integration coverage, but the bounded implementation slice was accepted and a future archive-surface audit was parked in idea_backlog.`
+  - larger backend test architecture buildout
+  - frontend/browser validation baseline work
+  - repo-native UI review repair
+  - new product behavior or relationship-model design
+- Dependencies: `Stable post-refactor runtime from Task Project Note Simplification Refactor plus explicit residue judgments captured in discussion_batch_008.`
+- Risk level: `medium`
+- Readiness: `ready`
+- Start condition: `Satisfied on 2026-04-20 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the bounded runtime residue cleanup slice while keeping the candidate visible during execution.`
+- Closeout: `Completed on 2026-04-20. The slice removed the legacy archived-task compatibility chain, retired Note.status, removed route-level tolerance for legacy linkedProjectId and origin-only project residue, updated backend tests to reflect the canonical runtime shape, and synced backend/runtime baselines. Broader testing/validation baseline work remains intentionally outside this sprint and stays parked in discussion_batch_008.`
 
 ### `Task Project Note Behavior-Lock Testing`
 

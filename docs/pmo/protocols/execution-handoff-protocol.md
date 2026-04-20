@@ -52,10 +52,12 @@ An active `execution_task.md` should contain at least:
 
 - `current_sprint.md` remains the lightweight PMO state card, not the full execution brief
 - `execution_task.md` is the canonical active execution contract
+- any execution worker, including delegated or sub-agent workers, should consume `execution_task.md` as the default execution source rather than relying on ad hoc direct prompting as the primary brief
 - active handoff should overwrite the active task surface rather than stack stale tasks
 - no active work should be represented by an explicit `idle` state rather than by deleting files
 - `execution_report.md` must remain stable enough for PMO closeout review
 - execution should escalate rather than crossing architecture or boundary assumptions not approved in the task contract
+- later direct instructions to an already-running worker should be limited to narrow follow-up clarifications, review corrections, or scope-safe execution updates rather than silently replacing the canonical handoff
 - before final completion reporting, execution should check whether sprint-started local dev servers are still occupying expected dev ports and clean them up when ownership is clear
 - future work that is intentionally out of scope for the sprint should be named explicitly so PMO can park or promote it after report review
 

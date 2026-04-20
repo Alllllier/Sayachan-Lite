@@ -96,9 +96,11 @@ Policy touchpoints during shaping:
 - detailed touch zones, non-goals, validation expectations, and escalation points belong in `execution_task.md`
 - `execution_task.md` should identify where the sprint came from so discussion, backlog, and handoff stay traceable
 - `execution_task.md` should contain only the current active execution contract, not stacked stale tasks
+- any execution worker, including delegated or sub-agent workers, should treat `execution_task.md` as the default execution source once the sprint is active
 - if no sprint is active, keep both `current_sprint.md` and `execution_task.md` in explicit `idle` state rather than silently leaving stale content
 - if human review during execution produces same-scope correction requests, keep them inside the active execution loop by default rather than reopening PMO immediately
 - only rewrite `execution_task.md` during active execution when the human-review correction materially changes scope, non-goals, or validation expectations
+- otherwise, later direct worker instructions should stay narrow and act as clarifications or same-scope follow-up guidance rather than replacing the canonical execution contract
 
 ## Validation Rule
 
