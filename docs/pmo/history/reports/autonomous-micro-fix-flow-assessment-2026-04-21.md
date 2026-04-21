@@ -1,102 +1,105 @@
-# Autonomous Micro-Fix Flow Assessment
+# 自动化 Micro-Fix 流程评估
 
-- Date: `2026-04-21`
-- Thread context: `UI noise micro-fix triggered by screenshot feedback`
-- Scope assessed: `Whether the just-completed autonomous PMO flow should later be formalized into the PMO as a supported operating mode.`
+- 日期：`2026-04-21`
+- 线程上下文：`由截图反馈触发的 UI 噪音 micro-fix`
+- 评估范围：`判断这次刚完成的自动化 PMO 流程，未来是否值得作为一种正式支持的 PMO 工作模式写入体系。`
 
-## What Happened In This Run
+## 本次流程实际做了什么
 
-- Human provided a concrete screenshot-marked issue and explicitly asked PMO to:
-  - analyze the issue
-  - generate candidates
-  - auto-select the best candidate
-  - use a sub-agent for execution
-  - review and iterate inside the same execution loop
-  - close out and commit without further human gating
-- PMO shaped the issue into a bounded micro-fix rather than a broader project-surface redesign.
-- PMO activated the micro-fix in `current_sprint.md` and `execution_task.md`.
-- PMO delegated execution to a sub-agent, then independently re-ran validation and reviewed the patch.
-- PMO accepted the result, closed the sprint, and restored the idle runtime state.
+- 人类给出了一个具体且已圈出问题的截图，并明确要求 PMO：
+  - 自行分析问题
+  - 自行生成 candidate
+  - 自行选择最合适的 candidate
+  - 使用 sub-agent 执行施工
+  - 在同一 execution loop 内完成 review 和必要修正
+  - 无需人类继续介入地完成 closeout 与提交
+- PMO 将问题收束成一个有边界的 micro-fix，而不是把它扩大成一轮更广的 project-surface redesign。
+- PMO 激活了对应的 `current_sprint.md` 和 `execution_task.md`。
+- PMO 将执行委托给 sub-agent，并在主线程中独立完成了验证复跑与结果 review。
+- PMO 接受结果、完成 closeout，并将运行面恢复到 idle。
 
-## Why This Flow Worked Here
+## 为什么这次流程能跑通
 
-- The problem statement was concrete and visual rather than speculative.
-- The user explicitly authorized bypassing the normal human compare-and-select step for candidates.
-- The implementation surface was narrow:
-  - one component template
-  - optional narrow test surface
-  - no backend/runtime semantics involved
-- The must-preserve rules were already stable from previous discussion:
-  - completed-task strikethrough
-  - archived-task non-interactivity
-  - archived-project narrow actions
-- The worker could therefore act inside a small, well-bounded execution box.
+- 问题描述是具体且可视化的，不是抽象猜测。
+- 人类明确授权 PMO 跳过通常的 candidate 人工比较和手动选中步骤。
+- 实现面非常窄：
+  - 主要集中在一个组件模板
+  - 只涉及可选的窄测试面
+  - 不涉及 backend/runtime 语义变更
+- must-preserve 规则在此前讨论中已经比较稳定：
+  - completed task 删除线
+  - archived task 不可交互
+  - archived project 保持窄 action 集
+- 因此 worker 能在一个非常清晰的小执行盒子里行动，而不需要再进行大范围产品判断。
 
-## Where The Flow Still Relied On Human-Friendly Preconditions
+## 这套流程仍然依赖了哪些“人类友好前提”
 
-- The PMO already had a mature local operating context:
-  - candidate shaping habits
-  - execution handoff habits
-  - closeout habits
-- The user gave unusually strong delegation authority for this run.
-- The issue was screenshotable and easy to judge as a micro-fix rather than a broad redesign.
-- The repo already had enough nearby context that the PMO could decide what to preserve without needing new architecture discussion.
+- PMO 本身已经有一套较成熟的本地操作上下文：
+  - candidate shaping 习惯
+  - execution handoff 习惯
+  - closeout 习惯
+- 这次人类给出的 delegation 权限非常强，允许自动 candidate 生成与自动选中。
+- 这个问题可以通过截图很容易判断为 micro-fix，而不是更大的方向性 UI 重构。
+- 仓库和既有讨论中已经存在足够多的邻近上下文，因此 PMO 可以判断哪些体验必须保留，而不需要重新开启一轮架构讨论。
 
-## Benefits Observed
+## 本次观察到的收益
 
-- The main thread stayed relatively clean because execution was isolated into a sub-agent.
-- Candidate generation plus auto-selection produced a clear execution contract before coding started.
-- The review loop caught the important question quickly:
-  - did the fix reduce noise without undoing the semantics cleanup?
-- The workflow was faster than reopening a full human gating cycle for a very small UI correction.
+- 主线程上下文保持得相对干净，因为执行被隔离到了 sub-agent。
+- candidate 生成加自动选中，使施工开始前就形成了清楚的 execution contract。
+- review loop 很快就聚焦到了真正重要的问题：
+  - 这次修复有没有在不破坏既有语义清理成果的前提下降低 UI 噪音？
+- 对一个非常小的 UI 修补来说，这比重新走一轮完整人工 gating 更快。
 
-## Risks Observed
+## 本次观察到的风险
 
-- Auto-selection bypasses the normal human comparison step, so it should not become default behavior for ambiguous or high-risk work.
-- PMO state files can drift if the automation edits them aggressively without a narrow scope.
-- This run surfaced a concrete PMO hygiene failure:
-  - `docs/pmo/state/sprint_candidates.md` temporarily exceeded the `at most 3 entries` rule after the autonomous candidate generation and closeout flow.
-  - the issue was not caused by bad product judgment, but by missing procedural guardrails inside the automation itself.
-  - the automated flow generated and retained the new micro-fix candidate correctly, but it did not also enforce candidate-surface pruning as a required self-check before declaring the PMO state clean.
-  - in a human-gated flow, this kind of overflow is often caught during manual PMO review; in an autonomous flow, that safety net is weaker unless the hygiene check is made explicit.
-- The root cause of the candidate overflow was therefore:
-  - autonomous execution covered shaping, selection, execution, review, and closeout
-  - but it did **not yet treat candidate-cap maintenance as a mandatory exit criterion**
-  - so the automation completed the task-level work successfully while leaving a PMO-surface inconsistency behind
-- This run still depended on human-seeded product judgment from earlier discussions; it was not a context-free autonomous planner.
-- The validation remained narrow and did not include browser-level review, so this pattern should not be oversold as fully autonomous UI verification.
+- 自动选中绕过了常规的人类比较步骤，因此它不应成为高风险或边界模糊任务的默认模式。
+- 如果自动流程对 PMO 状态文件进行修改，却没有足够窄的 scope 和强制检查，PMO 状态本身会发生漂移。
+- 这次实际暴露出了一个明确的 PMO hygiene 问题：
+  - `docs/pmo/state/sprint_candidates.md` 曾短暂超过 “最多 3 条” 的限制。
+  - 问题并不是产品判断错误，而是自动流程本身缺少对应的程序化护栏。
+  - 自动流程正确完成了新 micro-fix candidate 的生成和 closeout，但没有把 candidate surface 的整理当成一个必过的收尾检查项。
+  - 在人工 gating 流程里，这种问题往往会在人工 PMO 检查时被顺手发现；而在自动流程里，如果没有显式规则，这层安全网会变弱。
+- 因此这次 candidate overflow 的根因是：
+  - 自动流程已经覆盖了 shaping、selection、execution、review 和 closeout
+  - 但它**还没有把 candidate-cap 维护视为强制 exit criterion**
+  - 所以任务级工作虽然成功完成了，却仍然留下了一个 PMO surface inconsistency
+- 这次流程仍然依赖于更早讨论中由人类种下的产品判断；它并不是一个完全脱离上下文的自主规划器。
+- 这次验证仍然是窄验证，没有包含 browser-level review，因此不能把这种模式宣传成“完全自动的 UI 正确性保证”。
 
-## Recommendation
+## 建议
 
-- This flow looks suitable as a **bounded optional PMO operating mode**, not as the default for all work.
-- It is most appropriate when all of the following are true:
-  - the issue is narrow and concrete
-  - the human explicitly authorizes autonomous candidate generation and selection
-  - the implementation surface is small
-  - must-preserve rules are already stable
-  - the expected validation surface is narrow
-- It is not yet appropriate as a default mode for:
-  - architecture work
-  - broad frontend redesign
-  - backend/runtime refactors
-  - ambiguous UI problems that still need human product judgment
+- 不建议立刻把这套流程原样硬编码进 PMO。
+- 更合适的做法是，把这次运行视为一个证据：未来可以考虑定义一种 **有边界的可选 `autonomous micro-fix mode`**，但必须加上更严格的护栏。
+- 这套模式只适合在以下条件同时成立时使用：
+  - 问题非常窄且具体
+  - 人类明确授权自动 candidate 生成与自动选中
+  - 实现面很小
+  - must-preserve 规则已经稳定
+  - 预期验证面也比较窄
+- 它还不适合成为以下工作的默认流程：
+  - 架构工作
+  - 大范围前端重构
+  - backend/runtime 重构
+  - 仍然需要大量人类产品判断的模糊 UI 问题
 
-## Suggested Future PMO Direction
+## 对未来 PMO 的建议方向
 
-- Do **not** immediately hard-code this flow into PMO.
-- Instead, treat this run as evidence that a future PMO addition could define an `autonomous micro-fix mode` with clear guardrails:
-  - explicit human opt-in
-  - candidate auto-selection allowed only for low-risk bounded work
-  - required must-preserve section in the execution handoff
-  - mandatory PMO review before closeout
-  - mandatory final assessment of whether the flow behaved well
-  - mandatory PMO hygiene self-checks before final success is declared, including:
-    - candidate surface stays within the 3-entry cap
-    - displaced completed candidates are archived if needed
-    - `current_sprint.md`, `execution_task.md`, and `execution_report.md` are all returned to a coherent idle/closed state
-    - any automation-generated report explicitly records whether PMO hygiene passed cleanly or needed manual repair
+- 先**不要**立即把这套流程正式写进 PMO。
+- 更合理的下一步，是把这次运行当作一个样本，未来再考虑增加一种带明确护栏的 `autonomous micro-fix mode`，并至少要求：
+  - 明确的人类 opt-in
+  - 只有在低风险、强边界任务里才允许 candidate 自动选中
+  - execution handoff 里必须有明确的 must-preserve 区块
+  - closeout 前必须经过 PMO review
+  - 必须生成一份最终评估，判断这次自动化流程运行得是否健康
+  - 必须包含 PMO hygiene 自检项，例如：
+    - candidate surface 维持在 3 条以内
+    - 如有需要，及时归档被挤出的 completed candidate
+    - `current_sprint.md`、`execution_task.md`、`execution_report.md` 最终恢复到一致的 idle/closed 状态
+    - 自动生成的评估报告需要明确记录：这次流程是干净结束，还是事后还做了 PMO hygiene 补修
 
-## Final Judgment
+## 最终判断
 
-- `Yes, conditionally.` This run suggests the automation pattern is viable enough to consider later PMO formalization.
-- `No, not yet as-is.` The pattern should be formalized only as a narrow optional mode with strong entry conditions, explicit PMO hygiene exit checks, and a rule that success is not complete until candidate-surface and state-file consistency are restored.
+- `可以考虑加入，但必须有条件。`
+  这次运行说明，这种自动化模式已经足够可行，值得作为未来 PMO 的一个候选工作模式继续观察。
+- `不能按当前原样直接纳入。`
+  如果以后真的 formalize，它也应该只是一个**窄范围、可选、强护栏**的模式，而不是对正常人类 gating PMO 流程的全面替代。
