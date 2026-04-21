@@ -82,7 +82,7 @@ Use this layer for system truth and PMO truth:
 
 Use this layer for historical explanation and legacy transition:
 
-- `history/legacy-transition-notes.md`
+- `history/reference/legacy-transition-notes.md`
 - `history/candidates/README.md`
 - `history/reports/README.md`
 
@@ -197,7 +197,7 @@ It means:
 
 Current reference surface for that reminder:
 
-- `history/legacy-transition-notes.md`
+- `history/reference/legacy-transition-notes.md`
 
 Default behavior:
 

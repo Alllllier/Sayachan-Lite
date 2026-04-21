@@ -47,7 +47,7 @@ flowchart TD
     V -- "update required" --> X["更新 canonical docs<br/>然后记录结果"]
 
     B --> Y{"是否涉及 legacy residue 或 weak-sync note？"}
-    Y -- "是" --> Z["history/legacy-transition-notes.md<br/>只做轻量 reminder check"]
+    Y -- "是" --> Z["history/reference/legacy-transition-notes.md<br/>只做轻量 reminder check"]
     Y -- "否" --> AA["不需要 legacy reminder"]
 
     D --> AB["PMO state 保持 durable"]
@@ -68,4 +68,4 @@ flowchart TD
 - `ai-fallback-policy.md` 适用于 AI 行为变化，或 fallback path 可能被悄悄削弱的情况。
 - `architecture-sensitive-areas.md` 适用于代码看起来很小，但仍可能改变 system truth 或 boundary responsibility 的情况。
 - `documentation-sync-policy.md` 与 `documentation-sync-guide.md` 适用于 closeout 阶段 truth、PMO runtime 或 execution behavior 可能发生变化的情况。
-- `legacy-transition-notes.md` 是 reminder surface，不是常规阻塞流程。
+- `history/reference/legacy-transition-notes.md` 是 reminder surface，不是常规阻塞流程。

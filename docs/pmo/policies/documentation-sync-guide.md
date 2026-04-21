@@ -78,6 +78,6 @@ Do not widen the review scope just because older docs mention similar material.
 
 If the current change touches legacy path handling, deferred governance issues, or old PMO residue, do a weak reminder check here:
 
-- `docs/pmo/history/legacy-transition-notes.md`
+- `docs/pmo/history/reference/legacy-transition-notes.md`
 
 That check should remain lightweight unless the legacy note changes current safety, scope, or canonical ownership.

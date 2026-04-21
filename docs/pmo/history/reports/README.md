@@ -18,3 +18,4 @@
 - 当 `state/execution_report.md` 已被 PMO 读完并准备复位为 idle 时，将最近一次详细回包归档到这里
 - 归档时参照 `execution-report-archive.template.md`
 - 不要把仍在等待 PMO closeout 的 active report 放到这里
+- 不要把迁移说明、audit summary、流程评估等非 execution-report 文档继续放在这里；这类文件应进入 `../reference/`
