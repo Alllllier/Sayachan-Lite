@@ -661,13 +661,10 @@ async function addBatchTasks(project) {
                 }"
               >
                 <span class="task-preview-text">{{ task.title }}</span>
-                <div class="task-preview-meta">
-                  <span class="task-preview-state-chip" :class="task.status === 'completed' ? 'state-completed' : 'state-active'">
-                    {{ task.status === 'completed' ? 'Completed' : 'Active' }}
-                  </span>
-                  <span class="task-preview-state-chip state-archived">Archived</span>
-                  <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
-                </div>
+                <span class="task-preview-state-chip" :class="task.status === 'completed' ? 'state-completed' : 'state-active'">
+                  {{ task.status === 'completed' ? 'Completed' : 'Active' }}
+                </span>
+                <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
               </div>
             </div>
           </div>
@@ -1267,13 +1264,6 @@ async function addBatchTasks(project) {
   text-overflow: ellipsis;
 }
 
-.task-preview-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
 .task-preview-state-chip {
   display: inline-flex;
   align-items: center;
@@ -1292,11 +1282,6 @@ async function addBatchTasks(project) {
 .task-preview-state-chip.state-completed {
   background: #eef0f3;
   color: #667085;
-}
-
-.task-preview-state-chip.state-archived {
-  background: #f1ecff;
-  color: #6f54c9;
 }
 
 .set-focus-btn {

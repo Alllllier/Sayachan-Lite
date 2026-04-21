@@ -5,7 +5,7 @@
 - PMO owner: `Codex`
 - Architecture owner: `Human`
 - Execution owner: `execution worker`
-- Last updated: `2026-04-20`
+- Last updated: `2026-04-21`
 
 ## Current State
 
@@ -15,14 +15,14 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Project Surface Display Semantics Cleanup`
-- Closeout date: `2026-04-20`
+- Sprint: `Archived Preview Metadata Noise Reduction`
+- Closeout date: `2026-04-21`
 - Delivery status: `completed`
 - Commit state: `not committed yet`
 - Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `The project surface now separates archived tasks into their own secondary section while preserving completed-task strikethrough, archived-task non-interactivity, and archived-project narrow actions; broader frontend testing and repo-native UI review remain for later discussion in discussion_batch_010.`
+- Residual note: `The archived preview rows on ProjectsPanel are now quieter because the redundant per-row Archived chip was removed, while the archived section, completed strikethrough, archived-task non-interactivity, and archived-project narrow actions were preserved.`
 
 ## Next PMO Action
 
-- keep `execution_task.md` in explicit idle state until a new sprint or micro-fix is activated
-- decide whether the next PMO move is continued frontend testing discussion, UI-review baseline shaping, a new candidate activation, or archive cleanup
+- keep `execution_task.md` in explicit idle state until the next sprint or micro-fix is activated
+- decide whether the next PMO move is frontend panel behavior coverage, repo-native UI review baseline shaping, worker validation baseline shaping, or another bounded UI micro-fix

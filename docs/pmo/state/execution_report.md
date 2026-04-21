@@ -2,7 +2,7 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-04-20`
+- Last updated: `2026-04-21`
 
 ## Current State
 
@@ -10,8 +10,8 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Project Surface Display Semantics Cleanup`
-- Report outcome: `completed and archived to history/reports/project-surface-display-semantics-cleanup.md`
+- Sprint: `Archived Preview Metadata Noise Reduction`
+- Report outcome: `completed and archived to history/reports/archived-preview-metadata-noise-reduction.md`
 - PMO read result: `accepted for closeout`
 
 ## Next Use

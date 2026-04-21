@@ -2,7 +2,7 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-04-20`
+- Last updated: `2026-04-21`
 
 ## Current State
 
@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Project Surface Display Semantics Cleanup`
+- Sprint: `Archived Preview Metadata Noise Reduction`
 - Outcome: `completed and accepted for closeout`
-- Report surface: `docs/pmo/state/execution_report.md`
+- Report surface: `docs/pmo/history/reports/archived-preview-metadata-noise-reduction.md`
 
 ## Next Activation Rule
 
