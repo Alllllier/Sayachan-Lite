@@ -5,77 +5,84 @@
 
 :root {
   /* -----------------------------------------
-     Surface / Background
+     First-Pass Baseline Tokens
      ----------------------------------------- */
-  --surface-page: #fafafa;
-  --surface-panel: #f5f5f5;
-  --surface-card: #ffffff;
+  --identity-primary: #9B566C;
+  --identity-primary-hover: #8E4D62;
+  --identity-primary-soft: #F7F1F3;
+  --identity-primary-muted: #C295A3;
+
+  --accent-spark: #DAA520;
+  --accent-spark-soft: rgba(218, 165, 32, 0.14);
+  --accent-spark-hover: #c5931a;
+
+  /* Compatibility aliases for remaining legacy declarations */
+  --action-primary: #42B883;
+  --action-primary-hover: #36A372;
+  --action-ai: var(--identity-primary);
+  --action-ai-hover: var(--identity-primary-hover);
+  --border-accent: var(--identity-primary);
+  --border-focus: var(--action-primary);
+
+  --surface-page: #F8F5F6;
+  --surface-panel: #FCF9FA;
+  --surface-card: #FFFDFD;
+  --surface-hover: #F5EFF2;
+  --border-default: #E9E0E3;
+  --text-primary: #342A2E;
+  --text-secondary: #5E5257;
+  --text-muted: #8B7B82;
+  --text-emphasis: #9B566C;
+  --text-inverse: #FFFDFD;
+
+  --font-size-title: 16px;
+  --font-size-section: 12px;
+  --font-size-body: 14px;
+  --font-size-meta: 11px;
+  --font-size-chip: 11px;
+  --font-size-button: 13px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+
+  --radius-card: 8px;
+  --radius-block: 12px;
+
+  --shadow-card: 0 0 5px rgba(52, 42, 46, 0.075);
+  --shadow-directive: 0 0 10px rgba(52, 42, 46, 0.07);
+
+  /* -----------------------------------------
+     Legacy Compatibility Tokens
+     ----------------------------------------- */
   --surface-elevated: #f9f9f9;
-  --surface-hover: #f5f5f5;
   --surface-active: #e5e5e5;
-
-  /* -----------------------------------------
-     Border
-     ----------------------------------------- */
-  --border-default: #e0e0e0;
   --border-subtle: #eeeeee;
-  --border-accent: #42b883;
-  --border-focus: #42b883;
-
-  /* -----------------------------------------
-     Text
-     ----------------------------------------- */
-  --text-primary: #333333;
-  --text-secondary: #666666;
-  --text-muted: #999999;
-  --text-inverse: #ffffff;
-
-  /* -----------------------------------------
-     Interactive / Action
-     ----------------------------------------- */
-  --action-primary: #42b883;
-  --action-primary-hover: #36a372;
   --action-secondary: #7c85d8;
   --action-secondary-hover: #6b73c2;
   --action-danger: #c45c5c;
   --action-danger-hover: #a84848;
-  --action-ai: #DAA520;
-  --action-ai-hover: #c5931a;
   --action-disabled: #cccccc;
-
-  /* -----------------------------------------
-     Provenance (核心语义层)
-     ----------------------------------------- */
   --provenance-ai: #DAA520;
   --provenance-manual: #6b7280;
   --provenance-project: #3498db;
   --provenance-note: #9b59b6;
   --provenance-dashboard: #42b883;
-
-  /* -----------------------------------------
-     Status
-     ----------------------------------------- */
   --status-success: #10b981;
   --status-error: #ef4444;
   --status-warning: #f59e0b;
   --status-info: #3498db;
-
-  /* -----------------------------------------
-     Radius
-     ----------------------------------------- */
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-xl: 12px;
   --radius-full: 9999px;
-
-  /* -----------------------------------------
-     Spacing
-     ----------------------------------------- */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 12px;
-  --space-lg: 16px;
   --space-xl: 24px;
   --space-2xl: 32px;
 
@@ -350,11 +357,10 @@ select.input {
 
 .card {
   background: var(--surface-card);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: var(--space-lg);
+  border-radius: var(--radius-card);
+  padding: var(--space-md);
   margin-bottom: var(--space-md);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
 }
 
 .card-elevated {
@@ -366,6 +372,36 @@ select.input {
   box-shadow: var(--shadow-md);
   border-color: var(--border-accent);
   transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.card-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.card-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.card-meta-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
 /* Card header/title */
@@ -388,24 +424,24 @@ select.input {
 .card-meta {
   font-size: var(--font-size-sm);
   color: var(--text-muted);
-  margin-top: var(--space-sm);
 }
 
-/* Card accent border variants */
-.card-accent-green {
-  border-left: 3px solid var(--action-primary);
+.section-block {
+  background: var(--surface-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-block);
+  padding: var(--space-sm);
 }
 
-.card-accent-blue {
-  border-left: 3px solid var(--provenance-project);
+.directive-block {
+  background: var(--surface-card);
+  border-radius: var(--radius-block);
+  box-shadow: var(--shadow-directive);
 }
 
-.card-accent-purple {
-  border-left: 3px solid var(--provenance-note);
-}
-
-.card-accent-gold {
-  border-left: 3px solid var(--action-ai);
+.directive-block .card-meta,
+.section-block .card-meta {
+  margin-top: 0;
 }
 
 /* ============================================

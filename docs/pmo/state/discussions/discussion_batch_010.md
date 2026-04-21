@@ -1,7 +1,7 @@
 # Discussion Batch `discussion_batch_010`
 
 - Topic: `Frontend display semantics and test coverage buildout`
-- Last updated: `2026-04-20`
+- Last updated: `2026-04-21`
 - Status: `active`
 - Discussion mode: `follow-up`
 
@@ -46,7 +46,7 @@
 
 - Name: `Project surface display semantics cleanup`
 - Why separate: `The project and archived-project surfaces now need an explicit UI rule for how archived tasks appear after archive state was split from lifecycle status.`
-- Current maturity: `emerging`
+- Current maturity: `landed`
 - Likely target: `sprint_candidates`
 - Parking trigger: `If PMO decides the existing mixed display is tolerable for now and broader frontend testing should proceed first anyway.`
 - Reopen signal: `If discussion converges on a stable project-surface grouping and visibility rule that should be implemented before further frontend testing expansion.`
@@ -141,15 +141,43 @@
 - The current PMO reading is therefore:
   - the next frontend move is more likely `display semantics cleanup` than broad `frontend test coverage buildout`
   - frontend testing should follow clarified surface semantics rather than racing ahead of them
+- Since that judgment was recorded, the frontend display-semantics line has advanced further than this file originally captured:
+  - `Project Surface Display Semantics Cleanup` landed as the primary slice
+  - a first follow-up micro-fix then removed the redundant per-row `Archived` chip from archived preview rows while preserving the archived section, completed-task strikethrough, archived-task non-interactivity, and archived-project narrow actions
+  - a second, even narrower follow-up micro-fix then quieted the `Archived Project` task preview further by hiding:
+    - the archived subsection label
+    - the row-level lifecycle chip
+    only when the project itself is archived
+  - ordinary active-project archived sections were intentionally left unchanged in that second micro-fix
+- PMO should therefore now treat the `ProjectsPanel` display-semantics surface as materially more stable than it was when this batch was first opened:
+  - `Project` surface:
+    - archived tasks live in a separate archived section
+    - ordinary active-project archived sections still expose lifecycle chips per row
+  - `Archived Project` surface:
+    - archived task previews are now quieter and rely more on project-level archived context
+    - completed tasks still communicate lifecycle through strikethrough rather than through an additional row chip
+  - in both cases:
+    - archived tasks remain non-interactive
+    - archived-project narrow actions remain preserved
+- PMO should therefore update the frontend sequencing judgment:
+  - `slice-001` no longer blocks the next shaping step
+  - the most natural next move inside this batch is now `slice-002` frontend panel behavior coverage buildout
+  - `slice-003` repo-native UI review baseline remains less mature and does not yet supersede the panel-behavior line as the next likely target
 
 ## Promotion Outcome
 
 - `slice-001` was stable enough to promote into `state/sprint_candidates.md` as `Project Surface Display Semantics Cleanup`
 - `slice-001` has now completed successfully
+- two follow-up micro-fixes have also landed under the same frontend display-semantics line:
+  - `Archived Preview Metadata Noise Reduction`
+  - `Archived Project Preview Quieting`
 - keep this batch active as the frontend-specific follow-up container split out from `discussion_batch_008`
 - use `discussion_batch_008` only as the broader parent context for cross-surface testing/validation, not as the place for ongoing frontend-specific refinement
 - the remaining live work in this batch is now:
   - `slice-002` frontend panel behavior coverage buildout
   - `slice-003` repo-native UI review baseline
-- frontend behavior coverage should continue to follow clarified display semantics rather than racing ahead of them
+- frontend behavior coverage should now be treated as the next likely shaping target because display semantics are materially more settled than before
 - repo-native UI review baseline remains materially less mature than the just-completed project-surface semantics slice
+- a new sibling frontend discussion has now been split out:
+  - `discussion_batch_011` `Frontend style baseline refactor`
+- PMO should use `discussion_batch_011` for broader reusable-component/style-baseline planning rather than continuing to expand this batch with design-system scope

@@ -1,0 +1,475 @@
+# Discussion Batch `discussion_batch_011`
+
+- Topic: `Frontend style baseline refactor`
+- Last updated: `2026-04-21`
+- Status: `active`
+- Discussion mode: `follow-up`
+
+## Intake Record
+
+- Intake type: `architecture`
+- Origin trigger: `split-out from active frontend discussion after human judged that style-baseline and reusable-component work is large enough to stand alone`
+- Source channel: `human discussion`
+- Why now: `The frontend thread in discussion_batch_010 has advanced far enough that a broader style-baseline and reusable-component refactor is now likely to materially affect panel structure, reuse patterns, and future testing order. Human direction is to open this as its own discussion container first, without prematurely slicing it before the concrete refactor shape is clearer.`
+- Related sprint or closeout: `Project Surface Display Semantics Cleanup; Archived Preview Metadata Noise Reduction; Archived Project Preview Quieting`
+
+## Source Trace
+
+- Parent batch: `state/discussions/discussion_batch_010.md`
+- Why split out: `The new topic is no longer just about project-surface semantics or frontend testing order. It now concerns a broader style baseline, reusable UI primitives, component reuse, palette direction, and future component inventory. Keeping that inside discussion_batch_010 would mix panel-testing questions with a larger frontend design-system/refactor line.`
+
+## Why This Discussion Exists
+
+- The current style baseline is still relatively primitive.
+- The current frontend likely needs a more intentional reusable component layer.
+- Human direction indicates likely future work around:
+  - reusable `status-toggle`
+  - reusable `card`
+  - broader shared UI primitives beyond the already extracted `Toast`
+  - selection of a clearer overall color direction
+  - adding future-facing shared components that later slices can build on
+- This work is large enough that it may affect:
+  - panel structure
+  - implementation seams
+  - how future frontend testing should be sequenced
+- PMO therefore needs a dedicated container for the style-baseline/refactor question before deciding whether it should split into bounded execution slices.
+
+## Current PMO Judgment
+
+- This remains a broader discussion-level theme overall, but `slice-001` is no longer only candidate-ready: it has now been executed and accepted for closeout as a completed first-pass adoption sprint.
+- It would still be premature to slice mechanically beyond the currently shaped first pass before later structure/control follow-ons are clearer.
+- The likely interaction with `discussion_batch_010` is:
+  - if this style-baseline refactor becomes near-term work, it may temporarily block or reorder `slice-002` frontend panel behavior coverage buildout
+  - because major reusable-component and style-baseline changes would otherwise risk freezing unstable panel implementations too early
+- PMO should therefore use this batch first to answer:
+  - what the style baseline actually includes
+  - what counts as token-level cleanup versus structural reusable-component refactor
+  - whether the work should land as one bounded refactor or multiple slices
+- Human discussion has now also clarified an important color-direction principle:
+  - the project should not yet bind a permanent identity color directly to Sayachan as a whole
+  - instead, the current phase should treat `茜系` as the **default project primary color family**
+  - while preserving the future possibility that different人格/traits/theme modes may later modulate or replace that default color logic
+- Human discussion has further narrowed the current intended color temperament for that default direction:
+  - `温柔`
+  - `柔弱`
+  - `清冷`
+  - `带一点独属的温柔`
+  - `自身有种伤病的感觉`
+- PMO should preserve the following wording as a high-value working description of the current default-color direction:
+  - `冷雾茜`
+  - `一种偏冷、低饱和、带灰雾感的茜玫色`
+- These phrases should be treated as active design-language anchors for the current style-baseline discussion rather than as final token values.
+- Human discussion has now further clarified the color-role split:
+  - if AI is the main embodiment point of Sayachan in the current product, then the default project main color cannot stay outside the AI chain
+  - the current PMO tendency is therefore:
+    - `冷灰茜` should likely enter the AI primary accent path first
+    - the existing `#DAA520` gold should no longer remain the sole primary AI color
+    - if gold is retained, it should more likely survive only as a secondary/supporting accent rather than as the dominant AI identity color
+- This does **not** yet mean the entire app should be flooded with the same character color.
+- The active design question is instead:
+  - which current AI touchpoints should first be handed over to `冷灰茜`
+  - and which, if any, should retain or reinterpret gold as a secondary energy/highlight accent
+- Human discussion has now selected a concrete current default identity anchor:
+  - `冷灰茜`
+  - `#9B566C`
+- This anchor should be treated as the current default project primary color, while still preserving future openness for theme or人格-based modulation.
+- The current minimum identity-token set is now:
+  - `--identity-primary: #9B566C`
+  - `--identity-primary-hover: #8E4D62`
+  - `--identity-primary-soft: #F3E7EC`
+  - `--identity-primary-muted: #B78493`
+- PMO current judgment:
+  - this 4-token identity set is enough for the first style-baseline pass
+  - do not prematurely expand into a full 50/100/200 style scale yet
+- Human discussion has now also clarified an important refactor principle:
+  - this work should not be treated as a passive mapping of old UI pieces into new tokens
+  - if the current frontend visual grammar is incomplete, the refactor should explicitly fill missing layers rather than preserve accidental gaps
+- The most obvious missing area identified so far is text hierarchy:
+  - the current frontend has basic text tokens, but not yet a clearly articulated multi-layer text system suitable for the product's growing complexity
+- PMO should therefore treat the next palette discussion as covering:
+  - `neutral / surface`
+  - `text hierarchy`
+  together, rather than pretending surface-only refinement is enough
+- Human discussion has now also resolved the fate of the legacy AI gold:
+  - `#DAA520` does not fit the product's long-term overall temperament as a dominant primary accent
+  - but it still carries a useful "there is something special / worth trying here" pull
+- Current PMO judgment:
+  - do **not** preserve that gold as a second full semantic system
+  - do **not** let it continue as the dominant AI identity color
+  - instead, retain it only as a very narrow auxiliary accent under a single semantic role:
+    - `spark`
+- Current agreed token shape:
+  - `--accent-spark: #DAA520`
+  - `--accent-spark-soft: rgba(218, 165, 32, 0.14)`
+- Intended use:
+  - very limited AI invitation / spark / special-attraction traces
+  - small highlights, glow, or tiny CTA-adjacent emphasis
+- Not intended for:
+  - primary AI button backgrounds
+  - primary provenance identity
+  - broad chip/badge systems
+  - large surface or panel coloration
+- Human discussion has also provisionally accepted the first-round neutral / surface / text baseline as a good fit for the project's current temperament.
+- Current surface baseline draft:
+  - `--surface-page: #F6F3F4`
+  - `--surface-panel: #F1ECEE`
+  - `--surface-card: #FBF8F9`
+  - `--surface-hover: #F3E7EC`
+  - `--border-default: #E3D7DC`
+- Current text baseline draft:
+  - `--text-primary: #342A2E`
+  - `--text-secondary: #5E5257`
+  - `--text-muted: #8B7B82`
+  - `--text-emphasis: #9B566C`
+  - `--text-inverse: #FFFDFD`
+- PMO current judgment:
+  - these values are currently accepted as a strong first-round baseline
+  - `text-emphasis` is included in round one, but should still be treated as a restrained layer rather than a widely spread default heading color
+- Human discussion has now clarified the relationship between `active` and `focus` emphasis:
+  - both should live inside the `冷灰茜` identity family rather than introducing a separate major hue
+  - but they should **not** collapse into the exact same visual strength
+- Current PMO judgment:
+  - `active` should represent "you are currently here"
+  - `focus` should represent "this is what deserves your attention now"
+  - therefore:
+    - `active` should use the more baseline identity emphasis treatment
+    - `focus` should use a stronger or more directive treatment built from the same color family
+  - the product should avoid making current-tab/current-mode and current-focus-task look visually identical
+- Human discussion has also clarified that the `completed / archived / disabled` trio should **not** be flattened into pure color semantics.
+- Current PMO judgment:
+  - `completed`
+    - should continue to rely primarily on structural/typographic expression such as strikethrough
+    - color may assist by slightly de-emphasizing, but should not define the state by itself
+  - `archived`
+    - should continue to rely primarily on demotion, secondary placement, and default non-interactivity
+    - color should support a muted/de-emphasized reading rather than create a vivid independent state color
+  - `disabled`
+    - should continue to read as an interaction state rather than a business/domain state
+    - its color treatment should mostly be solved through neutral/text/surface reduction rather than a new major hue
+- Therefore:
+  - the current stage should lock the **strategy** of these three states
+  - but should not yet over-specify a full dedicated color-token system for them
+- Human discussion has now also clarified the font baseline strategy:
+  - `font-family` should remain a placeholder layer for now rather than being fully decided in this round
+  - future font-family experimentation may become its own larger topic
+  - for the current style-baseline refactor, font-family-related accent roles can continue to point at the system default stack
+- PMO current judgment:
+  - the current typography discussion should focus primarily on:
+    - size hierarchy
+    - weight hierarchy
+    - where those layers map in the product
+  - this keeps the first-round baseline concrete without prematurely opening a larger font-family decision line
+- Human discussion has now provisionally accepted a first-round typography draft that favors reading comfort over excessive density compression.
+- Current typography baseline draft:
+  - `--font-size-title: 16px`
+  - `--font-size-section: 12px`
+  - `--font-size-body: 14px`
+  - `--font-size-meta: 11px`
+  - `--font-size-chip: 11px`
+  - `--font-size-button: 13px`
+  - `--font-weight-regular: 400`
+  - `--font-weight-medium: 500`
+  - `--font-weight-semibold: 600`
+  - `--font-weight-bold: 700`
+- PMO current judgment:
+  - the product is still fundamentally record-and-reading-oriented, so `body` should remain at `14px`
+  - density cleanup should come more from meta/chip/section sizing than from shrinking general reading text
+- Human discussion has now also accepted a first-round spacing language, without needing a full UI-element mapping pass yet.
+- Current spacing baseline draft:
+  - `--space-2xs: 4px`
+  - `--space-xs: 8px`
+  - `--space-sm: 12px`
+  - `--space-md: 16px`
+  - `--space-lg: 24px`
+- PMO current judgment:
+  - this 5-step spacing ladder is enough for the first style-baseline pass
+  - the main follow-up work later will be consistent component/panel usage rather than adding more spacing granularity immediately
+- Human discussion has now clarified the radius strategy for the first pass:
+  - the project already has a usable token foundation for radius
+  - first-round cleanup should focus on pulling ordinary scattered radius values back toward that token system
+  - but structurally meaningful asymmetric radius compositions should be preserved for now
+- PMO current judgment:
+  - ordinary card/badge/section/button rounding should become more token-driven
+  - structurally justified special cases such as segmented-control edge rounding and chat/message bubble directional rounding should remain in place until the corresponding reusable component/pattern layer is formalized
+- Human discussion has also clarified the shadow strategy:
+  - shadow should not become the default global layering language for every card and panel
+  - the default system should still lean on surface, border, spacing, and text hierarchy first
+  - but certain "directive" or floating surfaces are allowed to use more explicit shadow
+- Current PMO judgment:
+  - ordinary cards should keep shadow very light or absent
+  - hover can use slight lift
+  - focus/current-work sections (such as the current project task section) may legitimately use stronger shadow to signal working emphasis
+  - floating interaction surfaces such as the chat popup may also legitimately use stronger shadow, because they function as overlay/floating UI rather than ordinary embedded cards
+- Human discussion has now also accepted a first-round border/shadow baseline.
+- Current border/shadow baseline draft:
+  - `border` should remain the default structural language
+  - `shadow` should not become the universal default layering language
+  - ordinary cards/sections:
+    - light border
+    - very light or absent shadow
+  - hover:
+    - slight lift is acceptable
+  - directive surfaces:
+    - stronger shadow is acceptable
+  - floating surfaces:
+    - stronger shadow is acceptable
+- Current minimal token set:
+  - `--border-default`
+  - `--border-subtle`
+  - `--shadow-soft`
+  - `--shadow-raised`
+- PMO current judgment:
+  - this is enough for the first-round visual-baseline pass
+  - no larger elevation scale is needed yet
+- Human discussion has now also clarified that the current widespread `left-border` language is **not** a preserved design preference.
+- Current PMO judgment:
+  - the current frontend appears to overuse left-border treatment across object cards, directive blocks, and nested sections
+  - this creates visual noise and weakens the meaning of accent structure
+  - large object containers such as `project-card` should not automatically inherit a left-border just because earlier implementation happened to use one
+  - the style-baseline refactor should therefore treat left-border overuse as an active cleanup target rather than something to preserve
+- PMO current rough structural split for component-layer discussion:
+  - `Card`
+    - outer object container
+    - examples: project card, note card, dashboard primary cards
+  - `DirectiveBlock`
+    - work-guidance / focus / current-work emphasis block
+    - examples: focus section, project task work-center block, focus recommendation
+  - `SectionBlock`
+    - nested/inset content section inside a card
+    - examples: task preview section, archived subsection, AI suggestions/tasks inset area
+- PMO current judgment:
+  - the first component-layer discussion should not treat all left-accented blocks as one generic “card”
+  - it should first distinguish object containers from directive emphasis blocks and nested sections
+- Human discussion has now also compared current `note` and `project` card structures against the emerging component model.
+- Current PMO judgment:
+  - current `note-card` is already relatively close to a clean first-round `Card` shape
+    - title
+    - body/content
+    - meta
+    - actions
+    - plus optional nested inset areas
+  - current `project-card` is **not** a clean first-round `Card` reference yet
+    - it currently mixes:
+      - outer object shell
+      - meta row
+      - focus/directive block
+      - task preview section
+      - action areas
+      - capture/suggestion surfaces
+  - therefore:
+    - first-round `Card` formalization should more naturally take `note-card` as the cleaner reference
+    - `project-card` should be treated as a composite structure that likely needs further responsibility splitting before it maps cleanly onto the new component language
+- Human discussion has now also clarified that first-round `Card` should avoid a variant explosion.
+- Current PMO judgment:
+  - first-round `Card` should not introduce archived/status/focus/elevated-style visual variants
+  - archived state should be expressed mainly through content/action changes rather than by mutating the shell into a separate card type
+  - note-card archived badge is therefore not something the new `Card` model needs to preserve by default
+- Current first-round `Card` structure is now provisionally:
+  - `Header`
+  - `Body`
+  - `Meta`
+  - `Actions`
+- PMO current judgment:
+  - this keeps `Card` as a quiet outer shell
+  - and leaves room for composite surfaces such as `project-card` to insert richer `SectionBlock` and `DirectiveBlock` content inside the body region without overloading the card shell itself
+- Human discussion has now also produced a rough classification pass over the current frontend:
+  - likely `Card`
+    - `note-card`
+    - outer `project-card`
+    - dashboard primary object/info cards
+  - likely `DirectiveBlock`
+    - `focus-section`
+    - `focus-recommendation`
+    - other genuinely current-work/current-attention blocks
+  - likely `SectionBlock`
+    - `project-tasks-preview`
+    - `ai-tasks`
+    - `ai-suggestions`
+    - other nested content containers inside a larger card shell
+- PMO current judgment:
+  - this rough split is good enough as a working model for the next stage
+  - but it should remain provisional until reusable components are actually shaped in code
+- Human discussion has also clarified an important scoping constraint:
+  - the dashboard AI workflow is expected to be substantially redone later
+  - so it should not be treated as a high-priority reference surface for the current style/component formalization
+- PMO current judgment:
+  - current component-language decisions should rely more heavily on `note-card`, outer `project-card`, and more stable nested sections
+  - the existing dashboard AI workflow should receive lower design-reference weight in this discussion
+- Human discussion has now narrowed the first-round reusable-component refactor set.
+- Current first-round component candidates confirmed for redesign/formalization:
+  - `Card`
+  - `SectionBlock`
+  - `DirectiveBlock`
+- Human discussion has also clarified that `StatusToggle` should **not** yet be folded into this first structural component set.
+- PMO current judgment:
+  - `StatusToggle` remains relevant, but should be discussed later together with buttons/interactive controls rather than inside the first structure-layer pass
+- Human discussion has now also clarified the intended internal relationship between the first-round structure components:
+  - `Card.Body` is the main content region, not a `SectionBlock`-only region
+  - `Card.Body` may contain:
+    - `SectionBlock`
+    - `DirectiveBlock`
+    - simple/plain content when the card is straightforward
+- Current PMO judgment:
+  - this allows `note-card` and `project-card` to share the same outer shell without forcing identical internal complexity
+  - `DirectiveBlock` and `SectionBlock` should be treated as standard inner content patterns, not as mandatory or exclusive body children
+- Human discussion has also refined one content-placement rule:
+  - `ai-tasks` should sit closer to the `Actions` region rather than being treated as an ordinary body section
+  - because they are directly generated by a nearby action and should preserve that causal/interaction proximity
+- Human discussion has now also clarified the intended placement and scope of `Meta`:
+  - `Meta` should sit above `Body`, closer to the title layer rather than below the main content
+  - the current project-facing combination of status badge + date is already a good first-round meta payload
+- Current PMO judgment:
+  - putting `Meta` above `Body` better supports the product's emphasis on time and workflow state
+  - status badges such as `in progress` deserve proximity to the title because they shape how the object should be read before the longer body content
+  - dates also belong in this early-reading zone because temporality is a meaningful part of the product atmosphere
+- Human discussion has now also clarified the intended shape of `Actions`:
+  - `Actions` should primarily be a button-oriented region
+  - in the normal/resting state, it should mostly read as a row or cluster of buttons
+  - it may also own hidden/revealed subordinate content that is causally tied to those actions
+    - such as `ai-tasks` revealed after an AI action is used
+- Current PMO judgment:
+  - `Actions` should stay visually narrow and operational by default
+  - secondary revealed content near `Actions` is acceptable when it is directly triggered by a nearby action and should preserve that interaction proximity
+  - this allows cards to remain quiet in their resting state while still supporting contextual action-driven reveal patterns
+- Human discussion has now also clarified a likely composition pattern for `project task list`-type surfaces:
+  - when a project task list is functioning as the project's main work-center/current execution area, its outer container should likely be treated as a `DirectiveBlock`
+  - internal subareas within that work-center should then be expressed as `SectionBlock`s
+- Current PMO judgment:
+  - this creates a clearer semantic layering:
+    - outer emphasis = "this is the current work area"
+    - inner sections = "these are the internal content partitions"
+  - not every task list automatically deserves `DirectiveBlock` treatment
+  - but project task areas that truly serve as the primary execution surface are strong candidates for:
+    - `DirectiveBlock`
+      - `SectionBlock`
+      - `SectionBlock`
+- Human discussion has now also clarified the preferred adoption strategy for the style-baseline component work:
+  - first land the newly defined baseline/components where they fit cleanly now
+  - allow unmatched areas to continue using legacy implementation temporarily during the first pass
+  - then use later slices to discuss which style-baseline decisions should replace more of that legacy surface
+  - and only at the end leave the truly irreducible leftovers as local implementation details inside components
+- Current PMO judgment:
+  - this phased adoption model is healthy and realistic
+  - it avoids forcing premature total replacement in the first slice
+  - it also prevents "legacy forever" by explicitly treating remaining legacy zones as follow-up cleanup targets rather than silent permanent exemptions
+
+## Open Questions
+
+- What belongs inside the style baseline versus outside it?
+- Which reusable components are truly foundational now, and which are still premature?
+- How much of the work is:
+  - token/palette cleanup
+  - structural reusable-component extraction
+  - broader panel reshaping
+- Does this refactor need to precede frontend panel behavior coverage buildout, or can parts of it run after?
+- What future-facing components are worth creating now without overbuilding the design system?
+
+## Possible Slices
+
+### `slice-001` `Structure And Baseline First-Pass Adoption`
+
+- Goal:
+  - land the first real adoption pass of the new style baseline through:
+    - `Card`
+    - `SectionBlock`
+    - `DirectiveBlock`
+  - and simultaneously wire in the already-agreed first-round visual baseline tokens:
+    - identity
+    - neutral / surface / text
+    - typography
+    - spacing
+    - radius
+    - border / shadow
+- Scope posture:
+  - use the new baseline/components where they fit cleanly now
+  - allow local legacy implementation to remain temporarily where the new model does not yet fit cleanly
+  - do not treat that temporary legacy as permanent design truth
+- Current likely touch surfaces:
+  - `note-card` as the cleaner first-round `Card` reference
+  - `project-card` as a composite structure that begins adopting the new shell and inner-block language without forcing total replacement
+- Non-goals:
+  - total frontend UI unification in one pass
+  - dashboard AI workflow redesign
+  - full button/interactive-control refactor
+  - solving every remaining legacy UI seam in one sprint
+- Current maturity:
+  - completed first pass
+  - now serves as landed context for later controls and cleanup slices
+- Validation posture:
+  - frontend tests are still part of the expected execution loop
+  - but temporary test failures are acceptable during this refactor as long as the execution report explicitly states:
+    - which tests failed
+    - whether the failure is caused by intentional structural refactor fallout or indicates a likely real regression
+    - whether the failure appears to affect actual user-visible behavior or only outdated test assumptions
+  - the worker should not silently ignore failed tests
+  - the worker must classify and explain them
+
+### `slice-002` `Legacy Surface Cleanup Follow-Ons`
+
+- Goal:
+  - after the first-pass adoption lands, identify which remaining legacy structures should be brought under the new style-baseline language
+- Scope posture:
+  - clean up legacy that should have been absorbed by the new baseline
+  - leave truly irreducible special-case implementation details inside components rather than in top-level panel code
+- Likely focus areas later:
+  - leftover `left-border` usage
+  - panel-local spacing / radius / shadow inconsistencies
+  - old nested block patterns that should become `SectionBlock` or `DirectiveBlock`
+- Current maturity:
+  - medium
+  - depends on `slice-001` landing first
+
+### `slice-003` `Interactive Controls Layer`
+
+- Goal:
+  - revisit the still-deferred interaction-layer primitives after the structure layer is stable
+- Expected future topics:
+  - `StatusToggle`
+  - button hierarchy
+  - action grouping and reveal patterns
+  - control-level visual states
+- Current maturity:
+  - lower
+  - intentionally deferred until after the structure-layer pass
+
+## Coverage Check
+
+- Current PMO judgment on what the current slice set already meaningfully covers:
+  - visual baseline / first-round tokens
+  - first-round structural components
+  - later interaction/control-layer refactor
+  - later legacy cleanup after those first two passes
+
+- Important themes that are **not yet fully covered**, but should remain visible inside this discussion:
+  - page / panel language
+  - shell / module language
+  - later component/control-level state realization
+
+- Important themes that are currently safe to defer:
+  - icon / symbol style
+  - motion / transition
+  - finer micro-interaction language
+  - broader brand-expression expansion beyond the current baseline pass
+
+- PMO current judgment:
+  - the current three-slice structure is sufficient for a disciplined first phase
+  - but it should not be mistaken for the entire long-term UI program
+  - panel/shell/module language should remain visible as future discussion work so that the new baseline does not overfit only the current `Projects / Notes / Dashboard` surfaces
+
+## Promotion Outcome
+
+- `slice-001` was promoted to `sprint_candidates.md` as:
+  - `Frontend Structure And Baseline First-Pass Adoption`
+- It has now also been executed and accepted for closeout on `2026-04-21`.
+- Landed scope includes:
+  - first-pass `Card`
+  - first-pass `SectionBlock`
+  - first-pass `DirectiveBlock`
+  - first-pass baseline-token adoption in the new shell/block structures
+- PMO review caught one execution-loop blocker before acceptance:
+  - `frontend/src/style.css` still referenced removed legacy CSS variables after the initial token rewrite
+  - the execution loop resolved that blocker by adding thin compatibility aliases rather than reopening the baseline direction
+- keep this batch as the canonical discussion surface for:
+  - the landed first-pass context
+  - later controls-layer discussion
+  - later legacy follow-ons

@@ -6,6 +6,8 @@ import { markdown } from '@codemirror/lang-markdown'
 import 'highlight.js/styles/github.css'
 import { renderMarkdown } from '../utils/markdown.js'
 import { saveTask } from '../services/taskService.js'
+import Card from './ui/Card.vue'
+import SectionBlock from './ui/SectionBlock.vue'
 import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
 
@@ -429,34 +431,57 @@ async function saveNoteTaskDraft(noteId, draft) {
       </div>
     </div>
     <EmptyState v-if="notes.length === 0" :title="showArchived ? 'No archived notes' : 'No notes yet'" />
-    <div v-for="note in notes" :key="note._id" :class="['card', 'card-accent-green', 'note-card', { archived: note.archived }]" @click="closeNoteMenu">
-      <div v-if="note.archived" class="archived-badge">Archived</div>
-      <button
-        v-else
-        @click="note.isPinned ? unpinNote(note) : pinNote(note)"
-        class="pin-icon-btn"
-        :class="{ pinned: note.isPinned }"
-        :title="note.isPinned ? 'Unpin note' : 'Pin note'"
-      >
-        <svg v-if="note.isPinned" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
-        </svg>
-        <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
-        </svg>
-      </button>
-      <div v-if="editingId === note._id && !note.archived">
-        <input v-model="note.title" placeholder="Title" class="input" />
-        <div :ref="el => bindEditEditor(el, note)" class="codemirror-editor"></div>
-        <div class="card-buttons">
+    <Card
+      v-for="note in notes"
+      :key="note._id"
+      :class="['note-card', { archived: note.archived }]"
+      @click="closeNoteMenu"
+    >
+      <template #header>
+        <div class="card-heading-row">
+          <div class="card-heading-copy">
+            <div v-if="note.archived" class="archived-badge">Archived</div>
+            <h3 class="card-title">{{ note.title }}</h3>
+          </div>
+          <button
+            v-if="!note.archived"
+            @click.stop="note.isPinned ? unpinNote(note) : pinNote(note)"
+            class="pin-icon-btn"
+            :class="{ pinned: note.isPinned }"
+            :title="note.isPinned ? 'Unpin note' : 'Pin note'"
+          >
+            <svg v-if="note.isPinned" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
+            </svg>
+            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
+            </svg>
+          </button>
+        </div>
+      </template>
+
+      <template #meta>
+        <p class="card-meta">{{ new Date(note.updatedAt).toLocaleString() }}</p>
+      </template>
+
+      <template #body>
+        <div v-if="editingId === note._id && !note.archived" class="note-edit-form">
+          <input v-model="note.title" placeholder="Title" class="input" />
+          <div :ref="el => bindEditEditor(el, note)" class="codemirror-editor"></div>
+        </div>
+        <div v-else>
+          <div class="card-content markdown-body" v-html="renderMarkdown(note.content)"></div>
+        </div>
+      </template>
+
+      <template #actions v-if="editingId === note._id && !note.archived">
+        <div class="card-buttons edit-actions">
           <button @click="cancelEdit(note)" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
           <button @click="updateNote(note)" :disabled="loading" class="btn btn-primary">Save</button>
         </div>
-      </div>
-      <div v-else>
-        <h3 class="card-title">{{ note.title }}</h3>
-        <div class="card-content markdown-body" v-html="renderMarkdown(note.content)"></div>
-        <p class="card-meta">{{ new Date(note.updatedAt).toLocaleString() }}</p>
+      </template>
+
+      <template #actions v-else>
         <div class="card-buttons">
           <template v-if="note.archived">
             <button @click="restoreNote(note)" class="btn btn-primary">Restore</button>
@@ -479,8 +504,7 @@ async function saveNoteTaskDraft(noteId, draft) {
             </div>
           </template>
         </div>
-        <!-- AI Tasks - Hidden for archived notes -->
-        <div v-if="!note.archived && aiTasksByNote[note._id] && aiTasksByNote[note._id].length > 0" class="ai-tasks">
+        <SectionBlock v-if="!note.archived && aiTasksByNote[note._id] && aiTasksByNote[note._id].length > 0" class="note-ai-tasks">
           <div class="ai-tasks-header">
             <strong>AI Tasks ({{ aiTasksByNote[note._id].length }})</strong>
             <div class="ai-tasks-actions">
@@ -495,19 +519,19 @@ async function saveNoteTaskDraft(noteId, draft) {
               </button>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </SectionBlock>
+      </template>
+    </Card>
   </div>
 </template>
 
 <style scoped>
 .form-section, .notes-section {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 24px;
-  background: #f9f9f9;
-  margin-bottom: 24px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
+  background: var(--surface-panel);
+  margin-bottom: var(--space-lg);
 }
 
 /* Editor container spacing */
@@ -516,10 +540,10 @@ async function saveNoteTaskDraft(noteId, draft) {
 }
 
 .form-section h2, .notes-section h2 {
-  font-size: 18px;
+  font-size: var(--font-size-title);
   margin-top: 0;
-  margin-bottom: 16px;
-  color: #333;
+  margin-bottom: var(--space-md);
+  color: var(--text-primary);
 }
 
 .section-header {
@@ -714,7 +738,7 @@ async function saveNoteTaskDraft(noteId, draft) {
   text-align: center;
 }
 
-/* .note-card uses .card and .card-accent-green baseline */
+/* .note-card uses the shared .card baseline */
 
 /* Markdown display uses global .markdown-body baseline from style.css */
 
@@ -782,5 +806,82 @@ async function saveNoteTaskDraft(noteId, draft) {
 
 .menu-item.delete:hover {
   background: #fee2e2;
+}
+
+.note-card {
+  gap: var(--space-sm);
+}
+
+.card-heading-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.card-heading-copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  flex: 1;
+}
+
+.card-heading-copy .card-title {
+  margin: 0;
+}
+
+.card-heading-copy .card-content {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-body);
+}
+
+.note-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.note-ai-tasks {
+  margin-top: 0;
+  background: color-mix(in srgb, var(--identity-primary-soft) 45%, var(--surface-card));
+  border: 1px solid var(--border-default);
+}
+
+.note-ai-tasks .ai-tasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-xs);
+}
+
+.note-ai-tasks .ai-task-item {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-block);
+}
+
+.note-ai-tasks .task-content {
+  color: var(--text-secondary);
+}
+
+.note-ai-tasks .btn-ai-dismiss {
+  background: var(--accent-spark-soft);
+  color: var(--accent-spark);
+}
+
+.note-ai-tasks .btn-ai-dismiss:hover {
+  background: rgba(218, 165, 32, 0.22);
+}
+
+.archived-badge {
+  position: static;
+  align-self: flex-start;
+  background: var(--text-muted);
+}
+
+.pin-icon-btn {
+  position: static;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 </style>

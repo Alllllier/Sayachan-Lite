@@ -8,6 +8,9 @@ import {
   getProjectPrimaryPreviewTasks,
   getProjectTaskBuckets
 } from './projectsPanel.behavior.js'
+import Card from './ui/Card.vue'
+import DirectiveBlock from './ui/DirectiveBlock.vue'
+import SectionBlock from './ui/SectionBlock.vue'
 import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
 
@@ -549,128 +552,200 @@ async function addBatchTasks(project) {
       </div>
     </div>
     <EmptyState v-if="projects.length === 0" :title="showArchived ? 'No archived projects' : 'No projects yet'" />
-    <div v-for="project in projects" :key="project._id" :class="['card', 'card-accent-blue', 'project-card', { archived: project.archived }]" @click="closeProjectMenu">
-      <button
-        v-if="!project.archived"
-        @click="project.isPinned ? unpinProject(project) : pinProject(project)"
-        class="pin-icon-btn"
-        :class="{ pinned: project.isPinned }"
-        :title="project.isPinned ? 'Unpin project' : 'Pin project'"
-      >
-        <svg v-if="project.isPinned" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
-        </svg>
-        <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
-        </svg>
-      </button>
-      <div v-if="editingProjectId === project._id && !project.archived">
-         <input v-model="project.name" placeholder="Project name" class="input" />
-        <textarea
-          v-model="project.summary"
-          placeholder="Summary"
-          rows="2"
-          class="textarea"
-        ></textarea>
-        <select v-model="project.status" class="input">
-          <option value="pending">Pending</option>
-          <option value="in_progress">In Progress</option>
-          <option value="completed">Completed</option>
-          <option value="on_hold">On Hold</option>
-        </select>
-        <div class="card-buttons edit-actions">
-          <button @click="cancelEditProject(project)" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
-          <button @click="updateProject(project)" :disabled="loading" class="btn btn-primary">Save</button>
+    <Card
+      v-for="project in projects"
+      :key="project._id"
+      :class="['project-card', { archived: project.archived }]"
+      @click="closeProjectMenu"
+    >
+      <template #header>
+        <div class="card-heading-row">
+          <div class="card-heading-copy">
+            <h3 class="card-title">{{ project.name }}</h3>
+            <p class="card-content">{{ project.summary }}</p>
+          </div>
+          <button
+            v-if="!project.archived"
+            @click.stop="project.isPinned ? unpinProject(project) : pinProject(project)"
+            class="pin-icon-btn"
+            :class="{ pinned: project.isPinned }"
+            :title="project.isPinned ? 'Unpin project' : 'Pin project'"
+          >
+            <svg v-if="project.isPinned" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
+            </svg>
+            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
+            </svg>
+          </button>
         </div>
-      </div>
-      <div v-else>
-        <h3 class="card-title">{{ project.name }}</h3>
-        <p class="card-content">{{ project.summary }}</p>
+      </template>
 
-        <!-- Meta Row: Status and Date -->
+      <template #meta>
         <div class="meta-row">
           <span class="status-badge" :class="getStatusClass(project.status)">{{ formatStatus(project.status) }}</span>
           <span class="date-meta">{{ new Date(project.updatedAt).toLocaleDateString() }}</span>
         </div>
+      </template>
 
-        <!-- Current Focus - Primary Decision Layer (Task-only) -->
-        <div class="focus-section">
-          <div class="focus-main">
-            <span class="focus-label">Current Focus</span>
-            <span class="focus-value">{{ getCurrentFocusDisplay(project) || 'No active focus' }}</span>
-          </div>
+      <template #body>
+        <div v-if="editingProjectId === project._id && !project.archived" class="project-edit-form">
+          <input v-model="project.name" placeholder="Project name" class="input" />
+          <textarea
+            v-model="project.summary"
+            placeholder="Summary"
+            rows="2"
+            class="textarea"
+          ></textarea>
+          <select v-model="project.status" class="input">
+            <option value="pending">Pending</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="on_hold">On Hold</option>
+          </select>
         </div>
+        <div v-else>
+          <DirectiveBlock class="project-focus-directive">
+            <div class="focus-section">
+              <div class="focus-main">
+                <span class="focus-label">Current Focus</span>
+                <span class="focus-value">{{ getCurrentFocusDisplay(project) || 'No active focus' }}</span>
+              </div>
+            </div>
+          </DirectiveBlock>
 
-        <!-- Project Tasks Preview -->
-        <div v-if="getActiveTasks(project._id).length > 0 || getCompletedTasks(project._id).length > 0 || getArchivedTasks(project._id).length > 0" class="project-tasks-preview" :class="{ 'preview-expanded': expandedProjects.has(project._id) }">
-          <div class="tasks-preview-header">
-            <div class="preview-header-left">
-              <span class="tasks-preview-title">Tasks</span>
-              <div v-if="!project.archived" class="preview-filter-switch">
+          <DirectiveBlock
+            v-if="getActiveTasks(project._id).length > 0 || getCompletedTasks(project._id).length > 0 || getArchivedTasks(project._id).length > 0"
+            class="project-tasks-directive"
+          >
+            <div class="project-tasks-preview" :class="{ 'preview-expanded': expandedProjects.has(project._id) }">
+              <div class="tasks-preview-header">
+                <div class="preview-header-left">
+                  <span class="tasks-preview-title">Tasks</span>
+                  <div v-if="!project.archived" class="preview-filter-switch">
+                    <button
+                      @click.stop="setPreviewFilter(project._id, 'active')"
+                      class="filter-btn"
+                      :class="{ active: getPreviewFilter(project._id) === 'active' }"
+                    >
+                      Active
+                    </button>
+                    <button
+                      @click.stop="setPreviewFilter(project._id, 'completed')"
+                      class="filter-btn"
+                      :class="{ active: getPreviewFilter(project._id) === 'completed' }"
+                    >
+                      Completed
+                    </button>
+                  </div>
+                </div>
                 <button
-                  @click.stop="setPreviewFilter(project._id, 'active')"
-                  class="filter-btn"
-                  :class="{ active: getPreviewFilter(project._id) === 'active' }"
+                  @click.stop="toggleProjectPreview(project._id)"
+                  class="btn btn-secondary btn-sm preview-toggle-btn"
                 >
-                  Active
-                </button>
-                <button
-                  @click.stop="setPreviewFilter(project._id, 'completed')"
-                  class="filter-btn"
-                  :class="{ active: getPreviewFilter(project._id) === 'completed' }"
-                >
-                  Completed
+                  {{ expandedProjects.has(project._id) ? '收起' : '展开' }}
                 </button>
               </div>
-            </div>
-            <button
-              @click.stop="toggleProjectPreview(project._id)"
-              class="btn btn-secondary btn-sm preview-toggle-btn"
-            >
-              {{ expandedProjects.has(project._id) ? '收起' : '展开' }}
-            </button>
-          </div>
 
-          <div class="tasks-preview-list">
-            <div v-if="getPrimaryPreviewTasks(project._id).length > 0" class="preview-task-section">
-              <div
-                v-for="task in getPrimaryPreviewTasks(project._id)"
-                :key="task._id"
-                class="task-preview-item"
-                :class="{
-                  completed: task.status === 'completed',
-                  'is-focus': isFocusTask(project, task),
-                  'can-focus': task.status === 'active' && !task.archived
-                }"
-                @click.stop="canSetProjectFocus(task) ? setTaskAsFocus(project, task) : null"
+              <div class="tasks-preview-list">
+                <div v-if="getPrimaryPreviewTasks(project._id).length > 0" class="preview-task-section">
+                  <div
+                    v-for="task in getPrimaryPreviewTasks(project._id)"
+                    :key="task._id"
+                    class="task-preview-item"
+                    :class="{
+                      completed: task.status === 'completed',
+                      'is-focus': isFocusTask(project, task),
+                      'can-focus': task.status === 'active' && !task.archived
+                    }"
+                    @click.stop="canSetProjectFocus(task) ? setTaskAsFocus(project, task) : null"
+                  >
+                    <span class="task-preview-text">{{ task.title }}</span>
+                    <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
+                  </div>
+                </div>
+
+                <div v-if="getArchivedPreviewTasks(project._id).length > 0" class="preview-task-section preview-task-section-archived">
+                  <div v-if="!project.archived" class="preview-section-label">Archived</div>
+                  <div
+                    v-for="task in getArchivedPreviewTasks(project._id)"
+                    :key="task._id"
+                    class="task-preview-item archived"
+                    :class="{
+                      completed: task.status === 'completed',
+                      'is-focus': isFocusTask(project, task)
+                    }"
+                  >
+                    <span class="task-preview-text">{{ task.title }}</span>
+                    <span v-if="!project.archived" class="task-preview-state-chip" :class="task.status === 'completed' ? 'state-completed' : 'state-active'">
+                      {{ task.status === 'completed' ? 'Completed' : 'Active' }}
+                    </span>
+                    <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DirectiveBlock>
+
+          <SectionBlock v-if="!project.archived && taskCaptureOpen.has(project._id)" class="task-capture-area">
+            <div class="capture-mode-switch">
+              <button
+                @click="setTaskCaptureMode(project._id, 'single')"
+                class="mode-btn"
+                :class="{ active: taskCaptureMode[project._id] === 'single' }"
               >
-                <span class="task-preview-text">{{ task.title }}</span>
-                <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
+                Single
+              </button>
+              <button
+                @click="setTaskCaptureMode(project._id, 'batch')"
+                class="mode-btn"
+                :class="{ active: taskCaptureMode[project._id] === 'batch' }"
+              >
+                Batch
+              </button>
+            </div>
+
+            <div v-if="taskCaptureMode[project._id] === 'single'" class="single-task-input">
+              <input
+                v-model="manualTaskInputs[project._id]"
+                placeholder="Task title..."
+                @keyup.enter="addManualTask(project)"
+                :disabled="addingManualTasks.has(project._id)"
+                class="input task-input"
+              />
+              <div class="manual-task-actions">
+                <button @click="addManualTask(project)" class="btn btn-primary btn-sm save-task-btn" :disabled="addingManualTasks.has(project._id)">
+                  {{ addingManualTasks.has(project._id) ? 'Saving...' : 'Save' }}
+                </button>
               </div>
             </div>
 
-            <div v-if="getArchivedPreviewTasks(project._id).length > 0" class="preview-task-section preview-task-section-archived">
-              <div v-if="!project.archived" class="preview-section-label">Archived</div>
-              <div
-                v-for="task in getArchivedPreviewTasks(project._id)"
-                :key="task._id"
-                class="task-preview-item archived"
-                :class="{
-                  completed: task.status === 'completed',
-                  'is-focus': isFocusTask(project, task)
-                }"
-              >
-                <span class="task-preview-text">{{ task.title }}</span>
-                <span v-if="!project.archived" class="task-preview-state-chip" :class="task.status === 'completed' ? 'state-completed' : 'state-active'">
-                  {{ task.status === 'completed' ? 'Completed' : 'Active' }}
-                </span>
-                <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
+            <div v-if="taskCaptureMode[project._id] === 'batch'" class="batch-task-input">
+              <textarea
+                v-model="batchTaskInputs[project._id]"
+                placeholder="One task per line..."
+                :disabled="addingBatchTasks.has(project._id)"
+                class="textarea"
+                rows="3"
+              ></textarea>
+              <div class="batch-task-actions">
+                <button @click="addBatchTasks(project)" class="btn btn-primary btn-sm save-task-btn" :disabled="addingBatchTasks.has(project._id)">
+                  {{ addingBatchTasks.has(project._id) ? 'Saving...' : 'Save All' }}
+                </button>
               </div>
             </div>
-          </div>
+          </SectionBlock>
         </div>
+      </template>
 
-        <!-- Main Action: Add Task / Cancel (Hidden for archived projects) -->
+      <template #actions v-if="editingProjectId === project._id && !project.archived">
+        <div class="card-buttons edit-actions">
+          <button @click="cancelEditProject(project)" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
+          <button @click="updateProject(project)" :disabled="loading" class="btn btn-primary">Save</button>
+        </div>
+      </template>
+
+      <template #actions v-else>
         <div v-if="!project.archived" class="card-buttons main-actions">
           <button
             v-if="!taskCaptureOpen.has(project._id)"
@@ -688,60 +763,6 @@ async function addBatchTasks(project) {
           </button>
         </div>
 
-        <!-- Task Capture Area: Single/Batch Mode Switch (shown below the main button, hidden for archived) -->
-        <div v-if="!project.archived && taskCaptureOpen.has(project._id)" class="task-capture-area">
-          <!-- Mode Switch -->
-          <div class="capture-mode-switch">
-            <button
-              @click="setTaskCaptureMode(project._id, 'single')"
-              class="mode-btn"
-              :class="{ active: taskCaptureMode[project._id] === 'single' }"
-            >
-              Single
-            </button>
-            <button
-              @click="setTaskCaptureMode(project._id, 'batch')"
-              class="mode-btn"
-              :class="{ active: taskCaptureMode[project._id] === 'batch' }"
-            >
-              Batch
-            </button>
-          </div>
-
-          <!-- Single Mode Input -->
-          <div v-if="taskCaptureMode[project._id] === 'single'" class="single-task-input">
-            <input
-              v-model="manualTaskInputs[project._id]"
-              placeholder="Task title..."
-              @keyup.enter="addManualTask(project)"
-              :disabled="addingManualTasks.has(project._id)"
-              class="input task-input"
-            />
-            <div class="manual-task-actions">
-              <button @click="addManualTask(project)" class="btn btn-primary btn-sm save-task-btn" :disabled="addingManualTasks.has(project._id)">
-                {{ addingManualTasks.has(project._id) ? 'Saving...' : 'Save' }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Batch Mode Input -->
-          <div v-if="taskCaptureMode[project._id] === 'batch'" class="batch-task-input">
-            <textarea
-              v-model="batchTaskInputs[project._id]"
-              placeholder="One task per line..."
-              :disabled="addingBatchTasks.has(project._id)"
-              class="textarea"
-              rows="3"
-            ></textarea>
-            <div class="batch-task-actions">
-              <button @click="addBatchTasks(project)" class="btn btn-primary btn-sm save-task-btn" :disabled="addingBatchTasks.has(project._id)">
-                {{ addingBatchTasks.has(project._id) ? 'Saving...' : 'Save All' }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Secondary Actions -->
         <div class="card-buttons secondary-actions">
           <template v-if="project.archived">
             <button @click="restoreProject(project)" class="btn btn-primary secondary-btn">Restore</button>
@@ -765,8 +786,7 @@ async function addBatchTasks(project) {
           </template>
         </div>
 
-        <!-- AI Suggestions - Hidden for archived projects -->
-        <div v-if="!project.archived && aiSuggestions[project._id] && aiSuggestions[project._id].length > 0" class="ai-suggestions">
+        <SectionBlock v-if="!project.archived && aiSuggestions[project._id] && aiSuggestions[project._id].length > 0" class="ai-suggestions project-ai-suggestions">
           <div class="ai-suggestions-header">
             <strong>AI Suggestions ({{ aiSuggestions[project._id].length }})</strong>
             <div class="ai-suggestions-actions">
@@ -781,9 +801,9 @@ async function addBatchTasks(project) {
               </button>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </SectionBlock>
+      </template>
+    </Card>
   </div>
 
   <div class="form-section project-form">
@@ -809,17 +829,18 @@ async function addBatchTasks(project) {
 
 <style scoped>
 .projects-section, .project-form {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 24px;
-  background: #f9f9f9;
-  margin-bottom: 24px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
+  background: var(--surface-panel);
+  margin-bottom: var(--space-lg);
 }
 
 .projects-section h2, .project-form h2 {
-  font-size: 18px;
+  font-size: var(--font-size-title);
   margin-top: 0;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-md);
+  color: var(--text-primary);
 }
 
 .section-header {
@@ -870,7 +891,6 @@ async function addBatchTasks(project) {
 
 .project-card.archived .focus-section {
   background: linear-gradient(135deg, var(--surface-panel) 0%, var(--surface-hover) 100%);
-  border-left-color: var(--text-muted);
 }
 
 .project-card.archived .focus-value {
@@ -920,10 +940,9 @@ async function addBatchTasks(project) {
   justify-content: space-between;
   align-items: center;
   margin: 12px 0 0;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-left: 3px solid #42b883;
-  border-radius: 6px;
+  padding: var(--space-md);
+  background: linear-gradient(135deg, var(--surface-card) 0%, var(--surface-hover) 100%);
+  border-radius: var(--radius-block);
 }
 
 .focus-main {
@@ -934,17 +953,17 @@ async function addBatchTasks(project) {
 }
 
 .focus-label {
-  font-size: 11px;
-  font-weight: 500;
-  color: #666;
+  font-size: var(--font-size-meta);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .focus-value {
-  font-size: 15px;
-  font-weight: 600;
-  color: #333;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
   line-height: 1.4;
 }
 
@@ -963,16 +982,16 @@ async function addBatchTasks(project) {
 }
 
 .status-badge {
-  font-size: 11px;
-  font-weight: 500;
-  color: #666;
+  font-size: var(--font-size-chip);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .date-meta {
-  font-size: 11px;
-  color: #999;
+  font-size: var(--font-size-meta);
+  color: var(--text-muted);
 }
 
 /* Status Color Coding */
@@ -980,31 +999,31 @@ async function addBatchTasks(project) {
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 500;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-chip);
+  font-weight: var(--font-weight-medium);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .status-planning {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--identity-primary-soft);
+  color: var(--text-emphasis);
 }
 
 .status-active {
-  background: #e8f5e9;
-  color: #388e3c;
+  background: rgba(218, 165, 32, 0.12);
+  color: #8e6514;
 }
 
 .status-completed {
-  background: #f3e5f5;
-  color: #7b1fa2;
+  background: var(--surface-hover);
+  color: var(--text-secondary);
 }
 
 .status-paused {
-  background: #fff3e0;
-  color: #f57c00;
+  background: var(--surface-panel);
+  color: var(--text-muted);
 }
 
 .card-buttons {
@@ -1143,7 +1162,7 @@ async function addBatchTasks(project) {
   text-align: center;
 }
 
-/* .project-card uses .card and .card-accent-blue baseline */
+/* .project-card uses the shared .card baseline */
 
 .focus-history {
   margin: 8px 0;
@@ -1179,10 +1198,10 @@ async function addBatchTasks(project) {
 
 .project-tasks-preview {
   margin-top: 16px;
-  padding: 12px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: var(--space-md);
+  background: var(--surface-panel);
+  border-radius: var(--radius-block);
+  box-shadow: none;
 }
 
 .tasks-preview-header {
@@ -1199,9 +1218,9 @@ async function addBatchTasks(project) {
 }
 
 .tasks-preview-title {
-  font-size: 12px;
-  font-weight: 500;
-  color: #666;
+  font-size: var(--font-size-section);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
 }
 
 .tasks-preview-list {
@@ -1223,9 +1242,9 @@ async function addBatchTasks(project) {
 }
 
 .preview-section-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #7a8494;
+  font-size: var(--font-size-meta);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1235,15 +1254,15 @@ async function addBatchTasks(project) {
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
-  background: white;
-  border-radius: 4px;
-  font-size: 12px;
-  border-left: 2px solid #42b883;
+  background: var(--surface-card);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-chip);
+  border-left: 2px solid var(--identity-primary);
 }
 
 .task-preview-item.completed {
   opacity: 0.75;
-  border-left-color: #ccc;
+  border-left-color: var(--border-default);
 }
 
 .task-preview-item.completed .task-preview-text {
@@ -1252,13 +1271,13 @@ async function addBatchTasks(project) {
 
 .task-preview-item.archived {
   opacity: 0.72;
-  border-left-color: #b7c0cd;
-  background: #f3f5f7;
+  border-left-color: var(--identity-primary-muted);
+  background: var(--surface-panel);
 }
 
 .task-preview-text {
   flex: 1;
-  color: #555;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1268,20 +1287,20 @@ async function addBatchTasks(project) {
   display: inline-flex;
   align-items: center;
   padding: 2px 6px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 600;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-meta);
+  font-weight: var(--font-weight-semibold);
   letter-spacing: 0.2px;
 }
 
 .task-preview-state-chip.state-active {
-  background: #eaf6ef;
-  color: #2f7d55;
+  background: var(--identity-primary-soft);
+  color: var(--text-emphasis);
 }
 
 .task-preview-state-chip.state-completed {
-  background: #eef0f3;
-  color: #667085;
+  background: var(--surface-hover);
+  color: var(--text-secondary);
 }
 
 .set-focus-btn {
@@ -1332,10 +1351,10 @@ async function addBatchTasks(project) {
 /* Task Capture Area: Unified Single/Batch Mode */
 .task-capture-area {
   margin-top: 8px;
-  padding: 8px 12px 12px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
+  padding: var(--space-sm) var(--space-md) var(--space-md);
+  background: var(--surface-panel);
+  border-radius: var(--radius-block);
+  border: 1px solid var(--border-default);
 }
 
 .capture-mode-switch {
@@ -1348,10 +1367,10 @@ async function addBatchTasks(project) {
 .mode-btn {
   flex: 1;
   padding: 8px 12px;
-  font-size: 13px;
-  background: #e9ecef;
-  color: #666;
-  border: 1px solid #dee2e6;
+  font-size: var(--font-size-button);
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
   border-radius: 0;
   cursor: pointer;
   transition: all 0.15s;
@@ -1368,13 +1387,13 @@ async function addBatchTasks(project) {
 }
 
 .mode-btn:hover:not(:disabled):not(.active) {
-  background: #dee2e6;
+  background: var(--identity-primary-soft);
 }
 
 .mode-btn.active {
-  background: #42b883;
-  color: white;
-  border-color: #42b883;
+  background: var(--identity-primary);
+  color: var(--text-inverse);
+  border-color: var(--identity-primary);
 }
 
 .mode-btn.active:first-child,
@@ -1503,17 +1522,17 @@ async function addBatchTasks(project) {
   gap: 0;
   border-radius: var(--radius-full);
   overflow: hidden;
-  background: #e9ecef;
+  background: var(--surface-hover);
   padding: 3px;
 }
 
 .filter-btn {
   padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--font-size-chip);
+  font-weight: var(--font-weight-medium);
   border: none;
   background: transparent;
-  color: #888;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
   border-radius: var(--radius-full);
@@ -1522,13 +1541,13 @@ async function addBatchTasks(project) {
 }
 
 .filter-btn:hover:not(.active) {
-  color: #555;
+  color: var(--text-secondary);
 }
 
 .filter-btn.active {
-  background: white;
-  color: #333;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(52, 42, 46, 0.12);
 }
 
 /* Task Row Interactions */
@@ -1539,23 +1558,23 @@ async function addBatchTasks(project) {
 
 @media (min-width: 481px) {
   .task-preview-item.can-focus:hover {
-    background: #f0f7f4;
+    background: var(--identity-primary-soft);
   }
 }
 
 .task-preview-item.is-focus {
-  border-left-color: #42b883;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-left-color: var(--identity-primary);
+  background: linear-gradient(135deg, var(--surface-card) 0%, var(--surface-hover) 100%);
 }
 
 .focus-badge {
   margin-left: 8px;
   padding: 2px 8px;
-  font-size: 10px;
-  font-weight: 500;
-  color: #42b883;
-  background: rgba(66, 184, 131, 0.1);
-  border-radius: 12px;
+  font-size: var(--font-size-meta);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-emphasis);
+  background: var(--identity-primary-soft);
+  border-radius: var(--radius-full);
   flex-shrink: 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1570,8 +1589,110 @@ async function addBatchTasks(project) {
 
 /* Mobile: hide row-level focus badge; rely on top Current Focus section for semantics */
 @media (max-width: 480px) {
-  .task-preview-item.is-focus .focus-badge {
+.task-preview-item.is-focus .focus-badge {
     display: none;
   }
+}
+
+.project-card {
+  gap: var(--space-sm);
+}
+
+.card-heading-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.card-heading-copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  flex: 1;
+}
+
+.card-heading-copy .card-title {
+  margin: 0;
+}
+
+.card-heading-copy .card-content {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-body);
+}
+
+.project-edit-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-focus-directive,
+.project-tasks-directive {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-focus-directive {
+  margin-top: var(--space-sm);
+}
+
+.project-focus-directive .focus-section {
+  margin: 0;
+}
+
+.project-tasks-directive {
+  margin-top: var(--space-md);
+}
+
+.project-tasks-directive .project-tasks-preview {
+  margin-top: 0;
+}
+
+.project-tasks-directive .preview-toggle-btn {
+  min-width: 72px;
+}
+
+.project-ai-suggestions {
+  margin-top: 0;
+  background: var(--identity-primary-soft);
+  border: 1px solid var(--border-default);
+}
+
+.project-ai-suggestions .ai-suggestions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-xs);
+}
+
+.project-ai-suggestions .ai-suggestions-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.project-ai-suggestions .btn-ai-dismiss {
+  background: var(--accent-spark-soft);
+  color: var(--accent-spark);
+}
+
+.project-ai-suggestions .btn-ai-dismiss:hover {
+  background: rgba(218, 165, 32, 0.22);
+}
+
+.project-ai-suggestions .ai-suggestion-item {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-block);
+}
+
+.project-ai-suggestions .suggestion-content {
+  color: var(--text-secondary);
+}
+
+.pin-icon-btn {
+  position: static;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 </style>

@@ -1,4 +1,4 @@
-# Current Sprint
+# Current Sprint Idle Template
 
 - Sprint: `idle`
 - Status: `idle`
@@ -15,14 +15,14 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Archived Project Preview Quieting`
+- Sprint: `Frontend Structure And Baseline First-Pass Adoption`
 - Closeout date: `2026-04-21`
 - Delivery status: `completed`
-- Commit state: `not committed yet`
+- Commit state: `not committed`
 - Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `Archived-project task previews are now quieter because the archived subsection label and lifecycle chip are hidden only in archived projects, while ordinary archived sections, completed strikethrough, archived-task non-interactivity, and archived-project narrow actions remain unchanged.`
+- Residual note: `The first-pass frontend structure layer landed with Card / SectionBlock / DirectiveBlock and first-round baseline tokens, while the style-baseline discussion now rolls forward into controls and later legacy cleanup rather than more shell-level first-pass adoption.`
 
 ## Next PMO Action
 
-- keep `execution_task.md` in explicit idle state until the next sprint or micro-fix is activated
-- decide whether the next PMO move is frontend panel behavior coverage, repo-native UI review baseline shaping, worker validation baseline shaping, or another bounded UI micro-fix
+- keep `execution_task.md` in explicit idle state until a new sprint or micro-fix is activated
+- decide whether the next PMO move is a new discussion, a candidate activation, a micro-fix, or archive cleanup

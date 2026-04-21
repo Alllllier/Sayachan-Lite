@@ -1,4 +1,4 @@
-# Execution Task
+# Execution Task Idle Template
 
 - Status: `idle`
 - Sprint: `idle`
@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Archived Project Preview Quieting`
-- Outcome: `completed and accepted for closeout`
-- Report surface: `docs/pmo/history/reports/archived-project-preview-quieting.md`
+- Sprint: `Frontend Structure And Baseline First-Pass Adoption`
+- Outcome: `completed`
+- Report surface: `docs/pmo/state/execution_report.md`
 
 ## Next Activation Rule
 

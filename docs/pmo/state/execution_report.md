@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Archived Project Preview Quieting`
-- Report outcome: `completed and archived to history/reports/archived-project-preview-quieting.md`
-- PMO read result: `accepted for closeout`
+- Sprint: `Frontend Structure And Baseline First-Pass Adoption`
+- Report outcome: `completed and archived to history/reports/frontend-structure-and-baseline-first-pass-adoption.md`
+- PMO read result: `accepted after one execution-loop blocker fix for legacy CSS variable compatibility`
 
 ## Next Use
 
