@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, defineEmits, defineProps, watch } from 'vue'
-import { saveTask, fetchProjectTasks } from '../services/taskService.js'
+import { saveTask, fetchProjectCardTasks } from '../services/taskService.js'
 import {
   canSetProjectFocus,
   getProjectArchivedPreviewTasks,
@@ -311,7 +311,7 @@ async function fetchProjectTasksForCard(projectId) {
   try {
     const project = projects.value.find(p => p._id === projectId)
     const archived = project?.archived === true
-    const tasks = await fetchProjectTasks(projectId, archived)
+    const tasks = await fetchProjectCardTasks(projectId, archived)
     projectTasks.value[projectId] = tasks
   } catch (e) {
     console.error('Failed to fetch project tasks:', e)

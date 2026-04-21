@@ -112,3 +112,19 @@ export async function fetchProjectTasks(projectId, archived = false) {
     return []
   }
 }
+
+export async function fetchProjectCardTasks(projectId, projectArchived = false) {
+  if (projectArchived) {
+    return fetchProjectTasks(projectId, true)
+  }
+
+  const [primaryTasks, archivedTasks] = await Promise.all([
+    fetchProjectTasks(projectId, false),
+    fetchProjectTasks(projectId, true)
+  ])
+
+  const primaryIds = new Set(primaryTasks.map(task => task?._id).filter(Boolean))
+  const uniqueArchivedTasks = archivedTasks.filter(task => !primaryIds.has(task?._id))
+
+  return [...primaryTasks, ...uniqueArchivedTasks]
+}

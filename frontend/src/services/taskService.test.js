@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   activeTasksSnapshotRef,
   buildTaskPayload,
+  fetchProjectCardTasks,
   fetchProjectTasks,
   fetchTasks,
   normalizeSavedTask,
@@ -93,6 +94,39 @@ describe('taskService smoke tests', () => {
 
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?projectId=project-42&archived=true')
     expect(tasks).toEqual([{ _id: 'archived-project-task', status: 'active', archived: true }])
+  })
+
+  it('fetches both active and archived project tasks for active project cards', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        json: async () => ([{ _id: 'project-task', archived: false, status: 'active' }])
+      })
+      .mockResolvedValueOnce({
+        json: async () => ([{ _id: 'archived-project-task', archived: true, status: 'active' }])
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const tasks = await fetchProjectCardTasks('project-42', false)
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:3001/tasks?projectId=project-42')
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:3001/tasks?projectId=project-42&archived=true')
+    expect(tasks).toEqual([
+      { _id: 'project-task', archived: false, status: 'active' },
+      { _id: 'archived-project-task', archived: true, status: 'active' }
+    ])
+  })
+
+  it('fetches only archived tasks for archived project cards', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: async () => ([{ _id: 'archived-project-task', archived: true, status: 'active' }])
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const tasks = await fetchProjectCardTasks('project-42', true)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?projectId=project-42&archived=true')
+    expect(tasks).toEqual([{ _id: 'archived-project-task', archived: true, status: 'active' }])
   })
 
   it('keeps a separate active-task snapshot for cockpit context', () => {
