@@ -29,6 +29,30 @@
 
 ## Current Candidates
 
+### `Archived Project Preview Quieting`
+
+- Status: `completed`
+- Source reference: `state/discussions/discussion_batch_010.md; follow-up human direction in current thread`
+- Why now: `The first archived-preview noise reduction removed the redundant row-level Archived chip, but archived projects still repeat too much state information. In an archived project, the project-level state and archive cascade are already understood, so keeping both the archived subsection label and per-row lifecycle chip still reads as more metadata than the surface needs.`
+- Expected outcome: `Archived project previews become quieter and easier to scan by removing metadata that is already implied by the archived project context, while preserving the affordances that still matter: completed-task strikethrough, archived-task non-interactivity, and the archived project’s narrow action set.`
+- In scope:
+  - reduce metadata noise only inside `archived project` task previews on the `ProjectsPanel`
+  - allow the archived project task area to rely on existing archived-project context instead of repeating archive/lifecycle labels
+  - preserve completed-task strikethrough as the lifecycle distinction
+  - keep any supporting test update narrow and local to this archived-project micro-fix
+- Out of scope:
+  - changes to ordinary active project archived sections
+  - broader `ProjectsPanel` redesign
+  - dashboard or notes-surface changes
+  - broader frontend test coverage buildout
+  - repo-native UI review repair
+  - backend/runtime semantics changes
+- Dependencies: `Completed Project Surface Display Semantics Cleanup plus the archived-preview noise reduction micro-fix already landed in this thread.`
+- Risk level: `low`
+- Readiness: `ready`
+- Start condition: `Satisfied on 2026-04-21 by explicit human instruction to run the same autonomous micro-fix flow again, this time narrowed specifically to archived-project preview noise.`
+- Closeout: `Completed on 2026-04-21. Archived-project task previews now hide the redundant archived subsection label and row-level lifecycle chip, while ordinary active-project archived sections remain unchanged and the established affordances stayed intact: completed strikethrough, archived-task non-interactivity, and archived-project narrow actions. Validation passed through frontend build.`
+
 ### `Archived Preview Metadata Noise Reduction`
 
 - Status: `completed`
@@ -73,33 +97,3 @@
 - Risk level: `medium`
 - Readiness: `almost-ready`
 - Start condition: `Use only if PMO judges that the narrower noise-reduction slice would be too small to solve the readability complaint.`
-
-### `Project Surface Display Semantics Cleanup`
-
-- Status: `completed`
-- Source reference: `state/discussions/discussion_batch_010.md`
-- Why now: `The archive/lifecycle model cleanup made task state semantics correct, but it also exposed that the current project surface still carries older display assumptions and now blurs `status` with `archived`, especially around archived-project task visibility. Human direction is to fix that surface semantics first before expanding frontend automated coverage.`
-- Expected outcome: `The project and archived-project surfaces will display the now-correct `status + archived` model clearly without broad UI churn. Archived tasks will move into an explicit secondary section, lifecycle differences will remain visible per task, and currently liked interaction constraints such as archived-task non-interactivity and archived-project narrow actions will be preserved. The result should remove mixed/blurry project-surface behavior and give later frontend testing a more stable target.`
-- In scope:
-  - clarify project-surface display semantics for tasks after `archived` was separated from lifecycle `status`
-  - ensure archived tasks on `Project` and `Archived Project` surfaces live in their own secondary archived section rather than disappearing or being merged back into the main active/completed groups
-  - keep archived-section tasks visually expressing lifecycle per item instead of splitting the archived section into separate `active` and `completed` subgroups
-  - preserve current liked UI affordances:
-    - completed tasks continue using strikethrough treatment
-    - archived tasks remain non-interactive by default, especially with respect to focus selection
-    - archived projects keep the narrow action set centered on `restore`, `delete`, and task expansion
-  - make archived-project task display explicitly show both dimensions at once:
-    - `completed + archived` keeps completed styling while remaining non-interactive
-    - `active + archived` remains non-interactive without inheriting completed styling
-- Out of scope:
-  - broader frontend test coverage buildout
-  - dashboard surface redesign
-  - notes-surface redesign
-  - repo-native UI review repair
-  - broad restyling or interaction redesign beyond the narrow project-surface semantics cleanup
-- Dependencies: `Completed archive/lifecycle model cleanup and the display-semantics judgments now captured in discussion_batch_010.`
-- Risk level: `medium`
-- Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-20 by explicit human selection; PMO activated current_sprint.md and execution_task.md for the narrow project-surface semantics slice while keeping the candidate visible during execution.`
-- Follow-on note: `A later frontend-testing slice should follow this cleanup rather than precede it, because panel behavior coverage will be more valuable once the project-surface state semantics are no longer mixed or blurry.`
-- Closeout: `Completed on 2026-04-20. The slice separated archived preview tasks into their own project-surface section, preserved lifecycle visibility per task item without splitting archived tasks into a second active/completed grouping, and kept the liked affordances intact: completed-task strikethrough, archived-task non-interactivity, and archived-project narrow actions. A narrow projectsPanel behavior test update was added, while broader frontend testing and repo-native UI review work remain deferred in discussion_batch_010.`

@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Archived Preview Metadata Noise Reduction`
+- Sprint: `Archived Project Preview Quieting`
 - Outcome: `completed and accepted for closeout`
-- Report surface: `docs/pmo/history/reports/archived-preview-metadata-noise-reduction.md`
+- Report surface: `docs/pmo/history/reports/archived-project-preview-quieting.md`
 
 ## Next Activation Rule
 

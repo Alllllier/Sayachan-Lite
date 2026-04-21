@@ -10,8 +10,8 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Archived Preview Metadata Noise Reduction`
-- Report outcome: `completed and archived to history/reports/archived-preview-metadata-noise-reduction.md`
+- Sprint: `Archived Project Preview Quieting`
+- Report outcome: `completed and archived to history/reports/archived-project-preview-quieting.md`
 - PMO read result: `accepted for closeout`
 
 ## Next Use

@@ -54,6 +54,15 @@
 
 - Auto-selection bypasses the normal human comparison step, so it should not become default behavior for ambiguous or high-risk work.
 - PMO state files can drift if the automation edits them aggressively without a narrow scope.
+- This run surfaced a concrete PMO hygiene failure:
+  - `docs/pmo/state/sprint_candidates.md` temporarily exceeded the `at most 3 entries` rule after the autonomous candidate generation and closeout flow.
+  - the issue was not caused by bad product judgment, but by missing procedural guardrails inside the automation itself.
+  - the automated flow generated and retained the new micro-fix candidate correctly, but it did not also enforce candidate-surface pruning as a required self-check before declaring the PMO state clean.
+  - in a human-gated flow, this kind of overflow is often caught during manual PMO review; in an autonomous flow, that safety net is weaker unless the hygiene check is made explicit.
+- The root cause of the candidate overflow was therefore:
+  - autonomous execution covered shaping, selection, execution, review, and closeout
+  - but it did **not yet treat candidate-cap maintenance as a mandatory exit criterion**
+  - so the automation completed the task-level work successfully while leaving a PMO-surface inconsistency behind
 - This run still depended on human-seeded product judgment from earlier discussions; it was not a context-free autonomous planner.
 - The validation remained narrow and did not include browser-level review, so this pattern should not be oversold as fully autonomous UI verification.
 
@@ -81,8 +90,13 @@
   - required must-preserve section in the execution handoff
   - mandatory PMO review before closeout
   - mandatory final assessment of whether the flow behaved well
+  - mandatory PMO hygiene self-checks before final success is declared, including:
+    - candidate surface stays within the 3-entry cap
+    - displaced completed candidates are archived if needed
+    - `current_sprint.md`, `execution_task.md`, and `execution_report.md` are all returned to a coherent idle/closed state
+    - any automation-generated report explicitly records whether PMO hygiene passed cleanly or needed manual repair
 
 ## Final Judgment
 
 - `Yes, conditionally.` This run suggests the automation pattern is viable enough to consider later PMO formalization.
-- `No, not yet as-is.` The pattern should be formalized only as a narrow optional mode with strong entry conditions, not as a general replacement for the normal human-gated PMO flow.
+- `No, not yet as-is.` The pattern should be formalized only as a narrow optional mode with strong entry conditions, explicit PMO hygiene exit checks, and a rule that success is not complete until candidate-surface and state-file consistency are restored.

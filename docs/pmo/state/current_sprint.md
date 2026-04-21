@@ -15,12 +15,12 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Archived Preview Metadata Noise Reduction`
+- Sprint: `Archived Project Preview Quieting`
 - Closeout date: `2026-04-21`
 - Delivery status: `completed`
 - Commit state: `not committed yet`
 - Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `The archived preview rows on ProjectsPanel are now quieter because the redundant per-row Archived chip was removed, while the archived section, completed strikethrough, archived-task non-interactivity, and archived-project narrow actions were preserved.`
+- Residual note: `Archived-project task previews are now quieter because the archived subsection label and lifecycle chip are hidden only in archived projects, while ordinary archived sections, completed strikethrough, archived-task non-interactivity, and archived-project narrow actions remain unchanged.`
 
 ## Next PMO Action
 

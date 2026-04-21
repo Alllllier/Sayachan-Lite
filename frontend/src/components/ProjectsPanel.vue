@@ -650,7 +650,7 @@ async function addBatchTasks(project) {
             </div>
 
             <div v-if="getArchivedPreviewTasks(project._id).length > 0" class="preview-task-section preview-task-section-archived">
-              <div class="preview-section-label">Archived</div>
+              <div v-if="!project.archived" class="preview-section-label">Archived</div>
               <div
                 v-for="task in getArchivedPreviewTasks(project._id)"
                 :key="task._id"
@@ -661,7 +661,7 @@ async function addBatchTasks(project) {
                 }"
               >
                 <span class="task-preview-text">{{ task.title }}</span>
-                <span class="task-preview-state-chip" :class="task.status === 'completed' ? 'state-completed' : 'state-active'">
+                <span v-if="!project.archived" class="task-preview-state-chip" :class="task.status === 'completed' ? 'state-completed' : 'state-active'">
                   {{ task.status === 'completed' ? 'Completed' : 'Active' }}
                 </span>
                 <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
