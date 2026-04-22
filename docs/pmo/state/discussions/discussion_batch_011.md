@@ -1,7 +1,7 @@
 # Discussion Batch `discussion_batch_011`
 
 - Topic: `Frontend style baseline refactor`
-- Last updated: `2026-04-21`
+- Last updated: `2026-04-22`
 - Status: `active`
 - Discussion mode: `follow-up`
 
@@ -419,18 +419,53 @@
   - medium
   - depends on `slice-001` landing first
 
-### `slice-003` `Interactive Controls Layer`
+### `slice-003` `Controls Core`
 
 - Goal:
-  - revisit the still-deferred interaction-layer primitives after the structure layer is stable
+  - formalize the primary interaction grammar that most directly shapes card-level actions and control hierarchy after the structure layer is stable
 - Expected future topics:
-  - `StatusToggle`
-  - button hierarchy
-  - action grouping and reveal patterns
-  - control-level visual states
+  - `button hierarchy`
+  - `StatusToggle` / segmented control
+  - `action grouping`
+  - core control-level visual states
 - Current maturity:
-  - lower
-  - intentionally deferred until after the structure-layer pass
+  - high
+  - now the most natural next slice after `slice-001` landed
+- Promotion direction:
+  - first pass promoted to `sprint_candidates.md` as:
+    - `Frontend Controls Core Baseline`
+  - current promoted scope is limited to:
+    - `button hierarchy`
+    - `segmented control`
+  - explicit follow-on still retained in discussion:
+    - `action grouping`
+  - first pass is now also landed and accepted on `2026-04-22`
+  - next likely move inside this slice family is:
+    - `action grouping`
+  - the action-grouping follow-on is now also promoted to `sprint_candidates.md` as:
+    - `Frontend Action Grouping Baseline`
+
+### `slice-004` `Secondary Controls And Reveal`
+
+- Goal:
+  - formalize the narrower but still shared secondary interaction primitives that control local entry points and progressive disclosure
+- Expected future topics:
+  - `icon button / menu trigger`
+  - `reveal pattern`
+- Current maturity:
+  - medium
+  - should follow once the core control grammar is stable
+
+### `slice-005` `Input State Cleanup`
+
+- Goal:
+  - normalize input and textarea state language after the higher-frequency action/control grammar is settled
+- Expected future topics:
+  - `input / textarea states`
+  - local form-state consistency across notes, projects, and task capture
+- Current maturity:
+  - medium-low
+  - safer after the control and reveal layers are more settled
 
 ## Coverage Check
 
@@ -439,6 +474,318 @@
   - first-round structural components
   - later interaction/control-layer refactor
   - later legacy cleanup after those first two passes
+
+- Human discussion has now explicitly confirmed that the intended first-pass interaction/control layer should include:
+  - `button hierarchy`
+  - `StatusToggle` / segmented control
+  - `action grouping`
+  - `icon button / menu trigger`
+  - `reveal pattern`
+  - `input / textarea states`
+
+- Current PMO judgment:
+  - these six areas do belong inside the project's interaction layer rather than being left as panel-local implementation drift
+  - they should now be treated as three separate discussion/execution slices rather than one undifferentiated controls bucket
+  - the intended sequencing is:
+    - `slice-003` `Controls Core`
+    - `slice-004` `Secondary Controls And Reveal`
+    - `slice-005` `Input State Cleanup`
+  - rationale:
+    - buttons, toggles, and action grouping already have the highest repetition and visual inconsistency cost
+    - icon/menu triggers are narrower but still shared enough to benefit from a dedicated pass
+    - reveal/input states matter, but they are more entangled with local workflows and are safer to pick up after the main control grammar is stable
+
+## Slice Notes
+
+### `slice-001` `Structure And Baseline First-Pass Adoption`
+
+- Status:
+  - landed
+- Purpose:
+  - first-pass adoption of:
+    - `Card`
+    - `SectionBlock`
+    - `DirectiveBlock`
+  - and first-pass adoption of the agreed visual baseline tokens
+- Landed baseline context:
+  - identity family:
+    - `冷灰茜`
+    - `#9B566C`
+  - narrow gold auxiliary accent:
+    - `spark`
+  - first-round neutral / surface / text baseline
+  - first-round typography / spacing / radius / border-shadow baseline
+- Landed structure context:
+  - `Card`
+    - quiet outer shell
+    - current working structure:
+      - `Header`
+      - `Meta`
+      - `Body`
+      - `Actions`
+  - `SectionBlock`
+    - quiet inset content container
+    - primarily for nested content partitioning rather than emphasis
+  - `DirectiveBlock`
+    - stronger guidance/foreground container
+    - should rely more on block presence / surface / shadow than legacy left-border emphasis
+- Key mapping judgments preserved from the discussion:
+  - `note-card` is the cleaner first-round `Card` reference
+  - `project-card` is a composite structure and should not be treated as a simple `Card` clone
+  - `project task list` may legitimately take:
+    - outer `DirectiveBlock`
+    - inner `SectionBlock`s
+- Adoption posture:
+  - first pass allowed local legacy where the new structure did not yet fit cleanly
+  - later slices are expected to absorb more of that legacy where appropriate
+
+### `slice-002` `Legacy Surface Cleanup Follow-Ons`
+
+- Status:
+  - pending follow-on
+- Role:
+  - absorb remaining surface-level legacy after the new baseline and controls grammar are more settled
+- Current intended targets:
+  - leftover legacy surface treatment that should be brought under the new baseline
+  - panel-local spacing / radius / shadow drift
+  - old nested block shapes that should really become:
+    - `SectionBlock`
+    - `DirectiveBlock`
+- Current sequencing judgment:
+  - this should remain later than the controls-layer work
+  - rationale:
+    - controls work will naturally consume some of the remaining legacy first
+
+### `slice-003` `Controls Core`
+
+- Status:
+  - first pass landed
+  - action-grouping follow-on landed
+- Scope:
+  - `button hierarchy`
+  - `StatusToggle` / segmented control
+  - core control-level visual states
+- Why this is the next natural slice:
+  - these are the highest-frequency interaction primitives
+  - they now sit on top of a more stable structure/baseline layer from `slice-001`
+  - they have the largest repetition cost and the strongest influence on overall UI consistency
+- Current discussion framing:
+  - buttons should be treated as a hierarchy, not a flat class set
+  - segmented/toggle patterns are repeated enough to deserve formal treatment
+  - action grouping remains important, but is now treated as a follow-on after the first core control pass
+  - current agreed first-pass button hierarchy is now:
+    - `Primary`
+    - `Secondary`
+    - `Ghost / Tertiary`
+    - `Danger`
+    - `AI / Intent`
+  - current PMO judgment on the extra AI layer:
+    - it should be treated as a distinct interaction-semantic layer rather than merely a recolored `Primary`
+    - rationale:
+      - current and future AI buttons are not just CRUD or local service triggers
+      - they increasingly represent a user handing intent or work-attention over to the AI core / Sayachan
+      - this makes them a different class of action rather than only a different color treatment
+  - current discussion has also clarified that `Secondary` should not be treated only as a visual layer:
+    - current stable `Secondary` examples are:
+      - `Edit`
+      - `Restore`
+      - `Cancel`
+    - `Archive` should remain under the broader secondary family for now, but specifically as a reversible state-transition action rather than a pure neutral secondary
+  - current object-state presentation judgment:
+    - for active notes/projects:
+      - secondary actions tend to collapse into an overflow/menu presentation
+    - for archived notes/projects:
+      - secondary actions more naturally surface directly as visible buttons
+      - especially:
+        - `Restore`
+        - `Delete`
+  - PMO current judgment:
+    - controls-layer work must therefore cover not only button visual hierarchy but also the presentation rule for when secondary actions are:
+      - directly surfaced
+      - placed into overflow
+  - current controls-layer adoption judgment:
+    - directly surfaced `Secondary` actions should be treated similarly to `Primary` in implementation posture:
+      - they should be brought under the formal controls baseline/token system rather than left as ad-hoc panel styling
+    - `Secondary` actions that live inside overflow should not be ignored as "just menu implementation details"
+      - if the current controls grammar is insufficient to describe their trigger/menu/item treatment, the controls layer should be allowed to expand to cover that gap
+  - shorthand PMO rule:
+    - direct `Secondary` should be tokenized
+    - overflow `Secondary` should be formalized by rule rather than left as drifting local implementation
+  - current `Ghost / Tertiary` judgment:
+    - its current cleanest sample is `展开 / 收起`
+    - this layer should be understood primarily as light reveal/view control rather than as a secondary business action
+    - current implementation already benefits from the shared button baseline
+    - but it still borrows `Secondary` styling rather than standing on a true ghost/tertiary control rule
+  - PMO current direction:
+    - later controls-core work should promote this reveal/toggle sample from "secondary-styled local button" into a true `Ghost / Tertiary` control treatment
+  - current `Danger` judgment:
+    - its cleanest current sample is `Delete`
+    - it already naturally appears in two presentation modes:
+      - directly surfaced on archived objects
+      - placed in overflow on active objects
+  - current `AI / Intent` judgment:
+    - its cleanest current samples are the note/project AI entry buttons
+    - this layer should be understood as intent delegation toward the AI core / Sayachan rather than as ordinary CRUD or local utility action
+    - first-round form should remain `icon-first`
+      - rationale:
+        - the current semantic load is still light enough that full textual explicitness is not required
+        - the current icon-first form already fits the intended "give the AI core a direction" behavior
+        - this is sufficient for the near-term product phase even if richer AI entry forms appear later
+  - current segmented-control direction:
+    - `page` and `mode` should remain distinct in interaction tone
+      - `page`
+        - lighter
+        - more like a view switch
+      - `mode`
+        - slightly stronger
+        - more like an input/control selector
+    - but several current differences should be treated as implementation noise rather than preserved design truth
+  - current PMO judgment on segmented-control differences that can be unified later:
+    - whether the outer shell must have a full border
+    - whether each segment must draw its own border
+    - exactly how edge radii are manually stitched
+    - local padding differences that are better handled by shared size rules
+  - current `inline` segmented-control judgment:
+    - it should remain the lightest of the three segmented-control tones
+    - it should read as a local filter rather than as a page switch or input-mode selector
+    - it should stay closely attached to the content block it filters
+  - current PMO preference:
+    - the existing `Active / Completed` task-preview control is a good reference for the future `inline` treatment
+    - `inline` should therefore not be forced to visually align toward `page` or `mode`
+    - instead, later controls work should place that lighter local-filter language inside the shared segmented-control shell and token system without losing the current good feel
+  - current token-layer judgment for segmented controls:
+    - the existing general-purpose spacing/radius/text tokens are useful as a baseline
+    - but segmented controls now justify a thin controls-specific token layer rather than continuing to borrow everything indirectly
+  - likely future thin token needs:
+    - `--control-segmented-padding-y`
+    - `--control-segmented-padding-x`
+    - `--control-segmented-gap`
+    - `--control-segmented-radius`
+  - PMO current judgment:
+    - this should stay a very thin control-specific layer
+    - enough to make segmented controls coherent without turning controls-core work into a large token explosion
+  - current action-grouping simplification judgment:
+    - first-round action grouping does not need many named row patterns
+    - current PMO preference is to reduce the grouping model to:
+      - `ActionRow`
+      - `ObjectActionArea`
+  - current distinction:
+    - `ActionRow`
+      - a very thin grouped-action container
+      - ordinary grouped actions such as:
+        - form submit
+        - edit save/cancel
+        - archived restore/delete
+      - first-round layout rules:
+        - right-aligned
+        - fixed gap
+        - do not over-specify button order yet
+        - `Danger` should simply appear as one of the actions in the row rather than forcing row-level special handling
+      - non-goal:
+        - do not make `ActionRow` responsible for the business semantics of each button
+    - `ObjectActionArea`
+      - object-level primary action entry that may open a local interaction mode and reveal subordinate controls/content
+  - current key reference for `ObjectActionArea`:
+    - `Add Task` on projects
+    - human discussion has clarified that the preferred behavior is not just the button's visual presence
+    - the key valued interaction is:
+      - resting state:
+        - `Add Task`
+      - activated state:
+        - the same position becomes `Cancel`
+        - `Single / Batch` and the task-capture UI appear below
+  - PMO current judgment:
+    - this "enter local object mode" behavior is worth preserving
+    - `Add Task` should therefore not be flattened into an ordinary action-row button example during controls-core refactor
+  - current sequencing refinement:
+    - first pass inside `slice-003` should focus on:
+      - `button hierarchy`
+      - `segmented control`
+    - later follow-on should revisit:
+      - `action grouping`
+  - rationale:
+    - button hierarchy and segmented controls already have enough stable shared structure to support a cleaner first execution slice
+    - action grouping still carries more object/workflow-specific interaction grammar, especially around `Add Task`, and is safer as the next follow-on after the control primitives settle
+  - landed first-pass outcome:
+    - Notes and Projects now share the first-pass button hierarchy baseline
+    - Notes and Projects now use the shared `SegmentedControl` shell across `page`, `mode`, and `inline` contexts now in scope
+    - review/polish corrections preserved the core judgments:
+      - `Primary` remained functional rather than identity-colored
+      - `AI / Intent` remained icon-first
+      - `page` active state became more explicit as a view switch
+      - the AI / Intent button baseline settled into a round, shadow-led pattern
+  - current promoted follow-on scope:
+    - `ActionRow`
+    - `ObjectActionArea`
+  - current promoted action-grouping judgments:
+    - `ActionRow`
+      - a very thin grouped-action container
+      - right-aligned
+      - fixed gap
+      - no premature enforcement of button order
+      - does not own business semantics for its actions
+    - `ObjectActionArea`
+      - object-level main action area
+      - first-round state model:
+        - `idle`
+        - `active`
+        - `pending`
+      - main interaction grammar:
+        - main button in resting state
+        - in-place replacement with `Cancel`
+        - directly attached revealed block below
+      - current additional AI-entry-state judgment:
+        - the current AI object-action entry already provides a good `idle` reference
+        - `active` should be made explicit rather than implied
+        - preferred first-round `active` form is a close/cancel icon button rather than text-only replacement
+        - use an SVG `x`/close icon rather than relying on a plain text label
+        - `pending` should be treated as a general optional in-progress state for object-level actions rather than as an AI-only special case
+        - the current AI implementation is only one concrete use of that broader state
+        - `pending` should remain visually continuous with `idle` instead of diverging into a much noisier alternate button form
+      - revealed block internals remain intentionally light-weight and may continue to rely on local implementation plus the current baseline
+  - landed action-grouping outcome:
+    - `ActionRow` now exists as a thin grouped-action container for ordinary grouped actions
+    - `ObjectActionArea` now exists as a first-pass object-level entry grammar with:
+      - `idle`
+      - `active`
+      - `pending`
+    - `Add Task` has been brought back toward the preferred in-place object-entry flow:
+      - resting main button
+      - in-place `Cancel`
+      - directly attached capture block below
+    - note/project AI action entries now share the same general object-action family:
+      - `idle` remains icon-first
+      - `active` uses a close/cancel SVG `x`
+      - `pending` remains in the same family rather than drifting into an unrelated button treatment
+    - post-review polish also aligned the remaining Dashboard `page` toggle with the shared segmented-control baseline and removed the redundant archived-note badge residue
+
+### `slice-004` `Secondary Controls And Reveal`
+
+- Status:
+  - deferred until after `slice-003`
+- Scope:
+  - `icon button / menu trigger`
+  - `reveal pattern`
+- Why separate from controls core:
+  - these are shared enough to deserve formalization
+  - but they are narrower and more local than the button/toggle/action grammar
+- Current discussion framing:
+  - local entry points such as pin/menu/spark-style icon triggers should converge later under a cleaner shared pattern
+  - reveal behavior should be treated as a reusable interaction language rather than one-off panel logic
+
+### `slice-005` `Input State Cleanup`
+
+- Status:
+  - deferred later
+- Scope:
+  - `input / textarea states`
+  - local form-state consistency across notes, projects, and task capture
+- Why later:
+  - still important
+  - but more entangled with local workflow specifics than the earlier controls grammar
+- Current discussion framing:
+  - this slice should normalize field state language after controls and reveal patterns are more settled
+  - it should not become a premature full form-system redesign
 
 - Important themes that are **not yet fully covered**, but should remain visible inside this discussion:
   - page / panel language
@@ -469,6 +816,20 @@
 - PMO review caught one execution-loop blocker before acceptance:
   - `frontend/src/style.css` still referenced removed legacy CSS variables after the initial token rewrite
   - the execution loop resolved that blocker by adding thin compatibility aliases rather than reopening the baseline direction
+- `slice-003` was first promoted to `sprint_candidates.md` as:
+  - `Frontend Controls Core Baseline`
+- It has now also been executed and accepted for closeout on `2026-04-22`.
+- Landed scope includes:
+  - first-pass button hierarchy baseline
+  - first-pass segmented-control baseline
+  - first-pass `ActionRow`
+  - first-pass `ObjectActionArea`
+- review/polish corrections preserved the most important controls/action-grouping judgments:
+  - `Primary` stayed functional rather than identity-colored
+  - `AI / Intent` stayed icon-first
+  - `page` segmented controls remained clearer as view switches
+  - `mode` controls were softened without losing their control-surface role
+  - AI object-action entries settled into a round, shadow-led idle/pending family with explicit close-state active treatment
 - keep this batch as the canonical discussion surface for:
   - the landed first-pass context
   - later controls-layer discussion

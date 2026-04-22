@@ -1,21 +1,15 @@
-# Execution Task Idle Template
+# Execution Task
 
 - Status: `idle`
-- Sprint: `idle`
-- Last updated: `2026-04-21`
+- Sprint: `none`
+- Last updated: `2026-04-22`
 
-## Current State
+## Mission
 
-There is no active execution handoff right now.
+Await the next human-selected sprint.
 
-This file should be overwritten only when a new sprint or micro-fix is explicitly activated and handed off into execution.
+## Notes
 
-## Last Closed Sprint
-
-- Sprint: `Frontend Structure And Baseline First-Pass Adoption`
-- Outcome: `completed`
-- Report surface: `docs/pmo/state/execution_report.md`
-
-## Next Activation Rule
-
-- wait for explicit human sprint selection or a clearly bounded micro-fix activation before writing a new active execution contract here
+- The previous execution task for `Frontend Action Grouping Baseline` has been closed out.
+- The archived execution report now lives in:
+  - `docs/pmo/history/reports/frontend-action-grouping-baseline.md`

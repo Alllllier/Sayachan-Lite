@@ -29,61 +29,6 @@
 
 ## Current Candidates
 
-### `Frontend Structure And Baseline First-Pass Adoption`
-
-- Status: `completed`
-- Source reference: `state/discussions/discussion_batch_011.md slice-001`
-- Why now: `The frontend style-baseline discussion has now converged enough that a first bounded adoption pass can land without waiting for the whole long-term UI program. The project already has a workable first-round visual baseline and three structural component candidates (`Card`, `SectionBlock`, `DirectiveBlock`), and the cleanest next step is to start using that language where it fits now rather than letting it remain only as discussion.`
-- Expected outcome: `The frontend gains a real first-pass structure layer and token-backed baseline through Card, SectionBlock, and DirectiveBlock, with the agreed first-round visual baseline wired into those structures. note-card should become the cleaner first reference surface, while project-card begins adopting the new shell/inner-block language without forcing total replacement or pretending every legacy seam can disappear in one pass.`
-- In scope:
-  - first-pass formalization/adoption of `Card`, `SectionBlock`, and `DirectiveBlock`
-  - first-pass adoption of the already-agreed baseline tokens for:
-    - identity
-    - neutral / surface / text
-    - typography
-    - spacing
-    - radius
-    - border / shadow
-  - use `note-card` as the cleaner first-round `Card` reference
-  - begin moving `project-card` toward the new shell + inner-block structure without forcing full purity in one sprint
-  - allow temporary local legacy implementation where the new structure does not yet fit cleanly
-- Out of scope:
-  - full dashboard AI workflow redesign
-  - full interaction/control layer redesign
-  - `StatusToggle` redesign
-  - total frontend UI unification in one pass
-  - exhaustive legacy cleanup
-  - icon/motion/system-wide shell-language completion
-- Dependencies: `discussion_batch_011's agreed first-round baseline decisions; existing landed project-surface semantics cleanup; willingness to tolerate local temporary legacy where the new model cannot yet fully absorb old structures`
-- Risk level: `medium`
-- Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-21 by explicit human promotion after discussion converged on a phased adoption model and confirmed that the first-pass slice should land both structure (`Card` / `SectionBlock` / `DirectiveBlock`) and already-agreed visual baseline tokens together.`
-- Closeout: `Completed on 2026-04-21. Landed first-pass Card, SectionBlock, and DirectiveBlock adoption across note/project surfaces plus the agreed first-round baseline tokens. PMO review caught one runtime-style blocker after initial delivery: removed legacy CSS variables were still referenced in style.css. That blocker was fixed in the execution loop by restoring thin compatibility aliases, after which frontend tests and build passed and the sprint was accepted for closeout.`
-
-### `Archived Project Preview Quieting`
-
-- Status: `completed`
-- Source reference: `state/discussions/discussion_batch_010.md; follow-up human direction in current thread`
-- Why now: `The first archived-preview noise reduction removed the redundant row-level Archived chip, but archived projects still repeat too much state information. In an archived project, the project-level state and archive cascade are already understood, so keeping both the archived subsection label and per-row lifecycle chip still reads as more metadata than the surface needs.`
-- Expected outcome: `Archived project previews become quieter and easier to scan by removing metadata that is already implied by the archived project context, while preserving the affordances that still matter: completed-task strikethrough, archived-task non-interactivity, and the archived project’s narrow action set.`
-- In scope:
-  - reduce metadata noise only inside `archived project` task previews on the `ProjectsPanel`
-  - allow the archived project task area to rely on existing archived-project context instead of repeating archive/lifecycle labels
-  - preserve completed-task strikethrough as the lifecycle distinction
-  - keep any supporting test update narrow and local to this archived-project micro-fix
-- Out of scope:
-  - changes to ordinary active project archived sections
-  - broader `ProjectsPanel` redesign
-  - dashboard or notes-surface changes
-  - broader frontend test coverage buildout
-  - repo-native UI review repair
-  - backend/runtime semantics changes
-- Dependencies: `Completed Project Surface Display Semantics Cleanup plus the archived-preview noise reduction micro-fix already landed in this thread.`
-- Risk level: `low`
-- Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-21 by explicit human instruction to run the same autonomous micro-fix flow again, this time narrowed specifically to archived-project preview noise.`
-- Closeout: `Completed on 2026-04-21. Archived-project task previews now hide the redundant archived subsection label and row-level lifecycle chip, while ordinary active-project archived sections remain unchanged and the established affordances stayed intact: completed strikethrough, archived-task non-interactivity, and archived-project narrow actions. Validation passed through frontend build.`
-
 ### `Archived Preview Metadata Noise Reduction`
 
 - Status: `completed`
@@ -108,3 +53,68 @@
 - Readiness: `ready`
 - Start condition: `Satisfied on 2026-04-21 by explicit human instruction to auto-generate candidates, auto-select the best micro-fix, execute it, review it, close it out, and commit without further human gating.`
 - Closeout: `Completed on 2026-04-21. The micro-fix removed the redundant per-row Archived chip from archived preview rows on ProjectsPanel while preserving the separate archived section, completed-task strikethrough, archived-task non-interactivity, and archived-project narrow actions. Narrow frontend validation passed through projectsPanel.behavior.test.js.`
+
+### `Frontend Controls Core Baseline`
+
+- Status: `completed`
+- Source reference: `state/discussions/discussion_batch_011.md slice-003 first pass`
+- Why now: `The structure/baseline first pass has already landed, so the next highest-value frontend consistency work is to formalize the core control grammar instead of leaving buttons and segmented controls as a mix of legacy styling and panel-local decisions. The current discussion has converged enough to support a bounded first pass focused only on button hierarchy and segmented controls, while intentionally deferring action-grouping follow-ons.`
+- Expected outcome: `The frontend gains a first real controls-core baseline covering button hierarchy and segmented controls. High-frequency controls across Notes, Projects, task preview, and task capture should stop drifting as local one-off implementations and begin using a shared hierarchy (`Primary`, `Secondary`, `Ghost / Tertiary`, `Danger`, `AI / Intent`) plus a shared segmented-control shell (`page`, `mode`, `inline`) backed by a thin controls-specific token layer where needed.`
+- In scope:
+  - formalize first-pass button hierarchy for:
+    - `Primary`
+    - `Secondary`
+    - `Ghost / Tertiary`
+    - `Danger`
+    - `AI / Intent`
+  - formalize first-pass segmented-control shell for:
+    - `page`
+    - `mode`
+    - `inline`
+  - add only the thin controls-specific token layer needed to support segmented controls cleanly
+  - first-pass adoption on current high-frequency surfaces where the new control grammar fits cleanly now
+  - preserve the current good `inline` task-preview filter feel while moving it into the shared segmented-control baseline
+- Out of scope:
+  - `ActionRow / ObjectActionArea` follow-on work
+  - full icon-button / menu-trigger systemization
+  - reveal-pattern systemization
+  - input / textarea state cleanup
+  - dashboard AI workflow redesign
+  - exhaustive frontend legacy cleanup
+- Dependencies: `discussion_batch_011 slice-003 controls-core judgments; landed structure/baseline first pass from slice-001; willingness to defer action-grouping refinement into the next follow-on instead of forcing it into this sprint`
+- Risk level: `medium`
+- Readiness: `ready`
+- Start condition: `Satisfied on 2026-04-22 by explicit human direction to split controls core into a narrower first pass and to promote that first pass once the expected outcome and scope boundary were clear.`
+- Closeout: `Completed on 2026-04-22. Landed the first-pass controls baseline for button hierarchy and segmented controls on Notes and Projects, then accepted several narrow review/polish corrections without widening scope: primary stayed functional-green rather than identity-colored, AI/Intent stayed icon-first, the page segmented-control active state was made clearer as a view switch, and the AI intent button baseline was settled into a round shadow-led pattern. Validation passed through frontend npm test and npm run build.`
+
+### `Frontend Action Grouping Baseline`
+
+- Status: `completed`
+- Source reference: `state/discussions/discussion_batch_011.md slice-003 action-grouping follow-on`
+- Why now: `The first-pass controls core baseline has already landed, so the next highest-value follow-on inside the same controls family is to formalize action grouping instead of leaving object-level action areas and ordinary action rows as panel-local interaction grammar. The discussion has now converged on a simple two-part model: a thin `ActionRow` and an object-focused `ObjectActionArea`.`
+- Expected outcome: `The frontend gains a first action-grouping baseline that distinguishes ordinary grouped actions from object-level action entry areas. `ActionRow` should become a thin, right-aligned grouped-action container, while `ObjectActionArea` should formalize the object-entry pattern around a main button, in-place `Cancel` replacement, optional pending state, and a directly attached revealed block.`
+- In scope:
+  - formalize first-pass `ActionRow` as a thin grouped-action container
+  - formalize first-pass `ObjectActionArea` with `idle / active / pending` state semantics
+  - preserve the preferred `Add Task` direction:
+    - main button in resting state
+    - in-place replacement with `Cancel`
+    - attached revealed mode/content block below
+  - bring current object-level AI action areas under the same general `ObjectActionArea` family where they fit
+  - make the AI object-action entry fully three-state:
+    - preserve the current good `idle` form
+    - add an explicit `active` close/cancel state using an SVG `x` icon
+    - keep `pending` visually continuous with `idle` rather than letting it drift into a very different button treatment
+  - allow the revealed lower block to continue relying on local implementation plus the existing baseline rather than forcing a heavy new inner component
+- Out of scope:
+  - redoing button hierarchy or segmented-control baseline
+  - full icon-button / menu-trigger systemization
+  - reveal-pattern formalization beyond the object-action-area cases already discussed here
+  - input / textarea state cleanup
+  - dashboard AI workflow redesign
+  - exhaustive panel-level action cleanup
+- Dependencies: `discussion_batch_011 action-grouping judgments; landed controls-core first pass; willingness to treat `ActionRow` as a thin container and `ObjectActionArea` as the richer object-level interaction grammar`
+- Risk level: `medium`
+- Readiness: `ready`
+- Start condition: `Satisfied on 2026-04-22 by explicit human direction to stop splitting this follow-on into extra slices and instead promote the full action-grouping pass as one bounded candidate.`
+- Closeout: `Completed on 2026-04-22. Landed a thin `ActionRow` and a first-pass `ObjectActionArea` grammar across current Notes/Projects action surfaces, including `Add Task` in-place cancel flow and AI object-action `idle / active / pending` states. Post-review polish also aligned Dashboard onto the shared page segmented control, removed the archived-note badge residue, and tightened AI/mode control visuals without widening back into broader controls or reveal work.`

@@ -59,6 +59,49 @@
   --shadow-directive: 0 0 10px rgba(52, 42, 46, 0.07);
 
   /* -----------------------------------------
+     Controls-Core Tokens
+     ----------------------------------------- */
+  --control-height-md: 36px;
+  --control-height-sm: 30px;
+  --control-radius: 10px;
+  --control-radius-pill: 9999px;
+  --control-padding-x: 14px;
+  --control-border-strong: #d8ccd1;
+
+  --button-secondary-surface: #f3ecef;
+  --button-secondary-surface-hover: #ece2e7;
+  --button-secondary-border: #dccfd5;
+  --button-secondary-text: var(--text-primary);
+
+  --button-ghost-surface-hover: #f1eaed;
+  --button-ghost-text: var(--text-secondary);
+
+  --button-danger-surface: #f9ecec;
+  --button-danger-surface-hover: #f3dddd;
+  --button-danger-border: #e7c4c4;
+  --button-danger-text: #9f4343;
+
+  --button-ai-surface: linear-gradient(135deg, #fff6dd 0%, #f7ecf2 100%);
+  --button-ai-surface-hover: linear-gradient(135deg, #ffefcb 0%, #f3e4ec 100%);
+  --button-ai-text: var(--text-emphasis);
+  --button-ai-shadow: 0 0 8px rgba(155, 86, 108, 0.14);
+  --button-ai-shadow-hover: 0 0 12px rgba(155, 86, 108, 0.2);
+
+  --segmented-shell-page: #f4edf0;
+  --segmented-page-active: var(--action-primary);
+  --segmented-page-active-hover: var(--action-primary-hover);
+  --segmented-page-active-text: var(--text-inverse);
+  --segmented-shell-mode: var(--surface-card);
+  --segmented-shell-shadow-mode: 0 0 5px rgba(52, 42, 46, 0.075);
+  --segmented-mode-active: var(--action-primary);
+  --segmented-mode-active-hover: var(--action-primary-hover);
+  --segmented-mode-active-text: var(--text-inverse);
+  --segmented-shell-inline: #f6f0f2;
+  --segmented-item-active: #fffdfd;
+  --segmented-item-text: var(--text-muted);
+  --segmented-item-text-strong: var(--text-primary);
+
+  /* -----------------------------------------
      Legacy Compatibility Tokens
      ----------------------------------------- */
   --surface-elevated: #f9f9f9;
@@ -133,117 +176,216 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 20px;
-  font-size: var(--font-size-base);
-  font-weight: 500;
+  gap: 8px;
+  min-height: var(--control-height-md);
+  padding: 8px var(--control-padding-x);
+  font-size: var(--font-size-button);
+  font-weight: var(--font-weight-semibold);
   font-family: inherit;
-  border: none;
-  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  border-radius: var(--control-radius);
   cursor: pointer;
-  transition: background-color 0.2s, opacity 0.15s;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.15s ease;
   text-decoration: none;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .btn:hover:not(:disabled) {
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .btn:disabled {
   background: var(--action-disabled);
+  border-color: transparent;
+  color: var(--text-inverse);
   cursor: not-allowed;
   opacity: 0.7;
+  box-shadow: none;
 }
 
-/* Primary Action */
 .btn-primary {
   background: var(--action-primary);
   color: var(--text-inverse);
+  box-shadow: 0 1px 2px rgba(52, 42, 46, 0.08);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--action-primary-hover);
+  box-shadow: 0 3px 10px rgba(66, 184, 131, 0.16);
 }
 
-/* Secondary Action - Soft indigo for edit actions */
 .btn-secondary {
-  background: var(--action-secondary);
-  color: var(--text-inverse);
-  border: none;
+  background: var(--button-secondary-surface);
+  color: var(--button-secondary-text);
+  border-color: var(--button-secondary-border);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--action-secondary-hover);
+  background: var(--button-secondary-surface-hover);
+  border-color: var(--control-border-strong);
 }
 
-/* Danger/Delete Action - Muted red background with white text */
+.btn-ghost {
+  background: transparent;
+  color: var(--button-ghost-text);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--button-ghost-surface-hover);
+  color: var(--text-primary);
+}
+
 .btn-danger {
-  background: var(--action-danger);
-  color: var(--text-inverse);
-  border: none;
+  background: var(--button-danger-surface);
+  color: var(--button-danger-text);
+  border-color: var(--button-danger-border);
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: var(--action-danger-hover);
+  background: var(--button-danger-surface-hover);
+  border-color: #dba9a9;
 }
 
-/* Archive Action - Neutral style, visually sibling to edit/delete */
 .btn-archive {
-  background: #8b9dc3;
-  color: var(--text-inverse);
-  border: none;
+  background: var(--button-secondary-surface);
+  color: var(--text-secondary);
+  border-color: var(--button-secondary-border);
 }
 
 .btn-archive:hover:not(:disabled) {
-  background: #7a8ab0;
+  background: var(--button-secondary-surface-hover);
 }
 
-/* AI Action */
 .btn-ai {
-  background: var(--action-ai);
-  color: var(--text-inverse);
+  background: var(--button-ai-surface);
+  color: var(--button-ai-text);
+  border-color: transparent;
+  box-shadow: var(--button-ai-shadow);
 }
 
 .btn-ai:hover:not(:disabled) {
-  background: var(--action-ai-hover);
+  background: var(--button-ai-surface-hover);
+  box-shadow: var(--button-ai-shadow-hover);
 }
 
-/* AI Icon Button - Small circular, auxiliary function indicator */
-.btn-ai-icon {
-  background: var(--surface-card);
-  color: var(--action-ai);
-  border: none;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  font-size: 13px;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  align-self: center;
-  transition: box-shadow 0.2s ease;
+.object-action-area--ai.is-pending .btn-ai {
+  background: var(--button-ai-surface);
+  color: var(--button-ai-text);
+  box-shadow: var(--button-ai-shadow);
 }
 
-.btn-ai-icon:hover:not(:disabled) {
-  background: rgba(218, 165, 32, 0.1);
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
-}
-
-.btn-ai-icon:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-ai-icon svg {
+.btn-icon-leading svg,
+.btn-ai svg {
   width: 14px;
   height: 14px;
   stroke: currentColor;
   stroke-width: 2;
   fill: none;
+}
+
+.btn-ai-icon {
+  width: var(--control-height-sm);
+  min-height: var(--control-height-sm);
+  min-width: var(--control-height-sm);
+  padding: 0;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.btn-overflow {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 8px;
+}
+
+.btn-overflow:hover:not(:disabled),
+.btn-overflow.active {
+  background: var(--button-secondary-surface);
+  border-color: var(--button-secondary-border);
+  color: var(--text-primary);
+}
+
+.btn-menu-item {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 38px;
+  padding: 10px 16px;
+  border-radius: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.btn-menu-item:hover:not(:disabled) {
+  background: var(--button-secondary-surface);
+}
+
+.btn-menu-item.btn-danger {
+  color: var(--button-danger-text);
+  background: transparent;
+  border-color: transparent;
+}
+
+.btn-menu-item.btn-danger:hover:not(:disabled) {
+  background: #fee9e9;
+}
+
+/* ============================================
+   Action Grouping
+   Phase 4: grouped actions and object-level action areas
+   ============================================ */
+
+.action-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.object-action-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.object-action-area__entry {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.object-action-area--primary .object-action-area__entry {
+  width: 100%;
+}
+
+.object-action-area--primary .object-action-area__button {
+  width: 100%;
+}
+
+.object-action-area__button {
+  flex-shrink: 0;
+}
+
+.object-action-area__panel {
+  width: 100%;
+}
+
+.object-action-area__pending {
+  display: inline-block;
+  line-height: 1;
+  animation: spin 1s linear infinite;
+}
+
+.object-action-area__close-icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
 }
 
 /* Loading animation for icon buttons */
@@ -259,6 +401,7 @@ body {
 
 /* Size variants */
 .btn-sm {
+  min-height: var(--control-height-sm);
   padding: 6px 12px;
   font-size: var(--font-size-sm);
 }
@@ -270,8 +413,108 @@ body {
 
 /* Compact button for tight spaces */
 .btn-compact {
-  padding: 8px 16px;
+  padding: 7px 12px;
   font-size: var(--font-size-md);
+}
+
+/* ============================================
+   Segmented Controls
+   Controls-core baseline: page / mode / inline
+   ============================================ */
+
+.segmented-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding: 3px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--control-radius-pill);
+}
+
+.segmented-control__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  color: var(--segmented-item-text);
+  border-radius: var(--control-radius-pill);
+  font-size: var(--font-size-chip);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.segmented-control__item:hover:not(:disabled):not(.is-active) {
+  color: var(--text-secondary);
+}
+
+.segmented-control__item.is-active {
+  background: var(--segmented-item-active);
+  color: var(--segmented-item-text-strong);
+  box-shadow: 0 1px 3px rgba(52, 42, 46, 0.12);
+}
+
+.segmented-control--page {
+  background: var(--segmented-shell-page);
+}
+
+.segmented-control--page .segmented-control__item {
+  min-height: 30px;
+  padding: 0 13px;
+  font-size: var(--font-size-sm);
+}
+
+.segmented-control--page .segmented-control__item.is-active {
+  background: var(--segmented-page-active);
+  color: var(--segmented-page-active-text);
+  box-shadow: 0 2px 8px rgba(66, 184, 131, 0.22);
+}
+
+.segmented-control--page .segmented-control__item.is-active:hover:not(:disabled) {
+  background: var(--segmented-page-active-hover);
+}
+
+.segmented-control--mode {
+  background: var(--segmented-shell-mode);
+  border-color: transparent;
+  box-shadow: var(--segmented-shell-shadow-mode);
+}
+
+.segmented-control--mode .segmented-control__item {
+  min-height: 30px;
+  padding: 0 14px;
+  font-size: var(--font-size-button);
+  font-weight: var(--font-weight-medium);
+}
+
+.segmented-control--mode .segmented-control__item.is-active {
+  background: var(--segmented-mode-active);
+  color: var(--segmented-mode-active-text);
+  box-shadow: 0 2px 8px rgba(66, 184, 131, 0.22);
+}
+
+.segmented-control--mode .segmented-control__item.is-active:hover:not(:disabled) {
+  background: var(--segmented-mode-active-hover);
+}
+
+.segmented-control--inline {
+  background: var(--segmented-shell-inline);
+  border-color: transparent;
+  padding: 2px;
+}
+
+.segmented-control--inline .segmented-control__item {
+  min-height: 26px;
+  padding: 0 10px;
+  font-size: var(--font-size-chip);
+}
+
+.segmented-control--inline .segmented-control__item.is-active {
+  box-shadow: 0 1px 2px rgba(52, 42, 46, 0.1);
 }
 
 /* ============================================

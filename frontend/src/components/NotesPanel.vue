@@ -8,8 +8,11 @@ import { renderMarkdown } from '../utils/markdown.js'
 import { saveTask } from '../services/taskService.js'
 import Card from './ui/Card.vue'
 import SectionBlock from './ui/SectionBlock.vue'
+import ActionRow from './ui/ActionRow.vue'
+import ObjectActionArea from './ui/ObjectActionArea.vue'
 import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
+import SegmentedControl from './ui/SegmentedControl.vue'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
@@ -36,6 +39,11 @@ const editEditorViews = reactive({})
 const toast = ref(null)
 const toastMessage = ref('')
 const toastType = ref('success') // success, error
+
+const archiveViewOptions = [
+  { value: 'active', label: 'Active' },
+  { value: 'archived', label: 'Archived' }
+]
 
 function showToast(message, type = 'success') {
   toastMessage.value = message
@@ -348,6 +356,17 @@ function closeAITasks(noteId) {
   delete aiTasksByNote[noteId]
 }
 
+function getNoteAIState(noteId) {
+  if (aiLoadingNotes.value.has(noteId)) return 'pending'
+  if (aiTasksByNote[noteId] && aiTasksByNote[noteId].length > 0) return 'active'
+  return 'idle'
+}
+
+function setArchiveView(view) {
+  showArchived.value = view === 'archived'
+  fetchNotes()
+}
+
 onMounted(() => {
   fetchNotes()
   nextTick(() => {
@@ -406,29 +425,26 @@ async function saveNoteTaskDraft(noteId, draft) {
     <h2>{{ editingId ? 'Edit Note' : 'New Note' }}</h2>
     <input v-model="form.title" placeholder="Title" class="input" />
     <div ref="newEditorRef" class="codemirror-editor"></div>
-    <div class="form-buttons">
+    <ActionRow class="form-buttons">
       <button @click="createNote" :disabled="loading || editingId" class="btn btn-primary">
         {{ loading ? 'Saving...' : 'Add Note' }}
       </button>
       <button v-if="editingId" @click="cancelEdit" :disabled="loading" class="btn btn-secondary cancel">
         Cancel
       </button>
-    </div>
+    </ActionRow>
   </div>
 
   <div class="notes-section">
     <div class="section-header">
       <h2>Notes ({{ notes.length }})</h2>
-      <div class="archive-toggle">
-        <button
-          @click="showArchived = false; fetchNotes()"
-          :class="['toggle-btn', { active: !showArchived }]"
-        >Active</button>
-        <button
-          @click="showArchived = true; fetchNotes()"
-          :class="['toggle-btn', { active: showArchived }]"
-        >Archived</button>
-      </div>
+      <SegmentedControl
+        :model-value="showArchived ? 'archived' : 'active'"
+        :options="archiveViewOptions"
+        variant="page"
+        aria-label="Notes archive view"
+        @update:model-value="setArchiveView"
+      />
     </div>
     <EmptyState v-if="notes.length === 0" :title="showArchived ? 'No archived notes' : 'No notes yet'" />
     <Card
@@ -440,7 +456,6 @@ async function saveNoteTaskDraft(noteId, draft) {
       <template #header>
         <div class="card-heading-row">
           <div class="card-heading-copy">
-            <div v-if="note.archived" class="archived-badge">Archived</div>
             <h3 class="card-title">{{ note.title }}</h3>
           </div>
           <button
@@ -475,51 +490,57 @@ async function saveNoteTaskDraft(noteId, draft) {
       </template>
 
       <template #actions v-if="editingId === note._id && !note.archived">
-        <div class="card-buttons edit-actions">
+        <ActionRow class="card-buttons edit-actions">
           <button @click="cancelEdit(note)" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
           <button @click="updateNote(note)" :disabled="loading" class="btn btn-primary">Save</button>
-        </div>
+        </ActionRow>
       </template>
 
       <template #actions v-else>
-        <div class="card-buttons">
-          <template v-if="note.archived">
-            <button @click="restoreNote(note)" class="btn btn-primary">Restore</button>
+        <template v-if="note.archived">
+          <ActionRow class="card-buttons">
+            <button @click="restoreNote(note)" class="btn btn-secondary">Restore</button>
             <button @click="deleteNote(note._id)" class="btn btn-danger delete">Delete</button>
+          </ActionRow>
+        </template>
+        <ObjectActionArea
+          v-else
+          class="note-ai-action"
+          variant="ai"
+          active-kind="icon"
+          :state="getNoteAIState(note._id)"
+          @activate="handleAIGenerateTasks(note)"
+          @cancel="closeAITasks(note._id)"
+        >
+          <template #idle-icon>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
           </template>
-          <template v-else>
-            <button @click.stop="handleAIGenerateTasks(note)" class="btn-ai-icon" :disabled="aiLoadingNotes.has(note._id)" title="Generate with AI">
-              <span v-if="aiLoadingNotes.has(note._id)" class="icon-loading">⋯</span>
-              <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-            </button>
+          <template #trailing>
             <div class="task-menu-container">
-              <button @click.stop="toggleNoteMenu(note._id)" class="task-menu-btn" :class="{ active: menuOpenNoteId === note._id }" title="Actions">
+              <button @click.stop="toggleNoteMenu(note._id)" class="btn btn-overflow task-menu-btn" :class="{ active: menuOpenNoteId === note._id }" title="Actions">
                 <svg class="menu-icon-svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/></svg>
               </button>
               <div v-if="menuOpenNoteId === note._id" class="task-menu-dropdown" @click.stop>
-                <button @click="startEditing(note)" class="menu-item">Edit</button>
-                <button @click="archiveNote(note)" class="menu-item">Archive</button>
-                <button @click="deleteNote(note._id)" class="menu-item delete">Delete</button>
+                <button @click="startEditing(note)" class="btn btn-menu-item btn-secondary menu-item">Edit</button>
+                <button @click="archiveNote(note)" class="btn btn-menu-item btn-archive menu-item">Archive</button>
+                <button @click="deleteNote(note._id)" class="btn btn-menu-item btn-danger menu-item delete">Delete</button>
               </div>
             </div>
           </template>
-        </div>
-        <SectionBlock v-if="!note.archived && aiTasksByNote[note._id] && aiTasksByNote[note._id].length > 0" class="note-ai-tasks">
-          <div class="ai-tasks-header">
-            <strong>AI Tasks ({{ aiTasksByNote[note._id].length }})</strong>
-            <div class="ai-tasks-actions">
-              <button @click="closeAITasks(note._id)" class="btn-ai-dismiss" title="Close">×</button>
+          <SectionBlock v-if="aiTasksByNote[note._id] && aiTasksByNote[note._id].length > 0" class="note-ai-tasks">
+            <div class="ai-tasks-header">
+              <strong>AI Tasks ({{ aiTasksByNote[note._id].length }})</strong>
             </div>
-          </div>
-          <div v-for="(draft, idx) in aiTasksByNote[note._id]" :key="idx" class="ai-task-item">
-            <div class="task-content">{{ draft }}</div>
-            <div class="task-actions">
-              <button @click="saveNoteTaskDraft(note._id, draft)" class="btn btn-secondary btn-sm" :disabled="savedTaskDrafts.has(draft)">
-                {{ savedTaskDrafts.has(draft) ? 'Saved' : 'Save as Task' }}
-              </button>
+            <div v-for="(draft, idx) in aiTasksByNote[note._id]" :key="idx" class="ai-task-item">
+              <div class="task-content">{{ draft }}</div>
+              <div class="task-actions">
+                <button @click="saveNoteTaskDraft(note._id, draft)" class="btn btn-secondary btn-sm" :disabled="savedTaskDrafts.has(draft)">
+                  {{ savedTaskDrafts.has(draft) ? 'Saved' : 'Save as Task' }}
+                </button>
+              </div>
             </div>
-          </div>
-        </SectionBlock>
+          </SectionBlock>
+        </ObjectActionArea>
       </template>
     </Card>
   </div>
@@ -553,34 +574,6 @@ async function saveNoteTaskDraft(noteId, draft) {
   margin-bottom: var(--space-md);
 }
 
-/* Archive Toggle - Uses semantic tokens */
-.archive-toggle {
-  display: flex;
-  gap: 0;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  border: 1px solid var(--border-default);
-}
-
-.toggle-btn {
-  padding: 6px 12px;
-  font-size: var(--font-size-sm);
-  border: none;
-  background: var(--surface-panel);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.toggle-btn:hover {
-  background: var(--surface-hover);
-}
-
-.toggle-btn.active {
-  background: var(--action-primary);
-  color: var(--text-inverse);
-}
-
 /* Archived Note Card Styles - Uses semantic tokens */
 .note-card {
   position: relative;
@@ -590,20 +583,6 @@ async function saveNoteTaskDraft(noteId, draft) {
   opacity: 0.75;
   background: var(--surface-panel);
   border-color: var(--border-default);
-}
-
-.archived-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: var(--text-muted);
-  color: var(--text-inverse);
-  padding: var(--space-xs) 10px;
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 /* Pin Icon Button - Top right, no border */
@@ -651,52 +630,13 @@ async function saveNoteTaskDraft(noteId, draft) {
 
 /* button.delete uses global .btn .btn-danger */
 
-.ai-tasks {
-  margin-top: 12px;
-  padding: 10px;
-  background: #f0e6ff;
-  border-radius: 4px;
-  font-size: 13px;
-  color: #6b3fa0;
-}
-
 .ai-tasks-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 8px;
-}
-
-.ai-tasks-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .save-success {
   color: #10b981;
   font-size: 11px;
-}
-
-.btn-ai-dismiss {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(107, 63, 160, 0.15);
-  color: #6b3fa0;
-  font-size: 14px;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  flex-shrink: 0;
-}
-
-.btn-ai-dismiss:hover {
-  background: rgba(107, 63, 160, 0.25);
 }
 
 /* AI Task Item - Vertical hierarchy (content first) */
@@ -749,26 +689,9 @@ async function saveNoteTaskDraft(noteId, draft) {
 }
 
 .task-menu-btn {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-  transition: background 0.15s;
-}
-
-.task-menu-btn:hover {
-  background: #f5f5f5;
-}
-
-.task-menu-btn.active {
-  background: #e5e5e5;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
 }
 
 .task-menu-dropdown {
@@ -785,27 +708,7 @@ async function saveNoteTaskDraft(noteId, draft) {
 }
 
 .menu-item {
-  width: 100%;
-  padding: 10px 16px;
-  background: white;
-  border: none;
-  text-align: left;
-  font-size: 13px;
-  color: #333;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.menu-item:hover {
-  background: #f5f5f5;
-}
-
-.menu-item.delete {
-  color: #dc2626;
-}
-
-.menu-item.delete:hover {
-  background: #fee2e2;
+  box-shadow: none;
 }
 
 .note-card {
@@ -841,6 +744,10 @@ async function saveNoteTaskDraft(noteId, draft) {
   gap: var(--space-sm);
 }
 
+.note-ai-action {
+  width: 100%;
+}
+
 .note-ai-tasks {
   margin-top: 0;
   background: color-mix(in srgb, var(--identity-primary-soft) 45%, var(--surface-card));
@@ -862,21 +769,6 @@ async function saveNoteTaskDraft(noteId, draft) {
 
 .note-ai-tasks .task-content {
   color: var(--text-secondary);
-}
-
-.note-ai-tasks .btn-ai-dismiss {
-  background: var(--accent-spark-soft);
-  color: var(--accent-spark);
-}
-
-.note-ai-tasks .btn-ai-dismiss:hover {
-  background: rgba(218, 165, 32, 0.22);
-}
-
-.archived-badge {
-  position: static;
-  align-self: flex-start;
-  background: var(--text-muted);
 }
 
 .pin-icon-btn {

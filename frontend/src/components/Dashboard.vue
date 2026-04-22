@@ -12,6 +12,7 @@ import {
 import { applyDashboardTaskUpdate, removeDashboardTask } from './dashboard.behavior.js'
 import { useCockpitSignals } from '../stores/cockpitSignals'
 import EmptyState from './ui/EmptyState.vue'
+import SegmentedControl from './ui/SegmentedControl.vue'
 import Toast from './ui/Toast.vue'
 
 const cockpitSignals = useCockpitSignals()
@@ -100,6 +101,10 @@ const isQuickAdding = ref(false)
 
 // P0-B: Archive visibility toggle
 const showArchived = ref(false)
+const archiveViewOptions = [
+  { value: 'active', label: 'Active' },
+  { value: 'archived', label: 'Archived' }
+]
 
 onMounted(() => fetchTasks(showArchived.value))
 
@@ -107,6 +112,10 @@ onMounted(() => fetchTasks(showArchived.value))
 watch(showArchived, (newValue) => {
   fetchTasks(newValue)
 })
+
+function setArchiveView(view) {
+  showArchived.value = view === 'archived'
+}
 
 async function handleQuickAddTask() {
   const title = quickAddInput.value.trim()
@@ -377,16 +386,13 @@ async function handleGenerateTaskDrafts() {
       <div class="zone-header">
         <h3 class="zone-title">Saved Tasks</h3>
         <div class="zone-controls">
-          <div class="archive-toggle">
-            <button
-              @click="showArchived = false"
-              :class="['toggle-btn', { active: !showArchived }]"
-            >Active</button>
-            <button
-              @click="showArchived = true"
-              :class="['toggle-btn', { active: showArchived }]"
-            >Archived</button>
-          </div>
+          <SegmentedControl
+            :model-value="showArchived ? 'archived' : 'active'"
+            :options="archiveViewOptions"
+            variant="page"
+            aria-label="Dashboard task archive view"
+            @update:model-value="setArchiveView"
+          />
         </div>
       </div>
       <div v-if="savedTasks.length > 0" class="saved-tasks-list" @click="closeTaskMenu">
@@ -745,34 +751,6 @@ async function handleGenerateTaskDrafts() {
 .task-action-success {
   color: #10b981;
   font-size: 12px;
-}
-
-/* P0-B: Archive toggle */
-.archive-toggle {
-  display: flex;
-  gap: 0;
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid #e0e0e0;
-}
-
-.toggle-btn {
-  padding: 6px 12px;
-  font-size: 12px;
-  border: none;
-  background: #f5f5f5;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.toggle-btn:hover {
-  background: #e8e8e8;
-}
-
-.toggle-btn.active {
-  background: #42b883;
-  color: white;
 }
 
 .saved-tasks-list {

@@ -1,0 +1,23 @@
+### `Archived Project Preview Quieting`
+
+- Status: `completed`
+- Source reference: `state/discussions/discussion_batch_010.md; follow-up human direction in current thread`
+- Why now: `The first archived-preview noise reduction removed the redundant row-level Archived chip, but archived projects still repeat too much state information. In an archived project, the project-level state and archive cascade are already understood, so keeping both the archived subsection label and per-row lifecycle chip still reads as more metadata than the surface needs.`
+- Expected outcome: `Archived project previews become quieter and easier to scan by removing metadata that is already implied by the archived project context, while preserving the affordances that still matter: completed-task strikethrough, archived-task non-interactivity, and the archived project’s narrow action set.`
+- In scope:
+  - reduce metadata noise only inside `archived project` task previews on the `ProjectsPanel`
+  - allow the archived project task area to rely on existing archived-project context instead of repeating archive/lifecycle labels
+  - preserve completed-task strikethrough as the lifecycle distinction
+  - keep any supporting test update narrow and local to this archived-project micro-fix
+- Out of scope:
+  - changes to ordinary active project archived sections
+  - broader `ProjectsPanel` redesign
+  - dashboard or notes-surface changes
+  - broader frontend test coverage buildout
+  - repo-native UI review repair
+  - backend/runtime semantics changes
+- Dependencies: `Completed Project Surface Display Semantics Cleanup plus the archived-preview noise reduction micro-fix already landed in this thread.`
+- Risk level: `low`
+- Readiness: `ready`
+- Start condition: `Satisfied on 2026-04-21 by explicit human instruction to run the same autonomous micro-fix flow again, this time narrowed specifically to archived-project preview noise.`
+- Closeout: `Completed on 2026-04-21. Archived-project task previews now hide the redundant archived subsection label and row-level lifecycle chip, while ordinary active-project archived sections remain unchanged and the established affordances stayed intact: completed strikethrough, archived-task non-interactivity, and archived-project narrow actions. Validation passed through frontend build.`

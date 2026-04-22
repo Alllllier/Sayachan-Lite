@@ -1,28 +1,19 @@
-# Current Sprint Idle Template
+# Current Sprint
 
-- Sprint: `idle`
+- Sprint: `none`
 - Status: `idle`
 - PMO owner: `Codex`
 - Architecture owner: `Human`
-- Execution owner: `execution worker`
-- Last updated: `2026-04-21`
+- Execution owner: `none`
+- Last updated: `2026-04-22`
 
 ## Current State
 
 - Type: `idle`
-- Goal: `No active sprint.`
+- Goal: `Await next human-selected sprint.`
 - Active handoff: `none`
 
-## Last Closed Sprint
+## PMO Notes
 
-- Sprint: `Frontend Structure And Baseline First-Pass Adoption`
-- Closeout date: `2026-04-21`
-- Delivery status: `completed`
-- Commit state: `not committed`
-- Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `The first-pass frontend structure layer landed with Card / SectionBlock / DirectiveBlock and first-round baseline tokens, while the style-baseline discussion now rolls forward into controls and later legacy cleanup rather than more shell-level first-pass adoption.`
-
-## Next PMO Action
-
-- keep `execution_task.md` in explicit idle state until a new sprint or micro-fix is activated
-- decide whether the next PMO move is a new discussion, a candidate activation, a micro-fix, or archive cleanup
+- The last completed sprint was `Frontend Action Grouping Baseline`.
+- Canonical discussion context remains in `docs/pmo/state/discussions/discussion_batch_011.md`.

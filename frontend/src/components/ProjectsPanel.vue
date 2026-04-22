@@ -11,8 +11,11 @@ import {
 import Card from './ui/Card.vue'
 import DirectiveBlock from './ui/DirectiveBlock.vue'
 import SectionBlock from './ui/SectionBlock.vue'
+import ActionRow from './ui/ActionRow.vue'
+import ObjectActionArea from './ui/ObjectActionArea.vue'
 import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
+import SegmentedControl from './ui/SegmentedControl.vue'
 
 const props = defineProps(['projects'])
 
@@ -48,6 +51,21 @@ const previewFilter = ref({}) // { [projectId]: 'active' | 'completed' }
 const toast = ref(null)
 const toastMessage = ref('')
 const toastType = ref('success') // success, error
+
+const archiveViewOptions = [
+  { value: 'active', label: 'Active' },
+  { value: 'archived', label: 'Archived' }
+]
+
+const previewFilterOptions = [
+  { value: 'active', label: 'Active' },
+  { value: 'completed', label: 'Completed' }
+]
+
+const taskCaptureModeOptions = [
+  { value: 'single', label: 'Single' },
+  { value: 'batch', label: 'Batch' }
+]
 
 // Focus Source Unification: task-only focus, no ephemeral suggestion state
 
@@ -306,6 +324,12 @@ function closeAISuggestions(projectId) {
   delete aiSuggestions.value[projectId]
 }
 
+function getProjectAIState(projectId) {
+  if (aiLoadingProjects.value.has(projectId)) return 'pending'
+  if (aiSuggestions.value[projectId] && aiSuggestions.value[projectId].length > 0) return 'active'
+  return 'idle'
+}
+
 async function fetchProjectTasksForCard(projectId) {
   loadingProjectTasks.value.add(projectId)
   try {
@@ -396,6 +420,11 @@ function getArchivedTasks(projectId) {
 
 function getPreviewFilter(projectId) {
   return previewFilter.value[projectId] || 'active'
+}
+
+function setProjectArchiveView(view) {
+  showArchived.value = view === 'archived'
+  fetchProjects()
 }
 
 function getPrimaryPreviewTasks(projectId) {
@@ -540,16 +569,13 @@ async function addBatchTasks(project) {
   <div class="projects-section">
     <div class="section-header">
       <h2>Projects ({{ projects.length }})</h2>
-      <div class="archive-toggle">
-        <button
-          @click="showArchived = false; fetchProjects()"
-          :class="['toggle-btn', { active: !showArchived }]"
-        >Active</button>
-        <button
-          @click="showArchived = true; fetchProjects()"
-          :class="['toggle-btn', { active: showArchived }]"
-        >Archived</button>
-      </div>
+      <SegmentedControl
+        :model-value="showArchived ? 'archived' : 'active'"
+        :options="archiveViewOptions"
+        variant="page"
+        aria-label="Projects archive view"
+        @update:model-value="setProjectArchiveView"
+      />
     </div>
     <EmptyState v-if="projects.length === 0" :title="showArchived ? 'No archived projects' : 'No projects yet'" />
     <Card
@@ -622,26 +648,18 @@ async function addBatchTasks(project) {
               <div class="tasks-preview-header">
                 <div class="preview-header-left">
                   <span class="tasks-preview-title">Tasks</span>
-                  <div v-if="!project.archived" class="preview-filter-switch">
-                    <button
-                      @click.stop="setPreviewFilter(project._id, 'active')"
-                      class="filter-btn"
-                      :class="{ active: getPreviewFilter(project._id) === 'active' }"
-                    >
-                      Active
-                    </button>
-                    <button
-                      @click.stop="setPreviewFilter(project._id, 'completed')"
-                      class="filter-btn"
-                      :class="{ active: getPreviewFilter(project._id) === 'completed' }"
-                    >
-                      Completed
-                    </button>
-                  </div>
+                  <SegmentedControl
+                    v-if="!project.archived"
+                    :model-value="getPreviewFilter(project._id)"
+                    :options="previewFilterOptions"
+                    variant="inline"
+                    aria-label="Task preview filter"
+                    @update:model-value="setPreviewFilter(project._id, $event)"
+                  />
                 </div>
                 <button
                   @click.stop="toggleProjectPreview(project._id)"
-                  class="btn btn-secondary btn-sm preview-toggle-btn"
+                  class="btn btn-ghost btn-sm preview-toggle-btn"
                 >
                   {{ expandedProjects.has(project._id) ? '收起' : '展开' }}
                 </button>
@@ -687,23 +705,37 @@ async function addBatchTasks(project) {
             </div>
           </DirectiveBlock>
 
-          <SectionBlock v-if="!project.archived && taskCaptureOpen.has(project._id)" class="task-capture-area">
-            <div class="capture-mode-switch">
-              <button
-                @click="setTaskCaptureMode(project._id, 'single')"
-                class="mode-btn"
-                :class="{ active: taskCaptureMode[project._id] === 'single' }"
-              >
-                Single
-              </button>
-              <button
-                @click="setTaskCaptureMode(project._id, 'batch')"
-                class="mode-btn"
-                :class="{ active: taskCaptureMode[project._id] === 'batch' }"
-              >
-                Batch
-              </button>
-            </div>
+        </div>
+      </template>
+
+      <template #actions v-if="editingProjectId === project._id && !project.archived">
+        <ActionRow class="card-buttons edit-actions">
+          <button @click="cancelEditProject(project)" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
+          <button @click="updateProject(project)" :disabled="loading" class="btn btn-primary">Save</button>
+        </ActionRow>
+      </template>
+
+      <template #actions v-else>
+        <ObjectActionArea
+          v-if="!project.archived"
+          class="main-actions"
+          variant="primary"
+          :state="taskCaptureOpen.has(project._id) ? 'active' : 'idle'"
+          idle-label="+ Add Task"
+          active-label="Cancel"
+          :button-class="'add-task-btn'"
+          @activate="openTaskCapture(project._id)"
+          @cancel="closeTaskCapture(project._id)"
+        >
+          <SectionBlock class="task-capture-area">
+            <SegmentedControl
+              class="capture-mode-switch"
+              :model-value="taskCaptureMode[project._id]"
+              :options="taskCaptureModeOptions"
+              variant="mode"
+              aria-label="Task capture mode"
+              @update:model-value="setTaskCaptureMode(project._id, $event)"
+            />
 
             <div v-if="taskCaptureMode[project._id] === 'single'" class="single-task-input">
               <input
@@ -735,73 +767,52 @@ async function addBatchTasks(project) {
               </div>
             </div>
           </SectionBlock>
-        </div>
-      </template>
+        </ObjectActionArea>
 
-      <template #actions v-if="editingProjectId === project._id && !project.archived">
-        <div class="card-buttons edit-actions">
-          <button @click="cancelEditProject(project)" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
-          <button @click="updateProject(project)" :disabled="loading" class="btn btn-primary">Save</button>
-        </div>
-      </template>
-
-      <template #actions v-else>
-        <div v-if="!project.archived" class="card-buttons main-actions">
-          <button
-            v-if="!taskCaptureOpen.has(project._id)"
-            @click="openTaskCapture(project._id)"
-            class="btn btn-primary add-task-btn"
-          >
-            + Add Task
-          </button>
-          <button
-            v-else
-            @click="closeTaskCapture(project._id)"
-            class="btn btn-secondary add-task-btn"
-          >
-            Cancel
-          </button>
-        </div>
-
-        <div class="card-buttons secondary-actions">
-          <template v-if="project.archived">
-            <button @click="restoreProject(project)" class="btn btn-primary secondary-btn">Restore</button>
+        <template v-if="project.archived">
+          <ActionRow class="card-buttons secondary-actions">
+            <button @click="restoreProject(project)" class="btn btn-secondary secondary-btn">Restore</button>
             <button @click="deleteProject(project._id)" class="btn btn-danger secondary-btn delete-btn">Delete</button>
+          </ActionRow>
+        </template>
+        <ObjectActionArea
+          v-else
+          class="project-ai-action secondary-actions"
+          variant="ai"
+          active-kind="icon"
+          :state="getProjectAIState(project._id)"
+          @activate="handleAISuggest(project)"
+          @cancel="closeAISuggestions(project._id)"
+        >
+          <template #idle-icon>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
           </template>
-          <template v-else>
-            <button @click.stop="handleAISuggest(project)" class="btn-ai-icon" :disabled="aiLoadingProjects.has(project._id)" title="Generate with AI">
-              <span v-if="aiLoadingProjects.has(project._id)" class="icon-loading">⋯</span>
-              <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-            </button>
+          <template #trailing>
             <div class="task-menu-container">
-              <button @click.stop="toggleProjectMenu(project._id)" class="task-menu-btn" :class="{ active: menuOpenProjectId === project._id }" title="Actions">
+              <button @click.stop="toggleProjectMenu(project._id)" class="btn btn-overflow task-menu-btn" :class="{ active: menuOpenProjectId === project._id }" title="Actions">
                 <svg class="menu-icon-svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/></svg>
               </button>
               <div v-if="menuOpenProjectId === project._id" class="task-menu-dropdown" @click.stop>
-                <button @click="startEditingProject(project)" class="menu-item">Edit</button>
-                <button @click="archiveProject(project)" class="menu-item">Archive</button>
-                <button @click="deleteProject(project._id)" class="menu-item delete">Delete</button>
+                <button @click="startEditingProject(project)" class="btn btn-menu-item btn-secondary menu-item">Edit</button>
+                <button @click="archiveProject(project)" class="btn btn-menu-item btn-archive menu-item">Archive</button>
+                <button @click="deleteProject(project._id)" class="btn btn-menu-item btn-danger menu-item delete">Delete</button>
               </div>
             </div>
           </template>
-        </div>
-
-        <SectionBlock v-if="!project.archived && aiSuggestions[project._id] && aiSuggestions[project._id].length > 0" class="ai-suggestions project-ai-suggestions">
-          <div class="ai-suggestions-header">
-            <strong>AI Suggestions ({{ aiSuggestions[project._id].length }})</strong>
-            <div class="ai-suggestions-actions">
-              <button @click="closeAISuggestions(project._id)" class="btn-ai-dismiss" title="Close">×</button>
+          <SectionBlock v-if="aiSuggestions[project._id] && aiSuggestions[project._id].length > 0" class="ai-suggestions project-ai-suggestions">
+            <div class="ai-suggestions-header">
+              <strong>AI Suggestions ({{ aiSuggestions[project._id].length }})</strong>
             </div>
-          </div>
-          <div v-for="(suggestion, idx) in aiSuggestions[project._id]" :key="idx" class="ai-suggestion-item">
-            <div class="suggestion-content">{{ suggestion }}</div>
-            <div class="suggestion-actions">
-              <button @click="saveSuggestionAsTask(project._id, suggestion)" class="btn btn-secondary btn-sm" :disabled="savedSuggestions.has(suggestion)">
-                {{ savedSuggestions.has(suggestion) ? 'Saved' : 'Save as Task' }}
-              </button>
+            <div v-for="(suggestion, idx) in aiSuggestions[project._id]" :key="idx" class="ai-suggestion-item">
+              <div class="suggestion-content">{{ suggestion }}</div>
+              <div class="suggestion-actions">
+                <button @click="saveSuggestionAsTask(project._id, suggestion)" class="btn btn-secondary btn-sm" :disabled="savedSuggestions.has(suggestion)">
+                  {{ savedSuggestions.has(suggestion) ? 'Saved' : 'Save as Task' }}
+                </button>
+              </div>
             </div>
-          </div>
-        </SectionBlock>
+          </SectionBlock>
+        </ObjectActionArea>
       </template>
     </Card>
   </div>
@@ -821,9 +832,9 @@ async function addBatchTasks(project) {
       <option value="completed">Completed</option>
       <option value="on_hold">On Hold</option>
     </select>
-    <div class="form-buttons">
+    <ActionRow class="form-buttons">
       <button @click="createProject" :disabled="loading" class="btn btn-primary">Add Project</button>
-    </div>
+    </ActionRow>
   </div>
 </template>
 
@@ -848,34 +859,6 @@ async function addBatchTasks(project) {
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--space-md);
-}
-
-/* Archive Toggle - Uses semantic tokens */
-.archive-toggle {
-  display: flex;
-  gap: 0;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  border: 1px solid var(--border-default);
-}
-
-.toggle-btn {
-  padding: 6px 12px;
-  font-size: var(--font-size-sm);
-  border: none;
-  background: var(--surface-panel);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.toggle-btn:hover {
-  background: var(--surface-hover);
-}
-
-.toggle-btn.active {
-  background: var(--action-primary);
-  color: var(--text-inverse);
 }
 
 /* Archived Project Card Styles - Uses semantic tokens */
@@ -1039,13 +1022,10 @@ async function addBatchTasks(project) {
 /* Polish-1: Compact button row layout */
 .main-actions {
   margin-top: 12px;
-  display: flex;
-  gap: 8px;
 }
 
 .secondary-actions {
   margin-top: 8px;
-  justify-content: flex-end;
 }
 
 /* .secondary-btn uses global .btn .btn-secondary .btn-compact baseline */
@@ -1074,52 +1054,13 @@ async function addBatchTasks(project) {
 
 /* button.cancel uses global .btn .btn-secondary */
 
-.ai-suggestions {
-  margin-top: 12px;
-  padding: 10px;
-  background: #f0e6ff;
-  border-radius: 4px;
-  font-size: 13px;
-  color: #6b3fa0;
-}
-
 .ai-suggestions-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 8px;
-}
-
-.ai-suggestions-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .save-success {
   color: #10b981;
   font-size: 11px;
-}
-
-.btn-ai-dismiss {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(107, 63, 160, 0.15);
-  color: #6b3fa0;
-  font-size: 14px;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  flex-shrink: 0;
-}
-
-.btn-ai-dismiss:hover {
-  background: rgba(107, 63, 160, 0.25);
 }
 
 /* AI Suggestion Item - Vertical hierarchy (content first) */
@@ -1358,47 +1299,7 @@ async function addBatchTasks(project) {
 }
 
 .capture-mode-switch {
-  display: flex;
-  gap: 0;
   margin-bottom: 8px;
-  align-items: center;
-}
-
-.mode-btn {
-  flex: 1;
-  padding: 8px 12px;
-  font-size: var(--font-size-button);
-  background: var(--surface-hover);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-default);
-  border-radius: 0;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.mode-btn:first-child {
-  border-radius: 4px 0 0 4px;
-  border-right: none;
-}
-
-.mode-btn:last-child {
-  border-radius: 0 4px 4px 0;
-  border-left: none;
-}
-
-.mode-btn:hover:not(:disabled):not(.active) {
-  background: var(--identity-primary-soft);
-}
-
-.mode-btn.active {
-  background: var(--identity-primary);
-  color: var(--text-inverse);
-  border-color: var(--identity-primary);
-}
-
-.mode-btn.active:first-child,
-.mode-btn.active:last-child {
-  border-color: #42b883;
 }
 
 /* Single Task Input */
@@ -1451,26 +1352,9 @@ async function addBatchTasks(project) {
 }
 
 .task-menu-btn {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-  transition: background 0.15s;
-}
-
-.task-menu-btn:hover {
-  background: #f5f5f5;
-}
-
-.task-menu-btn.active {
-  background: #e5e5e5;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
 }
 
 .task-menu-dropdown {
@@ -1487,67 +1371,13 @@ async function addBatchTasks(project) {
 }
 
 .menu-item {
-  width: 100%;
-  padding: 10px 16px;
-  background: white;
-  border: none;
-  text-align: left;
-  font-size: 13px;
-  color: #333;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.menu-item:hover {
-  background: #f5f5f5;
-}
-
-.menu-item.delete {
-  color: #dc2626;
-}
-
-.menu-item.delete:hover {
-  background: #fee2e2;
+  box-shadow: none;
 }
 
 /* Preview Toggle Button */
 .preview-toggle-btn {
   padding: 4px 10px;
   font-size: 11px;
-}
-
-/* Preview Filter Switch - Lightweight unified segmented control */
-.preview-filter-switch {
-  display: inline-flex;
-  gap: 0;
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  background: var(--surface-hover);
-  padding: 3px;
-}
-
-.filter-btn {
-  padding: 4px 10px;
-  font-size: var(--font-size-chip);
-  font-weight: var(--font-weight-medium);
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border-radius: var(--radius-full);
-  white-space: nowrap;
-  margin: 0 1px;
-}
-
-.filter-btn:hover:not(.active) {
-  color: var(--text-secondary);
-}
-
-.filter-btn.active {
-  background: var(--surface-card);
-  color: var(--text-primary);
-  box-shadow: 0 1px 3px rgba(52, 42, 46, 0.12);
 }
 
 /* Task Row Interactions */
@@ -1652,6 +1482,10 @@ async function addBatchTasks(project) {
   min-width: 72px;
 }
 
+.project-ai-action {
+  width: 100%;
+}
+
 .project-ai-suggestions {
   margin-top: 0;
   background: var(--identity-primary-soft);
@@ -1663,21 +1497,6 @@ async function addBatchTasks(project) {
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--space-xs);
-}
-
-.project-ai-suggestions .ai-suggestions-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-}
-
-.project-ai-suggestions .btn-ai-dismiss {
-  background: var(--accent-spark-soft);
-  color: var(--accent-spark);
-}
-
-.project-ai-suggestions .btn-ai-dismiss:hover {
-  background: rgba(218, 165, 32, 0.22);
 }
 
 .project-ai-suggestions .ai-suggestion-item {
