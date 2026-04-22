@@ -76,6 +76,15 @@
   --button-ghost-surface-hover: #f1eaed;
   --button-ghost-text: var(--text-secondary);
 
+  --panel-surface-icon-size: 28px;
+  --panel-surface-icon-radius: 8px;
+  --panel-surface-icon-foreground: var(--text-muted);
+  --panel-surface-icon-active-surface: var(--button-secondary-surface);
+  --panel-surface-icon-active-surface-hover: var(--button-secondary-surface);
+  --panel-surface-menu-offset: 4px;
+  --panel-surface-menu-min-width: 120px;
+  --panel-surface-menu-radius: 6px;
+
   --button-danger-surface: #f9ecec;
   --button-danger-surface-hover: #f3dddd;
   --button-danger-border: #e7c4c4;
@@ -293,20 +302,51 @@ body {
   flex-shrink: 0;
 }
 
+.panel-surface-icon-btn,
 .btn-overflow {
-  min-width: 32px;
-  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--panel-surface-icon-size);
+  height: var(--panel-surface-icon-size);
+  min-width: var(--panel-surface-icon-size);
+  min-height: var(--panel-surface-icon-size);
   padding: 0;
   background: transparent;
-  color: var(--text-muted);
-  border-radius: 8px;
+  color: var(--panel-surface-icon-foreground);
+  border: none;
+  border-radius: var(--panel-surface-icon-radius);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
 }
 
+.panel-surface-icon-btn:hover:not(:disabled),
+.panel-surface-icon-btn.is-active,
+.panel-surface-icon-btn.pinned,
 .btn-overflow:hover:not(:disabled),
 .btn-overflow.active {
-  background: var(--button-secondary-surface);
-  border-color: var(--button-secondary-border);
-  color: var(--text-primary);
+  background: var(--panel-surface-icon-active-surface-hover);
+  color: var(--action-primary);
+}
+
+.panel-surface-icon-btn svg,
+.btn-overflow svg {
+  width: 14px;
+  height: 14px;
+}
+
+.panel-surface-menu {
+  position: absolute;
+  top: calc(100% + var(--panel-surface-menu-offset));
+  right: 0;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--panel-surface-menu-radius);
+  box-shadow: var(--shadow-md);
+  min-width: var(--panel-surface-menu-min-width);
+  z-index: 10;
+  overflow: hidden;
 }
 
 .btn-menu-item {

@@ -10,6 +10,6 @@ Await the next human-selected sprint.
 
 ## Notes
 
-- The previous execution task for `Frontend Action Grouping Baseline` has been closed out.
+- The previous execution task for `Frontend Secondary Controls And Reveal Baseline` has been closed out.
 - The archived execution report now lives in:
-  - `docs/pmo/history/reports/frontend-action-grouping-baseline.md`
+  - `docs/pmo/history/reports/frontend-secondary-controls-and-reveal-baseline.md`

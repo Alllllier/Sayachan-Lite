@@ -411,12 +411,12 @@ async function handleGenerateTaskDrafts() {
             :title="getSourceTooltip(task)"
           >{{ getSourceLetter(task) }}</span>
           <div class="task-menu-container">
-            <button @click="toggleTaskMenu(task._id)" class="task-menu-btn" :class="{ active: taskMenuOpen === task._id }" @click.stop title="Actions">
+            <button @click="toggleTaskMenu(task._id)" class="btn btn-overflow task-menu-btn" :class="{ active: taskMenuOpen === task._id }" @click.stop title="Actions">
               <svg class="menu-icon-svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/></svg>
             </button>
-            <div v-if="taskMenuOpen === task._id" class="task-menu-dropdown" @click.stop>
-              <button @click="handleTaskArchive(task)" class="menu-item">{{ showArchived ? 'Restore' : 'Archive' }}</button>
-              <button @click="handleTaskDelete(task)" class="menu-item delete">Delete</button>
+            <div v-if="taskMenuOpen === task._id" class="task-menu-dropdown panel-surface-menu" @click.stop>
+              <button @click="handleTaskArchive(task)" class="btn btn-menu-item btn-archive menu-item">{{ showArchived ? 'Restore' : 'Archive' }}</button>
+              <button @click="handleTaskDelete(task)" class="btn btn-menu-item btn-danger menu-item delete">Delete</button>
             </div>
           </div>
         </div>
@@ -841,64 +841,12 @@ async function handleGenerateTaskDrafts() {
   margin-left: 4px;
 }
 
-.task-menu-btn {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-  transition: background 0.15s;
-}
-
-.task-menu-btn:hover {
-  background: #f5f5f5;
-}
-
-.task-menu-btn.active {
-  background: #e5e5e5;
-}
-
-.task-menu-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 120px;
-  z-index: 10;
-  overflow: hidden;
-}
-
 .menu-item {
-  width: 100%;
-  padding: 10px 16px;
-  background: white;
-  border: none;
-  text-align: left;
-  font-size: 13px;
-  color: #333;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.menu-item:hover {
-  background: #f5f5f5;
+  box-shadow: none;
 }
 
 .menu-item.delete {
-  color: #dc2626;
-}
-
-.menu-item.delete:hover {
-  background: #fee2e2;
+  font-weight: var(--font-weight-medium);
 }
 
 .empty-tasks {

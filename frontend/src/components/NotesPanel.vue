@@ -461,7 +461,7 @@ async function saveNoteTaskDraft(noteId, draft) {
           <button
             v-if="!note.archived"
             @click.stop="note.isPinned ? unpinNote(note) : pinNote(note)"
-            class="pin-icon-btn"
+            class="panel-surface-icon-btn pin-icon-btn"
             :class="{ pinned: note.isPinned }"
             :title="note.isPinned ? 'Unpin note' : 'Pin note'"
           >
@@ -520,7 +520,7 @@ async function saveNoteTaskDraft(noteId, draft) {
               <button @click.stop="toggleNoteMenu(note._id)" class="btn btn-overflow task-menu-btn" :class="{ active: menuOpenNoteId === note._id }" title="Actions">
                 <svg class="menu-icon-svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/></svg>
               </button>
-              <div v-if="menuOpenNoteId === note._id" class="task-menu-dropdown" @click.stop>
+              <div v-if="menuOpenNoteId === note._id" class="task-menu-dropdown panel-surface-menu" @click.stop>
                 <button @click="startEditing(note)" class="btn btn-menu-item btn-secondary menu-item">Edit</button>
                 <button @click="archiveNote(note)" class="btn btn-menu-item btn-archive menu-item">Archive</button>
                 <button @click="deleteNote(note._id)" class="btn btn-menu-item btn-danger menu-item delete">Delete</button>
@@ -583,35 +583,6 @@ async function saveNoteTaskDraft(noteId, draft) {
   opacity: 0.75;
   background: var(--surface-panel);
   border-color: var(--border-default);
-}
-
-/* Pin Icon Button - Top right, no border */
-.pin-icon-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  transition: all 0.15s;
-}
-
-.pin-icon-btn:hover {
-  color: var(--action-primary);
-  background: var(--surface-hover);
-}
-
-.pin-icon-btn.pinned {
-  color: var(--action-primary);
-  background: rgba(66, 184, 131, 0.1);
 }
 
 .form-buttons, .card-buttons {
@@ -686,25 +657,6 @@ async function saveNoteTaskDraft(noteId, draft) {
 .task-menu-container {
   position: relative;
   margin-left: 4px;
-}
-
-.task-menu-btn {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-}
-
-.task-menu-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 120px;
-  z-index: 10;
-  overflow: hidden;
 }
 
 .menu-item {

@@ -762,7 +762,7 @@
 ### `slice-004` `Secondary Controls And Reveal`
 
 - Status:
-  - deferred until after `slice-003`
+  - landed
 - Scope:
   - `icon button / menu trigger`
   - `reveal pattern`
@@ -772,6 +772,37 @@
 - Current discussion framing:
   - local entry points such as pin/menu/spark-style icon triggers should converge later under a cleaner shared pattern
   - reveal behavior should be treated as a reusable interaction language rather than one-off panel logic
+  - current rounded-square icon-button baseline judgment:
+    - `pin` is the strongest current reference sample and should be treated as the quality bar rather than as a control to redesign heavily
+    - ordinary panel-surface icon buttons should use:
+      - `28x28`
+      - `rounded-square`
+      - transparent default
+      - muted foreground
+      - shared active surface for hover/open/pinned-like states
+    - `menu trigger` should directly eat that same rounded-square baseline
+  - current shape split:
+    - `rounded-square`
+      - ordinary tool/menu controls
+    - `circle`
+      - special AI / Intent controls
+      - explicitly out of scope for this slice
+  - current scope judgment:
+    - `Notes / Projects` already function as the canonical shared panel-surface sample
+    - their menu-trigger stack is now mostly duplicated implementation rather than meaningfully different design
+    - `Dashboard` should be absorbed into that final shared scheme rather than treated as a competing reference sample
+  - current reveal-pattern judgment:
+    - only the ordinary attached panel-surface reveal pattern is in scope here
+    - this should follow the existing `Notes / Projects` attachment logic
+    - `ObjectActionArea` reveal and AI circle reveal remain out of scope
+  - current exclusion judgment:
+    - `ChatEntry` remains outside this slice because its current local control language is already working well and should not be disturbed here
+  - landed outcome:
+    - `rounded-square` secondary panel-surface controls now have a first shared baseline
+    - `pin` remained the reference sample rather than being made heavier
+    - `Notes / Projects` were fully treated as one canonical menu-trigger family rather than competing references
+    - `Dashboard` was absorbed into that same final trigger/dropdown/menu-item scheme
+    - `circle` AI / Intent controls and `ChatEntry` stayed explicitly out of scope
 
 ### `slice-005` `Input State Cleanup`
 
@@ -834,3 +865,14 @@
   - the landed first-pass context
   - later controls-layer discussion
   - later legacy follow-ons
+- `slice-004` has now also been promoted to `sprint_candidates.md` as:
+  - `Frontend Secondary Controls And Reveal Baseline`
+- current promoted scope is intentionally narrow:
+  - rounded-square icon-button/menu-trigger baseline
+  - ordinary attached panel-surface reveal pattern
+  - `Dashboard` absorption into the `Notes / Projects` standard
+  - explicit exclusions:
+    - AI circle controls
+    - `ChatEntry`
+    - broader object-action or input-state work
+- `slice-004` has now also been executed and accepted for closeout on `2026-04-22`.

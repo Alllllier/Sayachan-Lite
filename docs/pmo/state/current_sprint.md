@@ -15,5 +15,5 @@
 
 ## PMO Notes
 
-- The last completed sprint was `Frontend Action Grouping Baseline`.
+- The last completed sprint was `Frontend Secondary Controls And Reveal Baseline`.
 - Canonical discussion context remains in `docs/pmo/state/discussions/discussion_batch_011.md`.

@@ -179,3 +179,16 @@
 - Risks / unknowns: `If approached too broadly, this could sprawl into a repo-wide documentation rewrite instead of a focused worker-interface cleanup. It is also still unclear which procedures belong in durable skills versus baseline docs or operator guides.`
 - Suggested next action: `Later, run a bounded discussion that inventories scattered execution procedures, identifies the highest-value candidates for skill formalization, and defines how that work should align with broader worker/Claude decoupling.`
 - Reopen trigger: `A human explicitly wants to formalize execution procedures into skills, or worker/Claude decoupling becomes an active PMO topic.`
+
+### `Runtime State Template Activation For PMO Handoffs`
+
+- Type: `cleanup`
+- Source: `discussion`
+- Source reference: `Human discussion on 2026-04-22 during discussion_batch_011 follow-up`
+- Problem / Opportunity: `The `docs/pmo/state/templates/` layer currently exists mostly as a static reference surface, especially for idle resets, but it is not yet truly part of the active sprint-selection and handoff generation chain. As a result, real runtime files such as `current_sprint.md`, `execution_task.md`, and `execution_report.md` are still composed ad hoc from discussion context, which increases the chance that already-agreed state templates, must-preserve rules, or structured handoff slots are inconsistently carried into execution.`
+- Why now: `Recent real PMO usage exposed that even when discussion judgments are stable, the active handoff can still miss already-decided state templates because the runtime write path does not actually instantiate from the template layer. Recording this now preserves a concrete process-improvement target for the later PMO discussion/process optimization pass.`
+- Current status: `parked`
+- Dependencies: `A later PMO workflow discussion that covers discussion templates, archival mechanics, and the runtime handoff pipeline; likely adjacent to future work on improving PMO discussion/process structure overall.`
+- Risks / unknowns: `If solved too mechanically, this could produce rigid template-filling that loses useful judgment. If left unresolved, PMO will keep depending on live manual translation between discussion conclusions and active runtime state files, which increases drift risk. The right boundary between template-instantiated structure and PMO-authored contextual nuance is still open.`
+- Suggested next action: `Later, run a bounded PMO workflow discussion focused on upgrading `state/templates` from static reference material into a real handoff-generation skeleton for active runtime files, while preserving room for narrow contextual judgment.`
+- Reopen trigger: `A human explicitly wants to improve PMO discussion/process flow, or another active handoff reveals that agreed runtime-state structure was not actually carried through from the template layer.`

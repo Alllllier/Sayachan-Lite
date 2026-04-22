@@ -29,31 +29,6 @@
 
 ## Current Candidates
 
-### `Archived Preview Metadata Noise Reduction`
-
-- Status: `completed`
-- Source reference: `state/discussions/discussion_batch_010.md; human screenshot feedback in current thread`
-- Why now: `The last project-surface semantics cleanup clarified `status + archived`, but screenshot feedback now shows that archived preview rows still carry too much repeated metadata on mobile. The separate archived section is correct, but the combination of section label plus per-row lifecycle and archive markers is visually noisy enough to merit a bounded micro-fix.`
-- Expected outcome: `Archived project-task preview rows become quieter and easier to scan without losing the semantics just established. The archived section remains, archived tasks stay non-interactive, and completed-vs-active remains legible, but redundant metadata shouting is reduced.`
-- In scope:
-  - reduce redundant metadata noise inside archived preview rows on the `ProjectsPanel`
-  - preserve the separate archived section itself
-  - preserve archived-task non-interactivity
-  - preserve completed-task strikethrough treatment
-  - preserve archived-project narrow actions
-  - keep any supporting test update narrow and local to this UI noise fix
-- Out of scope:
-  - broader `ProjectsPanel` redesign
-  - dashboard or notes-surface changes
-  - broader frontend test coverage buildout
-  - repo-native UI review repair
-  - backend/runtime semantics changes
-- Dependencies: `Completed Project Surface Display Semantics Cleanup plus the screenshot-confirmed UI-noise issue surfaced in the current thread.`
-- Risk level: `low`
-- Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-21 by explicit human instruction to auto-generate candidates, auto-select the best micro-fix, execute it, review it, close it out, and commit without further human gating.`
-- Closeout: `Completed on 2026-04-21. The micro-fix removed the redundant per-row Archived chip from archived preview rows on ProjectsPanel while preserving the separate archived section, completed-task strikethrough, archived-task non-interactivity, and archived-project narrow actions. Narrow frontend validation passed through projectsPanel.behavior.test.js.`
-
 ### `Frontend Controls Core Baseline`
 
 - Status: `completed`
@@ -118,3 +93,38 @@
 - Readiness: `ready`
 - Start condition: `Satisfied on 2026-04-22 by explicit human direction to stop splitting this follow-on into extra slices and instead promote the full action-grouping pass as one bounded candidate.`
 - Closeout: `Completed on 2026-04-22. Landed a thin `ActionRow` and a first-pass `ObjectActionArea` grammar across current Notes/Projects action surfaces, including `Add Task` in-place cancel flow and AI object-action `idle / active / pending` states. Post-review polish also aligned Dashboard onto the shared page segmented control, removed the archived-note badge residue, and tightened AI/mode control visuals without widening back into broader controls or reveal work.`
+
+### `Frontend Secondary Controls And Reveal Baseline`
+
+- Status: `completed`
+- Source reference: `state/discussions/discussion_batch_011.md slice-004`
+- Why now: `The core controls grammar and action-grouping baseline have already landed, so the next frontend consistency gap is the narrower but still shared layer around icon buttons, overflow/menu triggers, and their attached reveal surfaces. Discussion has now converged on a bounded direction: `Notes / Projects` define the standard rounded-square panel-surface pattern, `Dashboard` should be absorbed into that final pattern, and AI circle controls remain intentionally out of scope for this pass.`
+- Expected outcome: `The frontend gains a first real baseline for secondary panel-surface controls and attached reveal surfaces. Ordinary tool-style icon buttons and menu triggers should stop drifting as panel-local implementations, `Notes / Projects` should define the shared rounded-square pattern, and `Dashboard` should adopt that same final menu-trigger grammar without reopening AI circle or ChatEntry control design.`
+- In scope:
+  - formalize the panel-surface `rounded-square` icon-button baseline
+  - keep `28x28` as the shared size for that baseline
+  - preserve the agreed shape split:
+    - `rounded-square` for ordinary tool/menu controls
+    - `circle` remains outside this slice
+  - absorb the agreed rounded-square state language into baseline tokens/rules:
+    - transparent default
+    - muted foreground
+    - shared active surface for hover/open/pinned-like states
+  - treat `pin` as the main rounded-square reference sample
+  - formalize `menu trigger` to eat the same rounded-square baseline
+  - treat `Notes / Projects` as the canonical shared panel-surface menu-trigger sample
+  - bring `Dashboard` menu trigger directly under that final shared scheme
+  - preserve current dropdown/menu-item behavior where it is already good enough
+  - keep reveal-pattern formalization limited to the ordinary attached panel-surface pattern already present in `Notes / Projects`
+- Out of scope:
+  - `circle` AI / Intent button redesign or AI reveal unification
+  - `ChatEntry` icon-button/menu-trigger changes
+  - broader `ObjectActionArea` or action-grouping redesign
+  - broader dashboard workflow redesign
+  - input / textarea states
+  - full legacy cleanup beyond this secondary-controls surface
+- Dependencies: `discussion_batch_011 slice-004 judgments; landed controls core and action-grouping baselines; willingness to treat `Notes / Projects` as the canonical menu-trigger sample and `Dashboard` as the legacy surface to absorb`
+- Risk level: `low`
+- Readiness: `ready`
+- Start condition: `Satisfied on 2026-04-22 by explicit human direction to promote the now-mature secondary-controls/reveal discussion into candidate status rather than continue deeper speculative discussion.`
+- Closeout: `Completed on 2026-04-22. Landed the first rounded-square panel-surface baseline for pin/menu triggers, unified the effective Notes/Projects menu-trigger family into shared baseline rules, and absorbed Dashboard into that same trigger/dropdown/menu-item scheme without reopening AI circle controls, ChatEntry, or broader workflow redesign. Validation passed through frontend npm test and npm run build.`

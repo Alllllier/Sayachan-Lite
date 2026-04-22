@@ -8,4 +8,4 @@
 
 - No active execution report is open.
 - The most recent archived report is:
-  - `docs/pmo/history/reports/frontend-action-grouping-baseline.md`
+  - `docs/pmo/history/reports/frontend-secondary-controls-and-reveal-baseline.md`
