@@ -89,15 +89,8 @@ function handleClick() {
         <template v-else-if="state === 'active'">
           <svg
             v-if="activeKind === 'icon'"
-            class="object-action-area__close-icon"
-            width="14"
-            height="14"
+            class="object-action-area__close-icon icon-stroke"
             viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
             aria-hidden="true"
           >
             <path d="M18 6 6 18" />

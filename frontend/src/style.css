@@ -293,6 +293,16 @@ body {
   fill: none;
 }
 
+.icon-stroke {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .btn-ai-icon {
   width: var(--control-height-sm);
   min-height: var(--control-height-sm);
