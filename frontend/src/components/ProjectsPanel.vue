@@ -42,6 +42,9 @@ const batchTaskInputs = ref({})
 const addingBatchTasks = ref(new Set())
 const projectTasks = ref({})
 const loadingProjectTasks = ref(new Set())
+const projectFormErrors = ref({ name: '', summary: '' })
+const editProjectErrors = ref({})
+const taskCaptureErrors = ref({})
 
 // Project task preview expansion and filter state
 const expandedProjects = ref(new Set())
@@ -121,6 +124,86 @@ function getCurrentFocusDisplay(project) {
 
 const emit = defineEmits(['refreshed'])
 
+function createEmptyProjectErrors() {
+  return { name: '', summary: '' }
+}
+
+function validateProjectFields(projectLike) {
+  const errors = createEmptyProjectErrors()
+  if (!projectLike.name?.trim()) {
+    errors.name = 'Enter a project name.'
+  }
+  if (!projectLike.summary?.trim()) {
+    errors.summary = 'Enter a short summary.'
+  }
+  return errors
+}
+
+function hasProjectErrors(errors) {
+  return Boolean(errors.name || errors.summary)
+}
+
+function ensureEditProjectErrorState(projectId) {
+  if (!editProjectErrors.value[projectId]) {
+    editProjectErrors.value[projectId] = createEmptyProjectErrors()
+  }
+  return editProjectErrors.value[projectId]
+}
+
+function updateProjectFieldError(target, field, value, projectId = null) {
+  const trimmed = value.trim()
+  if (target === 'new') {
+    if (field === 'name') {
+      projectFormErrors.value.name = trimmed ? '' : projectFormErrors.value.name
+    } else {
+      projectFormErrors.value.summary = trimmed ? '' : projectFormErrors.value.summary
+    }
+    return
+  }
+
+  const errors = ensureEditProjectErrorState(projectId)
+  if (field === 'name') {
+    errors.name = trimmed ? '' : errors.name
+  } else {
+    errors.summary = trimmed ? '' : errors.summary
+  }
+}
+
+function clearEditProjectErrors(projectId) {
+  delete editProjectErrors.value[projectId]
+}
+
+function createEmptyTaskCaptureError() {
+  return { single: '', batch: '' }
+}
+
+function ensureTaskCaptureErrorState(projectId) {
+  if (!taskCaptureErrors.value[projectId]) {
+    taskCaptureErrors.value[projectId] = createEmptyTaskCaptureError()
+  }
+  return taskCaptureErrors.value[projectId]
+}
+
+function setTaskCaptureError(projectId, mode, message) {
+  const errors = ensureTaskCaptureErrorState(projectId)
+  errors[mode] = message
+}
+
+function clearTaskCaptureError(projectId, mode = null) {
+  if (!taskCaptureErrors.value[projectId]) return
+  if (!mode) {
+    delete taskCaptureErrors.value[projectId]
+    return
+  }
+  taskCaptureErrors.value[projectId][mode] = ''
+}
+
+function handleTaskCaptureInput(projectId, mode, value) {
+  if (value.trim()) {
+    clearTaskCaptureError(projectId, mode)
+  }
+}
+
 async function fetchProjects() {
   loading.value = true
   try {
@@ -152,7 +235,9 @@ watch(() => props.projects, (newProjects) => {
 }, { deep: true })
 
 async function createProject() {
-  if (!projectForm.value.name.trim() || !projectForm.value.summary.trim()) return
+  const errors = validateProjectFields(projectForm.value)
+  projectFormErrors.value = errors
+  if (hasProjectErrors(errors)) return
   loading.value = true
   error.value = null
   try {
@@ -165,6 +250,7 @@ async function createProject() {
     const project = await response.json()
     projects.value.unshift(project)
     projectForm.value = { name: '', summary: '', status: 'pending' }
+    projectFormErrors.value = createEmptyProjectErrors()
     emit('refreshed', projects.value)
     showToast('Project created')
     // Initialize empty task list for new project
@@ -177,6 +263,9 @@ async function createProject() {
 }
 
 async function updateProject(project) {
+  const errors = validateProjectFields(project)
+  editProjectErrors.value[project._id] = errors
+  if (hasProjectErrors(errors)) return
   loading.value = true
   error.value = null
   try {
@@ -195,6 +284,7 @@ async function updateProject(project) {
       return new Date(b.updatedAt) - new Date(a.updatedAt)
     })
     editingProjectId.value = null
+    clearEditProjectErrors(project._id)
     emit('refreshed', projects.value)
     showToast('Project updated')
   } catch (e) {
@@ -286,6 +376,7 @@ async function unpinProject(project) {
 
 function startEditingProject(project) {
   editingProjectId.value = project._id
+  editProjectErrors.value[project._id] = createEmptyProjectErrors()
   // P0-Fix-1: Store original data for restore on cancel
   editingOriginalData.value[project._id] = {
     name: project.name,
@@ -315,6 +406,9 @@ function cancelEditProject(project) {
     project.status = editingOriginalData.value[project._id].status
     // Clean up stored original data
     delete editingOriginalData.value[project._id]
+  }
+  if (project?._id) {
+    clearEditProjectErrors(project._id)
   }
   editingProjectId.value = null
 }
@@ -468,6 +562,7 @@ function openTaskCapture(projectId) {
   taskCaptureMode.value[projectId] = 'single'
   manualTaskInputs.value[projectId] = ''
   manualTaskProjects.value.add(projectId)
+  taskCaptureErrors.value[projectId] = createEmptyTaskCaptureError()
 }
 
 function closeTaskCapture(projectId) {
@@ -476,10 +571,12 @@ function closeTaskCapture(projectId) {
   delete manualTaskInputs.value[projectId]
   delete batchTaskInputs.value[projectId]
   manualTaskProjects.value.delete(projectId)
+  clearTaskCaptureError(projectId)
 }
 
 function setTaskCaptureMode(projectId, mode) {
   taskCaptureMode.value[projectId] = mode
+  clearTaskCaptureError(projectId)
   if (mode === 'single') {
     manualTaskProjects.value.add(projectId)
     if (!manualTaskInputs.value[projectId]) {
@@ -496,7 +593,11 @@ function setTaskCaptureMode(projectId, mode) {
 
 async function addManualTask(project) {
   const taskTitle = manualTaskInputs.value[project._id]?.trim()
-  if (!taskTitle) return
+  if (!taskTitle) {
+    setTaskCaptureError(project._id, 'single', 'Enter a task title.')
+    return
+  }
+  clearTaskCaptureError(project._id, 'single')
 
   addingManualTasks.value.add(project._id)
   try {
@@ -524,7 +625,10 @@ async function addManualTask(project) {
 
 async function addBatchTasks(project) {
   const inputText = batchTaskInputs.value[project._id]?.trim()
-  if (!inputText) return
+  if (!inputText) {
+    setTaskCaptureError(project._id, 'batch', 'Enter at least one task title.')
+    return
+  }
 
   // Split by newlines and filter empty lines
   const taskTitles = inputText
@@ -532,7 +636,11 @@ async function addBatchTasks(project) {
     .map(line => line.trim())
     .filter(line => line.length > 0)
 
-  if (taskTitles.length === 0) return
+  if (taskTitles.length === 0) {
+    setTaskCaptureError(project._id, 'batch', 'Enter at least one task title.')
+    return
+  }
+  clearTaskCaptureError(project._id, 'batch')
 
   addingBatchTasks.value.add(project._id)
   try {
@@ -616,19 +724,43 @@ async function addBatchTasks(project) {
 
       <template #body>
         <div v-if="editingProjectId === project._id && !project.archived" class="project-edit-form">
-          <input v-model="project.name" placeholder="Project name" class="input" />
-          <textarea
-            v-model="project.summary"
-            placeholder="Summary"
-            rows="2"
-            class="textarea"
-          ></textarea>
-          <select v-model="project.status" class="input">
-            <option value="pending">Pending</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="on_hold">On Hold</option>
-          </select>
+          <div class="field-stack">
+            <input
+              v-model="project.name"
+              placeholder="Project name"
+              class="input"
+              :class="{ 'is-invalid': editProjectErrors[project._id]?.name }"
+              :disabled="loading"
+              :aria-invalid="Boolean(editProjectErrors[project._id]?.name)"
+              @input="updateProjectFieldError('edit', 'name', project.name, project._id)"
+            />
+            <p v-if="editProjectErrors[project._id]?.name" class="field-helper field-helper--error">
+              {{ editProjectErrors[project._id].name }}
+            </p>
+          </div>
+          <div class="field-stack">
+            <textarea
+              v-model="project.summary"
+              placeholder="Summary"
+              rows="2"
+              class="textarea"
+              :class="{ 'is-invalid': editProjectErrors[project._id]?.summary }"
+              :disabled="loading"
+              :aria-invalid="Boolean(editProjectErrors[project._id]?.summary)"
+              @input="updateProjectFieldError('edit', 'summary', project.summary, project._id)"
+            ></textarea>
+            <p v-if="editProjectErrors[project._id]?.summary" class="field-helper field-helper--error">
+              {{ editProjectErrors[project._id].summary }}
+            </p>
+          </div>
+          <div class="field-stack">
+            <select v-model="project.status" class="input" :disabled="loading">
+              <option value="pending">Pending</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="on_hold">On Hold</option>
+            </select>
+          </div>
         </div>
         <div v-else>
           <DirectiveBlock class="project-focus-directive">
@@ -738,13 +870,21 @@ async function addBatchTasks(project) {
             />
 
             <div v-if="taskCaptureMode[project._id] === 'single'" class="single-task-input">
-              <input
-                v-model="manualTaskInputs[project._id]"
-                placeholder="Task title..."
-                @keyup.enter="addManualTask(project)"
-                :disabled="addingManualTasks.has(project._id)"
-                class="input task-input"
-              />
+              <div class="field-stack">
+                <input
+                  v-model="manualTaskInputs[project._id]"
+                  placeholder="Task title..."
+                  @keyup.enter="addManualTask(project)"
+                  :disabled="addingManualTasks.has(project._id)"
+                  class="input task-input"
+                  :class="{ 'is-invalid': taskCaptureErrors[project._id]?.single }"
+                  :aria-invalid="Boolean(taskCaptureErrors[project._id]?.single)"
+                  @input="handleTaskCaptureInput(project._id, 'single', manualTaskInputs[project._id] || '')"
+                />
+                <p v-if="taskCaptureErrors[project._id]?.single" class="field-helper field-helper--error">
+                  {{ taskCaptureErrors[project._id].single }}
+                </p>
+              </div>
               <div class="manual-task-actions">
                 <button @click="addManualTask(project)" class="btn btn-primary btn-sm save-task-btn" :disabled="addingManualTasks.has(project._id)">
                   {{ addingManualTasks.has(project._id) ? 'Saving...' : 'Save' }}
@@ -753,13 +893,21 @@ async function addBatchTasks(project) {
             </div>
 
             <div v-if="taskCaptureMode[project._id] === 'batch'" class="batch-task-input">
-              <textarea
-                v-model="batchTaskInputs[project._id]"
-                placeholder="One task per line..."
-                :disabled="addingBatchTasks.has(project._id)"
-                class="textarea"
-                rows="3"
-              ></textarea>
+              <div class="field-stack">
+                <textarea
+                  v-model="batchTaskInputs[project._id]"
+                  placeholder="One task per line..."
+                  :disabled="addingBatchTasks.has(project._id)"
+                  class="textarea"
+                  :class="{ 'is-invalid': taskCaptureErrors[project._id]?.batch }"
+                  :aria-invalid="Boolean(taskCaptureErrors[project._id]?.batch)"
+                  rows="3"
+                  @input="handleTaskCaptureInput(project._id, 'batch', batchTaskInputs[project._id] || '')"
+                ></textarea>
+                <p v-if="taskCaptureErrors[project._id]?.batch" class="field-helper field-helper--error">
+                  {{ taskCaptureErrors[project._id].batch }}
+                </p>
+              </div>
               <div class="batch-task-actions">
                 <button @click="addBatchTasks(project)" class="btn btn-primary btn-sm save-task-btn" :disabled="addingBatchTasks.has(project._id)">
                   {{ addingBatchTasks.has(project._id) ? 'Saving...' : 'Save All' }}
@@ -819,19 +967,39 @@ async function addBatchTasks(project) {
 
   <div class="form-section project-form">
     <h2>New Project</h2>
-    <input v-model="projectForm.name" placeholder="Project name" class="input" />
-    <textarea
-      v-model="projectForm.summary"
-      placeholder="Summary"
-      rows="2"
-      class="textarea"
-    ></textarea>
-    <select v-model="projectForm.status" class="input">
-      <option value="pending">Pending</option>
-      <option value="in_progress">In Progress</option>
-      <option value="completed">Completed</option>
-      <option value="on_hold">On Hold</option>
-    </select>
+    <div class="field-stack">
+      <input
+        v-model="projectForm.name"
+        placeholder="Project name"
+        class="input"
+        :class="{ 'is-invalid': projectFormErrors.name }"
+        :disabled="loading"
+        :aria-invalid="Boolean(projectFormErrors.name)"
+        @input="updateProjectFieldError('new', 'name', projectForm.name)"
+      />
+      <p v-if="projectFormErrors.name" class="field-helper field-helper--error">{{ projectFormErrors.name }}</p>
+    </div>
+    <div class="field-stack">
+      <textarea
+        v-model="projectForm.summary"
+        placeholder="Summary"
+        rows="2"
+        class="textarea"
+        :class="{ 'is-invalid': projectFormErrors.summary }"
+        :disabled="loading"
+        :aria-invalid="Boolean(projectFormErrors.summary)"
+        @input="updateProjectFieldError('new', 'summary', projectForm.summary)"
+      ></textarea>
+      <p v-if="projectFormErrors.summary" class="field-helper field-helper--error">{{ projectFormErrors.summary }}</p>
+    </div>
+    <div class="field-stack">
+      <select v-model="projectForm.status" class="input" :disabled="loading">
+        <option value="pending">Pending</option>
+        <option value="in_progress">In Progress</option>
+        <option value="completed">Completed</option>
+        <option value="on_hold">On Hold</option>
+      </select>
+    </div>
     <ActionRow class="form-buttons">
       <button @click="createProject" :disabled="loading" class="btn btn-primary">Add Project</button>
     </ActionRow>
@@ -1231,19 +1399,7 @@ async function addBatchTasks(project) {
 }
 
 .task-input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 14px;
-}
-
-.task-input:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  margin-bottom: 0;
 }
 
 .manual-task-actions {
@@ -1288,13 +1444,7 @@ async function addBatchTasks(project) {
 }
 
 .batch-task-input textarea {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 14px;
+  margin-bottom: 0;
   resize: none;
   overflow-y: auto;
   min-height: 80px;

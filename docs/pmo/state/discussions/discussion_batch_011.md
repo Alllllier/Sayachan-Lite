@@ -807,7 +807,7 @@
 ### `slice-005` `Input State Cleanup`
 
 - Status:
-  - deferred later
+  - landed
 - Scope:
   - `input / textarea states`
   - local form-state consistency across notes, projects, and task capture
@@ -817,6 +817,65 @@
 - Current discussion framing:
   - this slice should normalize field state language after controls and reveal patterns are more settled
   - it should not become a premature full form-system redesign
+  - current input-state layering judgment:
+    - `default`
+      - already exists as a usable shared baseline across:
+        - `.input`
+        - `.textarea`
+        - `select.input`
+      - first-round work is mainly to formally recognize and preserve that baseline rather than redesign it
+    - `focus`
+      - already exists as a relatively mature baseline through:
+        - `border-focus`
+        - `shadow-focus`
+      - this should be treated as first-round baseline formalization rather than new design work
+    - `disabled`
+      - already exists and is good enough for first-round baseline formalization
+      - current PMO judgment:
+        - do not redesign it heavily
+        - simply make it an explicit part of the input baseline
+    - `error`
+      - the project already contains local submit-guard logic for invalid input:
+        - empty note title/content
+        - empty project name/summary
+        - empty task-capture values
+      - but that logic still behaves mostly as silent submit blocking rather than visible field invalid state
+      - first-round direction:
+        - convert those existing local guards into a light visible invalid-state pattern
+        - keep the expression restrained:
+          - thin error border
+          - light error focus
+          - small helper text below the field
+        - do not turn this into a heavy full-form validation framework
+        - do not treat all failures as field errors; first-round `error` only covers local input invalidity, not generic network/save failures
+    - `pending / submitting`
+      - current PMO judgment:
+        - first-round handling is already adequate through:
+          - disabling the relevant input area
+          - disabling the related action button
+        - do not add a new dedicated visual submitting state yet
+        - if future async duration becomes long enough to warrant stronger feedback, that can be discussed later
+    - `filled / editing-active`
+      - this state exists behaviorally in:
+        - note/project edit mode
+        - task-capture open state
+        - other object-level editing/capture contexts
+      - but current PMO judgment is:
+        - it should remain a region-level or object-level logical state
+        - it should not be forced into the first-round input visual baseline
+        - it mainly serves editing/submission flow logic rather than field skinning
+  - current promoted first-pass input surfaces:
+    - `New Note`
+    - `Edit Note`
+    - `New Project`
+    - `Edit Project`
+    - `task capture`
+  - current explicit exclusions:
+    - `Dashboard`
+    - `ChatEntry`
+    - full validation framework
+    - service/network failure mapped into field-level error
+    - forcing `filled / editing-active` into a field-level visual state
 
 - Important themes that are **not yet fully covered**, but should remain visible inside this discussion:
   - page / panel language
@@ -876,3 +935,24 @@
     - `ChatEntry`
     - broader object-action or input-state work
 - `slice-004` has now also been executed and accepted for closeout on `2026-04-22`.
+- `slice-005` was also promoted to `sprint_candidates.md` as:
+  - `Frontend Input State Cleanup`
+- `slice-005` has now also been executed and accepted for closeout on `2026-04-22`.
+- Landed scope includes:
+  - first-pass input-state baseline formalization across:
+    - `New Note`
+    - `Edit Note`
+    - `New Project`
+    - `Edit Project`
+    - `task capture`
+  - preservation and normalization of:
+    - `default`
+    - `focus`
+    - `disabled`
+  - restrained visible local invalid-state feedback replacing prior silent empty-submit guards where appropriate
+  - continued light `pending / submitting` behavior through input/button disabling rather than a heavier visual submitting skin
+- PMO closeout judgment:
+  - the sprint stayed inside the intended narrow scope
+  - `Dashboard`, `ChatEntry`, broader validation-system work, field-level treatment of service failures, and field-level `filled / editing-active` skinning all remained out of scope as intended
+  - an execution-loop process correction was required because the first worker return did not fully flow through the active `execution_task.md` -> `execution_report.md` contract
+  - after correction, the runtime PMO report surface was properly written and the sprint was accepted for closeout

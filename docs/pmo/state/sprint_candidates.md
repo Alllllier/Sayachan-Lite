@@ -29,39 +29,6 @@
 
 ## Current Candidates
 
-### `Frontend Controls Core Baseline`
-
-- Status: `completed`
-- Source reference: `state/discussions/discussion_batch_011.md slice-003 first pass`
-- Why now: `The structure/baseline first pass has already landed, so the next highest-value frontend consistency work is to formalize the core control grammar instead of leaving buttons and segmented controls as a mix of legacy styling and panel-local decisions. The current discussion has converged enough to support a bounded first pass focused only on button hierarchy and segmented controls, while intentionally deferring action-grouping follow-ons.`
-- Expected outcome: `The frontend gains a first real controls-core baseline covering button hierarchy and segmented controls. High-frequency controls across Notes, Projects, task preview, and task capture should stop drifting as local one-off implementations and begin using a shared hierarchy (`Primary`, `Secondary`, `Ghost / Tertiary`, `Danger`, `AI / Intent`) plus a shared segmented-control shell (`page`, `mode`, `inline`) backed by a thin controls-specific token layer where needed.`
-- In scope:
-  - formalize first-pass button hierarchy for:
-    - `Primary`
-    - `Secondary`
-    - `Ghost / Tertiary`
-    - `Danger`
-    - `AI / Intent`
-  - formalize first-pass segmented-control shell for:
-    - `page`
-    - `mode`
-    - `inline`
-  - add only the thin controls-specific token layer needed to support segmented controls cleanly
-  - first-pass adoption on current high-frequency surfaces where the new control grammar fits cleanly now
-  - preserve the current good `inline` task-preview filter feel while moving it into the shared segmented-control baseline
-- Out of scope:
-  - `ActionRow / ObjectActionArea` follow-on work
-  - full icon-button / menu-trigger systemization
-  - reveal-pattern systemization
-  - input / textarea state cleanup
-  - dashboard AI workflow redesign
-  - exhaustive frontend legacy cleanup
-- Dependencies: `discussion_batch_011 slice-003 controls-core judgments; landed structure/baseline first pass from slice-001; willingness to defer action-grouping refinement into the next follow-on instead of forcing it into this sprint`
-- Risk level: `medium`
-- Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-22 by explicit human direction to split controls core into a narrower first pass and to promote that first pass once the expected outcome and scope boundary were clear.`
-- Closeout: `Completed on 2026-04-22. Landed the first-pass controls baseline for button hierarchy and segmented controls on Notes and Projects, then accepted several narrow review/polish corrections without widening scope: primary stayed functional-green rather than identity-colored, AI/Intent stayed icon-first, the page segmented-control active state was made clearer as a view switch, and the AI intent button baseline was settled into a round shadow-led pattern. Validation passed through frontend npm test and npm run build.`
-
 ### `Frontend Action Grouping Baseline`
 
 - Status: `completed`
@@ -128,3 +95,39 @@
 - Readiness: `ready`
 - Start condition: `Satisfied on 2026-04-22 by explicit human direction to promote the now-mature secondary-controls/reveal discussion into candidate status rather than continue deeper speculative discussion.`
 - Closeout: `Completed on 2026-04-22. Landed the first rounded-square panel-surface baseline for pin/menu triggers, unified the effective Notes/Projects menu-trigger family into shared baseline rules, and absorbed Dashboard into that same trigger/dropdown/menu-item scheme without reopening AI circle controls, ChatEntry, or broader workflow redesign. Validation passed through frontend npm test and npm run build.`
+
+### `Frontend Input State Cleanup`
+
+- Status: `completed`
+- Source reference: `state/discussions/discussion_batch_011.md slice-005`
+- Why now: `The structure, controls, action grouping, and secondary-control baselines have all landed, so the next most natural frontend consistency pass is to clean up high-frequency input-state semantics instead of leaving them as a mix of inherited baseline, silent submit guards, and object-level editing logic. Discussion has now converged on a bounded first pass covering only the highest-frequency input surfaces.` 
+- Expected outcome: `The frontend gains a first real baseline for input and textarea states on the highest-frequency creation/edit surfaces. Existing `default / focus / disabled` behavior should be formalized as shared baseline, local silent submit guards should become a light visible invalid-state pattern, and current submitting behavior should be formalized through input/button disable rules without forcing a full validation framework or a new filled-state skin.`
+- In scope:
+  - formalize first-pass input-state baseline on:
+    - `New Note`
+    - `Edit Note`
+    - `New Project`
+    - `Edit Project`
+    - `task capture`
+  - explicitly retain and normalize:
+    - `default`
+    - `focus`
+    - `disabled`
+  - add a light input-invalid pattern for local input errors:
+    - thin error border
+    - light error focus
+    - small helper text below the invalid field
+  - convert existing silent local submit guards into visible local invalid-state behavior where it fits cleanly
+  - formalize current `pending / submitting` behavior through input/button disabling rather than introducing a new heavy visual submitting state
+- Out of scope:
+  - `Dashboard` input/workflow redesign
+  - `ChatEntry`
+  - full validation framework or multi-field validation system
+  - service/network failure mapping into field-level error states
+  - forcing `filled / editing-active` into a field-level visual state
+  - broader form-system redesign
+- Dependencies: `discussion_batch_011 slice-005 judgments; landed structure/control/action-grouping/secondary-control baselines; willingness to treat `filled / editing-active` as region-level logic rather than a new input skin`
+- Risk level: `low`
+- Readiness: `ready`
+- Start condition: `Satisfied on 2026-04-22 by explicit human direction to promote the now-bounded high-frequency input-state pass after clarifying both covered surfaces and excluded areas.`
+- Closeout: `Completed on 2026-04-22. Landed the first shared input-state cleanup across note/project creation and editing plus task capture, formalized default/focus/disabled behavior, upgraded current silent local invalid cases into restrained inline feedback, and kept submitting behavior intentionally light through disable rules rather than a heavier new form skin.`

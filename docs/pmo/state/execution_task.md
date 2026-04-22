@@ -1,15 +1,21 @@
-# Execution Task
+# Execution Task Idle Template
 
 - Status: `idle`
-- Sprint: `none`
+- Sprint: `idle`
 - Last updated: `2026-04-22`
 
-## Mission
+## Current State
 
-Await the next human-selected sprint.
+There is no active execution handoff right now.
 
-## Notes
+This file should be overwritten only when a new sprint or micro-fix is explicitly activated and handed off into execution.
 
-- The previous execution task for `Frontend Secondary Controls And Reveal Baseline` has been closed out.
-- The archived execution report now lives in:
-  - `docs/pmo/history/reports/frontend-secondary-controls-and-reveal-baseline.md`
+## Last Closed Sprint
+
+- Sprint: `Frontend Input State Cleanup`
+- Outcome: `completed`
+- Report surface: `docs/pmo/history/reports/frontend-input-state-cleanup.md`
+
+## Next Activation Rule
+
+- wait for explicit human sprint selection or a clearly bounded micro-fix activation before writing a new active execution contract here

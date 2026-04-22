@@ -26,6 +26,8 @@ const aiTasksByNote = reactive({})
 const aiLoadingNotes = ref(new Set())
 const savedTaskDrafts = ref(new Set())
 const menuOpenNoteId = ref(null)
+const newNoteErrors = ref({ title: '', content: '' })
+const editNoteErrors = ref({})
 
 // P0-Fix-1: Store original note data for cancel restore
 const editingOriginalData = ref({})
@@ -78,6 +80,53 @@ function clearDraft() {
   localStorage.removeItem('sayachan_note_drafts')
 }
 const emit = defineEmits(['refreshed'])
+
+function createEmptyNoteErrors() {
+  return { title: '', content: '' }
+}
+
+function validateNoteFields(noteLike) {
+  const errors = createEmptyNoteErrors()
+  if (!noteLike.title?.trim()) {
+    errors.title = 'Enter a note title.'
+  }
+  if (!noteLike.content?.trim()) {
+    errors.content = 'Enter note content.'
+  }
+  return errors
+}
+
+function hasNoteErrors(errors) {
+  return Boolean(errors.title || errors.content)
+}
+
+function updateNewNoteError(field, value) {
+  if (field === 'title') {
+    newNoteErrors.value.title = value.trim() ? '' : newNoteErrors.value.title
+    return
+  }
+  newNoteErrors.value.content = value.trim() ? '' : newNoteErrors.value.content
+}
+
+function ensureEditNoteErrorState(noteId) {
+  if (!editNoteErrors.value[noteId]) {
+    editNoteErrors.value[noteId] = createEmptyNoteErrors()
+  }
+  return editNoteErrors.value[noteId]
+}
+
+function updateEditNoteError(noteId, field, value) {
+  const errors = ensureEditNoteErrorState(noteId)
+  if (field === 'title') {
+    errors.title = value.trim() ? '' : errors.title
+    return
+  }
+  errors.content = value.trim() ? '' : errors.content
+}
+
+function clearEditNoteErrors(noteId) {
+  delete editNoteErrors.value[noteId]
+}
 
 // CodeMirror factory
 function createCodeMirror(parent, initialValue, onChange) {
@@ -137,7 +186,11 @@ function createCodeMirror(parent, initialValue, onChange) {
       }),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
-          onChange(update.state.doc.toString())
+          const value = update.state.doc.toString()
+          onChange(value)
+          if (parent === newEditorRef.value) {
+            updateNewNoteError('content', value)
+          }
         }
       })
     ],
@@ -153,6 +206,7 @@ function bindEditEditor(el, note) {
   }
   editEditorViews[note._id] = createCodeMirror(el, note.content || '', (val) => {
     note.content = val
+    updateEditNoteError(note._id, 'content', val)
   })
 }
 
@@ -173,7 +227,9 @@ async function fetchNotes() {
 }
 
 async function createNote() {
-  if (!form.value.title.trim() || !form.value.content.trim()) return
+  const errors = validateNoteFields(form.value)
+  newNoteErrors.value = errors
+  if (hasNoteErrors(errors)) return
   loading.value = true
   error.value = null
   try {
@@ -186,6 +242,7 @@ async function createNote() {
     const note = await response.json()
     notes.value.unshift(note)
     form.value = { title: '', content: '' }
+    newNoteErrors.value = createEmptyNoteErrors()
     if (newEditorView.value) {
       const doc = newEditorView.value.state.doc
       newEditorView.value.dispatch({
@@ -205,6 +262,9 @@ async function createNote() {
 }
 
 async function updateNote(note) {
+  const errors = validateNoteFields(note)
+  editNoteErrors.value[note._id] = errors
+  if (hasNoteErrors(errors)) return
   loading.value = true
   error.value = null
   try {
@@ -226,6 +286,7 @@ async function updateNote(note) {
       editEditorViews[note._id].destroy()
       delete editEditorViews[note._id]
     }
+    clearEditNoteErrors(note._id)
     editingId.value = null
     emit('refreshed', notes.value)
     showToast('Note updated')
@@ -329,6 +390,7 @@ function startEditing(note) {
     }
   }
   editingId.value = note._id
+  editNoteErrors.value[note._id] = createEmptyNoteErrors()
   // P0-Fix-1: Store original data for restore on cancel
   editingOriginalData.value[note._id] = {
     title: note.title,
@@ -337,6 +399,9 @@ function startEditing(note) {
 }
 
 function cancelEdit(note) {
+  if (!note && editingId.value) {
+    note = notes.value.find(n => n._id === editingId.value)
+  }
   // P0-Fix-1: Restore original data before closing edit mode
   if (note && editingOriginalData.value[note._id]) {
     note.title = editingOriginalData.value[note._id].title
@@ -347,6 +412,9 @@ function cancelEdit(note) {
   if (note && editEditorViews[note._id]) {
     editEditorViews[note._id].destroy()
     delete editEditorViews[note._id]
+  }
+  if (note?._id) {
+    clearEditNoteErrors(note._id)
   }
   editingId.value = null
 }
@@ -423,8 +491,29 @@ async function saveNoteTaskDraft(noteId, draft) {
 
   <div class="form-section">
     <h2>{{ editingId ? 'Edit Note' : 'New Note' }}</h2>
-    <input v-model="form.title" placeholder="Title" class="input" />
-    <div ref="newEditorRef" class="codemirror-editor"></div>
+    <div class="field-stack">
+      <input
+        v-model="form.title"
+        placeholder="Title"
+        class="input"
+        :class="{ 'is-invalid': newNoteErrors.title }"
+        :disabled="loading"
+        :aria-invalid="Boolean(newNoteErrors.title)"
+        @input="updateNewNoteError('title', form.title)"
+      />
+      <p v-if="newNoteErrors.title" class="field-helper field-helper--error">{{ newNoteErrors.title }}</p>
+    </div>
+    <div class="field-stack">
+      <div
+        ref="newEditorRef"
+        class="codemirror-editor"
+        :class="{
+          'is-invalid': newNoteErrors.content,
+          'is-disabled': loading
+        }"
+      ></div>
+      <p v-if="newNoteErrors.content" class="field-helper field-helper--error">{{ newNoteErrors.content }}</p>
+    </div>
     <ActionRow class="form-buttons">
       <button @click="createNote" :disabled="loading || editingId" class="btn btn-primary">
         {{ loading ? 'Saving...' : 'Add Note' }}
@@ -481,8 +570,33 @@ async function saveNoteTaskDraft(noteId, draft) {
 
       <template #body>
         <div v-if="editingId === note._id && !note.archived" class="note-edit-form">
-          <input v-model="note.title" placeholder="Title" class="input" />
-          <div :ref="el => bindEditEditor(el, note)" class="codemirror-editor"></div>
+          <div class="field-stack">
+            <input
+              v-model="note.title"
+              placeholder="Title"
+              class="input"
+              :class="{ 'is-invalid': editNoteErrors[note._id]?.title }"
+              :disabled="loading"
+              :aria-invalid="Boolean(editNoteErrors[note._id]?.title)"
+              @input="updateEditNoteError(note._id, 'title', note.title)"
+            />
+            <p v-if="editNoteErrors[note._id]?.title" class="field-helper field-helper--error">
+              {{ editNoteErrors[note._id].title }}
+            </p>
+          </div>
+          <div class="field-stack">
+            <div
+              :ref="el => bindEditEditor(el, note)"
+              class="codemirror-editor"
+              :class="{
+                'is-invalid': editNoteErrors[note._id]?.content,
+                'is-disabled': loading
+              }"
+            ></div>
+            <p v-if="editNoteErrors[note._id]?.content" class="field-helper field-helper--error">
+              {{ editNoteErrors[note._id].content }}
+            </p>
+          </div>
         </div>
         <div v-else>
           <div class="card-content markdown-body" v-html="renderMarkdown(note.content)"></div>
@@ -557,7 +671,7 @@ async function saveNoteTaskDraft(noteId, draft) {
 
 /* Editor container spacing */
 .codemirror-editor {
-  margin-bottom: var(--space-md);
+  margin-bottom: 0;
 }
 
 .form-section h2, .notes-section h2 {

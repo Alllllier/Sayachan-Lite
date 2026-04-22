@@ -1,19 +1,28 @@
-# Current Sprint
+# Current Sprint Idle Template
 
-- Sprint: `none`
+- Sprint: `idle`
 - Status: `idle`
 - PMO owner: `Codex`
 - Architecture owner: `Human`
-- Execution owner: `none`
+- Execution owner: `execution worker`
 - Last updated: `2026-04-22`
 
 ## Current State
 
 - Type: `idle`
-- Goal: `Await next human-selected sprint.`
+- Goal: `No active sprint.`
 - Active handoff: `none`
 
-## PMO Notes
+## Last Closed Sprint
 
-- The last completed sprint was `Frontend Secondary Controls And Reveal Baseline`.
-- Canonical discussion context remains in `docs/pmo/state/discussions/discussion_batch_011.md`.
+- Sprint: `Frontend Input State Cleanup`
+- Closeout date: `2026-04-22`
+- Delivery status: `completed`
+- Commit state: `not yet committed`
+- Documentation sync outcome: `report archived; candidate/discussion/state surfaces updated`
+- Residual note: `Implementation changes remain in the worktree and still need a normal git commit/push after closeout.`
+
+## Next PMO Action
+
+- keep `execution_task.md` in explicit idle state until a new sprint or micro-fix is activated
+- decide whether the next PMO move is a new discussion, a candidate activation, a micro-fix, or archive cleanup
