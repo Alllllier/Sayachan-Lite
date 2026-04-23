@@ -102,7 +102,7 @@
 
 ### `Frontend Display-List Baseline Pass 1: Projects Task Preview`
 
-- Status: `active`
+- Status: `completed`
 - Source reference: `state/discussions/discussion_batch_012.md slice-001 first-pass rollout pass-1`
 - Why now: `The display-list discussion has now converged enough that the cleanest first implementation slice is no longer speculative. Projects task preview is the strongest near-match to the new list frame, already demonstrates list-level expand plus grouped preview sections, and is the safest place to test whether the emerging list grammar can become real shared structure without dragging in the harder Dashboard saved-task redesign too early.`
 - Expected outcome: `The frontend gains the first real implementation pass of the shared display-list baseline on the Projects task preview surface. The preview should be realigned to the new `List / ListSection / ListItem / ItemContent / ItemMeta` reading, `Tasks` should behave like a section header rather than a generic list header, section-level filter control placement should be clarified, and the existing list-level expand behavior should remain intact as the governing preview-versus-expanded mode switch.`
@@ -134,3 +134,4 @@
 - Risk level: `low`
 - Readiness: `ready`
 - Start condition: `Satisfied on 2026-04-23 by explicit human direction to promote the first-pass Projects task preview slice after converging on the new list framework, rollout order, and the judgment that this is the cleanest surface to validate real implementation.`
+- Closeout: `Completed on 2026-04-23. Landed the first shared display-list primitive layer under `frontend/src/components/ui/list/` and rewired `ProjectsPanel` task preview onto it. Same-scope human review corrections then tightened the section hierarchy, restored correct row font sizing, fixed mobile preview truncation, hid project-local mobile meta, moved disclosure from list shell to section-level controls, and split primary versus archived expansion state so the final implementation matched the updated PMO rule. Frontend targeted tests passed and repeated production builds stayed green aside from the existing large-chunk warning.`

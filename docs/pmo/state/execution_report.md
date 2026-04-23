@@ -2,7 +2,7 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-04-22`
+- Last updated: `2026-04-23`
 
 ## Current State
 
@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Frontend Input State Cleanup`
+- Sprint: `Frontend Display-List Baseline Pass 1: Projects Task Preview`
 - Report outcome: `safe to close out`
-- PMO read result: `accepted; archived to docs/pmo/history/reports/frontend-input-state-cleanup.md`
+- PMO read result: `accepted; archived to docs/pmo/history/reports/frontend-display-list-baseline-pass-1-projects-task-preview.md`
 
 ## Next Use
 

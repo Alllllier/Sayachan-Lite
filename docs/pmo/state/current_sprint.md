@@ -1,7 +1,7 @@
-# Current Sprint
+# Current Sprint Idle Template
 
-- Sprint: `Frontend Display-List Baseline Pass 1: Projects Task Preview`
-- Status: `active`
+- Sprint: `idle`
+- Status: `idle`
 - PMO owner: `Codex`
 - Architecture owner: `Human`
 - Execution owner: `execution worker`
@@ -9,23 +9,22 @@
 
 ## Current State
 
-- Type: `candidate-activated sprint`
-- Goal: `Validate the first real implementation of the emerging display-list baseline by aligning Projects task preview to the new `List / ListSection / ListItem / ItemContent / ItemMeta` frame without reopening broader dashboard or AI/list convergence work.`
-- Active handoff: `docs/pmo/state/execution_task.md`
+- Type: `idle`
+- Goal: `No active sprint.`
+- Active handoff: `none`
 
 ## Last Closed Sprint
 
-- Sprint: `Frontend Input State Cleanup`
-- Closeout date: `2026-04-22`
+- Sprint: `Frontend Display-List Baseline Pass 1: Projects Task Preview`
+- Closeout date: `2026-04-23`
 - Delivery status: `completed`
-- Commit state: `not yet committed`
-- Documentation sync outcome: `report archived; candidate/discussion/state surfaces updated`
-- Residual note: `Implementation changes remain in the worktree and still need a normal git commit/push after closeout.`
+- Commit state: `committed and pushed on main (f3ce191)`
+- Documentation sync outcome: `reviewed, no update needed; report archived; candidate/discussion/state surfaces updated`
+- Residual note: `The first shared list primitives now exist, but cross-surface validation is still pending. `discussion_batch_012` remains the active home for the later Dashboard pass and AI/list convergence follow-up.`
 
 ## Next PMO Action
 
-- keep the active execution contract bounded to `Projects` task preview only
-- wait for execution return in `execution_report.md`, then judge whether the first-pass list frame is:
-  - validated and ready for closeout
-  - still active for same-scope refinement
-  - or blocked by framework-level ambiguity that should return to PMO
+- keep `execution_task.md` in explicit idle state until a new sprint or micro-fix is activated
+- likely next PMO move:
+  - continue `discussion_batch_012` toward the Dashboard list migration pass
+  - or return to broader frontend legacy cleanup if the human reprioritizes

@@ -67,7 +67,7 @@
 
 - Name: `Display list container and row baseline`
 - Why separate: `The smallest credible first pass may only need a shared list container plus a display-row/item primitive rather than a broader list-state system.`
-- Current maturity: `promoted`
+- Current maturity: `completed`
 - Likely target: `sprint_candidates`
 - Parking trigger: `If PMO concludes that row-level convergence is still too mixed across surfaces and should wait until more panel language is stabilized.`
 - Reopen signal: `If discussion converges on one narrow list-row grammar that can absorb Dashboard mini-items plus some Note/Project reveal items without disturbing workflow-specific interactions.`
@@ -337,6 +337,9 @@
       - collect any remaining list-like local surfaces that clearly fit the proven frame
 - `slice-001` is now promoted into `state/sprint_candidates.md` as:
   - `Frontend Display-List Baseline Pass 1: Projects Task Preview`
+- `slice-001` has now completed successfully and remains recorded in:
+  - `state/sprint_candidates.md`
+  - `history/reports/frontend-display-list-baseline-pass-1-projects-task-preview.md`
 - PMO current lifecycle reading after promotion:
   - keep this batch active because:
     - later `Dashboard` and AI/list convergence follow-ons remain open
@@ -346,7 +349,7 @@
 ## Suggested Next PMO Action
 
 - Use this batch as the durable context for:
-  - the promoted first-pass candidate on `Projects` task preview
+  - the now-completed first-pass `Projects` task preview validation slice
   - later `Dashboard` comparison/migration work
   - later AI/item convergence cleanup after the anchor surfaces are proven
 - Keep `NotesPanel` and `ProjectsPanel` audits as evidence inputs, not as replacement canonical homes for this larger topic.
