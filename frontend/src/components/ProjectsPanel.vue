@@ -8,19 +8,23 @@ import {
   getProjectPrimaryPreviewTasks,
   getProjectTaskBuckets
 } from './projectsPanel.behavior.js'
-import Card from './ui/Card.vue'
-import DirectiveBlock from './ui/DirectiveBlock.vue'
-import SectionBlock from './ui/SectionBlock.vue'
-import ActionRow from './ui/ActionRow.vue'
-import ObjectActionArea from './ui/ObjectActionArea.vue'
+import {
+  Card,
+  DirectiveBlock,
+  SectionBlock,
+  ActionRow,
+  ObjectActionArea
+} from './ui/surfaces'
 import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
 import SegmentedControl from './ui/SegmentedControl.vue'
-import List from './ui/list/List.vue'
-import ListSection from './ui/list/ListSection.vue'
-import ListItem from './ui/list/ListItem.vue'
-import ItemContent from './ui/list/ItemContent.vue'
-import ItemMeta from './ui/list/ItemMeta.vue'
+import {
+  List,
+  ListSection,
+  ListItem,
+  ItemContent,
+  ItemMeta
+} from './ui/list'
 
 const props = defineProps(['projects'])
 

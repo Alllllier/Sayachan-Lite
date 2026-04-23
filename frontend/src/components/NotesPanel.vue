@@ -6,10 +6,12 @@ import { markdown } from '@codemirror/lang-markdown'
 import 'highlight.js/styles/github.css'
 import { renderMarkdown } from '../utils/markdown.js'
 import { saveTask } from '../services/taskService.js'
-import Card from './ui/Card.vue'
-import SectionBlock from './ui/SectionBlock.vue'
-import ActionRow from './ui/ActionRow.vue'
-import ObjectActionArea from './ui/ObjectActionArea.vue'
+import {
+  Card,
+  SectionBlock,
+  ActionRow,
+  ObjectActionArea
+} from './ui/surfaces'
 import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
 import SegmentedControl from './ui/SegmentedControl.vue'
