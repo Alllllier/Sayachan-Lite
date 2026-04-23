@@ -1,5 +1,16 @@
+<script setup>
+defineOptions({ inheritAttrs: false })
+
+defineProps({
+  tag: {
+    type: String,
+    default: 'div'
+  }
+})
+</script>
+
 <template>
-  <div class="action-row">
+  <component :is="tag" class="action-row" v-bind="$attrs">
     <slot />
-  </div>
+  </component>
 </template>

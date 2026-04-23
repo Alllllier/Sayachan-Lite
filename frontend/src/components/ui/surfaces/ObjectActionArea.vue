@@ -4,11 +4,13 @@ import { computed } from 'vue'
 const props = defineProps({
   state: {
     type: String,
-    default: 'idle'
+    default: 'idle',
+    validator: value => ['idle', 'active', 'pending'].includes(value)
   },
   variant: {
     type: String,
-    default: 'secondary'
+    default: 'primary',
+    validator: value => ['primary', 'ai'].includes(value)
   },
   idleLabel: {
     type: String,
@@ -18,69 +20,95 @@ const props = defineProps({
     type: String,
     default: 'Cancel'
   },
-  buttonClass: {
+  pendingLabel: {
     type: String,
     default: ''
   },
   activeKind: {
     type: String,
-    default: 'text'
+    default: 'text',
+    validator: value => ['text', 'icon'].includes(value)
+  },
+  buttonClass: {
+    type: [String, Array, Object],
+    default: ''
+  },
+  disabled: {
+    type: Boolean,
+    default: false
   }
 })
 
 const emit = defineEmits(['activate', 'cancel'])
 
-const isIdle = computed(() => props.state === 'idle')
-const isActive = computed(() => props.state === 'active')
-const isPending = computed(() => props.state === 'pending')
+const buttonClasses = computed(() => {
+  const classes = ['object-action-area__button']
 
-const buttonVariantClass = computed(() => {
-  if (props.variant === 'primary') return 'btn-primary'
-  if (props.variant === 'ai') return 'btn-ai'
-  return 'btn-secondary'
+  if (props.variant === 'ai') {
+    classes.push('btn', 'btn-ai', 'btn-ai-icon')
+  } else if (props.state === 'active') {
+    classes.push('btn', 'btn-secondary')
+  } else {
+    classes.push('btn', 'btn-primary')
+  }
+
+  return classes
 })
 
-function handlePrimaryClick() {
-  if (isPending.value) return
-  if (isIdle.value) emit('activate')
-  else emit('cancel')
+const areaClasses = computed(() => ([
+  'object-action-area',
+  `object-action-area--${props.variant}`,
+  `is-${props.state}`
+]))
+
+const showReveal = computed(() => props.state === 'active')
+
+function handleClick() {
+  if (props.disabled) return
+  if (props.state === 'active') {
+    emit('cancel')
+  } else if (props.state === 'idle') {
+    emit('activate')
+  }
 }
 </script>
 
 <template>
-  <div class="object-action-area" :class="`object-action-area--${state}`">
-    <div class="object-action-area__header">
+  <div :class="areaClasses">
+    <div class="object-action-area__entry">
       <button
         type="button"
-        :disabled="isPending"
-        :class="['btn', buttonVariantClass, buttonClass, { 'is-pending': isPending }]"
-        @click="handlePrimaryClick"
+        :class="[buttonClasses, buttonClass]"
+        :disabled="disabled || state === 'pending'"
+        @click="handleClick"
       >
-        <template v-if="variant === 'ai' && isIdle && $slots['idle-icon']">
-          <span class="object-action-area__icon">
-            <slot name="idle-icon" />
-          </span>
+        <template v-if="state === 'idle'">
+          <slot name="idle-icon" />
+          <span v-if="idleLabel">{{ idleLabel }}</span>
         </template>
-
-        <template v-if="isActive && activeKind === 'icon'">
-          <span class="object-action-area__icon object-action-area__icon--close" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M6 6l12 12M18 6 6 18" />
-            </svg>
-          </span>
+        <template v-else-if="state === 'active'">
+          <svg
+            v-if="activeKind === 'icon'"
+            class="object-action-area__close-icon icon-stroke"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+          <span v-else>{{ activeLabel }}</span>
         </template>
-
-        <span v-if="isPending">Loading...</span>
-        <span v-else-if="isIdle">{{ idleLabel }}</span>
-        <span v-else-if="activeKind !== 'icon'">{{ activeLabel }}</span>
+        <template v-else>
+          <slot name="pending-icon">
+            <span class="object-action-area__pending">...</span>
+          </slot>
+          <span v-if="pendingLabel">{{ pendingLabel }}</span>
+        </template>
       </button>
-
-      <div v-if="$slots.trailing" class="object-action-area__trailing">
-        <slot name="trailing" />
-      </div>
+      <slot name="trailing" />
     </div>
 
-    <div v-if="!isIdle" class="object-action-area__content">
+    <div v-if="showReveal && $slots.default" class="object-action-area__panel">
       <slot />
     </div>
   </div>

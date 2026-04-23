@@ -45,8 +45,6 @@ async function start() {
   app.listen(PORT, () => {
     console.log(`Backend server running at http://localhost:${PORT}`);
     console.log(`Health check available at http://localhost:${PORT}/health`);
-    console.log(`Notes API available at http://localhost:${PORT}/notes`);
-    console.log(`AI routes available at http://localhost:${PORT}/ai`);
   });
 }
 
