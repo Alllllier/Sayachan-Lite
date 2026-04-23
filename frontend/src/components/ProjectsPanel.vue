@@ -850,7 +850,10 @@ async function addBatchTasks(project) {
                 <ListSection
                   v-if="getArchivedPreviewTasks(project._id).length > 0"
                   class="project-task-section project-task-section-archived"
-                  :class="{ 'is-expanded': expandedArchivedPreviewProjects.has(project._id) }"
+                  :class="{
+                    'is-expanded': expandedArchivedPreviewProjects.has(project._id),
+                    'project-task-section-separated': hasPrimaryTaskSection(project._id)
+                  }"
                   :title="getArchivedSectionTitle(project)"
                   :aria-label="getArchivedSectionTitle(project)"
                 >
@@ -1329,7 +1332,7 @@ async function addBatchTasks(project) {
   margin-top: 16px;
 }
 
-.project-task-section-archived {
+.project-task-section-separated {
   padding-top: var(--space-sm);
   border-top: 1px dashed var(--border-default);
 }
