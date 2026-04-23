@@ -1,0 +1,88 @@
+/* ============================================
+   Card Shell Baseline
+   Phase 3: Reusable card primitives
+   ============================================ */
+
+.card {
+  background: var(--surface-card);
+  border-radius: var(--radius-card);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  box-shadow: var(--shadow-card);
+}
+
+.card-interactive:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-accent);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.card-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.card-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.card-meta-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* Card header/title */
+.card-title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-sm);
+}
+
+/* Card content */
+.card-content {
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* Card meta/footer */
+.card-meta {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.section-block {
+  background: var(--surface-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-block);
+  padding: var(--space-sm);
+}
+
+.directive-block {
+  background: var(--surface-card);
+  border-radius: var(--radius-block);
+  box-shadow: var(--shadow-directive);
+}
+
+.directive-block .card-meta,
+.section-block .card-meta {
+  margin-top: 0;
+}

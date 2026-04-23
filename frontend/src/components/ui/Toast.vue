@@ -39,6 +39,10 @@ defineProps({
 
 <style scoped>
 .toast {
+  --toast-success-bg: #10b981;
+  --toast-error-bg: #ef4444;
+  --toast-warning-bg: #f59e0b;
+  --toast-info-bg: #3498db;
   position: fixed;
   bottom: 80px;
   left: 50%;
@@ -55,11 +59,11 @@ defineProps({
 }
 
 .toast.success {
-  background: var(--status-success);
+  background: var(--toast-success-bg);
 }
 
 .toast.error {
-  background: var(--status-error);
+  background: var(--toast-error-bg);
 }
 
 /* Toast Transition Animation */

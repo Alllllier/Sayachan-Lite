@@ -1,17 +1,17 @@
-# Current Sprint Idle Template
+# Current Sprint
 
-- Sprint: `idle`
-- Status: `idle`
+- Sprint: `Frontend Display-List Baseline Pass 1: Projects Task Preview`
+- Status: `active`
 - PMO owner: `Codex`
 - Architecture owner: `Human`
 - Execution owner: `execution worker`
-- Last updated: `2026-04-22`
+- Last updated: `2026-04-23`
 
 ## Current State
 
-- Type: `idle`
-- Goal: `No active sprint.`
-- Active handoff: `none`
+- Type: `candidate-activated sprint`
+- Goal: `Validate the first real implementation of the emerging display-list baseline by aligning Projects task preview to the new `List / ListSection / ListItem / ItemContent / ItemMeta` frame without reopening broader dashboard or AI/list convergence work.`
+- Active handoff: `docs/pmo/state/execution_task.md`
 
 ## Last Closed Sprint
 
@@ -24,5 +24,8 @@
 
 ## Next PMO Action
 
-- keep `execution_task.md` in explicit idle state until a new sprint or micro-fix is activated
-- decide whether the next PMO move is a new discussion, a candidate activation, a micro-fix, or archive cleanup
+- keep the active execution contract bounded to `Projects` task preview only
+- wait for execution return in `execution_report.md`, then judge whether the first-pass list frame is:
+  - validated and ready for closeout
+  - still active for same-scope refinement
+  - or blocked by framework-level ambiguity that should return to PMO

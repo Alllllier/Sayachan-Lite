@@ -43,7 +43,7 @@ defineProps({
   color: var(--text-muted);
   padding: var(--space-xl) var(--space-lg);
   text-align: center;
-  background: var(--surface-elevated);
+  background: var(--surface-panel);
   border-radius: var(--radius-md);
   border: 1px dashed var(--border-default);
 }

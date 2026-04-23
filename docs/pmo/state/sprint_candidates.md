@@ -29,38 +29,6 @@
 
 ## Current Candidates
 
-### `Frontend Action Grouping Baseline`
-
-- Status: `completed`
-- Source reference: `state/discussions/discussion_batch_011.md slice-003 action-grouping follow-on`
-- Why now: `The first-pass controls core baseline has already landed, so the next highest-value follow-on inside the same controls family is to formalize action grouping instead of leaving object-level action areas and ordinary action rows as panel-local interaction grammar. The discussion has now converged on a simple two-part model: a thin `ActionRow` and an object-focused `ObjectActionArea`.`
-- Expected outcome: `The frontend gains a first action-grouping baseline that distinguishes ordinary grouped actions from object-level action entry areas. `ActionRow` should become a thin, right-aligned grouped-action container, while `ObjectActionArea` should formalize the object-entry pattern around a main button, in-place `Cancel` replacement, optional pending state, and a directly attached revealed block.`
-- In scope:
-  - formalize first-pass `ActionRow` as a thin grouped-action container
-  - formalize first-pass `ObjectActionArea` with `idle / active / pending` state semantics
-  - preserve the preferred `Add Task` direction:
-    - main button in resting state
-    - in-place replacement with `Cancel`
-    - attached revealed mode/content block below
-  - bring current object-level AI action areas under the same general `ObjectActionArea` family where they fit
-  - make the AI object-action entry fully three-state:
-    - preserve the current good `idle` form
-    - add an explicit `active` close/cancel state using an SVG `x` icon
-    - keep `pending` visually continuous with `idle` rather than letting it drift into a very different button treatment
-  - allow the revealed lower block to continue relying on local implementation plus the existing baseline rather than forcing a heavy new inner component
-- Out of scope:
-  - redoing button hierarchy or segmented-control baseline
-  - full icon-button / menu-trigger systemization
-  - reveal-pattern formalization beyond the object-action-area cases already discussed here
-  - input / textarea state cleanup
-  - dashboard AI workflow redesign
-  - exhaustive panel-level action cleanup
-- Dependencies: `discussion_batch_011 action-grouping judgments; landed controls-core first pass; willingness to treat `ActionRow` as a thin container and `ObjectActionArea` as the richer object-level interaction grammar`
-- Risk level: `medium`
-- Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-22 by explicit human direction to stop splitting this follow-on into extra slices and instead promote the full action-grouping pass as one bounded candidate.`
-- Closeout: `Completed on 2026-04-22. Landed a thin `ActionRow` and a first-pass `ObjectActionArea` grammar across current Notes/Projects action surfaces, including `Add Task` in-place cancel flow and AI object-action `idle / active / pending` states. Post-review polish also aligned Dashboard onto the shared page segmented control, removed the archived-note badge residue, and tightened AI/mode control visuals without widening back into broader controls or reveal work.`
-
 ### `Frontend Secondary Controls And Reveal Baseline`
 
 - Status: `completed`
@@ -131,3 +99,38 @@
 - Readiness: `ready`
 - Start condition: `Satisfied on 2026-04-22 by explicit human direction to promote the now-bounded high-frequency input-state pass after clarifying both covered surfaces and excluded areas.`
 - Closeout: `Completed on 2026-04-22. Landed the first shared input-state cleanup across note/project creation and editing plus task capture, formalized default/focus/disabled behavior, upgraded current silent local invalid cases into restrained inline feedback, and kept submitting behavior intentionally light through disable rules rather than a heavier new form skin.`
+
+### `Frontend Display-List Baseline Pass 1: Projects Task Preview`
+
+- Status: `active`
+- Source reference: `state/discussions/discussion_batch_012.md slice-001 first-pass rollout pass-1`
+- Why now: `The display-list discussion has now converged enough that the cleanest first implementation slice is no longer speculative. Projects task preview is the strongest near-match to the new list frame, already demonstrates list-level expand plus grouped preview sections, and is the safest place to test whether the emerging list grammar can become real shared structure without dragging in the harder Dashboard saved-task redesign too early.`
+- Expected outcome: `The frontend gains the first real implementation pass of the shared display-list baseline on the Projects task preview surface. The preview should be realigned to the new `List / ListSection / ListItem / ItemContent / ItemMeta` reading, `Tasks` should behave like a section header rather than a generic list header, section-level filter control placement should be clarified, and the existing list-level expand behavior should remain intact as the governing preview-versus-expanded mode switch.`
+- In scope:
+  - implement the first-pass display-list frame on the Projects task preview surface only
+  - align the preview surface to the agreed structural reading:
+    - `List`
+    - primary task `ListSection`
+    - optional archived `ListSection`
+    - `ListItem`
+    - `ItemContent`
+    - optional `ItemMeta`
+  - preserve list-level expand as the owner of:
+    - visible range
+    - information density
+  - treat `Tasks` as a section header/title rather than a universal list header
+  - keep the current preview filter as a section-mounted control rather than core list structure
+  - preserve row primary click as the current `focus/select` action
+  - allow `ItemTrailingMenu` to remain absent on this sample rather than forcing row actions where they do not naturally belong
+- Out of scope:
+  - Dashboard saved-task redesign
+  - checkbox removal or completed-toggle remapping on Dashboard
+  - broad row-state systemization across all surfaces
+  - AI task / AI suggestion convergence work
+  - task-capture workflow redesign
+  - broader panel/shell cleanup
+  - global list-variant formalization beyond what this preview surface needs to prove the frame
+- Dependencies: `discussion_batch_012 stabilized list grammar judgments; current Projects task preview implementation; willingness to treat this pass as a structural validation slice rather than a broader visual redesign`
+- Risk level: `low`
+- Readiness: `ready`
+- Start condition: `Satisfied on 2026-04-23 by explicit human direction to promote the first-pass Projects task preview slice after converging on the new list framework, rollout order, and the judgment that this is the cleanest surface to validate real implementation.`

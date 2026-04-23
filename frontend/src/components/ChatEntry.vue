@@ -340,8 +340,8 @@ function mockFallbackReply() {
   align-items: center;
   justify-content: space-between;
   padding: var(--space-md) var(--space-lg);
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--surface-elevated);
+  border-bottom: 1px solid #eeeeee;
+  background: #f9f9f9;
 }
 
 .chat-title {
@@ -458,7 +458,7 @@ function mockFallbackReply() {
 .chip {
   padding: 6px 12px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid #eeeeee;
   background: var(--surface-card);
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
@@ -483,7 +483,7 @@ function mockFallbackReply() {
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-lg) var(--space-md);
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid #eeeeee;
   background: var(--surface-card);
 }
 
@@ -541,8 +541,8 @@ function mockFallbackReply() {
   align-items: center;
   justify-content: space-between;
   padding: var(--space-md) var(--space-lg);
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--surface-elevated);
+  border-bottom: 1px solid #eeeeee;
+  background: #f9f9f9;
   border-radius: 0 16px 0 0;
 }
 
@@ -603,7 +603,7 @@ function mockFallbackReply() {
   justify-content: space-between;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid #eeeeee;
   background: var(--surface-card);
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
@@ -649,7 +649,7 @@ function mockFallbackReply() {
   justify-content: space-between;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-md);
-  border: 1px dashed var(--border-subtle);
+  border: 1px dashed #eeeeee;
   background: var(--surface-card);
   font-size: var(--font-size-sm);
   color: var(--text-primary);

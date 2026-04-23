@@ -821,19 +821,19 @@ async function handleGenerateTaskDrafts() {
 
 /* Provenance color variants using semantic tokens */
 .source-dot.provenance-ai {
-  background-color: var(--provenance-ai) !important;
+  background-color: #DAA520 !important;
 }
 
 .source-dot.provenance-manual {
-  background-color: var(--provenance-manual) !important;
+  background-color: #6b7280 !important;
 }
 
 .source-dot.provenance-project {
-  background-color: var(--provenance-project) !important;
+  background-color: #3498db !important;
 }
 
 .source-dot.provenance-note {
-  background-color: var(--provenance-note) !important;
+  background-color: #9b59b6 !important;
 }
 
 .task-menu-container {

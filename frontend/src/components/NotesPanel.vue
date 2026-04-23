@@ -139,7 +139,7 @@ function createCodeMirror(parent, initialValue, onChange) {
       EditorView.theme({
         '&': {
           fontSize: '14px',
-          border: '1px solid var(--border-subtle)',
+          border: '1px solid var(--border-default)',
           borderRadius: 'var(--radius-md)',
           background: 'var(--surface-card)',
           fontFamily: 'var(--font-family-base)',

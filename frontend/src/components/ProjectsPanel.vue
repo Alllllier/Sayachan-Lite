@@ -16,6 +16,11 @@ import ObjectActionArea from './ui/ObjectActionArea.vue'
 import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
 import SegmentedControl from './ui/SegmentedControl.vue'
+import List from './ui/list/List.vue'
+import ListSection from './ui/list/ListSection.vue'
+import ListItem from './ui/list/ListItem.vue'
+import ItemContent from './ui/list/ItemContent.vue'
+import ItemMeta from './ui/list/ItemMeta.vue'
 
 const props = defineProps(['projects'])
 
@@ -47,7 +52,8 @@ const editProjectErrors = ref({})
 const taskCaptureErrors = ref({})
 
 // Project task preview expansion and filter state
-const expandedProjects = ref(new Set())
+const expandedPrimaryPreviewProjects = ref(new Set())
+const expandedArchivedPreviewProjects = ref(new Set())
 const previewFilter = ref({}) // { [projectId]: 'active' | 'completed' }
 
 // Toast notifications
@@ -512,6 +518,11 @@ function getArchivedTasks(projectId) {
   return getProjectTaskBuckets(projectTasks.value[projectId] || []).archived
 }
 
+function hasPrimaryTaskSection(projectId) {
+  const { active, completed } = getProjectTaskBuckets(projectTasks.value[projectId] || [])
+  return active.length > 0 || completed.length > 0
+}
+
 function getPreviewFilter(projectId) {
   return previewFilter.value[projectId] || 'active'
 }
@@ -527,7 +538,7 @@ function getPrimaryPreviewTasks(projectId) {
     project,
     projectTasks.value[projectId] || [],
     getPreviewFilter(projectId),
-    expandedProjects.value.has(projectId)
+    expandedPrimaryPreviewProjects.value.has(projectId)
   )
 }
 
@@ -536,15 +547,23 @@ function getArchivedPreviewTasks(projectId) {
   return getProjectArchivedPreviewTasks(
     project,
     projectTasks.value[projectId] || [],
-    expandedProjects.value.has(projectId)
+    expandedArchivedPreviewProjects.value.has(projectId)
   )
 }
 
-function toggleProjectPreview(projectId) {
-  if (expandedProjects.value.has(projectId)) {
-    expandedProjects.value.delete(projectId)
+function togglePrimaryProjectPreview(projectId) {
+  if (expandedPrimaryPreviewProjects.value.has(projectId)) {
+    expandedPrimaryPreviewProjects.value.delete(projectId)
   } else {
-    expandedProjects.value.add(projectId)
+    expandedPrimaryPreviewProjects.value.add(projectId)
+  }
+}
+
+function toggleArchivedProjectPreview(projectId) {
+  if (expandedArchivedPreviewProjects.value.has(projectId)) {
+    expandedArchivedPreviewProjects.value.delete(projectId)
+  } else {
+    expandedArchivedPreviewProjects.value.add(projectId)
   }
 }
 
@@ -554,6 +573,10 @@ function setPreviewFilter(projectId, filter) {
 
 function isFocusTask(project, task) {
   return String(project.currentFocusTaskId) === String(task._id)
+}
+
+function getArchivedSectionTitle(project) {
+  return project?.archived ? 'Archived Tasks' : 'Archived'
 }
 
 function openTaskCapture(projectId) {
@@ -776,65 +799,91 @@ async function addBatchTasks(project) {
             v-if="getActiveTasks(project._id).length > 0 || getCompletedTasks(project._id).length > 0 || getArchivedTasks(project._id).length > 0"
             class="project-tasks-directive"
           >
-            <div class="project-tasks-preview" :class="{ 'preview-expanded': expandedProjects.has(project._id) }">
-              <div class="tasks-preview-header">
-                <div class="preview-header-left">
-                  <span class="tasks-preview-title">Tasks</span>
-                  <SegmentedControl
-                    v-if="!project.archived"
-                    :model-value="getPreviewFilter(project._id)"
-                    :options="previewFilterOptions"
-                    variant="inline"
-                    aria-label="Task preview filter"
-                    @update:model-value="setPreviewFilter(project._id, $event)"
-                  />
-                </div>
-                <button
-                  @click.stop="toggleProjectPreview(project._id)"
-                  class="btn btn-ghost btn-sm preview-toggle-btn"
+            <List
+              class="project-tasks-preview"
+              mode="preview"
+            >
+              <ListSection
+                  v-if="!project.archived && hasPrimaryTaskSection(project._id)"
+                  class="project-task-section"
+                  :class="{ 'is-expanded': expandedPrimaryPreviewProjects.has(project._id) }"
+                  :aria-label="`Tasks (${getPreviewFilter(project._id)})`"
                 >
-                  {{ expandedProjects.has(project._id) ? '收起' : '展开' }}
-                </button>
-              </div>
+                  <template #title>
+                    <div class="project-task-section-heading">
+                      <span class="project-task-section-heading-text">Tasks</span>
+                      <SegmentedControl
+                        :model-value="getPreviewFilter(project._id)"
+                        :options="previewFilterOptions"
+                        variant="inline"
+                        aria-label="Task preview filter"
+                        @update:model-value="setPreviewFilter(project._id, $event)"
+                      />
+                    </div>
+                  </template>
+                  <template #control>
+                    <button
+                      @click.stop="togglePrimaryProjectPreview(project._id)"
+                      class="btn btn-ghost btn-sm preview-toggle-btn"
+                    >
+                      {{ expandedPrimaryPreviewProjects.has(project._id) ? '收起' : '展开' }}
+                    </button>
+                  </template>
 
-              <div class="tasks-preview-list">
-                <div v-if="getPrimaryPreviewTasks(project._id).length > 0" class="preview-task-section">
-                  <div
+                  <ListItem
                     v-for="task in getPrimaryPreviewTasks(project._id)"
                     :key="task._id"
-                    class="task-preview-item"
-                    :class="{
-                      completed: task.status === 'completed',
-                      'is-focus': isFocusTask(project, task),
-                      'can-focus': task.status === 'active' && !task.archived
-                    }"
+                    :element="canSetProjectFocus(task) ? 'button' : 'div'"
+                    :interactive="canSetProjectFocus(task)"
+                    :current="isFocusTask(project, task)"
+                    :muted="task.status === 'completed'"
+                    :aria-pressed="canSetProjectFocus(task) ? isFocusTask(project, task) : undefined"
                     @click.stop="canSetProjectFocus(task) ? setTaskAsFocus(project, task) : null"
                   >
-                    <span class="task-preview-text">{{ task.title }}</span>
-                    <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
-                  </div>
-                </div>
+                    <ItemContent :text="task.title" />
+                    <ItemMeta v-if="isFocusTask(project, task)">
+                      <span class="focus-badge">Current Focus</span>
+                    </ItemMeta>
+                  </ListItem>
+                </ListSection>
 
-                <div v-if="getArchivedPreviewTasks(project._id).length > 0" class="preview-task-section preview-task-section-archived">
-                  <div v-if="!project.archived" class="preview-section-label">Archived</div>
-                  <div
+                <ListSection
+                  v-if="getArchivedPreviewTasks(project._id).length > 0"
+                  class="project-task-section project-task-section-archived"
+                  :class="{ 'is-expanded': expandedArchivedPreviewProjects.has(project._id) }"
+                  :title="getArchivedSectionTitle(project)"
+                  :aria-label="getArchivedSectionTitle(project)"
+                >
+                  <template #control>
+                    <button
+                      @click.stop="toggleArchivedProjectPreview(project._id)"
+                      class="btn btn-ghost btn-sm preview-toggle-btn"
+                    >
+                      {{ expandedArchivedPreviewProjects.has(project._id) ? '收起' : '展开' }}
+                    </button>
+                  </template>
+
+                  <ListItem
                     v-for="task in getArchivedPreviewTasks(project._id)"
                     :key="task._id"
-                    class="task-preview-item archived"
-                    :class="{
-                      completed: task.status === 'completed',
-                      'is-focus': isFocusTask(project, task)
-                    }"
+                    :archived="true"
+                    :current="isFocusTask(project, task)"
+                    :muted="task.status === 'completed'"
                   >
-                    <span class="task-preview-text">{{ task.title }}</span>
-                    <span v-if="!project.archived" class="task-preview-state-chip" :class="task.status === 'completed' ? 'state-completed' : 'state-active'">
-                      {{ task.status === 'completed' ? 'Completed' : 'Active' }}
-                    </span>
-                    <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+                    <ItemContent :text="task.title" />
+                    <ItemMeta v-if="!project.archived || isFocusTask(project, task)">
+                      <span
+                        v-if="!project.archived"
+                        class="task-preview-state-chip"
+                        :class="task.status === 'completed' ? 'state-completed' : 'state-active'"
+                      >
+                        {{ task.status === 'completed' ? 'Completed' : 'Active' }}
+                      </span>
+                      <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
+                    </ItemMeta>
+                  </ListItem>
+                </ListSection>
+            </List>
           </DirectiveBlock>
 
         </div>
@@ -1278,89 +1327,29 @@ async function addBatchTasks(project) {
 
 .project-tasks-preview {
   margin-top: 16px;
-  padding: var(--space-md);
-  background: var(--surface-panel);
-  border-radius: var(--radius-block);
-  box-shadow: none;
 }
 
-.tasks-preview-header {
+.project-task-section-archived {
+  padding-top: var(--space-sm);
+  border-top: 1px dashed var(--border-default);
+}
+
+:deep(.project-task-section.is-expanded .item-content-text) {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.project-task-section-heading {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  gap: var(--space-xs);
 }
 
-.preview-header-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.tasks-preview-title {
+.project-task-section-heading-text {
   font-size: var(--font-size-section);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-secondary);
-}
-
-.tasks-preview-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.preview-task-section {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.preview-task-section-archived {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed #d8dee6;
-}
-
-.preview-section-label {
-  font-size: var(--font-size-meta);
   font-weight: var(--font-weight-semibold);
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.task-preview-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  background: var(--surface-card);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-chip);
-  border-left: 2px solid var(--identity-primary);
-}
-
-.task-preview-item.completed {
-  opacity: 0.75;
-  border-left-color: var(--border-default);
-}
-
-.task-preview-item.completed .task-preview-text {
-  text-decoration: line-through;
-}
-
-.task-preview-item.archived {
-  opacity: 0.72;
-  border-left-color: var(--identity-primary-muted);
-  background: var(--surface-panel);
-}
-
-.task-preview-text {
-  flex: 1;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--text-primary);
 }
 
 .task-preview-state-chip {
@@ -1381,13 +1370,6 @@ async function addBatchTasks(project) {
 .task-preview-state-chip.state-completed {
   background: var(--surface-hover);
   color: var(--text-secondary);
-}
-
-.set-focus-btn {
-  margin-left: 8px;
-  padding: 4px 10px;
-  font-size: 11px;
-  flex-shrink: 0;
 }
 
 /* Polish-1: Unified compact input area styling */
@@ -1482,25 +1464,7 @@ async function addBatchTasks(project) {
   font-size: 11px;
 }
 
-/* Task Row Interactions */
-.task-preview-item.can-focus {
-  cursor: pointer;
-  user-select: none;
-}
-
-@media (min-width: 481px) {
-  .task-preview-item.can-focus:hover {
-    background: var(--identity-primary-soft);
-  }
-}
-
-.task-preview-item.is-focus {
-  border-left-color: var(--identity-primary);
-  background: linear-gradient(135deg, var(--surface-card) 0%, var(--surface-hover) 100%);
-}
-
 .focus-badge {
-  margin-left: 8px;
   padding: 2px 8px;
   font-size: var(--font-size-meta);
   font-weight: var(--font-weight-medium);
@@ -1512,16 +1476,22 @@ async function addBatchTasks(project) {
   letter-spacing: 0.5px;
 }
 
-/* Expanded state: no text truncation */
-.preview-expanded .task-preview-text {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-}
-
 /* Mobile: hide row-level focus badge; rely on top Current Focus section for semantics */
 @media (max-width: 480px) {
-.task-preview-item.is-focus .focus-badge {
+  :deep(.project-task-section .list-section-header) {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  :deep(.project-task-section .list-section-control) {
+    width: auto;
+  }
+
+  :deep(.project-task-section .item-meta) {
+    display: none;
+  }
+
+  :deep(.list-item--current) .focus-badge {
     display: none;
   }
 }
@@ -1578,10 +1548,6 @@ async function addBatchTasks(project) {
 
 .project-tasks-directive .project-tasks-preview {
   margin-top: 0;
-}
-
-.project-tasks-directive .preview-toggle-btn {
-  min-width: 72px;
 }
 
 .project-ai-action {

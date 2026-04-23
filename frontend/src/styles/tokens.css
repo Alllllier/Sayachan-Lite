@@ -1,0 +1,101 @@
+/* ============================================
+   Sayachan UI Foundation Tokens
+   Global semantic and compatibility variables
+   ============================================ */
+
+:root {
+  /* -----------------------------------------
+     Identity
+     ----------------------------------------- */
+  --identity-primary: #9B566C;
+  --identity-primary-hover: #8E4D62;
+  --identity-primary-soft: #F7F1F3;
+  --identity-primary-muted: #C295A3;
+
+  --accent-spark: #DAA520;
+  --accent-spark-soft: rgba(218, 165, 32, 0.14);
+  --accent-spark-hover: #c5931a;
+
+  /* -----------------------------------------
+     Foundation aliases still used by shared primitives
+     ----------------------------------------- */
+  --action-primary: #42B883;
+  --action-primary-hover: #36A372;
+  --action-ai: var(--identity-primary);
+  --action-ai-hover: var(--identity-primary-hover);
+  --border-accent: var(--identity-primary);
+  --border-focus: var(--action-primary);
+
+  /* -----------------------------------------
+     Surface and text
+     ----------------------------------------- */
+  --surface-page: #F8F5F6;
+  --surface-panel: #FCF9FA;
+  --surface-card: #FFFDFD;
+  --surface-hover: #F5EFF2;
+  --border-default: #E9E0E3;
+  --text-primary: #342A2E;
+  --text-secondary: #5E5257;
+  --text-muted: #8B7B82;
+  --text-emphasis: #9B566C;
+  --text-inverse: #FFFDFD;
+
+  /* -----------------------------------------
+     Typography
+     ----------------------------------------- */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  --font-size-title: 16px;
+  --font-size-section: 12px;
+  --font-size-body: 14px;
+  --font-size-meta: 11px;
+  --font-size-chip: 11px;
+  --font-size-button: 13px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 13px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 24px;
+
+  /* -----------------------------------------
+     Spacing
+     ----------------------------------------- */
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+
+  /* -----------------------------------------
+     Radius
+     ----------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+  --radius-card: 8px;
+  --radius-block: 12px;
+
+  /* -----------------------------------------
+     Shadow
+     ----------------------------------------- */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-focus: 0 0 0 2px rgba(66, 184, 131, 0.15);
+  --shadow-card: 0 0 5px rgba(52, 42, 46, 0.075);
+  --shadow-directive: 0 0 10px rgba(52, 42, 46, 0.1);
+
+  /* -----------------------------------------
+     Legacy compatibility tokens
+     ----------------------------------------- */
+}

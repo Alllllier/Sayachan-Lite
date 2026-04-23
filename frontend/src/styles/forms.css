@@ -1,0 +1,128 @@
+/* ============================================
+   Input / Textarea Baseline
+   Phase 3: Reusable form primitives
+   ============================================ */
+
+.input,
+.textarea,
+select.input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: var(--space-md);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input:focus,
+.textarea:focus,
+select.input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.input:disabled,
+.textarea:disabled,
+select.input:disabled {
+  background: var(--surface-panel);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Textarea specific */
+.textarea {
+  resize: none;
+  overflow-y: auto;
+  min-height: 80px;
+  max-height: 400px;
+  line-height: 1.5;
+  /* Modern browsers: native auto-grow (Chrome 123+, Firefox 129+) */
+  field-sizing: content;
+}
+
+/* Select specific */
+select.input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+/* Size variants */
+.input-sm,
+.textarea-sm {
+  padding: 6px 10px;
+  font-size: var(--font-size-sm);
+}
+
+.input-lg,
+.textarea-lg {
+  padding: 14px;
+  font-size: var(--font-size-lg);
+}
+
+/* Muted text for placeholders */
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.field-stack {
+  margin-bottom: var(--space-md);
+}
+
+.field-stack .input,
+.field-stack .textarea,
+.field-stack select.input {
+  margin-bottom: 0;
+}
+
+.input.is-invalid,
+.textarea.is-invalid,
+select.input.is-invalid {
+  border-color: #d88b8b;
+}
+
+.input.is-invalid:focus,
+.textarea.is-invalid:focus,
+select.input.is-invalid:focus {
+  border-color: #cf7d7d;
+  box-shadow: 0 0 0 3px rgba(207, 125, 125, 0.12);
+}
+
+.field-helper {
+  margin-top: 6px;
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.field-helper--error {
+  color: #a55656;
+}
+
+.codemirror-editor {
+  border-radius: var(--radius-md);
+  transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+
+.codemirror-editor.is-invalid .cm-editor {
+  border-color: #d88b8b !important;
+}
+
+.codemirror-editor.is-invalid:focus-within .cm-editor,
+.codemirror-editor.is-invalid .cm-editor.cm-focused {
+  border-color: #cf7d7d !important;
+  box-shadow: 0 0 0 3px rgba(207, 125, 125, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+.codemirror-editor.is-disabled {
+  opacity: 0.7;
+  pointer-events: none;
+}
