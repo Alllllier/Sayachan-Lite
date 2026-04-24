@@ -74,6 +74,7 @@ const previewFilterOptions = [
   { value: 'active', label: 'Active' },
   { value: 'completed', label: 'Completed' }
 ]
+const projectTaskPreviewLimit = 3
 
 const taskCaptureModeOptions = [
   { value: 'single', label: 'Single' },
@@ -531,6 +532,24 @@ function getPreviewFilter(projectId) {
   return previewFilter.value[projectId] || 'active'
 }
 
+function getPrimaryPreviewTaskTotal(projectId) {
+  const buckets = getProjectTaskBuckets(projectTasks.value[projectId] || [])
+  return getPreviewFilter(projectId) === 'completed'
+    ? buckets.completed.length
+    : buckets.active.length
+}
+
+function getArchivedPreviewTaskTotal(projectId) {
+  return getProjectTaskBuckets(projectTasks.value[projectId] || []).archived.length
+}
+
+function getProjectPreviewToggleLabel(isExpanded, total) {
+  if (isExpanded) {
+    return '收起'
+  }
+  return total > projectTaskPreviewLimit ? `展开全部 (${total})` : '展开详情'
+}
+
 function setProjectArchiveView(view) {
   showArchived.value = view === 'archived'
   fetchProjects()
@@ -829,8 +848,9 @@ async function addBatchTasks(project) {
                     <button
                       @click.stop="togglePrimaryProjectPreview(project._id)"
                       class="btn btn-ghost btn-sm preview-toggle-btn"
+                      :aria-expanded="expandedPrimaryPreviewProjects.has(project._id)"
                     >
-                      {{ expandedPrimaryPreviewProjects.has(project._id) ? '收起' : '展开' }}
+                      {{ getProjectPreviewToggleLabel(expandedPrimaryPreviewProjects.has(project._id), getPrimaryPreviewTaskTotal(project._id)) }}
                     </button>
                   </template>
 
@@ -865,8 +885,9 @@ async function addBatchTasks(project) {
                     <button
                       @click.stop="toggleArchivedProjectPreview(project._id)"
                       class="btn btn-ghost btn-sm preview-toggle-btn"
+                      :aria-expanded="expandedArchivedPreviewProjects.has(project._id)"
                     >
-                      {{ expandedArchivedPreviewProjects.has(project._id) ? '收起' : '展开' }}
+                      {{ getProjectPreviewToggleLabel(expandedArchivedPreviewProjects.has(project._id), getArchivedPreviewTaskTotal(project._id)) }}
                     </button>
                   </template>
 
@@ -1485,15 +1506,6 @@ async function addBatchTasks(project) {
 
 /* Mobile: hide row-level focus badge; rely on top Current Focus section for semantics */
 @media (max-width: 480px) {
-  :deep(.project-task-section .list-section-header) {
-    align-items: center;
-    flex-direction: row;
-  }
-
-  :deep(.project-task-section .list-section-control) {
-    width: auto;
-  }
-
   :deep(.project-task-section .item-meta) {
     display: none;
   }

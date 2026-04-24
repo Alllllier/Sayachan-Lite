@@ -48,11 +48,11 @@ defineProps({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-sm);
 }
 
 .list-section-title {
   margin: 0;
+  min-width: 0;
   font-size: var(--font-size-section);
   font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
@@ -69,16 +69,5 @@ defineProps({
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-@media (max-width: 480px) {
-  .list-section-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .list-section-control {
-    width: 100%;
-  }
 }
 </style>

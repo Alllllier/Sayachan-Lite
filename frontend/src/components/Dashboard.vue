@@ -78,6 +78,8 @@ const isLoadingDrafts = ref(false)
 
 const isSavingTasks = ref(false)
 const taskMenuOpen = ref(null)
+const isSavedTaskListExpanded = ref(false)
+const savedTaskPreviewLimit = 5
 
 // Toast notifications
 const toast = ref(null)
@@ -103,11 +105,30 @@ const archiveViewOptions = [
   { value: 'active', label: 'Active' },
   { value: 'archived', label: 'Archived' }
 ]
+const hasSavedTaskOverflow = computed(() => savedTasks.value.length > savedTaskPreviewLimit)
+const savedTaskToggleLabel = computed(() => {
+  if (isSavedTaskListExpanded.value) {
+    return 'Show less'
+  }
+  return hasSavedTaskOverflow.value
+    ? `Show all (${savedTasks.value.length})`
+    : 'Expand details'
+})
+const visibleSavedTasks = computed(() => (
+  isSavedTaskListExpanded.value
+    ? savedTasks.value
+    : savedTasks.value.slice(0, savedTaskPreviewLimit)
+))
+const savedTaskListMode = computed(() => (
+  isSavedTaskListExpanded.value ? 'expanded' : 'preview'
+))
 
 onMounted(() => fetchTasks(showArchived.value))
 
 // P0-B: Watch toggle and refetch tasks
 watch(showArchived, (newValue) => {
+  isSavedTaskListExpanded.value = false
+  closeTaskMenu()
   fetchTasks(newValue)
 })
 
@@ -204,6 +225,11 @@ function toggleTaskMenu(taskId) {
 
 function closeTaskMenu() {
   taskMenuOpen.value = null
+}
+
+function toggleSavedTaskListExpanded() {
+  isSavedTaskListExpanded.value = !isSavedTaskListExpanded.value
+  closeTaskMenu()
 }
 
 // Status mapping: internal enum → user-friendly language
@@ -372,30 +398,41 @@ async function handleGenerateTaskDrafts() {
     </div>
 
     <div class="card tasks-execution-zone">
-      <div class="zone-header">
-        <h3 class="card-title zone-title">Saved Tasks</h3>
-        <div class="zone-controls">
-          <SegmentedControl
-            :model-value="showArchived ? 'archived' : 'active'"
-            :options="archiveViewOptions"
-            variant="page"
-            aria-label="Dashboard task archive view"
-            @update:model-value="setArchiveView"
-          />
-        </div>
-      </div>
       <List
-        v-if="savedTasks.length > 0"
         class="dashboard-saved-task-list"
-        mode="preview"
+        :mode="savedTaskListMode"
         @click="closeTaskMenu"
       >
         <ListSection
           class="dashboard-saved-task-section"
           :aria-label="showArchived ? 'Archived saved tasks' : 'Active saved tasks'"
         >
+          <template #title>
+            <div class="dashboard-saved-task-section-heading">
+              <span class="dashboard-saved-task-section-heading-text">Saved Tasks</span>
+              <SegmentedControl
+                :model-value="showArchived ? 'archived' : 'active'"
+                :options="archiveViewOptions"
+                variant="page"
+                aria-label="Dashboard task archive view"
+                @update:model-value="setArchiveView"
+              />
+            </div>
+          </template>
+
+          <template v-if="savedTasks.length > 0" #control>
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm dashboard-saved-task-toggle"
+              :aria-expanded="isSavedTaskListExpanded"
+              @click.stop="toggleSavedTaskListExpanded"
+            >
+              {{ savedTaskToggleLabel }}
+            </button>
+          </template>
+
           <ListItem
-            v-for="task in savedTasks"
+            v-for="task in visibleSavedTasks"
             :key="task._id"
             element="div"
             :interactive="!showArchived"
@@ -427,9 +464,11 @@ async function handleGenerateTaskDrafts() {
               </div>
             </ItemMeta>
           </ListItem>
+          <li v-if="savedTasks.length === 0" class="dashboard-saved-task-empty">
+            <EmptyState :title="showArchived ? 'No archived tasks' : 'No saved tasks yet'" :description="showArchived ? 'Archive tasks to see them here' : 'Add tasks from AI drafts or quick add above'" />
+          </li>
         </ListSection>
       </List>
-      <EmptyState v-else :title="showArchived ? 'No archived tasks' : 'No saved tasks yet'" :description="showArchived ? 'Archive tasks to see them here' : 'Add tasks from AI drafts or quick add above'" />
     </div>
 
     <div class="card">
@@ -730,23 +769,7 @@ async function handleGenerateTaskDrafts() {
 .tasks-execution-zone {
   display: flex;
   flex-direction: column;
-}
-
-.zone-header {
-  margin-bottom: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.zone-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.zone-title {
-  margin: 0;
+  padding: 0;
 }
 
 .task-action-success {
@@ -756,6 +779,35 @@ async function handleGenerateTaskDrafts() {
 
 .dashboard-saved-task-list {
   --dashboard-task-provenance-size: 16px;
+  border: none;
+}
+
+.dashboard-saved-task-section-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.dashboard-saved-task-section-heading-text {
+  font-size: var(--font-size-section);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.dashboard-saved-task-empty {
+  list-style: none;
+}
+
+@media (max-width: 480px) {
+  .dashboard-saved-task-list :deep(.list-item) {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .dashboard-saved-task-list :deep(.item-meta) {
+    width: auto;
+    justify-content: flex-end;
+  }
 }
 
 .source-dot {

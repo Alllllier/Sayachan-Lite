@@ -355,7 +355,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0;
-  padding: 3px;
+  padding: 2px;
   border: 1px solid var(--border-default);
   border-radius: var(--control-radius-pill);
 }
@@ -364,8 +364,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 28px;
-  padding: 0 12px;
+  min-height: 26px;
+  padding: 0 10px;
   border: none;
   background: transparent;
   color: var(--segmented-item-text);
@@ -392,8 +392,8 @@
 }
 
 .segmented-control--page .segmented-control__item {
-  min-height: 30px;
-  padding: 0 13px;
+  min-height: 28px;
+  padding: 0 11px;
   font-size: var(--font-size-sm);
 }
 
@@ -414,8 +414,8 @@
 }
 
 .segmented-control--mode .segmented-control__item {
-  min-height: 30px;
-  padding: 0 14px;
+  min-height: 28px;
+  padding: 0 12px;
   font-size: var(--font-size-button);
   font-weight: var(--font-weight-medium);
 }
@@ -433,12 +433,12 @@
 .segmented-control--inline {
   background: var(--segmented-shell-inline);
   border-color: transparent;
-  padding: 2px;
+  padding: 1px;
 }
 
 .segmented-control--inline .segmented-control__item {
-  min-height: 26px;
-  padding: 0 10px;
+  min-height: 24px;
+  padding: 0 8px;
   font-size: var(--font-size-chip);
 }
 
