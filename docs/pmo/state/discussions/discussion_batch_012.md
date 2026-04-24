@@ -327,7 +327,7 @@
       - use the first pass as a reference
       - solve the saved-task disclosure versus primary-action redistribution
       - determine whether checkbox removal and list-level expand can be landed cleanly
-- `pass-3`
+  - `pass-3`
     - then close with `ai-task-item`, `ai-suggestion-item`, and any remaining compatible local residues
     - reason:
       - these look like good cleanup consumers of the framework once the two major anchor surfaces are proven
@@ -340,17 +340,47 @@
 - `slice-001` has now completed successfully and remains recorded in:
   - `state/sprint_candidates.md`
   - `history/reports/frontend-display-list-baseline-pass-1-projects-task-preview.md`
+- `pass-2` is now promoted into `state/sprint_candidates.md` as:
+  - `Frontend Display-List Baseline Pass 2: Dashboard Saved Tasks`
+- `pass-2` has now been selected as the active sprint on `2026-04-24`.
+- Active handoff surface:
+  - `state/execution_task.md`
+- `pass-2` has now completed and was accepted for closeout on `2026-04-24`.
+- Closeout report:
+  - `history/reports/frontend-display-list-baseline-pass-2-dashboard-saved-tasks.md`
+- Landed pass-2 outcome:
+  - Dashboard saved tasks now use the shared `List / ListSection / ListItem / ItemContent / ItemMeta` frame
+  - active row primary click now owns complete/reactivate
+  - the checkbox and row-level title expansion path were removed
+  - provenance remains row metadata
+  - archive/delete/restore remain trailing secondary actions
+  - follow-up polish aligned the saved-task surface with shared card/title language and action-accent list styling
+- Current promoted pass-2 judgment:
+  - Dashboard saved tasks can now sit under the shared list framework because their current local structure maps cleanly to:
+    - `saved-tasks-list` -> `List`
+    - `saved-task-item` -> `ListItem`
+    - `task-title` -> `ItemContent`
+    - `source-dot` -> `ItemMeta`
+    - overflow archive/delete/restore controls -> trailing secondary action area, without requiring a formal `ItemTrailingMenu` component yet
+  - the main implementation change is a responsibility redistribution rather than a cosmetic class swap:
+    - row primary click in active view should own `completed / uncompleted` toggle
+    - the active-view checkbox should be removed
+    - row-level title expansion should be removed from saved tasks
+    - any preview/full disclosure should live at list or section level
+    - provenance should remain metadata
+    - archive/delete/restore should remain trailing secondary actions
 - PMO current lifecycle reading after promotion:
   - keep this batch active because:
-    - later `Dashboard` and AI/list convergence follow-ons remain open
+    - the selected `Dashboard` pass has completed
+    - later AI/list convergence follow-ons remain open
   - but treat the first-pass Projects validation slice as no longer discussion-only
-  - use the promoted candidate as the formal near-term execution entry for this thread's first implementation move
+  - treat both Projects task preview and Dashboard saved tasks as validated anchor surfaces before deciding the later AI/list convergence cleanup
 
 ## Suggested Next PMO Action
 
 - Use this batch as the durable context for:
   - the now-completed first-pass `Projects` task preview validation slice
-  - later `Dashboard` comparison/migration work
+  - the now-completed `Dashboard` saved-task migration slice
   - later AI/item convergence cleanup after the anchor surfaces are proven
 - Keep `NotesPanel` and `ProjectsPanel` audits as evidence inputs, not as replacement canonical homes for this larger topic.
 - Treat `Dashboard` as a likely evidence surface for compact list/item residue, but do not let it dominate the first shared grammar decision unless it proves to be the cleanest reference.

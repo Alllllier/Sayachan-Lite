@@ -14,6 +14,7 @@ import { useCockpitSignals } from '../stores/cockpitSignals'
 import EmptyState from './ui/EmptyState.vue'
 import SegmentedControl from './ui/SegmentedControl.vue'
 import Toast from './ui/Toast.vue'
+import { List, ListSection, ListItem, ItemContent, ItemMeta } from './ui/list'
 
 const cockpitSignals = useCockpitSignals()
 
@@ -91,9 +92,6 @@ function showToast(message, type = 'success') {
     toast.value = false
   }, 3000)
 }
-
-// P0-2: Task Expand
-const expandedTasks = ref(new Set())
 
 // P0-1: Quick Add Task
 const quickAddInput = ref('')
@@ -206,15 +204,6 @@ function toggleTaskMenu(taskId) {
 
 function closeTaskMenu() {
   taskMenuOpen.value = null
-}
-
-// P0-2: Toggle task expand
-function toggleTaskExpand(taskId) {
-  if (expandedTasks.value.has(taskId)) {
-    expandedTasks.value.delete(taskId)
-  } else {
-    expandedTasks.value.add(taskId)
-  }
 }
 
 // Status mapping: internal enum → user-friendly language
@@ -382,9 +371,9 @@ async function handleGenerateTaskDrafts() {
       />
     </div>
 
-    <div class="tasks-execution-zone">
+    <div class="card tasks-execution-zone">
       <div class="zone-header">
-        <h3 class="zone-title">Saved Tasks</h3>
+        <h3 class="card-title zone-title">Saved Tasks</h3>
         <div class="zone-controls">
           <SegmentedControl
             :model-value="showArchived ? 'archived' : 'active'"
@@ -395,32 +384,51 @@ async function handleGenerateTaskDrafts() {
           />
         </div>
       </div>
-      <div v-if="savedTasks.length > 0" class="saved-tasks-list" @click="closeTaskMenu">
-        <div
-          class="saved-task-item"
-          :class="{ completed: task.completed, expanded: expandedTasks.has(task._id) }"
-          v-for="task in savedTasks"
-          :key="task._id"
-          @click="toggleTaskExpand(task._id)"
+      <List
+        v-if="savedTasks.length > 0"
+        class="dashboard-saved-task-list"
+        mode="preview"
+        @click="closeTaskMenu"
+      >
+        <ListSection
+          class="dashboard-saved-task-section"
+          :aria-label="showArchived ? 'Archived saved tasks' : 'Active saved tasks'"
         >
-          <input v-if="!showArchived" type="checkbox" class="task-checkbox" :checked="task.completed" @change="handleTaskComplete(task)" @click.stop>
-          <span class="task-title" :title="task.title">{{ task.title }}</span>
-          <span
-            class="source-dot"
-            :class="getProvenanceClass(task)"
-            :title="getSourceTooltip(task)"
-          >{{ getSourceLetter(task) }}</span>
-          <div class="task-menu-container">
-            <button @click="toggleTaskMenu(task._id)" class="btn btn-overflow task-menu-btn" :class="{ active: taskMenuOpen === task._id }" @click.stop title="Actions">
-              <svg class="menu-icon-svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/></svg>
-            </button>
-            <div v-if="taskMenuOpen === task._id" class="task-menu-dropdown panel-surface-menu" @click.stop>
-              <button @click="handleTaskArchive(task)" class="btn btn-menu-item btn-archive menu-item">{{ showArchived ? 'Restore' : 'Archive' }}</button>
-              <button @click="handleTaskDelete(task)" class="btn btn-menu-item btn-danger menu-item delete">Delete</button>
-            </div>
-          </div>
-        </div>
-      </div>
+          <ListItem
+            v-for="task in savedTasks"
+            :key="task._id"
+            element="div"
+            :interactive="!showArchived"
+            :muted="task.completed || task.status === 'completed'"
+            :archived="showArchived"
+            :raised="taskMenuOpen === task._id"
+            :role="!showArchived ? 'button' : undefined"
+            :tabindex="!showArchived ? 0 : undefined"
+            :aria-pressed="!showArchived ? task.completed || task.status === 'completed' : undefined"
+            @click="!showArchived ? handleTaskComplete(task) : null"
+            @keydown.enter.prevent="!showArchived ? handleTaskComplete(task) : null"
+            @keydown.space.prevent="!showArchived ? handleTaskComplete(task) : null"
+          >
+            <ItemContent :text="task.title" />
+            <ItemMeta>
+              <span
+                class="source-dot"
+                :class="getProvenanceClass(task)"
+                :title="getSourceTooltip(task)"
+              >{{ getSourceLetter(task) }}</span>
+              <div class="task-menu-container" @click.stop @keydown.stop>
+                <button @click.stop="toggleTaskMenu(task._id)" class="btn btn-overflow task-menu-btn" :class="{ active: taskMenuOpen === task._id }" title="Actions">
+                  <svg class="menu-icon-svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/></svg>
+                </button>
+                <div v-if="taskMenuOpen === task._id" class="task-menu-dropdown panel-surface-menu" @click.stop>
+                  <button @click="handleTaskArchive(task)" class="btn btn-menu-item btn-archive menu-item">{{ showArchived ? 'Restore' : 'Archive' }}</button>
+                  <button @click="handleTaskDelete(task)" class="btn btn-menu-item btn-danger menu-item delete">Delete</button>
+                </div>
+              </div>
+            </ItemMeta>
+          </ListItem>
+        </ListSection>
+      </List>
       <EmptyState v-else :title="showArchived ? 'No archived tasks' : 'No saved tasks yet'" :description="showArchived ? 'Archive tasks to see them here' : 'Add tasks from AI drafts or quick add above'" />
     </div>
 
@@ -720,12 +728,8 @@ async function handleGenerateTaskDrafts() {
 }
 
 .tasks-execution-zone {
-  margin-bottom: 24px;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  border: 2px solid #42b883;
-  box-shadow: 0 2px 8px rgba(66, 184, 131, 0.1);
+  display: flex;
+  flex-direction: column;
 }
 
 .zone-header {
@@ -742,10 +746,7 @@ async function handleGenerateTaskDrafts() {
 }
 
 .zone-title {
-  font-size: 16px;
   margin: 0;
-  color: #42b883;
-  font-weight: 600;
 }
 
 .task-action-success {
@@ -753,60 +754,13 @@ async function handleGenerateTaskDrafts() {
   font-size: 12px;
 }
 
-.saved-tasks-list {
-  background: white;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.saved-task-item {
-  display: flex;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #f5f5f5;
-}
-
-.saved-task-item:last-child {
-  border-bottom: none;
-}
-
-.saved-task-item.completed .task-title {
-  text-decoration: line-through;
-  opacity: 0.5;
-}
-
-.task-checkbox {
-  width: 16px;
-  height: 16px;
-  margin-right: 8px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.task-title {
-  flex: 1;
-  font-size: 13px;
-  color: #333;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: pointer;
-  line-height: 1.5;
-  padding: 2px 0;
-}
-
-/* Hotfix-3: Expanded state - only change white-space, no display change to avoid drift */
-.saved-task-item.expanded .task-title {
-  white-space: normal;
-  word-break: break-word;
-  overflow: visible;
+.dashboard-saved-task-list {
+  --dashboard-task-provenance-size: 16px;
 }
 
 .source-dot {
-  width: 16px;
-  height: 16px;
+  width: var(--dashboard-task-provenance-size);
+  height: var(--dashboard-task-provenance-size);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -814,7 +768,6 @@ async function handleGenerateTaskDrafts() {
   font-size: 9px;
   font-weight: 600;
   color: white;
-  margin-left: 6px;
   flex-shrink: 0;
   background-color: var(--text-muted); /* Default fallback */
 }

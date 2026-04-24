@@ -25,6 +25,10 @@ defineProps({
   archived: {
     type: Boolean,
     default: false
+  },
+  raised: {
+    type: Boolean,
+    default: false
   }
 })
 </script>
@@ -39,7 +43,8 @@ defineProps({
         'list-item--interactive': interactive,
         'list-item--current': current,
         'list-item--muted': muted,
-        'list-item--archived': archived
+        'list-item--archived': archived,
+        'list-item--raised': raised
       }"
       v-bind="$attrs"
     >
@@ -63,10 +68,12 @@ defineProps({
   background: var(--surface-card);
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
-  border-left: 2px solid var(--identity-primary);
+  border-left: 2px solid var(--action-primary);
   font-size: var(--font-size-chip);
   text-align: left;
   color: inherit;
+  position: relative;
+  z-index: 0;
 }
 
 button.list-item {
@@ -93,23 +100,32 @@ button.list-item {
 }
 
 .list-item--current {
-  border-left-color: var(--identity-primary);
+  border-left-color: var(--action-primary);
   background: linear-gradient(135deg, var(--surface-card) 0%, var(--surface-hover) 100%);
 }
 
 .list-item--muted {
-  opacity: 0.75;
   border-left-color: var(--border-default);
 }
 
 .list-item--muted .item-content-text {
+  color: var(--text-muted);
+  opacity: 0.78;
   text-decoration: line-through;
 }
 
 .list-item--archived {
-  opacity: 0.72;
-  border-left-color: var(--identity-primary-muted);
+  border-left-color: var(--action-primary-hover);
   background: var(--surface-panel);
+}
+
+.list-item--archived .item-content-text,
+.list-item--archived .item-meta {
+  opacity: 0.72;
+}
+
+.list-item--raised {
+  z-index: 20;
 }
 
 @media (max-width: 480px) {

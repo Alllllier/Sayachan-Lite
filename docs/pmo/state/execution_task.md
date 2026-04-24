@@ -2,7 +2,7 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-04-23`
+- Last updated: `2026-04-24`
 
 ## Current State
 
@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Frontend Display-List Baseline Pass 1: Projects Task Preview`
+- Sprint: `Frontend Display-List Baseline Pass 2: Dashboard Saved Tasks`
 - Outcome: `completed`
-- Report surface: `docs/pmo/history/reports/frontend-display-list-baseline-pass-1-projects-task-preview.md`
+- Report surface: `docs/pmo/history/reports/frontend-display-list-baseline-pass-2-dashboard-saved-tasks.md`
 
 ## Next Activation Rule
 

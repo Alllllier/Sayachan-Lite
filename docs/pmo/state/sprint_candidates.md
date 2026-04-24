@@ -29,41 +29,6 @@
 
 ## Current Candidates
 
-### `Frontend Secondary Controls And Reveal Baseline`
-
-- Status: `completed`
-- Source reference: `state/discussions/discussion_batch_011.md slice-004`
-- Why now: `The core controls grammar and action-grouping baseline have already landed, so the next frontend consistency gap is the narrower but still shared layer around icon buttons, overflow/menu triggers, and their attached reveal surfaces. Discussion has now converged on a bounded direction: `Notes / Projects` define the standard rounded-square panel-surface pattern, `Dashboard` should be absorbed into that final pattern, and AI circle controls remain intentionally out of scope for this pass.`
-- Expected outcome: `The frontend gains a first real baseline for secondary panel-surface controls and attached reveal surfaces. Ordinary tool-style icon buttons and menu triggers should stop drifting as panel-local implementations, `Notes / Projects` should define the shared rounded-square pattern, and `Dashboard` should adopt that same final menu-trigger grammar without reopening AI circle or ChatEntry control design.`
-- In scope:
-  - formalize the panel-surface `rounded-square` icon-button baseline
-  - keep `28x28` as the shared size for that baseline
-  - preserve the agreed shape split:
-    - `rounded-square` for ordinary tool/menu controls
-    - `circle` remains outside this slice
-  - absorb the agreed rounded-square state language into baseline tokens/rules:
-    - transparent default
-    - muted foreground
-    - shared active surface for hover/open/pinned-like states
-  - treat `pin` as the main rounded-square reference sample
-  - formalize `menu trigger` to eat the same rounded-square baseline
-  - treat `Notes / Projects` as the canonical shared panel-surface menu-trigger sample
-  - bring `Dashboard` menu trigger directly under that final shared scheme
-  - preserve current dropdown/menu-item behavior where it is already good enough
-  - keep reveal-pattern formalization limited to the ordinary attached panel-surface pattern already present in `Notes / Projects`
-- Out of scope:
-  - `circle` AI / Intent button redesign or AI reveal unification
-  - `ChatEntry` icon-button/menu-trigger changes
-  - broader `ObjectActionArea` or action-grouping redesign
-  - broader dashboard workflow redesign
-  - input / textarea states
-  - full legacy cleanup beyond this secondary-controls surface
-- Dependencies: `discussion_batch_011 slice-004 judgments; landed controls core and action-grouping baselines; willingness to treat `Notes / Projects` as the canonical menu-trigger sample and `Dashboard` as the legacy surface to absorb`
-- Risk level: `low`
-- Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-22 by explicit human direction to promote the now-mature secondary-controls/reveal discussion into candidate status rather than continue deeper speculative discussion.`
-- Closeout: `Completed on 2026-04-22. Landed the first rounded-square panel-surface baseline for pin/menu triggers, unified the effective Notes/Projects menu-trigger family into shared baseline rules, and absorbed Dashboard into that same trigger/dropdown/menu-item scheme without reopening AI circle controls, ChatEntry, or broader workflow redesign. Validation passed through frontend npm test and npm run build.`
-
 ### `Frontend Input State Cleanup`
 
 - Status: `completed`
@@ -135,3 +100,39 @@
 - Readiness: `ready`
 - Start condition: `Satisfied on 2026-04-23 by explicit human direction to promote the first-pass Projects task preview slice after converging on the new list framework, rollout order, and the judgment that this is the cleanest surface to validate real implementation.`
 - Closeout: `Completed on 2026-04-23. Landed the first shared display-list primitive layer under `frontend/src/components/ui/list/` and rewired `ProjectsPanel` task preview onto it. Same-scope human review corrections then tightened the section hierarchy, restored correct row font sizing, fixed mobile preview truncation, hid project-local mobile meta, moved disclosure from list shell to section-level controls, and split primary versus archived expansion state so the final implementation matched the updated PMO rule. Frontend targeted tests passed and repeated production builds stayed green aside from the existing large-chunk warning.`
+
+### `Frontend Display-List Baseline Pass 2: Dashboard Saved Tasks`
+
+- Status: `completed`
+- Source reference: `state/discussions/discussion_batch_012.md pass-2`
+- Why now: `The Projects task preview pass has validated the first shared display-list primitive layer in real code. Dashboard saved tasks are now the right second anchor surface because they expose the harder responsibility split that the list grammar was designed to clarify: row primary click, preview/expanded disclosure, provenance metadata, and trailing secondary actions are currently mixed across local Dashboard markup and checkbox behavior.`
+- Expected outcome: `Dashboard saved tasks migrate onto the shared `List / ListSection / ListItem / ItemContent / ItemMeta` frame, removing the local saved-task list/item shell as the governing structure. Row primary click becomes the active-view complete/reactivate action, item-level expand is removed in favor of list or section preview/expanded mode, provenance stays in row metadata, and archive/delete/restore remain trailing secondary actions without forcing a full `ItemTrailingMenu` component yet.`
+- In scope:
+  - migrate Dashboard saved tasks from local `saved-tasks-list` / `saved-task-item` structure to shared display-list primitives:
+    - `List`
+    - `ListSection`
+    - `ListItem`
+    - `ItemContent`
+    - `ItemMeta`
+  - remove the active-view checkbox from saved-task rows
+  - assign row primary click in active view to `completed / uncompleted` toggle
+  - remove item-level title expansion state from saved tasks
+  - introduce or use list/section-level preview versus expanded mode if the visible range or full-title display needs disclosure
+  - keep source/provenance dots as row metadata
+  - keep archive/delete/restore actions as trailing menu behavior inside the row metadata/trailing area
+  - preserve active versus archived view behavior through the existing Dashboard archive segmented control
+  - express completed rows primarily through muted/strikethrough row treatment rather than a new color system
+  - express archived rows as demoted/non-primary rows rather than a separate vivid state treatment
+- Out of scope:
+  - introducing a formal `ItemTrailingMenu` component in this pass
+  - redesigning the broader Dashboard AI workflow
+  - migrating `taskDrafts`, `actionPlan`, or other AI workflow list-like residues
+  - broad row-state systemization beyond what Dashboard saved tasks need
+  - changing backend task lifecycle semantics
+  - replacing the existing archive view segmented control
+  - full Dashboard visual redesign or shell/module cleanup
+- Dependencies: `completed Projects task preview list pass; existing shared list primitives under frontend/src/components/ui/list/; discussion_batch_012 responsibility split for Dashboard saved tasks; human agreement that checkbox removal follows from assigning row primary click to completed/uncompleted toggle`
+- Risk level: `medium`
+- Readiness: `ready`
+- Start condition: `Satisfied on 2026-04-24 by human agreement that the Dashboard saved-task plan is complete enough to promote to candidate status.`
+- Closeout: `Completed on 2026-04-24. Dashboard saved tasks now use the shared display-list frame, active row primary click owns complete/reactivate, the checkbox and item-level expansion path were removed, provenance and trailing archive/delete/restore actions remain intact, and follow-up polish aligned the section with shared card/title and action-accent list treatment. Validation passed through frontend npm test and npm run build, with only the existing Vite large-chunk warning.`
