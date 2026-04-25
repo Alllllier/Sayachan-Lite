@@ -1,6 +1,5 @@
 <script setup>
 import { computed, ref, onMounted, watch, watchEffect } from 'vue'
-import { generateWeeklyReview, recommendFocus, generateActionPlan, generateTaskDrafts } from '../services/aiService'
 import {
   activeTasksSnapshotRef,
   fetchTasks,
@@ -19,21 +18,18 @@ import { List, ListSection, ListItem, ItemContent, ItemMeta } from './ui/list'
 
 const cockpitSignals = useCockpitSignals()
 
-const props = defineProps(['notes', 'projects'])
+const props = defineProps(['projects'])
 const emit = defineEmits(['refreshed'])
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
-const safeNotes = computed(() => Array.isArray(props.notes) ? props.notes : [])
 const safeProjects = computed(() => Array.isArray(props.projects) ? props.projects : [])
-
-const recentNotes = computed(() => safeNotes.value.slice(0, 3))
-const recentProjects = computed(() => safeProjects.value.slice(0, 3))
 
 const savedTasks = tasksRef
 const activeTasksForContext = activeTasksSnapshotRef
 
-// Cockpit signals: lightweight dashboard context for global chat
+// Temporary bridge: Dashboard still pre-hydrates cockpit signals for the
+// global ChatEntry. Future AI core context-layer work should own this instead.
 const activeProjectsCount = computed(() =>
   safeProjects.value.filter(p => !p.archived).length
 )
@@ -68,16 +64,6 @@ watchEffect(() => {
   })
 })
 
-const weeklyReview = ref('')
-const isLoading = ref(false)
-const focusRecommendation = ref('')
-const isLoadingFocus = ref(false)
-const actionPlan = ref([])
-const isLoadingAction = ref(false)
-const taskDrafts = ref([])
-const isLoadingDrafts = ref(false)
-
-const isSavingTasks = ref(false)
 const taskMenuOpen = ref(null)
 const isSavedTaskListExpanded = ref(false)
 const savedTaskPreviewLimit = 5
@@ -230,28 +216,6 @@ function toggleSavedTaskListExpanded() {
   closeTaskMenu()
 }
 
-// Status mapping: internal enum → user-friendly language
-function formatStatus(status) {
-  const statusMap = {
-    'pending': 'Planning',
-    'in_progress': 'In Progress',
-    'completed': 'Completed',
-    'on_hold': 'Paused'
-  }
-  return statusMap[status] || status
-}
-
-function getSourceColor(task) {
-  // Priority: use new creationMode field
-  if (task.creationMode === 'ai') {
-    return '#DAA520'
-  }
-  if (task.creationMode === 'manual') {
-    return '#6b7280'
-  }
-  return '#999' // Ultimate fallback
-}
-
 function getSourceLetter(task) {
   // Canonical: only use originModule field
   const originModule = task.originModule?.toLowerCase() || ''
@@ -293,404 +257,111 @@ function getSourceTooltip(task) {
   }
   return 'Manual'
 }
-
-async function handleSaveDraftsAsTasks() {
-  isSavingTasks.value = true
-  try {
-    for (const draft of taskDrafts.value) {
-      await saveTask(
-        draft.title,
-        draft.creationMode || 'ai',
-        draft.originModule || 'dashboard',
-        draft.originId || null
-      )
-    }
-    await fetchTasks(showArchived.value)
-    showToast(`Saved ${taskDrafts.value.length} task(s)`)
-    taskDrafts.value = []
-  } catch (e) {
-    showToast('Failed to save tasks', 'error')
-  } finally {
-    isSavingTasks.value = false
-  }
-}
-
-async function handleGenerateReview() {
-  isLoading.value = true
-  try {
-    const { review } = await generateWeeklyReview(safeNotes.value, safeProjects.value)
-    weeklyReview.value = review
-    showToast('Review generated')
-  } catch (e) {
-    weeklyReview.value = 'Failed to generate review'
-  } finally {
-    isLoading.value = false
-  }
-}
-
-async function handleRecommendFocus() {
-  isLoadingFocus.value = true
-  try {
-    const { recommendation } = await recommendFocus(safeNotes.value, safeProjects.value)
-    focusRecommendation.value = recommendation
-    showToast('Focus recommended')
-  } catch (e) {
-    focusRecommendation.value = 'Failed to get recommendation'
-  } finally {
-    isLoadingFocus.value = false
-  }
-}
-
-async function handleGenerateActionPlan() {
-  isLoadingAction.value = true
-  try {
-    const { actions } = await generateActionPlan(
-      safeNotes.value,
-      safeProjects.value,
-      focusRecommendation.value || undefined
-    )
-    actionPlan.value = actions
-    showToast('Action plan generated')
-  } catch (e) {
-    actionPlan.value = ['Failed to generate action plan']
-  } finally {
-    isLoadingAction.value = false
-  }
-}
-
-async function handleGenerateTaskDrafts() {
-  isLoadingDrafts.value = true
-  try {
-    const { drafts } = await generateTaskDrafts(
-      safeNotes.value,
-      safeProjects.value,
-      actionPlan.value || undefined
-    )
-    taskDrafts.value = drafts
-    showToast('Drafts generated')
-  } catch (e) {
-    taskDrafts.value = [{ title: 'Failed to generate drafts', source: 'error' }]
-  } finally {
-    isLoadingDrafts.value = false
-  }
-}
 </script>
 
 <template>
   <Toast :message="toastMessage" :type="toastType" :visible="toast" />
 
-  <div>
-    <input
-      v-model="quickAddInput"
-      placeholder="Quick add task... (e.g., 去拿快递)"
-      @keyup.enter="handleQuickAddTask"
-      :disabled="isQuickAdding"
-      class="input"
-    />
-  </div>
-
-    <div class="card dashboard-list-card">
-      <List
-        class="dashboard-card-list"
-        :mode="savedTaskListMode"
-        @click="closeTaskMenu"
-      >
-        <ListSection :aria-label="showArchived ? 'Archived saved tasks' : 'Active saved tasks'">
-          <template #title>
-            <div class="dashboard-list-heading">
-              <span class="dashboard-list-heading-text">Saved Tasks</span>
-              <SegmentedControl
-                :model-value="showArchived ? 'archived' : 'active'"
-                :options="archiveViewOptions"
-                variant="page"
-                aria-label="Dashboard task archive view"
-                @update:model-value="setArchiveView"
-              />
-            </div>
-          </template>
-
-          <template v-if="savedTasks.length > 0" #control>
-            <button
-              type="button"
-              class="btn btn-ghost btn-sm"
-              :aria-expanded="isSavedTaskListExpanded"
-              @click.stop="toggleSavedTaskListExpanded"
-            >
-              {{ savedTaskToggleLabel }}
-            </button>
-          </template>
-
-          <ListItem
-            v-for="task in visibleSavedTasks"
-            :key="task._id"
-            element="div"
-            :interactive="!showArchived"
-            :muted="task.completed || task.status === 'completed'"
-            :archived="showArchived"
-            :raised="taskMenuOpen === task._id"
-            :role="!showArchived ? 'button' : undefined"
-            :tabindex="!showArchived ? 0 : undefined"
-            :aria-pressed="!showArchived ? task.completed || task.status === 'completed' : undefined"
-            @click="!showArchived ? handleTaskComplete(task) : null"
-            @keydown.enter.prevent="!showArchived ? handleTaskComplete(task) : null"
-            @keydown.space.prevent="!showArchived ? handleTaskComplete(task) : null"
-          >
-            <ItemContent :text="task.title" />
-            <ItemMeta>
-              <span
-                class="source-dot"
-                :class="getProvenanceClass(task)"
-                :title="getSourceTooltip(task)"
-              >{{ getSourceLetter(task) }}</span>
-              <OverflowMenu
-                :open="taskMenuOpen === task._id"
-                title="Actions"
-                @toggle="toggleTaskMenu(task._id)"
-              >
-                <button @click="handleTaskArchive(task)" class="btn btn-menu-item btn-archive">{{ showArchived ? 'Restore' : 'Archive' }}</button>
-                <button @click="handleTaskDelete(task)" class="btn btn-menu-item btn-danger">Delete</button>
-              </OverflowMenu>
-            </ItemMeta>
-          </ListItem>
-          <li v-if="savedTasks.length === 0" class="dashboard-list-empty">
-            <EmptyState :title="showArchived ? 'No archived tasks' : 'No saved tasks yet'" :description="showArchived ? 'Archive tasks to see them here' : 'Add tasks from AI drafts or quick add above'" />
-          </li>
-        </ListSection>
-      </List>
+  <div class="card dashboard-list-card">
+    <div class="dashboard-quick-add">
+      <input
+        v-model="quickAddInput"
+        placeholder="Quick add task... (e.g., 去拿快递)"
+        @keyup.enter="handleQuickAddTask"
+        :disabled="isQuickAdding"
+        class="input"
+      />
     </div>
-
-    <div class="card dashboard-list-card">
-      <List class="dashboard-card-list dashboard-summary-list" mode="preview">
-        <ListSection title="Recent Notes">
-          <li v-if="recentNotes.length === 0" class="dashboard-list-empty">
-            <EmptyState title="No notes yet" />
-          </li>
-          <ListItem
-            v-for="note in recentNotes"
-            :key="note._id"
-          >
-            <ItemContent :text="note.title" />
-            <ItemMeta>{{ new Date(note.createdAt).toLocaleDateString() }}</ItemMeta>
-          </ListItem>
-        </ListSection>
-      </List>
-    </div>
-
-    <div class="card dashboard-list-card">
-      <List class="dashboard-card-list dashboard-summary-list" mode="preview">
-        <ListSection title="Projects">
-          <li v-if="recentProjects.length === 0" class="dashboard-list-empty">
-            <EmptyState title="No projects yet" />
-          </li>
-          <ListItem
-            v-for="project in recentProjects"
-            :key="project._id"
-          >
-            <ItemContent :text="project.name" />
-            <ItemMeta>{{ formatStatus(project.status) }}</ItemMeta>
-          </ListItem>
-        </ListSection>
-      </List>
-    </div>
-
-    <div class="ai-workflow">
-      <h3 class="ai-section-title">AI Assistant</h3>
-
-      <div class="workflow-step">
-        <div class="step-header">
-          <h4 class="step-title">1. Weekly Review</h4>
-        </div>
-        <button @click="handleGenerateReview" class="btn btn-ai" :disabled="isLoading">
-          {{ isLoading ? 'Generating...' : 'Generate Review' }}
-        </button>
-        <div v-if="weeklyReview" class="weekly-review">{{ weeklyReview }}</div>
-      </div>
-
-      <div class="workflow-step">
-        <div class="step-header">
-          <h4 class="step-title">2. Focus</h4>
-        </div>
-        <button @click="handleRecommendFocus" class="btn btn-ai" :disabled="isLoadingFocus">
-          {{ isLoadingFocus ? 'Analyzing...' : 'Get Focus' }}
-        </button>
-        <div v-if="focusRecommendation" class="focus-recommendation">{{ focusRecommendation }}</div>
-      </div>
-
-      <div class="workflow-step">
-        <div class="step-header">
-          <h4 class="step-title">3. Action Plan</h4>
-        </div>
-        <button @click="handleGenerateActionPlan" class="btn btn-ai" :disabled="isLoadingAction">
-          {{ isLoadingAction ? 'Generating...' : 'Create Plan' }}
-        </button>
-        <div v-if="actionPlan.length > 0" class="action-plan">
-          <div class="action-item" v-for="(action, idx) in actionPlan" :key="idx">{{ idx + 1 }}. {{ action }}</div>
-        </div>
-      </div>
-
-      <div class="workflow-step">
-        <div class="step-header">
-          <h4 class="step-title">4. Task Drafts</h4>
-        </div>
-        <button @click="handleGenerateTaskDrafts" class="btn btn-ai" :disabled="isLoadingDrafts">
-          {{ isLoadingDrafts ? 'Generating...' : 'Create Drafts' }}
-        </button>
-        <div v-if="taskDrafts.length > 0" class="task-drafts">
-          <div class="draft-item" v-for="(draft, idx) in taskDrafts" :key="idx">
-            <span>{{ draft.title }}</span>
-            <span class="draft-source">[{{ draft.source }}]</span>
+    <List
+      class="dashboard-card-list"
+      :mode="savedTaskListMode"
+      @click="closeTaskMenu"
+    >
+      <ListSection :aria-label="showArchived ? 'Archived saved tasks' : 'Active saved tasks'">
+        <template #title>
+          <div class="dashboard-list-heading">
+            <span class="dashboard-list-heading-text">Saved Tasks</span>
+            <SegmentedControl
+              :model-value="showArchived ? 'archived' : 'active'"
+              :options="archiveViewOptions"
+              variant="page"
+              aria-label="Dashboard task archive view"
+              @update:model-value="setArchiveView"
+            />
           </div>
-          <button @click="handleSaveDraftsAsTasks" class="btn btn-primary save-btn" :disabled="isSavingTasks">
-            {{ isSavingTasks ? 'Saving...' : 'Save to Tasks' }}
+        </template>
+
+        <template v-if="savedTasks.length > 0" #control>
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            :aria-expanded="isSavedTaskListExpanded"
+            @click.stop="toggleSavedTaskListExpanded"
+          >
+            {{ savedTaskToggleLabel }}
           </button>
-        </div>
-      </div>
-    </div>
+        </template>
+
+        <ListItem
+          v-for="task in visibleSavedTasks"
+          :key="task._id"
+          element="div"
+          :interactive="!showArchived"
+          :muted="task.completed || task.status === 'completed'"
+          :archived="showArchived"
+          :raised="taskMenuOpen === task._id"
+          :role="!showArchived ? 'button' : undefined"
+          :tabindex="!showArchived ? 0 : undefined"
+          :aria-pressed="!showArchived ? task.completed || task.status === 'completed' : undefined"
+          @click="!showArchived ? handleTaskComplete(task) : null"
+          @keydown.enter.prevent="!showArchived ? handleTaskComplete(task) : null"
+          @keydown.space.prevent="!showArchived ? handleTaskComplete(task) : null"
+        >
+          <ItemContent :text="task.title" />
+          <ItemMeta>
+            <span
+              class="source-dot"
+              :class="getProvenanceClass(task)"
+              :title="getSourceTooltip(task)"
+            >{{ getSourceLetter(task) }}</span>
+            <OverflowMenu
+              :open="taskMenuOpen === task._id"
+              title="Actions"
+              @toggle="toggleTaskMenu(task._id)"
+            >
+              <button @click="handleTaskArchive(task)" class="btn btn-menu-item btn-archive">{{ showArchived ? 'Restore' : 'Archive' }}</button>
+              <button @click="handleTaskDelete(task)" class="btn btn-menu-item btn-danger">Delete</button>
+            </OverflowMenu>
+          </ItemMeta>
+        </ListItem>
+        <li v-if="savedTasks.length === 0" class="dashboard-list-empty">
+          <EmptyState :title="showArchived ? 'No archived tasks' : 'No saved tasks yet'" :description="showArchived ? 'Archive tasks to see them here' : 'Add tasks from quick add above'" />
+        </li>
+      </ListSection>
+    </List>
+  </div>
 
 </template>
 
 <style scoped>
-.ai-workflow {
-  margin-top: 20px;
-  padding: 16px;
-  background: #f5f5f5;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-}
-
-.ai-section-title {
-  font-size: 13px;
-  margin: 0 0 12px;
-  color: #666;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.workflow-step {
-  margin-bottom: 12px;
-  padding: 12px;
-  background: white;
-  border-radius: 4px;
-  border: 1px solid #e5e5e5;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.workflow-step > * {
-  flex: 1 1 100%;
-}
-
-.workflow-step .step-header {
-  flex: 1 1 auto;
-  margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: none;
-}
-
-.workflow-step .btn-ai {
-  flex: 0 0 auto;
-  margin-left: auto;
-}
-
-.workflow-step:last-child {
-  margin-bottom: 0;
-}
-
-.step-header {
-  margin-bottom: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.step-title {
-  font-size: 13px;
-  margin: 0;
-  color: #666;
-  font-weight: 500;
-}
-
-.weekly-review {
-  margin-top: 8px;
-  background: #f9f9f9;
-  padding: 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #555;
-  border-left: 2px solid #42b883;
-}
-
-.focus-recommendation {
-  margin-top: 8px;
-  background: #f9f9f9;
-  padding: 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #555;
-  border-left: 2px solid #6366f1;
-}
-
-.action-plan {
-  margin-top: 8px;
-  background: #f9f9f9;
-  padding: 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #555;
-  border-left: 2px solid #f59e0b;
-}
-
-.action-item {
-  padding: 3px 0;
-}
-
-.task-drafts {
-  margin-top: 8px;
-  background: #f9f9f9;
-  padding: 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #555;
-  border-left: 2px solid #ec4899;
-}
-
-.draft-item {
-  padding: 4px 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.draft-source {
-  font-size: 10px;
-  color: #ec4899;
-  background: #fdf2f8;
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
-.save-btn {
-  margin-top: 6px;
-  padding: 5px 10px;
-  font-size: 11px;
-}
-
 .dashboard-list-card {
   padding: 0;
+  overflow: hidden;
+}
+
+.dashboard-quick-add {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.dashboard-quick-add .input {
+  margin-bottom: 0;
 }
 
 .dashboard-card-list {
   --dashboard-task-provenance-size: 16px;
-}
-
-.dashboard-summary-list {
-  background: var(--surface-card);
-}
-
-.dashboard-summary-list :deep(.list-item) {
-  border-left-color: transparent;
+  background: transparent;
+  border-radius: 0;
 }
 
 .dashboard-list-heading {

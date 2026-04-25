@@ -25,7 +25,7 @@ Current stack at a glance:
 - frontend: `Vue 3 + Vite + Vue Router + Pinia`
 - backend: `Node.js + Koa + Mongoose`
 - database: `MongoDB`
-- public AI surfaces: backend `/ai/*` routes plus frontend Dashboard fallback helpers
+- public AI surfaces: backend `/ai/*` routes
 - private AI core bridge: `backend/src/ai/bridge.js`
 - private core location: `backend/private_core/sayachan-ai-core`
 
@@ -66,19 +66,14 @@ Current Tasks behavior includes:
 
 Current Dashboard behavior includes:
 
-- recent notes and projects surfaces
 - quick-add tasks
+- saved-task management
 - cockpit signal publishing for chat context
-- AI weekly review
-- AI focus recommendation
-- AI action plan
-- AI task drafts
 
 Important current truth:
 
-- Dashboard AI helpers still live in `frontend/src/services/aiService.js`
-- those helpers currently run as local fallback-only helpers
-- they are not currently backend-mediated and no longer attempt frontend-direct GLM calls
+- the older fallback-only Dashboard AI Assistant surface has been removed
+- any future Dashboard AI workflow should reopen as a product/AI redesign rather than reviving the removed frontend-local helper path
 
 ### Chat
 
@@ -200,7 +195,6 @@ Reference:
 
 These are not rules, but current code-shape observations that matter for PMO truth:
 
-- Dashboard AI currently remains frontend-local fallback rather than backend-mediated
 - workflow-critical project/task coupling still lives mainly in route handlers
 - focus-clearing logic is implemented in route-level update/delete flows
 - chat runtime depends on the public bridge to the private core

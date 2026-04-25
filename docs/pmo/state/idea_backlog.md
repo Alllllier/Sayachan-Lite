@@ -83,8 +83,8 @@
 - Type: `feature`
 - Source: `discussion`
 - Source reference: `README.md Dashboard AI 功能整体重构; docs/pmo/state/discussions/discussion_batch_011.md`
-- Problem / Opportunity: `Dashboard still carries an older AI workflow surface for Weekly Review, Focus Recommendation, Action Plan, and Task Drafts. Recent frontend shell/module cleanup intentionally avoided deep-polishing this area because the workflow may need a product-level redesign rather than another local style cleanup pass.`
-- Why now: `discussion_batch_011 has stabilized the frontend shell/module cleanup and confirmed that Dashboard can be shallowly aligned with Panel/List baselines without resolving the deeper AI workflow model. Capturing this separately prevents the redesign from being hidden inside style cleanup debt.`
+- Problem / Opportunity: `Dashboard no longer carries the older fallback-only AI Assistant surface for Weekly Review, Focus Recommendation, Action Plan, and Task Drafts. A future Dashboard AI workflow may still be valuable, but it should be redesigned from current AI core, task context, and project-focus semantics rather than revived from the removed demo-era flow.`
+- Why now: `discussion_batch_011 stabilized the frontend shell/module cleanup, and the later Dashboard cleanup removed the stale AI Assistant block instead of deep-polishing it. Capturing the future redesign separately prevents the missing Dashboard AI workflow from being confused with style cleanup debt.`
 - Current status: `parked`
 - Dependencies: `A future AI/product discussion that decides whether the current dashboard AI workflow should remain, be replaced by AI core-owned surfaces, or be simplified into a smaller dashboard module.`
 - Risks / unknowns: `Premature UI cleanup could polish an interim workflow that may be removed. A broad redesign could also sprawl into AI core ownership, task draft semantics, and dashboard information architecture unless it is bounded deliberately.`

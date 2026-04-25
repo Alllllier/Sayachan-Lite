@@ -49,14 +49,9 @@ Tasks currently do all of the following:
 
 Dashboard currently does all of the following:
 
-- show recent notes and projects
 - manage saved tasks through shared task state
+- provide quick-add task creation
 - publish lightweight cockpit signals for chat context
-- run four AI helper flows from the frontend:
-  - weekly review
-  - focus recommendation
-  - action plan
-  - task drafts
 
 ### Chat
 
@@ -151,21 +146,19 @@ Current backend-mediated AI surfaces:
 - project next action: `POST /ai/projects/next-action`
 - chat runtime: `POST /ai/chat`
 
-### Frontend-Direct
+### Removed Frontend Fallback
 
-Current frontend-local fallback AI surfaces:
+Removed frontend-local fallback AI surfaces:
 
 - weekly review
 - focus recommendation
 - action plan
 - dashboard task drafts
-- text summarization
 
 Important current truth:
 
-- these frontend AI helpers still live in `frontend/src/services/aiService.js`
-- they now run as local fallback-only helpers
-- they do not currently attempt direct GLM calls from the browser
+- the older Dashboard AI Assistant fallback helper file has been removed
+- Dashboard AI workflow is parked for a future product/AI redesign, not preserved as an active frontend-local fallback path
 
 ## Shared Markdown Runtime
 

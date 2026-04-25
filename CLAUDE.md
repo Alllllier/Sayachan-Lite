@@ -53,7 +53,7 @@ Current stack at a glance:
 - frontend: Vue 3 + Vite + Vue Router + Pinia
 - backend: Node.js + Koa + Mongoose
 - database: MongoDB
-- public AI entrypoints: backend `/ai/*` routes plus some frontend-local Dashboard fallback helpers
+- public AI entrypoints: backend `/ai/*` routes
 - private AI core: `backend/private_core/sayachan-ai-core`
 
 ---
@@ -212,7 +212,6 @@ Do not kill unrelated long-running services just because they happen to use thes
 | frontend router | `frontend/src/router/index.js` |
 | chat UI | `frontend/src/components/ChatEntry.vue` |
 | notes UI | `frontend/src/components/NotesPanel.vue` |
-| AI service helpers | `frontend/src/services/aiService.js` |
 | chat service | `frontend/src/services/chatService.js` |
 | task service | `frontend/src/services/taskService.js` |
 
