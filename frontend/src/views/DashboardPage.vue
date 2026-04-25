@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import Dashboard from '../components/Dashboard.vue'
+import { Panel } from '../components/ui/shell'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
@@ -24,23 +25,7 @@ onMounted(refreshAllData)
 </script>
 
 <template>
-  <div class="page">
-    <h1 class="page-title">Dashboard</h1>
+  <Panel title="Dashboard">
     <Dashboard :notes="notes" :projects="projects" @refreshed="refreshAllData" />
-  </div>
+  </Panel>
 </template>
-
-<style scoped>
-.page {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px 16px 100px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-}
-
-.page-title {
-  font-size: 24px;
-  margin: 0 0 20px;
-  color: #333;
-}
-</style>

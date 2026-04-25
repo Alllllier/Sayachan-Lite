@@ -23,6 +23,10 @@
   gap: var(--space-md);
 }
 
+.card-state-archived {
+  opacity: 0.75;
+}
+
 .card-header {
   display: flex;
   flex-direction: column;

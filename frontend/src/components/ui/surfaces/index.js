@@ -1,4 +1,6 @@
 export { default as Card } from './Card.vue'
+export { default as CardHeaderRow } from './CardHeaderRow.vue'
+export { default as CardMetaRow } from './CardMetaRow.vue'
 export { default as DirectiveBlock } from './DirectiveBlock.vue'
 export { default as SectionBlock } from './SectionBlock.vue'
 export { default as ActionRow } from './ActionRow.vue'

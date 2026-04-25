@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import NotesPanel from '../components/NotesPanel.vue'
+import { Panel } from '../components/ui/shell'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 const notes = ref([])
@@ -22,23 +23,7 @@ onMounted(fetchNotes)
 </script>
 
 <template>
-  <div class="page">
-    <h1 class="page-title">Notes</h1>
+  <Panel title="Notes">
     <NotesPanel @refreshed="onNotesRefreshed" />
-  </div>
+  </Panel>
 </template>
-
-<style scoped>
-.page {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px 16px 100px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-}
-
-.page-title {
-  font-size: 24px;
-  margin: 0 0 20px;
-  color: #333;
-}
-</style>

@@ -10,13 +10,17 @@ import {
 } from './projectsPanel.behavior.js'
 import {
   Card,
+  CardHeaderRow,
+  CardMetaRow,
   DirectiveBlock,
   SectionBlock,
   ActionRow,
   ObjectActionArea
 } from './ui/surfaces'
+import { CardCollection } from './ui/shell'
 import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
+import OverflowMenu from './ui/OverflowMenu.vue'
 import SegmentedControl from './ui/SegmentedControl.vue'
 import {
   List,
@@ -720,9 +724,11 @@ async function addBatchTasks(project) {
 
   <div v-if="error" class="error">{{ error }}</div>
 
-  <div class="projects-section">
-    <div class="section-header">
-      <h2>Projects ({{ projects.length }})</h2>
+  <CardCollection>
+    <template #title>
+      Projects ({{ projects.length }})
+    </template>
+    <template #control>
       <SegmentedControl
         :model-value="showArchived ? 'archived' : 'active'"
         :options="archiveViewOptions"
@@ -730,24 +736,21 @@ async function addBatchTasks(project) {
         aria-label="Projects archive view"
         @update:model-value="setProjectArchiveView"
       />
-    </div>
+    </template>
     <EmptyState v-if="projects.length === 0" :title="showArchived ? 'No archived projects' : 'No projects yet'" />
     <Card
       v-for="project in projects"
       :key="project._id"
-      :class="['project-card', { archived: project.archived }]"
+      :state="project.archived ? 'archived' : null"
       @click="closeProjectMenu"
     >
       <template #header>
-        <div class="card-heading-row">
-          <div class="card-heading-copy">
-            <h3 class="card-title">{{ project.name }}</h3>
-            <p class="card-content">{{ project.summary }}</p>
-          </div>
+        <CardHeaderRow :title="project.name">
+          <template #actions>
           <button
             v-if="!project.archived"
             @click.stop="project.isPinned ? unpinProject(project) : pinProject(project)"
-            class="panel-surface-icon-btn pin-icon-btn"
+            class="panel-surface-icon-btn"
             :class="{ pinned: project.isPinned }"
             :title="project.isPinned ? 'Unpin project' : 'Pin project'"
           >
@@ -758,14 +761,15 @@ async function addBatchTasks(project) {
               <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
             </svg>
           </button>
-        </div>
+          </template>
+        </CardHeaderRow>
       </template>
 
       <template #meta>
-        <div class="meta-row">
+        <CardMetaRow>
           <span class="status-badge" :class="getStatusClass(project.status)">{{ formatStatus(project.status) }}</span>
-          <span class="date-meta">{{ new Date(project.updatedAt).toLocaleDateString() }}</span>
-        </div>
+          <template #date>{{ new Date(project.updatedAt).toLocaleDateString() }}</template>
+        </CardMetaRow>
       </template>
 
       <template #body>
@@ -808,8 +812,10 @@ async function addBatchTasks(project) {
             </select>
           </div>
         </div>
-        <div v-else>
-          <DirectiveBlock class="project-focus-directive">
+        <template v-else>
+          <p class="card-content">{{ project.summary }}</p>
+
+          <DirectiveBlock>
             <div class="focus-section">
               <div class="focus-main">
                 <span class="focus-label">Current Focus</span>
@@ -820,10 +826,8 @@ async function addBatchTasks(project) {
 
           <DirectiveBlock
             v-if="getActiveTasks(project._id).length > 0 || getCompletedTasks(project._id).length > 0 || getArchivedTasks(project._id).length > 0"
-            class="project-tasks-directive"
           >
             <List
-              class="project-tasks-preview"
               mode="preview"
             >
               <ListSection
@@ -914,12 +918,12 @@ async function addBatchTasks(project) {
             </List>
           </DirectiveBlock>
 
-        </div>
+        </template>
       </template>
 
       <template #actions v-if="editingProjectId === project._id && !project.archived">
-        <ActionRow class="card-buttons edit-actions">
-          <button @click="cancelEditProject(project)" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
+        <ActionRow>
+          <button @click="cancelEditProject(project)" :disabled="loading" class="btn btn-secondary">Cancel</button>
           <button @click="updateProject(project)" :disabled="loading" class="btn btn-primary">Save</button>
         </ActionRow>
       </template>
@@ -927,7 +931,6 @@ async function addBatchTasks(project) {
       <template #actions v-else>
         <ObjectActionArea
           v-if="!project.archived"
-          class="main-actions"
           variant="primary"
           :state="taskCaptureOpen.has(project._id) ? 'active' : 'idle'"
           idle-label="+ Add Task"
@@ -953,7 +956,7 @@ async function addBatchTasks(project) {
                   placeholder="Task title..."
                   @keyup.enter="addManualTask(project)"
                   :disabled="addingManualTasks.has(project._id)"
-                  class="input task-input"
+                  class="input"
                   :class="{ 'is-invalid': taskCaptureErrors[project._id]?.single }"
                   :aria-invalid="Boolean(taskCaptureErrors[project._id]?.single)"
                   @input="handleTaskCaptureInput(project._id, 'single', manualTaskInputs[project._id] || '')"
@@ -963,7 +966,7 @@ async function addBatchTasks(project) {
                 </p>
               </div>
               <div class="manual-task-actions">
-                <button @click="addManualTask(project)" class="btn btn-primary btn-sm save-task-btn" :disabled="addingManualTasks.has(project._id)">
+                <button @click="addManualTask(project)" class="btn btn-primary btn-sm" :disabled="addingManualTasks.has(project._id)">
                   {{ addingManualTasks.has(project._id) ? 'Saving...' : 'Save' }}
                 </button>
               </div>
@@ -986,7 +989,7 @@ async function addBatchTasks(project) {
                 </p>
               </div>
               <div class="batch-task-actions">
-                <button @click="addBatchTasks(project)" class="btn btn-primary btn-sm save-task-btn" :disabled="addingBatchTasks.has(project._id)">
+                <button @click="addBatchTasks(project)" class="btn btn-primary btn-sm" :disabled="addingBatchTasks.has(project._id)">
                   {{ addingBatchTasks.has(project._id) ? 'Saving...' : 'Save All' }}
                 </button>
               </div>
@@ -995,14 +998,13 @@ async function addBatchTasks(project) {
         </ObjectActionArea>
 
         <template v-if="project.archived">
-          <ActionRow class="card-buttons secondary-actions">
-            <button @click="restoreProject(project)" class="btn btn-secondary secondary-btn">Restore</button>
-            <button @click="deleteProject(project._id)" class="btn btn-danger secondary-btn delete-btn">Delete</button>
+          <ActionRow>
+            <button @click="restoreProject(project)" class="btn btn-secondary">Restore</button>
+            <button @click="deleteProject(project._id)" class="btn btn-danger">Delete</button>
           </ActionRow>
         </template>
         <ObjectActionArea
           v-else
-          class="project-ai-action secondary-actions"
           variant="ai"
           active-kind="icon"
           :state="getProjectAIState(project._id)"
@@ -1013,16 +1015,15 @@ async function addBatchTasks(project) {
             <svg class="icon-stroke" viewBox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
           </template>
           <template #trailing>
-            <div class="task-menu-container">
-              <button @click.stop="toggleProjectMenu(project._id)" class="btn btn-overflow task-menu-btn" :class="{ active: menuOpenProjectId === project._id }" title="Actions">
-                <svg class="menu-icon-svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/></svg>
-              </button>
-              <div v-if="menuOpenProjectId === project._id" class="task-menu-dropdown panel-surface-menu" @click.stop>
-                <button @click="startEditingProject(project)" class="btn btn-menu-item btn-secondary menu-item">Edit</button>
-                <button @click="archiveProject(project)" class="btn btn-menu-item btn-archive menu-item">Archive</button>
-                <button @click="deleteProject(project._id)" class="btn btn-menu-item btn-danger menu-item delete">Delete</button>
-              </div>
-            </div>
+            <OverflowMenu
+              :open="menuOpenProjectId === project._id"
+              title="Actions"
+              @toggle="toggleProjectMenu(project._id)"
+            >
+              <button @click="startEditingProject(project)" class="btn btn-menu-item btn-secondary">Edit</button>
+              <button @click="archiveProject(project)" class="btn btn-menu-item btn-archive">Archive</button>
+              <button @click="deleteProject(project._id)" class="btn btn-menu-item btn-danger">Delete</button>
+            </OverflowMenu>
           </template>
           <SectionBlock v-if="aiSuggestions[project._id] && aiSuggestions[project._id].length > 0" class="ai-suggestions project-ai-suggestions">
             <div class="ai-suggestions-header">
@@ -1040,7 +1041,7 @@ async function addBatchTasks(project) {
         </ObjectActionArea>
       </template>
     </Card>
-  </div>
+  </CardCollection>
 
   <div class="form-section project-form">
     <h2>New Project</h2>
@@ -1077,14 +1078,15 @@ async function addBatchTasks(project) {
         <option value="on_hold">On Hold</option>
       </select>
     </div>
-    <ActionRow class="form-buttons">
+    <ActionRow>
       <button @click="createProject" :disabled="loading" class="btn btn-primary">Add Project</button>
     </ActionRow>
   </div>
 </template>
 
 <style scoped>
-.projects-section, .project-form {
+/* Legacy creation form: future hover-icon creation flow will replace this area. */
+.project-form {
   border: 1px solid var(--border-default);
   border-radius: var(--radius-card);
   padding: var(--space-lg);
@@ -1092,53 +1094,18 @@ async function addBatchTasks(project) {
   margin-bottom: var(--space-lg);
 }
 
-.projects-section h2, .project-form h2 {
+.project-form h2 {
   font-size: var(--font-size-title);
   margin-top: 0;
   margin-bottom: var(--space-md);
   color: var(--text-primary);
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-md);
-}
-
-/* Archived Project Card Styles - Uses semantic tokens */
-.project-card {
-  position: relative;
-}
-
-.project-card.archived {
-  opacity: 0.75;
-  background: var(--surface-panel);
-  border-color: var(--border-default);
-}
-
-.project-card.archived .focus-section {
-  background: linear-gradient(135deg, var(--surface-panel) 0%, var(--surface-hover) 100%);
-}
-
-.project-card.archived .focus-value {
-  color: var(--text-secondary);
-}
-
-.form-buttons {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  margin-top: 8px;
-  color: #333;
-}
-
-/* Focus Section - Primary Decision Layer */
+/* Project focus */
 .focus-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 12px 0 0;
   padding: var(--space-md);
   background: linear-gradient(135deg, var(--surface-card) 0%, var(--surface-hover) 100%);
   border-radius: var(--radius-block);
@@ -1166,34 +1133,7 @@ async function addBatchTasks(project) {
   line-height: 1.4;
 }
 
-.save-focus-btn {
-  /* Layout only: uses global .btn .btn-primary .btn-sm for colors */
-  margin-left: 12px;
-  flex-shrink: 0;
-}
-
-/* Meta Row: Status and Date - Secondary Context */
-.meta-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 8px 0 12px;
-}
-
-.status-badge {
-  font-size: var(--font-size-chip);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.date-meta {
-  font-size: var(--font-size-meta);
-  color: var(--text-muted);
-}
-
-/* Status Color Coding */
+/* Project meta */
 .status-badge {
   display: inline-flex;
   align-items: center;
@@ -1225,42 +1165,8 @@ async function addBatchTasks(project) {
   color: var(--text-muted);
 }
 
-.card-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-/* Edit actions - align to right */
-.card-buttons.edit-actions {
-  justify-content: flex-end;
-}
-
-/* Polish-1: Compact button row layout */
-.main-actions {
-  margin-top: 12px;
-}
-
-.secondary-actions {
-  margin-top: 8px;
-}
-
-/* .secondary-btn uses global .btn .btn-secondary .btn-compact baseline */
-/* .secondary-btn layout preserved, colors from global .btn .btn-secondary */
-
-.icon-loading {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* .edit-btn uses global .btn .btn-secondary */
-
-/* Polish-1: Unified compact button styles for task capture */
+/* Project task capture */
 .add-task-btn {
-  /* Layout specific for task capture area */
   height: 40px;
   line-height: 1;  
   flex: 1 1 0;
@@ -1268,18 +1174,11 @@ async function addBatchTasks(project) {
   white-space: nowrap;
 }
 
-/* button.cancel uses global .btn .btn-secondary */
-
+/* Legacy AI suggestions: parked until AI reveal/list cleanup. */
 .ai-suggestions-header {
   margin-bottom: 8px;
 }
 
-.save-success {
-  color: #10b981;
-  font-size: 11px;
-}
-
-/* AI Suggestion Item - Vertical hierarchy (content first) */
 .ai-suggestion-item {
   display: flex;
   flex-direction: column;
@@ -1308,8 +1207,7 @@ async function addBatchTasks(project) {
   gap: 8px;
 }
 
-/* Empty state uses EmptyState component */
-
+/* Legacy page-level error state */
 .error {
   padding: 12px;
   background: #fee;
@@ -1317,44 +1215,6 @@ async function addBatchTasks(project) {
   border-radius: 4px;
   margin-bottom: 20px;
   text-align: center;
-}
-
-/* .project-card uses the shared .card baseline */
-
-.focus-history {
-  margin: 8px 0;
-  padding: 8px 12px;
-  background: #f5f5f5;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.focus-history.compact {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 4px 0 12px;
-  padding: 4px 10px;
-  background: transparent;
-  border-left: 2px solid #ddd;
-}
-
-.history-label {
-  font-size: 11px;
-  font-weight: 500;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.history-trail {
-  font-size: 11px;
-  color: #999;
-  font-style: italic;
-}
-
-.project-tasks-preview {
-  margin-top: 16px;
 }
 
 .project-task-section-separated {
@@ -1400,18 +1260,6 @@ async function addBatchTasks(project) {
   color: var(--text-secondary);
 }
 
-/* Polish-1: Unified compact input area styling */
-.manual-task-input {
-  margin-top: 12px;
-  padding: 0;
-  background: transparent;
-  border: none;
-}
-
-.task-input {
-  margin-bottom: 0;
-}
-
 .manual-task-actions {
   display: flex;
   align-items: center;
@@ -1419,14 +1267,6 @@ async function addBatchTasks(project) {
   gap: 8px;
 }
 
-/* .save-task-btn uses global .btn .btn-primary .btn-sm */
-
-.manual-task-success {
-  color: #10b981;
-  font-size: 11px;
-}
-
-/* Task Capture Area: Unified Single/Batch Mode */
 .task-capture-area {
   margin-top: 8px;
   padding: var(--space-sm) var(--space-md) var(--space-md);
@@ -1439,14 +1279,12 @@ async function addBatchTasks(project) {
   margin-bottom: 8px;
 }
 
-/* Single Task Input */
 .single-task-input {
   padding: 0;
   background: transparent;
   border: none;
 }
 
-/* Batch Task Input - Aligned with Notes textarea */
 .batch-task-input {
   padding: 0;
   background: transparent;
@@ -1460,7 +1298,6 @@ async function addBatchTasks(project) {
   min-height: 80px;
   max-height: 400px;
   line-height: 1.5;
-  /* Modern browsers: native auto-grow */
   field-sizing: content;
 }
 
@@ -1471,22 +1308,6 @@ async function addBatchTasks(project) {
   gap: 8px;
 }
 
-.batch-task-success {
-  color: #10b981;
-  font-size: 11px;
-}
-
-/* Task Menu - Overflow pattern */
-.task-menu-container {
-  position: relative;
-  margin-left: 4px;
-}
-
-.menu-item {
-  box-shadow: none;
-}
-
-/* Preview Toggle Button */
 .preview-toggle-btn {
   padding: 4px 10px;
   font-size: 11px;
@@ -1515,62 +1336,9 @@ async function addBatchTasks(project) {
   }
 }
 
-.project-card {
-  gap: var(--space-sm);
-}
-
-.card-heading-row {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-sm);
-}
-
-.card-heading-copy {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2xs);
-  flex: 1;
-}
-
-.card-heading-copy .card-title {
-  margin: 0;
-}
-
-.card-heading-copy .card-content {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: var(--font-size-body);
-}
-
 .project-edit-form {
   display: flex;
   flex-direction: column;
-}
-
-.project-focus-directive,
-.project-tasks-directive {
-  display: flex;
-  flex-direction: column;
-}
-
-.project-focus-directive {
-  margin-top: var(--space-sm);
-}
-
-.project-focus-directive .focus-section {
-  margin: 0;
-}
-
-.project-tasks-directive {
-  margin-top: var(--space-md);
-}
-
-.project-tasks-directive .project-tasks-preview {
-  margin-top: 0;
-}
-
-.project-ai-action {
-  width: 100%;
 }
 
 .project-ai-suggestions {
@@ -1596,9 +1364,4 @@ async function addBatchTasks(project) {
   color: var(--text-secondary);
 }
 
-.pin-icon-btn {
-  position: static;
-  margin-left: auto;
-  flex-shrink: 0;
-}
 </style>

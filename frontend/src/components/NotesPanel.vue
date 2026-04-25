@@ -8,12 +8,16 @@ import { renderMarkdown } from '../utils/markdown.js'
 import { saveTask } from '../services/taskService.js'
 import {
   Card,
+  CardHeaderRow,
+  CardMetaRow,
   SectionBlock,
   ActionRow,
   ObjectActionArea
 } from './ui/surfaces'
+import { CardCollection } from './ui/shell'
 import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
+import OverflowMenu from './ui/OverflowMenu.vue'
 import SegmentedControl from './ui/SegmentedControl.vue'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
@@ -516,19 +520,21 @@ async function saveNoteTaskDraft(noteId, draft) {
       ></div>
       <p v-if="newNoteErrors.content" class="field-helper field-helper--error">{{ newNoteErrors.content }}</p>
     </div>
-    <ActionRow class="form-buttons">
+    <ActionRow>
       <button @click="createNote" :disabled="loading || editingId" class="btn btn-primary">
         {{ loading ? 'Saving...' : 'Add Note' }}
       </button>
-      <button v-if="editingId" @click="cancelEdit" :disabled="loading" class="btn btn-secondary cancel">
+      <button v-if="editingId" @click="cancelEdit" :disabled="loading" class="btn btn-secondary">
         Cancel
       </button>
     </ActionRow>
   </div>
 
-  <div class="notes-section">
-    <div class="section-header">
-      <h2>Notes ({{ notes.length }})</h2>
+  <CardCollection>
+    <template #title>
+      Notes ({{ notes.length }})
+    </template>
+    <template #control>
       <SegmentedControl
         :model-value="showArchived ? 'archived' : 'active'"
         :options="archiveViewOptions"
@@ -536,23 +542,21 @@ async function saveNoteTaskDraft(noteId, draft) {
         aria-label="Notes archive view"
         @update:model-value="setArchiveView"
       />
-    </div>
+    </template>
     <EmptyState v-if="notes.length === 0" :title="showArchived ? 'No archived notes' : 'No notes yet'" />
     <Card
       v-for="note in notes"
       :key="note._id"
-      :class="['note-card', { archived: note.archived }]"
+      :state="note.archived ? 'archived' : null"
       @click="closeNoteMenu"
     >
       <template #header>
-        <div class="card-heading-row">
-          <div class="card-heading-copy">
-            <h3 class="card-title">{{ note.title }}</h3>
-          </div>
+        <CardHeaderRow :title="note.title">
+          <template #actions>
           <button
             v-if="!note.archived"
             @click.stop="note.isPinned ? unpinNote(note) : pinNote(note)"
-            class="panel-surface-icon-btn pin-icon-btn"
+            class="panel-surface-icon-btn"
             :class="{ pinned: note.isPinned }"
             :title="note.isPinned ? 'Unpin note' : 'Pin note'"
           >
@@ -563,11 +567,14 @@ async function saveNoteTaskDraft(noteId, draft) {
               <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
             </svg>
           </button>
-        </div>
+          </template>
+        </CardHeaderRow>
       </template>
 
       <template #meta>
-        <p class="card-meta">{{ new Date(note.updatedAt).toLocaleString() }}</p>
+        <CardMetaRow>
+          <template #date>{{ new Date(note.updatedAt).toLocaleString() }}</template>
+        </CardMetaRow>
       </template>
 
       <template #body>
@@ -606,22 +613,21 @@ async function saveNoteTaskDraft(noteId, draft) {
       </template>
 
       <template #actions v-if="editingId === note._id && !note.archived">
-        <ActionRow class="card-buttons edit-actions">
-          <button @click="cancelEdit(note)" :disabled="loading" class="btn btn-secondary cancel">Cancel</button>
+        <ActionRow>
+          <button @click="cancelEdit(note)" :disabled="loading" class="btn btn-secondary">Cancel</button>
           <button @click="updateNote(note)" :disabled="loading" class="btn btn-primary">Save</button>
         </ActionRow>
       </template>
 
       <template #actions v-else>
         <template v-if="note.archived">
-          <ActionRow class="card-buttons">
+          <ActionRow>
             <button @click="restoreNote(note)" class="btn btn-secondary">Restore</button>
-            <button @click="deleteNote(note._id)" class="btn btn-danger delete">Delete</button>
+            <button @click="deleteNote(note._id)" class="btn btn-danger">Delete</button>
           </ActionRow>
         </template>
         <ObjectActionArea
           v-else
-          class="note-ai-action"
           variant="ai"
           active-kind="icon"
           :state="getNoteAIState(note._id)"
@@ -632,16 +638,15 @@ async function saveNoteTaskDraft(noteId, draft) {
             <svg class="icon-stroke" viewBox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
           </template>
           <template #trailing>
-            <div class="task-menu-container">
-              <button @click.stop="toggleNoteMenu(note._id)" class="btn btn-overflow task-menu-btn" :class="{ active: menuOpenNoteId === note._id }" title="Actions">
-                <svg class="menu-icon-svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/></svg>
-              </button>
-              <div v-if="menuOpenNoteId === note._id" class="task-menu-dropdown panel-surface-menu" @click.stop>
-                <button @click="startEditing(note)" class="btn btn-menu-item btn-secondary menu-item">Edit</button>
-                <button @click="archiveNote(note)" class="btn btn-menu-item btn-archive menu-item">Archive</button>
-                <button @click="deleteNote(note._id)" class="btn btn-menu-item btn-danger menu-item delete">Delete</button>
-              </div>
-            </div>
+            <OverflowMenu
+              :open="menuOpenNoteId === note._id"
+              title="Actions"
+              @toggle="toggleNoteMenu(note._id)"
+            >
+              <button @click="startEditing(note)" class="btn btn-menu-item btn-secondary">Edit</button>
+              <button @click="archiveNote(note)" class="btn btn-menu-item btn-archive">Archive</button>
+              <button @click="deleteNote(note._id)" class="btn btn-menu-item btn-danger">Delete</button>
+            </OverflowMenu>
           </template>
           <SectionBlock v-if="aiTasksByNote[note._id] && aiTasksByNote[note._id].length > 0" class="note-ai-tasks">
             <div class="ai-tasks-header">
@@ -659,74 +664,34 @@ async function saveNoteTaskDraft(noteId, draft) {
         </ObjectActionArea>
       </template>
     </Card>
-  </div>
+  </CardCollection>
 </template>
 
 <style scoped>
-.form-section, .notes-section {
+/* Legacy creation form: future hover-icon creation flow will replace this area. */
+.form-section {
   border: 1px solid var(--border-default);
   border-radius: var(--radius-card);
   padding: var(--space-lg);
   background: var(--surface-panel);
-  margin-bottom: var(--space-lg);
 }
 
-/* Editor container spacing */
 .codemirror-editor {
   margin-bottom: 0;
 }
 
-.form-section h2, .notes-section h2 {
+.form-section h2 {
   font-size: var(--font-size-title);
   margin-top: 0;
   margin-bottom: var(--space-md);
   color: var(--text-primary);
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-md);
-}
-
-/* Archived Note Card Styles - Uses semantic tokens */
-.note-card {
-  position: relative;
-}
-
-.note-card.archived {
-  opacity: 0.75;
-  background: var(--surface-panel);
-  border-color: var(--border-default);
-}
-
-.form-buttons, .card-buttons {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.card-buttons {
-  margin-top: 16px;
-}
-
-/* Base button styles now use global .btn classes */
-
-/* button.cancel uses global .btn .btn-secondary */
-
-/* button.delete uses global .btn .btn-danger */
-
+/* Legacy AI task drafts: parked until AI reveal/list cleanup. */
 .ai-tasks-header {
   margin-bottom: 8px;
 }
 
-.save-success {
-  color: #10b981;
-  font-size: 11px;
-}
-
-/* AI Task Item - Vertical hierarchy (content first) */
 .ai-task-item {
   display: flex;
   flex-direction: column;
@@ -754,68 +719,6 @@ async function saveNoteTaskDraft(noteId, draft) {
   justify-content: flex-end;
 }
 
-/* Empty state uses EmptyState component */
-
-.error {
-  padding: 12px;
-  background: #fee;
-  color: #c33;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-/* .note-card uses the shared .card baseline */
-
-/* Markdown display uses global .markdown-body baseline from style.css */
-
-/* Task Menu - Overflow pattern */
-.task-menu-container {
-  position: relative;
-  margin-left: 4px;
-}
-
-.menu-item {
-  box-shadow: none;
-}
-
-.note-card {
-  gap: var(--space-sm);
-}
-
-.card-heading-row {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-sm);
-}
-
-.card-heading-copy {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2xs);
-  flex: 1;
-}
-
-.card-heading-copy .card-title {
-  margin: 0;
-}
-
-.card-heading-copy .card-content {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: var(--font-size-body);
-}
-
-.note-edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.note-ai-action {
-  width: 100%;
-}
-
 .note-ai-tasks {
   margin-top: 0;
   background: color-mix(in srgb, var(--identity-primary-soft) 45%, var(--surface-card));
@@ -839,9 +742,20 @@ async function saveNoteTaskDraft(noteId, draft) {
   color: var(--text-secondary);
 }
 
-.pin-icon-btn {
-  position: static;
-  margin-left: auto;
-  flex-shrink: 0;
+/* Legacy page-level error state */
+.error {
+  padding: 12px;
+  background: #fee;
+  color: #c33;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Card edit form */
+.note-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 </style>

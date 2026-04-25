@@ -1,8 +1,8 @@
 # Discussion Batch `discussion_batch_012`
 
 - Topic: `Frontend display-list baseline and list grammar`
-- Last updated: `2026-04-23`
-- Status: `active`
+- Last updated: `2026-04-24`
+- Status: `stable`
 - Discussion mode: `follow-up`
 
 ## Intake Record
@@ -328,7 +328,7 @@
       - solve the saved-task disclosure versus primary-action redistribution
       - determine whether checkbox removal and list-level expand can be landed cleanly
   - `pass-3`
-    - then close with `ai-task-item`, `ai-suggestion-item`, and any remaining compatible local residues
+    - originally expected to close with `ai-task-item`, `ai-suggestion-item`, and any remaining compatible local residues
     - reason:
       - these look like good cleanup consumers of the framework once the two major anchor surfaces are proven
       - they should act as convergence surfaces, not as the places that define the framework
@@ -370,17 +370,29 @@
     - provenance should remain metadata
     - archive/delete/restore should remain trailing secondary actions
 - PMO current lifecycle reading after promotion:
-  - keep this batch active because:
+  - keep this batch stable rather than active because:
     - the selected `Dashboard` pass has completed
-    - later AI/list convergence follow-ons remain open
+    - the two main anchor surfaces are now validated
+    - the previously expected AI reveal/list follow-on should no longer be treated as a near-term display-list cleanup target
   - but treat the first-pass Projects validation slice as no longer discussion-only
   - treat both Projects task preview and Dashboard saved tasks as validated anchor surfaces before deciding the later AI/list convergence cleanup
+- Human decision on `2026-04-24`:
+  - do not continue near-term display-list cleanup for:
+    - `NotesPanel` `ai-task-item`
+    - `ProjectsPanel` `ai-suggestion-item`
+  - rationale:
+    - their concrete behavior and presentation will likely be substantially taken over by the future AI core
+    - normalizing them now into the current display-list frame risks polishing an interim UI that may be replaced rather than reused
+- Updated PMO judgment:
+  - `ai-task-item` and `ai-suggestion-item` should be parked under future AI core/product-runtime convergence, not promoted from this batch as `pass-3`
+  - any later work on those surfaces should reopen from the AI core integration context, with the existing list primitives available as reference rather than mandate
+  - remaining compact/list-like residue should be handled opportunistically only if it blocks real UI cleanup; no new sprint candidate is currently implied by `discussion_batch_012`
 
 ## Suggested Next PMO Action
 
 - Use this batch as the durable context for:
   - the now-completed first-pass `Projects` task preview validation slice
   - the now-completed `Dashboard` saved-task migration slice
-  - later AI/item convergence cleanup after the anchor surfaces are proven
+  - the decision to park `ai-task-item` and `ai-suggestion-item` until future AI core ownership is clearer
 - Keep `NotesPanel` and `ProjectsPanel` audits as evidence inputs, not as replacement canonical homes for this larger topic.
-- Treat `Dashboard` as a likely evidence surface for compact list/item residue, but do not let it dominate the first shared grammar decision unless it proves to be the cleanest reference.
+- Treat any remaining compact list/item residue as opportunistic cleanup, not as an active display-list sprint line.

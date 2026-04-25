@@ -100,7 +100,11 @@ function handleClick() {
         </template>
         <template v-else>
           <slot name="pending-icon">
-            <span class="object-action-area__pending">...</span>
+            <svg class="object-action-area__pending" viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="8" cy="3" r="1.5" fill="currentColor" stroke="none" />
+              <circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none" />
+              <circle cx="8" cy="13" r="1.5" fill="currentColor" stroke="none" />
+            </svg>
           </slot>
           <span v-if="pendingLabel">{{ pendingLabel }}</span>
         </template>

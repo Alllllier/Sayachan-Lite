@@ -1,7 +1,7 @@
 # Discussion Batch `discussion_batch_010`
 
 - Topic: `Frontend display semantics and test coverage buildout`
-- Last updated: `2026-04-21`
+- Last updated: `2026-04-25`
 - Status: `active`
 - Discussion mode: `follow-up`
 
@@ -181,3 +181,32 @@
 - a new sibling frontend discussion has now been split out:
   - `discussion_batch_011` `Frontend style baseline refactor`
 - PMO should use `discussion_batch_011` for broader reusable-component/style-baseline planning rather than continuing to expand this batch with design-system scope
+
+## Follow-Up Recheck - After `discussion_batch_011` / `discussion_batch_012`
+
+- Date: `2026-04-25`
+- Status: `active / narrowed`
+
+### What Changed
+
+- `discussion_batch_011` is now stable:
+  - Notes, Projects, and shallow Dashboard shell/module cleanup have landed around the shared `Panel`, `CardCollection`, `CardHeaderRow`, `CardMetaRow`, `OverflowMenu`, `Card state`, and shared list/card surface language.
+  - creation flow, AI reveal/list cleanup, and Dashboard AI workflow redesign are no longer blocking this batch because they have been routed into backlog or decision records.
+- `discussion_batch_012` is now stable:
+  - Projects task preview and Dashboard saved tasks have validated the shared display-list frame in two real surfaces.
+  - AI reveal/list convergence is parked until future AI core ownership is clearer.
+
+### Updated PMO Reading
+
+- `slice-001` remains completed and stable.
+- `slice-002` is now the clearest live thread:
+  - the next useful discussion should define a first-pass frontend panel behavior coverage scope using the now-stabilized shell/list/card primitives as context.
+  - likely first coverage target remains `ProjectsPanel`, then `NotesPanel`.
+  - Dashboard should stay lighter for now because saved tasks have been structurally cleaned up, while broader Dashboard AI workflow remains a parked product redesign topic.
+- `slice-003` should not overtake `slice-002`:
+  - repo-native UI review and broader cross-surface browser review remain important, but current PMO state already tracks that as `Cross-Surface Frontend Validation Buildout` in `idea_backlog.md`.
+  - this batch should not reopen UI review tooling before the first panel behavior coverage scope is clearer.
+
+### Current Next Question
+
+- What exact behavior should the first `ProjectsPanel` frontend behavior coverage slice protect now that display semantics and shared shell/list/card structure are stable?

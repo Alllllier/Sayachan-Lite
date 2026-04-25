@@ -30,7 +30,6 @@ defineProps({
 .display-list {
   padding: var(--space-md);
   background: var(--surface-panel);
-  border: 1px solid var(--border-default);
   border-radius: var(--radius-block);
   box-shadow: none;
   display: flex;

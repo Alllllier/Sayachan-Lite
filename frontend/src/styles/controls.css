@@ -25,9 +25,9 @@
   --panel-surface-icon-foreground: var(--text-muted);
   --panel-surface-icon-active-surface: var(--button-secondary-surface);
   --panel-surface-icon-active-surface-hover: var(--button-secondary-surface);
-  --panel-surface-menu-offset: 4px;
-  --panel-surface-menu-min-width: 120px;
-  --panel-surface-menu-radius: 6px;
+  --overflow-menu-offset: 4px;
+  --overflow-menu-min-width: 120px;
+  --overflow-menu-radius: 6px;
 
   --button-danger-surface: #f9ecec;
   --button-danger-surface-hover: #f3dddd;
@@ -191,8 +191,7 @@
   flex-shrink: 0;
 }
 
-.panel-surface-icon-btn,
-.btn-overflow {
+.panel-surface-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -212,30 +211,14 @@
 
 .panel-surface-icon-btn:hover:not(:disabled),
 .panel-surface-icon-btn.is-active,
-.panel-surface-icon-btn.pinned,
-.btn-overflow:hover:not(:disabled),
-.btn-overflow.active {
+.panel-surface-icon-btn.pinned {
   background: var(--panel-surface-icon-active-surface-hover);
   color: var(--action-primary);
 }
 
-.panel-surface-icon-btn svg,
-.btn-overflow svg {
+.panel-surface-icon-btn svg {
   width: 14px;
   height: 14px;
-}
-
-.panel-surface-menu {
-  position: absolute;
-  top: calc(100% + var(--panel-surface-menu-offset));
-  right: 0;
-  background: var(--surface-card);
-  border: 1px solid var(--border-default);
-  border-radius: var(--panel-surface-menu-radius);
-  box-shadow: var(--shadow-md);
-  min-width: var(--panel-surface-menu-min-width);
-  z-index: 10;
-  overflow: hidden;
 }
 
 .btn-menu-item {
@@ -252,6 +235,8 @@
 
 .btn-menu-item:hover:not(:disabled) {
   background: var(--button-secondary-surface);
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .btn-menu-item.btn-danger {
@@ -262,6 +247,8 @@
 
 .btn-menu-item.btn-danger:hover:not(:disabled) {
   background: #fee9e9;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 /* ============================================
@@ -274,9 +261,11 @@
   justify-content: flex-end;
   align-items: center;
   gap: var(--space-xs);
+  flex-wrap: wrap;
 }
 
 .object-action-area {
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
@@ -307,6 +296,10 @@
 
 .object-action-area__pending {
   display: inline-block;
+  width: 14px;
+  height: 14px;
+  transform-box: fill-box;
+  transform-origin: center;
   line-height: 1;
   animation: spin 1s linear infinite;
 }
@@ -321,6 +314,7 @@
 .icon-loading {
   animation: spin 1s linear infinite;
   display: inline-block;
+  transform-origin: center;
 }
 
 @keyframes spin {

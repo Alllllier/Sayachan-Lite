@@ -892,6 +892,28 @@
   - the current three-slice structure is sufficient for a disciplined first phase
   - but it should not be mistaken for the entire long-term UI program
   - panel/shell/module language should remain visible as future discussion work so that the new baseline does not overfit only the current `Projects / Notes / Dashboard` surfaces
+  - human and PMO now agree that the next shell/module audit must treat the display-list baseline from `discussion_batch_012` as a core available structure, not as a side reference:
+    - `ObjectCollection` is a semantic role
+    - `List / ListSection / ListItem / ItemContent / ItemMeta` is an already-validated structural baseline for lightweight display lists
+    - the audit should therefore distinguish whether a surface is a collection of `Card`s, a `List`, a nested `SectionBlock + List`, or a still-undefined module/shell structure
+    - only gaps that cannot be explained by the existing `Card / SectionBlock / DirectiveBlock / ObjectActionArea / ActionRow / List` vocabulary should be considered possible structure-layer baseline extensions
+  - human priority is now explicit for the next structure refactor:
+    - use `Notes` and `Projects` as the first refactor targets and validation surfaces
+    - keep `Dashboard` out of the primary refactor scope until after the Notes/Projects structure pass lands
+    - after that pass, review whether Dashboard can naturally fit the new `Panel / Module` structure
+    - if Dashboard still does not fit cleanly, do not spend disproportionate effort forcing it into the new structure, especially while the future AI workflow/core ownership remains unsettled
+  - creation forms should not be treated as a primary structure-refactor target in this pass:
+    - `idea_backlog.md` already preserves creation-entry/list-surface consistency as a future product interaction topic
+    - human direction now points toward later redesigning Notes/Projects creation as a hover-icon-triggered flow
+    - therefore the near-term shell/module baseline should focus on `Panel` and `ObjectCollection`
+    - current `New Note` / `New Project` forms may remain local legacy until the creation-flow redesign is intentionally reopened
+  - first narrow Notes structure cut has now landed as a trial implementation:
+    - added a thin `Panel` shell baseline
+    - added a thin `CardCollection` baseline
+    - rewired `NotesPage` onto `Panel`
+    - rewired the Notes object-list region onto `CardCollection`
+    - intentionally left the current creation form, note card internals, and parked AI task draft items unchanged
+    - validation passed through frontend `npm run test` and `npm run build`, with only the existing Vite large-chunk warning
 
 ## Promotion Outcome
 
@@ -956,3 +978,35 @@
   - `Dashboard`, `ChatEntry`, broader validation-system work, field-level treatment of service failures, and field-level `filled / editing-active` skinning all remained out of scope as intended
   - an execution-loop process correction was required because the first worker return did not fully flow through the active `execution_task.md` -> `execution_report.md` contract
   - after correction, the runtime PMO report surface was properly written and the sprint was accepted for closeout
+
+## Final Follow-Up Closeout - Shell / Module Legacy Cleanup
+
+- Status: `stable / closed`
+- Date: `2026-04-25`
+- Final cleanup pass completed the intended shell/module baseline adoption and local style cleanup across the three current product surfaces:
+  - `Notes`
+    - uses `Panel`, `CardCollection`, `Card`, `CardHeaderRow`, `CardMetaRow`, `Card state`, `OverflowMenu`, and `ObjectActionArea`
+    - local style residue is now limited to explicitly parked legacy creation form, AI task draft reveal content, page-level load error, and edit-form layout
+  - `Projects`
+    - uses `CardCollection`, `Card`, `CardHeaderRow`, `CardMetaRow`, `Card state`, `OverflowMenu`, `List`, and `ObjectActionArea`
+    - local style residue is now limited to explicitly parked legacy creation form, AI suggestions reveal content, and genuine project-specific focus/status/task-capture/task-preview presentation
+  - `Dashboard`
+    - shallowly adopted `Panel`
+    - saved tasks, recent notes, and recent projects now use the shared `List` structure
+    - local Dashboard list styling is limited to dashboard-specific card/list presentation and saved-task provenance dots
+    - AI workflow remains local by design and is not treated as a completed shell/module target
+- Baseline components added or finalized during the follow-up:
+  - `Panel`
+  - `CardCollection`
+  - `CardHeaderRow`
+  - `CardMetaRow`
+  - `OverflowMenu`
+  - `Card state=archived`
+  - borderless shared `List` frame
+- Explicit deferrals are already captured outside this batch:
+  - Notes/Projects creation flow redesign remains in `idea_backlog.md` under `Creation And List-Surface Interaction Consistency`
+  - AI reveal/list cleanup remains deferred by `decision_log.md` entry `AI reveal list cleanup is deferred until AI core ownership is clearer`
+  - Dashboard AI workflow redesign has been added to `idea_backlog.md` as `Dashboard AI Workflow Redesign`
+- Final judgment:
+  - no further near-term discussion is needed inside `discussion_batch_011`
+  - future work should reopen from the relevant backlog/decision item rather than continuing this style-cleanup thread

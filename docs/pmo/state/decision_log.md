@@ -59,3 +59,12 @@
 - Decision: `Display-list disclosure should not be treated as universally list-level by rule. When a surface is organized around one main readable section plus one or more secondary sections, the primary `ListSection` may own the effective `preview / expanded` control and corresponding disclosure state.`
 - Reason: `Real implementation and human review on the Projects task preview showed that outer-list disclosure made the list shell feel artificially empty and blurred the difference between the main task reading surface and the secondary archived section. Section-mounted disclosure matched the product semantics more cleanly and required independent expand state to avoid unrelated sections opening together.`
 - Follow-up: `Use this rule when shaping the later Dashboard pass and any future list-baseline follow-ons. Keep `discussion_batch_012.md` as the living discussion home for how far this rule should generalize beyond the current validated Projects surface.`
+
+### `AI reveal list cleanup is deferred until AI core ownership is clearer`
+
+- Date: `2026-04-24`
+- Type: `deferred`
+- Scope: `discussion_batch_012 display-list follow-on for NotesPanel ai-task-item and ProjectsPanel ai-suggestion-item`
+- Decision: `Do not promote the previously expected display-list pass-3 for `ai-task-item` and `ai-suggestion-item` as near-term UI cleanup. Park those surfaces until future AI core and product-runtime ownership is clearer.`
+- Reason: `Projects task preview and Dashboard saved tasks already validated the shared display-list anchors. The AI reveal/list surfaces are likely to be substantially reshaped by future AI core integration, so normalizing them now risks polishing interim UI that may be replaced rather than reused.`
+- Follow-up: `Use the landed list primitives as reference only when AI/list convergence reopens from a concrete AI core integration need or a blocking UI cleanup surface.`
