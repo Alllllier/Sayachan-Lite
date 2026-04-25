@@ -1,7 +1,7 @@
 # Discussion Batch `discussion_batch_001`
 
 - Topic: `Dashboard time cues and panel action noise`
-- Last updated: `2026-04-18`
+- Last updated: `2026-04-25`
 - Status: `active`
 
 ## Why This Discussion Exists
@@ -44,6 +44,8 @@
 - What is the strongest text-led form that still feels soft rather than managerial or poetic in an empty way?
 - How can a text-led cue explain the current phase clearly enough to orient the user without sliding into action coaching?
 - What minimal ambient support, if any, should remain underneath a text-led primary cue?
+- Should the day-phase cue be controlled by a broader product settings entry, and what user-facing options should exist before this experience ships?
+- Should the cue default on, default soft, or require explicit opt-in given that time-awareness can feel either companion-like or pressure-inducing depending on the user?
 - What should count as a card's primary action in Notes versus Projects?
 - Which actions are legitimately high-frequency enough to stay visible, and which should be moved into a secondary `more` affordance?
 - How much UI simplification can happen without making edit/archive/delete feel hidden or unsafe?
@@ -58,6 +60,12 @@
 - A further stable preference has now emerged: within the text-led direction, Sayachan should lean toward explaining the current phase of the day or period, not subtly instructing the user toward the next action.
 - Another stable preference has now emerged: the primary cue should likely be built around day-phase explanation before considering month-scale or year-scale messaging as the lead layer.
 - The main unresolved shape question is no longer `text versus ambient` in the abstract, but what the underlying day-phase model should be and how each phase should feel in Sayachan language before copywriting begins.
+- A later product-control constraint has also emerged: the day-phase cue should not be treated as an unconditional homepage atmosphere. Because time-awareness can either feel companion-like or anxiety-inducing, this feature should eventually sit behind a broader product settings entry or equivalent preference surface.
+- PMO should therefore keep user control in scope for any future promotion:
+  - whether the cue is enabled
+  - how strong or subtle it is
+  - whether it uses explicit time facts or only phase language
+  - how it relates to future Sayachan tone / companion-style settings
 - The theme is directionally coherent, but the product framing is not yet stable enough for backlog retention or sprint promotion because the concrete UI shape is still open.
 - Preserving two separate possible slices is useful because the dashboard cue question and the panel-noise question may stabilize at different speeds.
 

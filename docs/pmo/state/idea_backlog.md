@@ -37,9 +37,9 @@
 - Problem / Opportunity: `The homepage may benefit from a lightweight time-orientation surface, but the product should preserve Sayachan's companion feel. The emerging direction is not a pressure-oriented countdown, but a text-led rhythm cue that gently explains the user's current phase of the day.`
 - Why now: `Homepage temporal treatment affects product tone at a high-traffic surface, and the discussion has already stabilized enough product constraints that the idea should remain visible outside the discussion batch.`
 - Current status: `exploring`
-- Dependencies: `A clearer day-phase model for Sayachan, including how many phases a day should have, where rough boundaries sit, how each phase should feel, and whether any minimal ambient support should sit beneath the text-led cue.`
-- Risks / unknowns: `The cue could still become too managerial, too poetic, too vague to orient, or too visually assertive for the dashboard. The exact balance between lived-time language and explicit time facts is still unresolved.`
-- Suggested next action: `Continue the active discussion by defining the day-phase structure and emotional texture first, then reassess whether the cue is stable enough for a bounded dashboard design slice.`
+- Dependencies: `A clearer day-phase model for Sayachan, including how many phases a day should have, where rough boundaries sit, how each phase should feel, whether any minimal ambient support should sit beneath the text-led cue, and what broader product settings / preference entry should control the cue.`
+- Risks / unknowns: `The cue could still become too managerial, too poetic, too vague to orient, or too visually assertive for the dashboard. The exact balance between lived-time language and explicit time facts is still unresolved, and the feature may feel companion-like for some users but pressure-inducing for others if it ships without user control.`
+- Suggested next action: `Continue the active discussion by defining the day-phase structure, emotional texture, and user-control model first, then reassess whether the cue is stable enough for a bounded dashboard design slice.`
 
 ### `Owner-Led Auth And Invite-Gated Tester Accounts`
 
