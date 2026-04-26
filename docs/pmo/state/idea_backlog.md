@@ -30,6 +30,19 @@
 
 ## Active Entries
 
+### `Projects Feature Layer Split`
+
+- Type: `architecture`
+- Source: `execution report`
+- Source reference: `docs/pmo/history/reports/projects-rules-behavior-coverage.md; FRONTEND_ARCHITECTURE_AUDIT_2026-04-23.md`
+- Problem / Opportunity: `ProjectsPanel still mixes rendering, local state, API calls, validation, task capture, focus management, and project-task preview orchestration. The just-completed Projects rules coverage gives the project a safer behavior baseline for a later split into clearer Projects feature layers.`
+- Why now: `The current sprint intentionally avoided architecture migration, but it clarified the preferred future direction: keep rules portable, then later introduce a feature boundary such as projects.api.js, projects.rules.js, and useProjects.js or an equivalent features/projects structure.`
+- Current status: `parked`
+- Dependencies: `A later architecture sprint that intentionally chooses the feature-layer structure and uses the new Projects rules tests as guardrails.`
+- Risks / unknowns: `If this is done too early or too broadly, it could turn into a frontend rewrite. If it is deferred indefinitely, ProjectsPanel will keep acting as view, controller, service, and state owner at once. The right boundary between composable state, API client, and pure rules still needs sprint-level shaping.`
+- Suggested next action: `Later, shape a bounded Projects feature-layer split that first moves API calls and stateful orchestration without changing product behavior, then moves the existing rules tests with the extracted rules module.`
+- Reopen trigger: `A human explicitly wants to start frontend feature-layer cleanup, or future Projects work becomes difficult because ProjectsPanel wiring remains too concentrated.`
+
 ### `Companion-Like Dashboard Day-Phase Rhythm Cue`
 
 - Type: `feature`

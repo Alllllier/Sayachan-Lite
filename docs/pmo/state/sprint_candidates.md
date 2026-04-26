@@ -29,110 +29,116 @@
 
 ## Current Candidates
 
-### `Frontend Input State Cleanup`
+### `Projects Rules Behavior Coverage`
 
 - Status: `completed`
-- Source reference: `state/discussions/discussion_batch_011.md slice-005`
-- Why now: `The structure, controls, action grouping, and secondary-control baselines have all landed, so the next most natural frontend consistency pass is to clean up high-frequency input-state semantics instead of leaving them as a mix of inherited baseline, silent submit guards, and object-level editing logic. Discussion has now converged on a bounded first pass covering only the highest-frequency input surfaces.` 
-- Expected outcome: `The frontend gains a first real baseline for input and textarea states on the highest-frequency creation/edit surfaces. Existing `default / focus / disabled` behavior should be formalized as shared baseline, local silent submit guards should become a light visible invalid-state pattern, and current submitting behavior should be formalized through input/button disable rules without forcing a full validation framework or a new filled-state skin.`
+- Source reference: `state/discussions/discussion_batch_013.md slice-001`
+- Why now: `ProjectsPanel is currently the most stable and important panel surface, and its task preview, archive/lifecycle display semantics, focus eligibility, and shared list/card baselines are now settled enough to protect at the rules layer. Human and PMO have also clarified that this slice should strengthen durable rules coverage first, without turning the work into a Projects feature-layer migration or UI review pass.`
+- Expected outcome: `The frontend gains a tighter Projects rules behavior baseline around task bucketing, preview branch selection, preview range and expansion, archived-project preview behavior, and focus eligibility. The work should keep tests close to pure rules/derivation logic so future `projects.api.js`, `projects.rules.js`, and `useProjects.js` separation can reuse the same behavioral guardrails instead of locking the current ProjectsPanel wiring shape.`
 - In scope:
-  - formalize first-pass input-state baseline on:
-    - `New Note`
-    - `Edit Note`
-    - `New Project`
-    - `Edit Project`
-    - `task capture`
-  - explicitly retain and normalize:
-    - `default`
-    - `focus`
-    - `disabled`
-  - add a light input-invalid pattern for local input errors:
-    - thin error border
-    - light error focus
-    - small helper text below the invalid field
-  - convert existing silent local submit guards into visible local invalid-state behavior where it fits cleanly
-  - formalize current `pending / submitting` behavior through input/button disabling rather than introducing a new heavy visual submitting state
+  - extend Projects rules/helper coverage for:
+    - active / completed / archived task bucketing, including archived priority over lifecycle status
+    - primary versus archived preview branches
+    - collapsed versus expanded preview limits
+    - archived-project primary preview remaining empty
+    - archived-project archived task preview remaining visible
+    - active/completed filter applying only to the primary branch
+    - focus eligibility limited to active non-archived tasks
+    - focus title deriving only from `currentFocusTaskId`
+  - extract a very small pure helper only if needed to cover stable metadata/display rules without component-level brittleness
+  - preserve current runtime behavior unless a rules test exposes a narrow mismatch such as a missing archived guard
 - Out of scope:
-  - `Dashboard` input/workflow redesign
-  - `ChatEntry`
-  - full validation framework or multi-field validation system
-  - service/network failure mapping into field-level error states
-  - forcing `filled / editing-active` into a field-level visual state
-  - broader form-system redesign
-- Dependencies: `discussion_batch_011 slice-005 judgments; landed structure/control/action-grouping/secondary-control baselines; willingness to treat `filled / editing-active` as region-level logic rather than a new input skin`
+  - `projects.api.js`, `projects.rules.js`, or `useProjects.js` architecture migration
+  - API endpoint tests or orchestration tests for future feature layers
+  - broad ProjectsPanel redesign
+  - task capture workflow coverage beyond rules-level eligibility if no pure seam exists
+  - pin/edit/archive/delete component rendering tests
+  - AI suggestion/list convergence
+  - browser, screenshot, Playwright, or E2E validation
+  - NotesPanel or Dashboard coverage
+- Dependencies: `discussion_batch_013 slice-001 code review; existing projectsPanel.behavior.js and projectsPanel.behavior.test.js; current taskService project-card fetch behavior; agreement that this sprint protects rules rather than current SFC wiring`
 - Risk level: `low`
 - Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-22 by explicit human direction to promote the now-bounded high-frequency input-state pass after clarifying both covered surfaces and excluded areas.`
-- Closeout: `Completed on 2026-04-22. Landed the first shared input-state cleanup across note/project creation and editing plus task capture, formalized default/focus/disabled behavior, upgraded current silent local invalid cases into restrained inline feedback, and kept submitting behavior intentionally light through disable rules rather than a heavier new form skin.`
+- Start condition: `Satisfied on 2026-04-26 by human agreement to promote slice-001 after PMO clarified that rules coverage is enough for the first Projects behavior slice and feature-layer separation should remain a later discussion/sprint.`
+- Closeout: `Completed on 2026-04-26. Expanded Projects rules-level behavior tests, moved the project preview limit into a shared rules constant consumed by ProjectsPanel, and aligned setTaskAsFocus with canSetProjectFocus so archived tasks cannot slip through the runtime guard. Targeted frontend tests passed and production build passed with the existing Vite large-chunk warning.`
 
-### `Frontend Display-List Baseline Pass 1: Projects Task Preview`
+### `Notes Rules Behavior Coverage`
 
 - Status: `completed`
-- Source reference: `state/discussions/discussion_batch_012.md slice-001 first-pass rollout pass-1`
-- Why now: `The display-list discussion has now converged enough that the cleanest first implementation slice is no longer speculative. Projects task preview is the strongest near-match to the new list frame, already demonstrates list-level expand plus grouped preview sections, and is the safest place to test whether the emerging list grammar can become real shared structure without dragging in the harder Dashboard saved-task redesign too early.`
-- Expected outcome: `The frontend gains the first real implementation pass of the shared display-list baseline on the Projects task preview surface. The preview should be realigned to the new `List / ListSection / ListItem / ItemContent / ItemMeta` reading, `Tasks` should behave like a section header rather than a generic list header, section-level filter control placement should be clarified, and the existing list-level expand behavior should remain intact as the governing preview-versus-expanded mode switch.`
+- Source reference: `state/discussions/discussion_batch_013.md slice-002`
+- Why now: `NotesPanel is a core long-lived surface, and its stable note object rules are now clear enough to protect without reopening editor design, markdown identity, AI reveal/list convergence, or frontend feature-layer migration. Unlike Projects, Notes does not yet have a behavior helper module, so the right first pass is a small rules extraction rather than component-level testing.`
+- Expected outcome: `The frontend gains a first Notes rules behavior baseline around local note validation, AI task reveal state derivation, active versus archived action eligibility, and simple edit snapshot restoration rules. NotesPanel should consume the extracted helpers only where doing so keeps the runtime aligned with the tested rules without changing product behavior.`
 - In scope:
-  - implement the first-pass display-list frame on the Projects task preview surface only
-  - align the preview surface to the agreed structural reading:
-    - `List`
-    - primary task `ListSection`
-    - optional archived `ListSection`
-    - `ListItem`
-    - `ItemContent`
-    - optional `ItemMeta`
-  - preserve list-level expand as the owner of:
-    - visible range
-    - information density
-  - treat `Tasks` as a section header/title rather than a universal list header
-  - keep the current preview filter as a section-mounted control rather than core list structure
-  - preserve row primary click as the current `focus/select` action
-  - allow `ItemTrailingMenu` to remain absent on this sample rather than forcing row actions where they do not naturally belong
+  - add a small pure helper module for stable Notes rules, likely `frontend/src/components/notesPanel.behavior.js`
+  - add focused Vitest coverage, likely `frontend/src/components/notesPanel.behavior.test.js`
+  - cover note field validation:
+    - empty or whitespace-only title returns `Enter a note title.`
+    - empty or whitespace-only content returns `Enter note content.`
+    - valid title/content returns no local field errors
+    - `hasNoteErrors` returns true only when title/content errors exist
+  - cover note AI state derivation:
+    - loading note id -> `pending`
+    - generated task drafts -> `active`
+    - neither loading nor drafts -> `idle`
+    - empty draft arrays do not count as active
+  - cover active versus archived action eligibility:
+    - active notes may expose pin, edit, archive, delete, and AI task generation
+    - archived notes expose restore and delete only
+    - archived notes do not expose pin, edit, archive, or AI task generation
+  - cover a tiny pure edit snapshot restore helper only if it stays simple and avoids component-level brittleness
+  - lightly wire `NotesPanel.vue` to the extracted helpers where this directly removes embedded rules duplication
 - Out of scope:
-  - Dashboard saved-task redesign
-  - checkbox removal or completed-toggle remapping on Dashboard
-  - broad row-state systemization across all surfaces
-  - AI task / AI suggestion convergence work
-  - task-capture workflow redesign
-  - broader panel/shell cleanup
-  - global list-variant formalization beyond what this preview surface needs to prove the frame
-- Dependencies: `discussion_batch_012 stabilized list grammar judgments; current Projects task preview implementation; willingness to treat this pass as a structural validation slice rather than a broader visual redesign`
+  - CodeMirror implementation redesign
+  - rendered markdown identity or broader style refresh
+  - browser-level writing comfort review
+  - Playwright, E2E, screenshot, or UI review
+  - AI task reveal/list convergence
+  - `notes.api.js`, `notes.rules.js`, `useNotes.js`, or `features/notes` migration
+  - full component rendering tests for `NotesPanel`
+  - note API or backend archive/restore behavior changes
+  - local draft-cache redesign
+- Dependencies: `discussion_batch_013 slice-002 code review; existing NotesPanel validation/action-state implementation; completed input-state, editor-comfort, and action-grouping baselines`
 - Risk level: `low`
 - Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-23 by explicit human direction to promote the first-pass Projects task preview slice after converging on the new list framework, rollout order, and the judgment that this is the cleanest surface to validate real implementation.`
-- Closeout: `Completed on 2026-04-23. Landed the first shared display-list primitive layer under `frontend/src/components/ui/list/` and rewired `ProjectsPanel` task preview onto it. Same-scope human review corrections then tightened the section hierarchy, restored correct row font sizing, fixed mobile preview truncation, hid project-local mobile meta, moved disclosure from list shell to section-level controls, and split primary versus archived expansion state so the final implementation matched the updated PMO rule. Frontend targeted tests passed and repeated production builds stayed green aside from the existing large-chunk warning.`
+- Start condition: `Satisfied on 2026-04-26 by human direction to promote slice-002 after PMO clarified a narrow rules-first Notes scope and excluded editor/UI review/feature-layer migration work.`
+- Closeout: `Completed on 2026-04-26. Added a narrow Notes rules helper and Vitest baseline for local validation, AI task state derivation, and active/archived action eligibility. NotesPanel now consumes those helpers without changing note API, editor, markdown, draft cache, AI reveal/list, or feature-layer structure. Targeted Notes behavior tests, full frontend npm test, and production build passed, with only the existing Vite large-chunk warning.`
 
-### `Frontend Display-List Baseline Pass 2: Dashboard Saved Tasks`
+### `Dashboard Saved-Task Behavior Guardrails`
 
 - Status: `completed`
-- Source reference: `state/discussions/discussion_batch_012.md pass-2`
-- Why now: `The Projects task preview pass has validated the first shared display-list primitive layer in real code. Dashboard saved tasks are now the right second anchor surface because they expose the harder responsibility split that the list grammar was designed to clarify: row primary click, preview/expanded disclosure, provenance metadata, and trailing secondary actions are currently mixed across local Dashboard markup and checkbox behavior.`
-- Expected outcome: `Dashboard saved tasks migrate onto the shared `List / ListSection / ListItem / ItemContent / ItemMeta` frame, removing the local saved-task list/item shell as the governing structure. Row primary click becomes the active-view complete/reactivate action, item-level expand is removed in favor of list or section preview/expanded mode, provenance stays in row metadata, and archive/delete/restore remain trailing secondary actions without forcing a full `ItemTrailingMenu` component yet.`
+- Source reference: `state/discussions/discussion_batch_013.md slice-003`
+- Why now: `Dashboard has been reduced to a narrow current surface: quick-add, saved tasks, active/archived saved-task view, row-level completion/archive/delete behavior, provenance dots, and a lightweight cockpit-signal bridge for chat context. The older Dashboard AI workflow is gone, so the right testing move is a small guardrail pass that protects the behavior that still exists without freezing a broader Dashboard product shape.`
+- Expected outcome: `The frontend gains a tighter Dashboard saved-task behavior baseline around preview/expanded derivation, active versus archived row interaction rules, completion/reactivation payloads, archive/restore/delete current-tab removal, provenance display derivation, and cockpit active-work truth alignment. Dashboard.vue should consume extracted pure helpers only where this replaces embedded rules without changing product behavior.`
 - In scope:
-  - migrate Dashboard saved tasks from local `saved-tasks-list` / `saved-task-item` structure to shared display-list primitives:
-    - `List`
-    - `ListSection`
-    - `ListItem`
-    - `ItemContent`
-    - `ItemMeta`
-  - remove the active-view checkbox from saved-task rows
-  - assign row primary click in active view to `completed / uncompleted` toggle
-  - remove item-level title expansion state from saved tasks
-  - introduce or use list/section-level preview versus expanded mode if the visible range or full-title display needs disclosure
-  - keep source/provenance dots as row metadata
-  - keep archive/delete/restore actions as trailing menu behavior inside the row metadata/trailing area
-  - preserve active versus archived view behavior through the existing Dashboard archive segmented control
-  - express completed rows primarily through muted/strikethrough row treatment rather than a new color system
-  - express archived rows as demoted/non-primary rows rather than a separate vivid state treatment
+  - extend `frontend/src/components/dashboard.behavior.js` with small pure helpers where useful for:
+    - saved-task preview versus expanded visible range
+    - saved-task overflow and toggle label derivation
+    - active versus archived row interaction and action eligibility
+    - completion/reactivation payload derivation
+    - canonical provenance letter, class, and tooltip derivation
+  - extend `frontend/src/components/dashboard.behavior.test.js` to cover:
+    - collapsed saved-task view shows at most five tasks
+    - expanded saved-task view shows the full current list
+    - toggle label distinguishes overflow, expanded, and non-overflow states
+    - active rows are primary-click interactive while archived rows are not
+    - active rows expose Archive/Delete while archived rows expose Restore/Delete
+    - completion payload flips active to completed and completed to active
+    - archive/restore removes tasks from the current visible tab
+    - provenance derives only from `originModule` and `creationMode`
+  - add or extend `dashboardContextService.test.js` only if needed to keep live Dashboard cockpit rules aligned with fallback snapshot truth
+  - lightly wire `Dashboard.vue` to extracted helpers where this directly exposes the tested rules
+  - preserve current product behavior
 - Out of scope:
-  - introducing a formal `ItemTrailingMenu` component in this pass
-  - redesigning the broader Dashboard AI workflow
-  - migrating `taskDrafts`, `actionPlan`, or other AI workflow list-like residues
-  - broad row-state systemization beyond what Dashboard saved tasks need
-  - changing backend task lifecycle semantics
-  - replacing the existing archive view segmented control
-  - full Dashboard visual redesign or shell/module cleanup
-- Dependencies: `completed Projects task preview list pass; existing shared list primitives under frontend/src/components/ui/list/; discussion_batch_012 responsibility split for Dashboard saved tasks; human agreement that checkbox removal follows from assigning row primary click to completed/uncompleted toggle`
-- Risk level: `medium`
+  - reintroducing Weekly Review, Focus Recommendation, Action Plan, dashboard task drafts, or any Dashboard AI Assistant block
+  - Dashboard AI workflow redesign
+  - broad Dashboard information architecture
+  - browser, screenshot, Playwright, E2E, or UI review
+  - creating `useDashboardTasks.js`, `dashboard.api.js`, or a full Dashboard feature-layer migration
+  - replacing the cockpit-signal bridge with a formal context architecture
+  - redesigning shared list primitives or row visuals
+  - backend task route changes
+- Dependencies: `discussion_batch_013 slice-003 code review; current Dashboard.vue saved-task implementation; existing dashboard.behavior.js/test; existing taskService active-task snapshot tests; existing dashboardContextService cockpit snapshot tests; completed Dashboard display-list migration`
+- Risk level: `low`
 - Readiness: `ready`
-- Start condition: `Satisfied on 2026-04-24 by human agreement that the Dashboard saved-task plan is complete enough to promote to candidate status.`
-- Closeout: `Completed on 2026-04-24. Dashboard saved tasks now use the shared display-list frame, active row primary click owns complete/reactivate, the checkbox and item-level expansion path were removed, provenance and trailing archive/delete/restore actions remain intact, and follow-up polish aligned the section with shared card/title and action-accent list treatment. Validation passed through frontend npm test and npm run build, with only the existing Vite large-chunk warning.`
+- Start condition: `Satisfied on 2026-04-26 by human direction to promote slice-003 after PMO confirmed the current Dashboard surface is much smaller than the old AI workflow and corrected roadmap baseline drift.`
+- Closeout: `Completed on 2026-04-26. Added helper-level Dashboard saved-task rules coverage for preview/expanded state, active versus archived row behavior, completion/reactivation payloads, archive/restore payloads, current-tab removal, and canonical provenance derivation. Dashboard.vue now consumes those helpers without reintroducing Dashboard AI workflow, feature-layer migration, backend route changes, shared list primitive changes, or UI/E2E review. Targeted Dashboard/task/context tests, full frontend npm test, and production build passed, with only the existing Vite large-chunk warning.`

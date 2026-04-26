@@ -6,7 +6,15 @@ import { useRuntimeControls } from '../stores/runtimeControls'
 import avatarUrl from '../assets/avator/temp.jpg'
 import { sendChat } from '../services/chatService'
 import { refreshDashboardContext } from '../services/dashboardContextService'
-import { resolveChatContextSnapshot } from './chatEntry.behavior.js'
+import {
+  canSendChatMessage,
+  getChatFallbackReply,
+  getChatSendButtonLabel,
+  getChatSendText,
+  isChatInputDisabled,
+  resolveChatContextForSend,
+  shouldClearChatDraft
+} from './chatEntry.behavior.js'
 import { renderMarkdown } from '../utils/markdown.js'
 
 const chatStore = useChatStore()
@@ -23,6 +31,14 @@ const inputValue = ref('')
 const messageListRef = ref(null)
 const isPanelOpen = ref(false)
 const isHydrating = ref(false)
+const chatInputDisabled = computed(() => isChatInputDisabled({
+  isSending: chatStore.isSending,
+  isHydrating: isHydrating.value
+}))
+const chatSendButtonLabel = computed(() => getChatSendButtonLabel({
+  isSending: chatStore.isSending,
+  isHydrating: isHydrating.value
+}))
 
 function openPopup() {
   chatStore.openChat()
@@ -52,10 +68,17 @@ watch(() => chatStore.messages.length, () => {
 })
 
 async function handleSend(presetText) {
-  const text = (typeof presetText === 'string' ? presetText : inputValue.value).trim()
-  if (!text || chatStore.isSending || isHydrating.value) return
+  const text = getChatSendText({
+    presetText,
+    inputValue: inputValue.value
+  })
+  if (!canSendChatMessage({
+    text,
+    isSending: chatStore.isSending,
+    isHydrating: isHydrating.value
+  })) return
 
-  if (typeof presetText !== 'string') {
+  if (shouldClearChatDraft(presetText)) {
     inputValue.value = ''
   }
   chatStore.appendMessage({ role: 'user', content: text })
@@ -63,17 +86,13 @@ async function handleSend(presetText) {
   let chatContext = context.value
   if (!cockpitSignals.hasHydrated) {
     isHydrating.value = true
-    try {
-      chatContext = await resolveChatContextSnapshot({
-        cockpitSignals,
-        currentContext: context.value,
-        refreshDashboardContext
-      })
-    } catch (e) {
-      console.error('Failed to hydrate context:', e)
-    } finally {
-      isHydrating.value = false
-    }
+    chatContext = await resolveChatContextForSend({
+      cockpitSignals,
+      currentContext: context.value,
+      refreshDashboardContext,
+      onHydrationError: e => console.error('Failed to hydrate context:', e)
+    })
+    isHydrating.value = false
   }
 
   chatStore.setSending(true)
@@ -84,7 +103,7 @@ async function handleSend(presetText) {
     chatStore.appendMessage({ role: 'assistant', content: reply })
   } catch (e) {
     console.error('Failed to send chat:', e)
-    chatStore.appendMessage({ role: 'assistant', content: mockFallbackReply() })
+    chatStore.appendMessage({ role: 'assistant', content: getChatFallbackReply(runtimeControls.personalityBaseline) })
   } finally {
     chatStore.setSending(false)
   }
@@ -97,15 +116,6 @@ function handleKeydown(e) {
   }
 }
 
-function mockFallbackReply() {
-  const baseline = runtimeControls.personalityBaseline
-  const fallbacks = {
-    warm: '我刚刚有点走神了，我们再试一次。',
-    strict: '连接中断。请重试，或检查网络状态。',
-    haraguro: '……连接断了呢。不过就算没断，你刚才想说的那个借口，我也不打算听的。'
-  }
-  return fallbacks[baseline] || fallbacks.warm
-}
 </script>
 
 <template>
@@ -143,9 +153,9 @@ function mockFallbackReply() {
             <div class="chat-bubble">{{ runtimeControls.personalityConfig.welcome }}</div>
           </div>
           <div class="chat-chips">
-            <button class="chip" :disabled="chatStore.isSending || isHydrating" @click="handleSend('帮我聚焦')">帮我聚焦</button>
-            <button class="chip" :disabled="chatStore.isSending || isHydrating" @click="handleSend('拆下一步')">拆下一步</button>
-            <button class="chip" :disabled="chatStore.isSending || isHydrating" @click="handleSend('今天总结')">今天总结</button>
+            <button class="chip" :disabled="chatInputDisabled" @click="handleSend('帮我聚焦')">帮我聚焦</button>
+            <button class="chip" :disabled="chatInputDisabled" @click="handleSend('拆下一步')">拆下一步</button>
+            <button class="chip" :disabled="chatInputDisabled" @click="handleSend('今天总结')">今天总结</button>
           </div>
           <div
             v-for="(msg, idx) in chatStore.messages"
@@ -174,11 +184,11 @@ function mockFallbackReply() {
             v-model="inputValue"
             class="chat-input"
             placeholder="说点什么&hellip;"
-            :disabled="chatStore.isSending || isHydrating"
+            :disabled="chatInputDisabled"
             @keydown="handleKeydown"
           />
-          <button class="btn btn-primary chat-send-btn" :disabled="chatStore.isSending || isHydrating" @click="handleSend">
-            {{ isHydrating ? '准备中' : chatStore.isSending ? 'Thinking' : 'Send' }}
+          <button class="btn btn-primary chat-send-btn" :disabled="chatInputDisabled" @click="handleSend">
+            {{ chatSendButtonLabel }}
           </button>
         </div>
       </div>

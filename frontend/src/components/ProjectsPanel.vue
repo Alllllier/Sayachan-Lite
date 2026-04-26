@@ -2,11 +2,21 @@
 import { ref, onMounted, defineEmits, defineProps, watch } from 'vue'
 import { saveTask, fetchProjectCardTasks } from '../services/taskService.js'
 import {
+  PROJECT_TASK_PREVIEW_LIMIT,
   canSetProjectFocus,
+  createEmptyProjectErrors,
+  createEmptyTaskCaptureError,
+  getInitialTaskCaptureState,
+  getNextTaskCaptureModeState,
   getProjectArchivedPreviewTasks,
   getProjectFocusTitle,
   getProjectPrimaryPreviewTasks,
-  getProjectTaskBuckets
+  getProjectTaskBuckets,
+  hasProjectErrors,
+  parseBatchTaskTitles,
+  validateBatchTaskCapture,
+  validateProjectFields,
+  validateSingleTaskCapture
 } from './projectsPanel.behavior.js'
 import {
   Card,
@@ -78,7 +88,6 @@ const previewFilterOptions = [
   { value: 'active', label: 'Active' },
   { value: 'completed', label: 'Completed' }
 ]
-const projectTaskPreviewLimit = 3
 
 const taskCaptureModeOptions = [
   { value: 'single', label: 'Single' },
@@ -139,25 +148,6 @@ function getCurrentFocusDisplay(project) {
 
 const emit = defineEmits(['refreshed'])
 
-function createEmptyProjectErrors() {
-  return { name: '', summary: '' }
-}
-
-function validateProjectFields(projectLike) {
-  const errors = createEmptyProjectErrors()
-  if (!projectLike.name?.trim()) {
-    errors.name = 'Enter a project name.'
-  }
-  if (!projectLike.summary?.trim()) {
-    errors.summary = 'Enter a short summary.'
-  }
-  return errors
-}
-
-function hasProjectErrors(errors) {
-  return Boolean(errors.name || errors.summary)
-}
-
 function ensureEditProjectErrorState(projectId) {
   if (!editProjectErrors.value[projectId]) {
     editProjectErrors.value[projectId] = createEmptyProjectErrors()
@@ -186,10 +176,6 @@ function updateProjectFieldError(target, field, value, projectId = null) {
 
 function clearEditProjectErrors(projectId) {
   delete editProjectErrors.value[projectId]
-}
-
-function createEmptyTaskCaptureError() {
-  return { single: '', batch: '' }
 }
 
 function ensureTaskCaptureErrorState(projectId) {
@@ -492,7 +478,7 @@ async function saveSuggestionAsTask(projectId, suggestion) {
 }
 
 async function setTaskAsFocus(project, task) {
-  if (!task || task.status !== 'active') return
+  if (!canSetProjectFocus(task)) return
   try {
     const response = await fetch(`${API_BASE}/projects/${project._id}`, {
       method: 'PUT',
@@ -551,7 +537,7 @@ function getProjectPreviewToggleLabel(isExpanded, total) {
   if (isExpanded) {
     return '收起'
   }
-  return total > projectTaskPreviewLimit ? `展开全部 (${total})` : '展开详情'
+  return total > PROJECT_TASK_PREVIEW_LIMIT ? `展开全部 (${total})` : '展开详情'
 }
 
 function setProjectArchiveView(view) {
@@ -607,12 +593,18 @@ function getArchivedSectionTitle(project) {
 }
 
 function openTaskCapture(projectId) {
+  const nextState = getInitialTaskCaptureState()
+
   taskCaptureOpen.value.add(projectId)
-  // 默认从 single 模式开始
-  taskCaptureMode.value[projectId] = 'single'
-  manualTaskInputs.value[projectId] = ''
-  manualTaskProjects.value.add(projectId)
-  taskCaptureErrors.value[projectId] = createEmptyTaskCaptureError()
+  taskCaptureMode.value[projectId] = nextState.mode
+  manualTaskInputs.value[projectId] = nextState.singleInput
+  taskCaptureErrors.value[projectId] = nextState.errors
+
+  if (nextState.manualProjectActive) {
+    manualTaskProjects.value.add(projectId)
+  } else {
+    manualTaskProjects.value.delete(projectId)
+  }
 }
 
 function closeTaskCapture(projectId) {
@@ -625,26 +617,30 @@ function closeTaskCapture(projectId) {
 }
 
 function setTaskCaptureMode(projectId, mode) {
-  taskCaptureMode.value[projectId] = mode
-  clearTaskCaptureError(projectId)
-  if (mode === 'single') {
+  const nextState = getNextTaskCaptureModeState(mode, {
+    singleInput: manualTaskInputs.value[projectId],
+    batchInput: batchTaskInputs.value[projectId]
+  })
+
+  taskCaptureMode.value[projectId] = nextState.mode
+  taskCaptureErrors.value[projectId] = nextState.errors
+
+  if (nextState.manualProjectActive) {
     manualTaskProjects.value.add(projectId)
-    if (!manualTaskInputs.value[projectId]) {
-      manualTaskInputs.value[projectId] = ''
-    }
+    manualTaskInputs.value[projectId] = nextState.singleInput
     delete batchTaskInputs.value[projectId]
   } else {
     manualTaskProjects.value.delete(projectId)
-    if (!batchTaskInputs.value[projectId]) {
-      batchTaskInputs.value[projectId] = ''
-    }
+    batchTaskInputs.value[projectId] = nextState.batchInput
+    delete manualTaskInputs.value[projectId]
   }
 }
 
 async function addManualTask(project) {
   const taskTitle = manualTaskInputs.value[project._id]?.trim()
-  if (!taskTitle) {
-    setTaskCaptureError(project._id, 'single', 'Enter a task title.')
+  const validationError = validateSingleTaskCapture(taskTitle)
+  if (validationError) {
+    setTaskCaptureError(project._id, 'single', validationError)
     return
   }
   clearTaskCaptureError(project._id, 'single')
@@ -674,22 +670,14 @@ async function addManualTask(project) {
 // toggleBatchTaskInput removed - replaced by unified task capture
 
 async function addBatchTasks(project) {
-  const inputText = batchTaskInputs.value[project._id]?.trim()
-  if (!inputText) {
-    setTaskCaptureError(project._id, 'batch', 'Enter at least one task title.')
+  const inputText = batchTaskInputs.value[project._id]
+  const validationError = validateBatchTaskCapture(inputText)
+  if (validationError) {
+    setTaskCaptureError(project._id, 'batch', validationError)
     return
   }
 
-  // Split by newlines and filter empty lines
-  const taskTitles = inputText
-    .split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0)
-
-  if (taskTitles.length === 0) {
-    setTaskCaptureError(project._id, 'batch', 'Enter at least one task title.')
-    return
-  }
+  const taskTitles = parseBatchTaskTitles(inputText)
   clearTaskCaptureError(project._id, 'batch')
 
   addingBatchTasks.value.add(project._id)

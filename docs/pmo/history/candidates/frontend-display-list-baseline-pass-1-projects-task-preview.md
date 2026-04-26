@@ -1,0 +1,25 @@
+### `Frontend Display-List Baseline Pass 1: Projects Task Preview`
+
+- Archived from: `docs/pmo/state/sprint_candidates.md`
+- Archive date: `2026-04-26`
+- Final status: `completed`
+- Source reference: `state/discussions/discussion_batch_012.md slice-001 first-pass rollout pass-1`
+- Why now: `The display-list discussion had converged enough that the cleanest first implementation slice was no longer speculative. Projects task preview was the strongest near-match to the new list frame, already demonstrating list-level expand plus grouped preview sections, and was the safest place to validate the emerging list grammar without dragging in Dashboard saved-task redesign too early.`
+- Expected outcome: `The frontend gains the first real implementation pass of the shared display-list baseline on the Projects task preview surface.`
+- In scope:
+  - implement the first-pass display-list frame on the Projects task preview surface only
+  - align the preview surface to `List / ListSection / ListItem / ItemContent / ItemMeta`
+  - preserve preview versus expanded behavior
+  - treat `Tasks` as a section title
+  - keep preview filter as section-mounted control
+  - preserve row primary click as focus/select
+- Out of scope:
+  - Dashboard saved-task redesign
+  - broad row-state systemization
+  - AI task / AI suggestion convergence work
+  - task-capture workflow redesign
+  - broader panel/shell cleanup
+- Risk level: `low`
+- Readiness: `ready`
+- Start condition: `Satisfied on 2026-04-23 by explicit human direction to promote the first-pass Projects task preview slice.`
+- Closeout: `Completed on 2026-04-23. Landed the first shared display-list primitive layer under frontend/src/components/ui/list/ and rewired ProjectsPanel task preview onto it. Same-scope human review corrections tightened section hierarchy, row sizing, mobile truncation, disclosure placement, and independent primary versus archived expansion state. Frontend targeted tests passed and repeated production builds stayed green aside from the existing large-chunk warning.`

@@ -19,6 +19,15 @@ import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
 import OverflowMenu from './ui/OverflowMenu.vue'
 import SegmentedControl from './ui/SegmentedControl.vue'
+import {
+  createEmptyNoteErrors,
+  createNoteEditSnapshot,
+  getNoteAIState as deriveNoteAIState,
+  getNoteActionEligibility,
+  hasNoteErrors,
+  restoreNoteFromSnapshot,
+  validateNoteFields
+} from './notesPanel.behavior.js'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
@@ -86,25 +95,6 @@ function clearDraft() {
   localStorage.removeItem('sayachan_note_drafts')
 }
 const emit = defineEmits(['refreshed'])
-
-function createEmptyNoteErrors() {
-  return { title: '', content: '' }
-}
-
-function validateNoteFields(noteLike) {
-  const errors = createEmptyNoteErrors()
-  if (!noteLike.title?.trim()) {
-    errors.title = 'Enter a note title.'
-  }
-  if (!noteLike.content?.trim()) {
-    errors.content = 'Enter note content.'
-  }
-  return errors
-}
-
-function hasNoteErrors(errors) {
-  return Boolean(errors.title || errors.content)
-}
 
 function updateNewNoteError(field, value) {
   if (field === 'title') {
@@ -386,8 +376,7 @@ function startEditing(note) {
   if (editingId.value && editingId.value !== note._id) {
     const oldNote = notes.value.find(n => n._id === editingId.value)
     if (oldNote && editingOriginalData.value[editingId.value]) {
-      oldNote.title = editingOriginalData.value[editingId.value].title
-      oldNote.content = editingOriginalData.value[editingId.value].content
+      restoreNoteFromSnapshot(oldNote, editingOriginalData.value[editingId.value])
       delete editingOriginalData.value[editingId.value]
     }
     if (editEditorViews[editingId.value]) {
@@ -397,22 +386,15 @@ function startEditing(note) {
   }
   editingId.value = note._id
   editNoteErrors.value[note._id] = createEmptyNoteErrors()
-  // P0-Fix-1: Store original data for restore on cancel
-  editingOriginalData.value[note._id] = {
-    title: note.title,
-    content: note.content
-  }
+  editingOriginalData.value[note._id] = createNoteEditSnapshot(note)
 }
 
 function cancelEdit(note) {
   if (!note && editingId.value) {
     note = notes.value.find(n => n._id === editingId.value)
   }
-  // P0-Fix-1: Restore original data before closing edit mode
   if (note && editingOriginalData.value[note._id]) {
-    note.title = editingOriginalData.value[note._id].title
-    note.content = editingOriginalData.value[note._id].content
-    // Clean up stored original data
+    restoreNoteFromSnapshot(note, editingOriginalData.value[note._id])
     delete editingOriginalData.value[note._id]
   }
   if (note && editEditorViews[note._id]) {
@@ -431,9 +413,11 @@ function closeAITasks(noteId) {
 }
 
 function getNoteAIState(noteId) {
-  if (aiLoadingNotes.value.has(noteId)) return 'pending'
-  if (aiTasksByNote[noteId] && aiTasksByNote[noteId].length > 0) return 'active'
-  return 'idle'
+  return deriveNoteAIState(noteId, aiLoadingNotes.value, aiTasksByNote)
+}
+
+function canUseNoteAction(note, action) {
+  return Boolean(getNoteActionEligibility(note)[action])
 }
 
 function setArchiveView(view) {
@@ -554,7 +538,7 @@ async function saveNoteTaskDraft(noteId, draft) {
         <CardHeaderRow :title="note.title">
           <template #actions>
           <button
-            v-if="!note.archived"
+            v-if="canUseNoteAction(note, 'canPin')"
             @click.stop="note.isPinned ? unpinNote(note) : pinNote(note)"
             class="panel-surface-icon-btn"
             :class="{ pinned: note.isPinned }"
@@ -620,14 +604,14 @@ async function saveNoteTaskDraft(noteId, draft) {
       </template>
 
       <template #actions v-else>
-        <template v-if="note.archived">
+        <template v-if="canUseNoteAction(note, 'canRestore')">
           <ActionRow>
             <button @click="restoreNote(note)" class="btn btn-secondary">Restore</button>
-            <button @click="deleteNote(note._id)" class="btn btn-danger">Delete</button>
+            <button v-if="canUseNoteAction(note, 'canDelete')" @click="deleteNote(note._id)" class="btn btn-danger">Delete</button>
           </ActionRow>
         </template>
         <ObjectActionArea
-          v-else
+          v-else-if="canUseNoteAction(note, 'canGenerateAITasks')"
           variant="ai"
           active-kind="icon"
           :state="getNoteAIState(note._id)"
@@ -643,9 +627,9 @@ async function saveNoteTaskDraft(noteId, draft) {
               title="Actions"
               @toggle="toggleNoteMenu(note._id)"
             >
-              <button @click="startEditing(note)" class="btn btn-menu-item btn-secondary">Edit</button>
-              <button @click="archiveNote(note)" class="btn btn-menu-item btn-archive">Archive</button>
-              <button @click="deleteNote(note._id)" class="btn btn-menu-item btn-danger">Delete</button>
+              <button v-if="canUseNoteAction(note, 'canEdit')" @click="startEditing(note)" class="btn btn-menu-item btn-secondary">Edit</button>
+              <button v-if="canUseNoteAction(note, 'canArchive')" @click="archiveNote(note)" class="btn btn-menu-item btn-archive">Archive</button>
+              <button v-if="canUseNoteAction(note, 'canDelete')" @click="deleteNote(note._id)" class="btn btn-menu-item btn-danger">Delete</button>
             </OverflowMenu>
           </template>
           <SectionBlock v-if="aiTasksByNote[note._id] && aiTasksByNote[note._id].length > 0" class="note-ai-tasks">

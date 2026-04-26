@@ -8,7 +8,18 @@ import {
   syncTaskIntoActiveSnapshot,
   tasksRef
 } from '../services/taskService'
-import { applyDashboardTaskUpdate, removeDashboardTask } from './dashboard.behavior.js'
+import {
+  applyDashboardTaskUpdate,
+  buildDashboardTaskArchivePayload,
+  buildDashboardTaskCompletionPayload,
+  deriveDashboardTaskProvenance,
+  deriveDashboardTaskRowState,
+  getDashboardTaskActions,
+  getDashboardTaskListMode,
+  getDashboardTaskToggleLabel,
+  getVisibleDashboardTasks,
+  removeDashboardTask
+} from './dashboard.behavior.js'
 import { useCockpitSignals } from '../stores/cockpitSignals'
 import EmptyState from './ui/EmptyState.vue'
 import OverflowMenu from './ui/OverflowMenu.vue'
@@ -66,7 +77,6 @@ watchEffect(() => {
 
 const taskMenuOpen = ref(null)
 const isSavedTaskListExpanded = ref(false)
-const savedTaskPreviewLimit = 5
 
 // Toast notifications
 const toast = ref(null)
@@ -90,23 +100,9 @@ const archiveViewOptions = [
   { value: 'active', label: 'Active' },
   { value: 'archived', label: 'Archived' }
 ]
-const hasSavedTaskOverflow = computed(() => savedTasks.value.length > savedTaskPreviewLimit)
-const savedTaskToggleLabel = computed(() => {
-  if (isSavedTaskListExpanded.value) {
-    return 'Show less'
-  }
-  return hasSavedTaskOverflow.value
-    ? `Show all (${savedTasks.value.length})`
-    : 'Expand details'
-})
-const visibleSavedTasks = computed(() => (
-  isSavedTaskListExpanded.value
-    ? savedTasks.value
-    : savedTasks.value.slice(0, savedTaskPreviewLimit)
-))
-const savedTaskListMode = computed(() => (
-  isSavedTaskListExpanded.value ? 'expanded' : 'preview'
-))
+const savedTaskToggleLabel = computed(() => getDashboardTaskToggleLabel(savedTasks.value, isSavedTaskListExpanded.value))
+const visibleSavedTasks = computed(() => getVisibleDashboardTasks(savedTasks.value, isSavedTaskListExpanded.value))
+const savedTaskListMode = computed(() => getDashboardTaskListMode(isSavedTaskListExpanded.value))
 
 onMounted(() => fetchTasks(showArchived.value))
 
@@ -141,16 +137,16 @@ async function handleQuickAddTask() {
 
 async function handleTaskComplete(task) {
   try {
-    const newStatus = task.status === 'completed' ? 'active' : 'completed'
+    const payload = buildDashboardTaskCompletionPayload(task)
     const res = await fetch(`${API_BASE}/tasks/${task._id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ completed: newStatus === 'completed', status: newStatus })
+      body: JSON.stringify(payload)
     })
     const updated = await res.json()
     savedTasks.value = applyDashboardTaskUpdate(savedTasks.value, updated)
     syncTaskIntoActiveSnapshot(updated)
-    showToast(newStatus === 'completed' ? 'Task completed' : 'Task reactivated')
+    showToast(payload.status === 'completed' ? 'Task completed' : 'Task reactivated')
     // Notify parent to refresh data (for project focus transition)
     emit('refreshed')
   } catch (e) {
@@ -160,11 +156,11 @@ async function handleTaskComplete(task) {
 
 async function handleTaskArchive(task) {
   try {
-    const willArchive = !task.archived
+    const payload = buildDashboardTaskArchivePayload(task)
     const res = await fetch(`${API_BASE}/tasks/${task._id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(willArchive ? { archived: true } : { archived: false })
+      body: JSON.stringify(payload)
     })
     const updated = await res.json()
     savedTasks.value = removeDashboardTask(savedTasks.value, updated._id)
@@ -215,48 +211,6 @@ function toggleSavedTaskListExpanded() {
   isSavedTaskListExpanded.value = !isSavedTaskListExpanded.value
   closeTaskMenu()
 }
-
-function getSourceLetter(task) {
-  // Canonical: only use originModule field
-  const originModule = task.originModule?.toLowerCase() || ''
-  if (originModule.includes('note')) {
-    return 'N'
-  }
-  if (originModule.includes('project')) {
-    return 'P'
-  }
-  if (originModule === 'dashboard') {
-    return 'D'
-  }
-  return '?' // Ultimate fallback
-}
-
-function getProvenanceClass(task) {
-  // Canonical: only use creationMode
-  if (task.creationMode === 'ai') {
-    return 'provenance-ai'
-  }
-  if (task.creationMode === 'manual') {
-    return 'provenance-manual'
-  }
-  return ''
-}
-
-function getSourceTooltip(task) {
-  if (task.creationMode === 'ai') {
-    return 'AI generated'
-  }
-  if (task.originModule === 'dashboard') {
-    return 'Dashboard quick add'
-  }
-  if (task.originModule === 'note') {
-    return 'Note task'
-  }
-  if (task.originModule === 'project') {
-    return 'Project task'
-  }
-  return 'Manual'
-}
 </script>
 
 <template>
@@ -306,31 +260,31 @@ function getSourceTooltip(task) {
           v-for="task in visibleSavedTasks"
           :key="task._id"
           element="div"
-          :interactive="!showArchived"
+          :interactive="deriveDashboardTaskRowState(task, showArchived).interactive"
           :muted="task.completed || task.status === 'completed'"
           :archived="showArchived"
           :raised="taskMenuOpen === task._id"
-          :role="!showArchived ? 'button' : undefined"
-          :tabindex="!showArchived ? 0 : undefined"
-          :aria-pressed="!showArchived ? task.completed || task.status === 'completed' : undefined"
-          @click="!showArchived ? handleTaskComplete(task) : null"
-          @keydown.enter.prevent="!showArchived ? handleTaskComplete(task) : null"
-          @keydown.space.prevent="!showArchived ? handleTaskComplete(task) : null"
+          :role="deriveDashboardTaskRowState(task, showArchived).role"
+          :tabindex="deriveDashboardTaskRowState(task, showArchived).tabindex"
+          :aria-pressed="deriveDashboardTaskRowState(task, showArchived).ariaPressed"
+          @click="deriveDashboardTaskRowState(task, showArchived).interactive ? handleTaskComplete(task) : null"
+          @keydown.enter.prevent="deriveDashboardTaskRowState(task, showArchived).interactive ? handleTaskComplete(task) : null"
+          @keydown.space.prevent="deriveDashboardTaskRowState(task, showArchived).interactive ? handleTaskComplete(task) : null"
         >
           <ItemContent :text="task.title" />
           <ItemMeta>
             <span
               class="source-dot"
-              :class="getProvenanceClass(task)"
-              :title="getSourceTooltip(task)"
-            >{{ getSourceLetter(task) }}</span>
+              :class="deriveDashboardTaskProvenance(task).className"
+              :title="deriveDashboardTaskProvenance(task).tooltip"
+            >{{ deriveDashboardTaskProvenance(task).letter }}</span>
             <OverflowMenu
               :open="taskMenuOpen === task._id"
               title="Actions"
               @toggle="toggleTaskMenu(task._id)"
             >
-              <button @click="handleTaskArchive(task)" class="btn btn-menu-item btn-archive">{{ showArchived ? 'Restore' : 'Archive' }}</button>
-              <button @click="handleTaskDelete(task)" class="btn btn-menu-item btn-danger">Delete</button>
+              <button @click="handleTaskArchive(task)" class="btn btn-menu-item btn-archive">{{ getDashboardTaskActions(showArchived)[0] }}</button>
+              <button @click="handleTaskDelete(task)" class="btn btn-menu-item btn-danger">{{ getDashboardTaskActions(showArchived)[1] }}</button>
             </OverflowMenu>
           </ItemMeta>
         </ListItem>

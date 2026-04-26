@@ -1,0 +1,25 @@
+### `Frontend Input State Cleanup`
+
+- Archived from: `docs/pmo/state/sprint_candidates.md`
+- Archive date: `2026-04-26`
+- Final status: `completed`
+- Source reference: `state/discussions/discussion_batch_011.md slice-005`
+- Why now: `The structure, controls, action grouping, and secondary-control baselines have all landed, so the next most natural frontend consistency pass is to clean up high-frequency input-state semantics instead of leaving them as a mix of inherited baseline, silent submit guards, and object-level editing logic. Discussion has now converged on a bounded first pass covering only the highest-frequency input surfaces.`
+- Expected outcome: `The frontend gains a first real baseline for input and textarea states on the highest-frequency creation/edit surfaces. Existing default / focus / disabled behavior should be formalized as shared baseline, local silent submit guards should become a light visible invalid-state pattern, and current submitting behavior should be formalized through input/button disable rules without forcing a full validation framework or a new filled-state skin.`
+- In scope:
+  - formalize first-pass input-state baseline on `New Note`, `Edit Note`, `New Project`, `Edit Project`, and `task capture`
+  - normalize `default`, `focus`, and `disabled`
+  - add a light local input-invalid pattern
+  - convert fitting silent local submit guards into visible local invalid-state behavior
+  - keep submitting behavior light through disable rules
+- Out of scope:
+  - `Dashboard` input/workflow redesign
+  - `ChatEntry`
+  - full validation framework or multi-field validation system
+  - service/network failure mapping into field-level error states
+  - broader form-system redesign
+- Dependencies: `discussion_batch_011 slice-005 judgments; landed structure/control/action-grouping/secondary-control baselines`
+- Risk level: `low`
+- Readiness: `ready`
+- Start condition: `Satisfied on 2026-04-22 by explicit human direction to promote the now-bounded high-frequency input-state pass after clarifying both covered surfaces and excluded areas.`
+- Closeout: `Completed on 2026-04-22. Landed the first shared input-state cleanup across note/project creation and editing plus task capture, formalized default/focus/disabled behavior, upgraded current silent local invalid cases into restrained inline feedback, and kept submitting behavior intentionally light through disable rules rather than a heavier new form skin.`

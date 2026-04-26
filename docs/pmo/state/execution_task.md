@@ -1,21 +1,35 @@
-# Execution Task Idle Template
+# Execution Task
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-04-24`
+- Last updated: `2026-04-26`
+- Source reference: `none`
+- Candidate reference: `none`
 
-## Current State
+## Objective
 
-There is no active execution handoff right now.
+No active execution task.
 
-This file should be overwritten only when a new sprint or micro-fix is explicitly activated and handed off into execution.
+## Safe Touch Zones
 
-## Last Closed Sprint
+- none
 
-- Sprint: `Frontend Display-List Baseline Pass 2: Dashboard Saved Tasks`
-- Outcome: `completed`
-- Report surface: `docs/pmo/history/reports/frontend-display-list-baseline-pass-2-dashboard-saved-tasks.md`
+## In Scope
 
-## Next Activation Rule
+- none
 
-- wait for explicit human sprint selection or a clearly bounded micro-fix activation before writing a new active execution contract here
+## Explicit Non-Goals
+
+- none
+
+## Acceptance Checks
+
+- none
+
+## Escalation Points
+
+- none
+
+## Completion Report Expectations
+
+No active completion report expected.

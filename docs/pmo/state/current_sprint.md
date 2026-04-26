@@ -1,30 +1,28 @@
-# Current Sprint Idle Template
+# Current Sprint
 
 - Sprint: `idle`
 - Status: `idle`
 - PMO owner: `Codex`
 - Architecture owner: `Human`
-- Execution owner: `execution worker`
-- Last updated: `2026-04-25`
+- Execution owner: `idle`
+- Last updated: `2026-04-26`
 
 ## Current State
 
-- Type: `idle`
-- Goal: `No active sprint.`
+- Type: `no active sprint`
+- Goal: `idle`
 - Active handoff: `none`
 
 ## Last Closed Sprint
 
-- Sprint: `Frontend Display-List Baseline Pass 2: Dashboard Saved Tasks`
-- Closeout date: `2026-04-24`
+- Sprint: `Dashboard Saved-Task Behavior Guardrails`
+- Closeout date: `2026-04-26`
 - Delivery status: `completed`
 - Commit state: `not committed in this closeout`
-- Documentation sync outcome: `report archived; candidate/discussion/state surfaces updated`
-- Residual note: `Dashboard is now the second validated anchor surface for the shared display-list frame. discussion_batch_012 is stable; AI reveal/list convergence is parked until future AI core ownership is clearer, and any future ItemTrailingMenu decision should reopen from a concrete surface need.`
+- Documentation sync outcome: `report archived; candidate/discussion/runtime state updated; discussion_batch_013 later stabilized after selected frontend behavior gaps were covered`
+- Residual note: `Dashboard saved-task rules landed as the last formal sprint slice; follow-up micro-coverage later added Projects form/task-capture rules, Notes edit snapshots, ChatEntry send-entry rules, chatService request contract tests, runtimeControls store tests, and chat store tests. Browser/E2E/UI review, Dashboard AI workflow redesign, and Dashboard feature-layer migration remain outside this sprint.`
 
 ## Next PMO Action
 
-- keep `execution_task.md` in explicit idle state until a new sprint or micro-fix is activated
-- likely next PMO move:
-  - return to `discussion_batch_010` for frontend panel behavior coverage shaping now that the shell/list/card cleanup discussions are stable
-  - treat `discussion_batch_012` as stable reference unless a concrete list-surface need reopens it
+- keep `execution_task.md` idle until a new sprint or micro-fix is explicitly selected
+- `discussion_batch_014` is now the active follow-up discussion for Projects / Notes / Dashboard feature-layer separation; no sprint is active until a bounded slice is promoted

@@ -2,7 +2,7 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-04-24`
+- Last updated: `2026-04-26`
 
 ## Current State
 
@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Frontend Display-List Baseline Pass 2: Dashboard Saved Tasks`
+- Sprint: `Dashboard Saved-Task Behavior Guardrails`
 - Report outcome: `safe to close out`
-- PMO read result: `accepted; archived to docs/pmo/history/reports/frontend-display-list-baseline-pass-2-dashboard-saved-tasks.md`
+- PMO read result: `accepted; archived to docs/pmo/history/reports/dashboard-saved-task-behavior-guardrails.md`
 
 ## Next Use
 

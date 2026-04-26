@@ -210,3 +210,29 @@
 ### Current Next Question
 
 - What exact behavior should the first `ProjectsPanel` frontend behavior coverage slice protect now that display semantics and shared shell/list/card structure are stable?
+
+## Split-Out Follow-Up - Panel Behavior Coverage Baseline
+
+- Date: `2026-04-26`
+- Status: `split out`
+- New discussion batch: `discussion_batch_013`
+
+### Split-Out Reason
+
+- Human direction is now to shape the first frontend behavior coverage baseline across all three major panels:
+  - `ProjectsPanel`
+  - `NotesPanel`
+  - `Dashboard`
+- Keeping that broader three-panel testing discussion inside this batch would blur:
+  - the already-completed project display-semantics cleanup
+  - the remaining repo-native UI review / validation buildout topic
+  - the new multi-panel behavior-coverage baseline
+
+### Updated Parent-Batch Reading
+
+- `slice-001` remains completed.
+- `slice-002` now continues in `discussion_batch_013` with three slices:
+  - ProjectsPanel behavior coverage
+  - NotesPanel behavior coverage
+  - Dashboard behavior guardrails
+- `slice-003` repo-native UI review baseline remains parked as broader validation buildout and should not overtake the new behavior-coverage discussion unless a concrete UI-review blocker appears.

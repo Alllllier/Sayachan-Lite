@@ -1,6 +1,6 @@
 # System Baseline
 
-> Audited against the live repository on `2026-04-18`.
+> Audited against the live repository on `2026-04-26`.
 
 ## Purpose
 
@@ -113,7 +113,7 @@ Current Note fields:
 
 - `title`
 - `content`
-- `status`
+- `archived`
 - `isPinned`
 - `pinnedAt`
 
@@ -124,6 +124,7 @@ Current Project fields:
 - `name`
 - `summary`
 - `status`
+- `archived`
 - `currentFocusTaskId`
 - `isPinned`
 - `pinnedAt`
@@ -136,18 +137,9 @@ Preferred Task contract fields:
 - `creationMode`
 - `originModule`
 - `originId`
-- `originLabel`
-- `linkedProjectId`
-- `linkedProjectName`
 - `status`
+- `archived`
 - `completed`
-
-Legacy compatibility fields still present on the model:
-
-- `source`
-- `sourceDetail`
-- `projectId`
-- `projectName`
 
 ## Current Domain Semantics
 
@@ -164,9 +156,6 @@ Canonical current task provenance uses:
 - `creationMode`
 - `originModule`
 - `originId`
-- `originLabel`
-- `linkedProjectId`
-- `linkedProjectName`
 
 ### Archive Semantics
 
@@ -175,7 +164,7 @@ Current archive / restore behavior includes:
 - note archive cascades to note-origin tasks
 - note restore restores those archived note-origin tasks
 - project archive cascades to related tasks and clears `currentFocusTaskId`
-- project restore restores archived related tasks to active
+- project restore restores archived related tasks while preserving lifecycle semantics
 
 ## Public / Private Core Split
 

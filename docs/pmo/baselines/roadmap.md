@@ -40,13 +40,17 @@
 
 ### Dashboard
 
-- recent notes and projects surfaces
 - quick-add tasks
-- AI weekly review
-- AI focus recommendation
-- AI action plan
-- AI task drafts
+- saved-task management
+- active / archived saved-task view toggle
+- saved-task complete / reactivate, archive / restore, and delete actions
+- saved-task provenance dots from canonical task provenance
 - cockpit signals for chat context
+- removed older fallback-only Dashboard AI workflow:
+  - weekly review
+  - focus recommendation
+  - action plan
+  - dashboard task drafts
 
 ### Chat Runtime
 
@@ -61,7 +65,6 @@
 
 ## Active Debt
 
-- legacy task fields remain in the schema for compatibility
 - workflow domain rules are still concentrated in route handlers
 - top-level docs still over-simplify the runtime compared with current reality
 - current PMO structure still mixes mature runtime surfaces with earlier descriptive scaffolding
