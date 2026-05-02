@@ -9,9 +9,9 @@ import {
   resolveChatContextForSend,
   resolveChatContextSnapshot,
   shouldClearChatDraft
-} from './chatEntry.behavior.js'
+} from './chat.rules.js'
 
-describe('chatEntry behavior locks', () => {
+describe('chat rules locks', () => {
   it('normalizes typed and preset send text before submission', () => {
     expect(normalizeChatSendText('  hello  ')).toBe('hello')
     expect(normalizeChatSendText('   ')).toBe('')
@@ -42,45 +42,45 @@ describe('chatEntry behavior locks', () => {
     expect(getChatSendButtonLabel({ isSending: true, isHydrating: true })).toBe('准备中')
   })
 
-  it('reuses hydrated cockpit signals without refreshing dashboard context', async () => {
-    const refreshDashboardContext = vi.fn()
+  it('reuses hydrated cockpit signals without refreshing cockpit context', async () => {
+    const refreshCockpitContext = vi.fn()
     const currentContext = { activeTasksCount: 3 }
 
     await expect(resolveChatContextSnapshot({
       cockpitSignals: { hasHydrated: true },
       currentContext,
-      refreshDashboardContext
+      refreshCockpitContext
     })).resolves.toEqual(currentContext)
 
-    expect(refreshDashboardContext).not.toHaveBeenCalled()
+    expect(refreshCockpitContext).not.toHaveBeenCalled()
   })
 
-  it('hydrates dashboard context before sending when cockpit signals are cold', async () => {
-    const refreshDashboardContext = vi.fn().mockResolvedValue({ activeTasksCount: 2 })
+  it('hydrates cockpit context before sending when cockpit signals are cold', async () => {
+    const refreshCockpitContext = vi.fn().mockResolvedValue({ activeTasksCount: 2 })
 
     await expect(resolveChatContextSnapshot({
       cockpitSignals: { hasHydrated: false },
       currentContext: { activeTasksCount: 99 },
-      refreshDashboardContext
+      refreshCockpitContext
     })).resolves.toEqual({ activeTasksCount: 2 })
 
-    expect(refreshDashboardContext).toHaveBeenCalledTimes(1)
+    expect(refreshCockpitContext).toHaveBeenCalledTimes(1)
   })
 
   it('falls back to current context when cold dashboard hydration fails', async () => {
     const error = new Error('offline')
     const onHydrationError = vi.fn()
-    const refreshDashboardContext = vi.fn().mockRejectedValue(error)
+    const refreshCockpitContext = vi.fn().mockRejectedValue(error)
     const currentContext = { activeTasksCount: 99 }
 
     await expect(resolveChatContextForSend({
       cockpitSignals: { hasHydrated: false },
       currentContext,
-      refreshDashboardContext,
+      refreshCockpitContext,
       onHydrationError
     })).resolves.toEqual(currentContext)
 
-    expect(refreshDashboardContext).toHaveBeenCalledTimes(1)
+    expect(refreshCockpitContext).toHaveBeenCalledTimes(1)
     expect(onHydrationError).toHaveBeenCalledWith(error)
   })
 

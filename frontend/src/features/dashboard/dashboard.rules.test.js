@@ -11,9 +11,9 @@ import {
   hasDashboardTaskOverflow,
   prependDashboardTask,
   removeDashboardTask
-} from './dashboard.behavior.js'
+} from './dashboard.rules.js'
 
-describe('dashboard saved-task behavior locks', () => {
+describe('dashboard saved-task rules locks', () => {
   const tasks = Array.from({ length: 7 }, (_, index) => ({
     _id: `task-${index + 1}`,
     title: `Task ${index + 1}`

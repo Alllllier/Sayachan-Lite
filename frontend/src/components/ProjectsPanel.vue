@@ -1,23 +1,13 @@
 <script setup>
-import { ref, onMounted, defineEmits, defineProps, watch } from 'vue'
-import { saveTask, fetchProjectCardTasks } from '../services/taskService.js'
+import { ref, onMounted, defineEmits } from 'vue'
+import { useProjectsFeature } from '../features/projects/useProjectsFeature.js'
 import {
   PROJECT_TASK_PREVIEW_LIMIT,
   canSetProjectFocus,
-  createEmptyProjectErrors,
-  createEmptyTaskCaptureError,
-  getInitialTaskCaptureState,
-  getNextTaskCaptureModeState,
   getProjectArchivedPreviewTasks,
-  getProjectFocusTitle,
   getProjectPrimaryPreviewTasks,
-  getProjectTaskBuckets,
-  hasProjectErrors,
-  parseBatchTaskTitles,
-  validateBatchTaskCapture,
-  validateProjectFields,
-  validateSingleTaskCapture
-} from './projectsPanel.behavior.js'
+  getProjectTaskBuckets
+} from '../features/projects/projects.rules.js'
 import {
   Card,
   CardHeaderRow,
@@ -40,34 +30,7 @@ import {
   ItemMeta
 } from './ui/list'
 
-const props = defineProps(['projects'])
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
-
-const projects = ref([])
-const projectForm = ref({ name: '', summary: '', status: 'pending' })
-const editingProjectId = ref(null)
-const loading = ref(false)
-const error = ref(null)
-const showArchived = ref(false)
-const aiSuggestions = ref({})
-const aiLoadingProjects = ref(new Set())
-const savedSuggestions = ref(new Set())
 const menuOpenProjectId = ref(null)
-const manualTaskProjects = ref(new Set())
-const addingManualTasks = ref(new Set())
-const manualTaskInputs = ref({})
-
-// Unified Task Capture (Single/Batch mode)
-const taskCaptureOpen = ref(new Set()) // 记录哪些 project 打开了 capture 区域
-const taskCaptureMode = ref({}) // { [projectId]: 'single' | 'batch' }
-const batchTaskInputs = ref({})
-const addingBatchTasks = ref(new Set())
-const projectTasks = ref({})
-const loadingProjectTasks = ref(new Set())
-const projectFormErrors = ref({ name: '', summary: '' })
-const editProjectErrors = ref({})
-const taskCaptureErrors = ref({})
 
 // Project task preview expansion and filter state
 const expandedPrimaryPreviewProjects = ref(new Set())
@@ -94,11 +57,6 @@ const taskCaptureModeOptions = [
   { value: 'batch', label: 'Batch' }
 ]
 
-// Focus Source Unification: task-only focus, no ephemeral suggestion state
-
-// P0-Fix-1: Store original project data for cancel restore
-const editingOriginalData = ref({})
-
 function showToast(message, type = 'success') {
   toastMessage.value = message
   toastType.value = type
@@ -107,6 +65,56 @@ function showToast(message, type = 'success') {
     toast.value = false
   }, 3000)
 }
+
+const emit = defineEmits(['refreshed'])
+
+const {
+  projects,
+  projectForm,
+  editingProjectId,
+  loading,
+  error,
+  showArchived,
+  aiSuggestions,
+  savedSuggestions,
+  addingManualTasks,
+  manualTaskInputs,
+  taskCaptureOpen,
+  taskCaptureMode,
+  batchTaskInputs,
+  addingBatchTasks,
+  taskCaptureErrors,
+  projectTasks,
+  projectFormErrors,
+  editProjectErrors,
+  fetchProjects,
+  createProject,
+  updateProject,
+  deleteProject,
+  archiveProject,
+  restoreProject,
+  pinProject,
+  unpinProject,
+  startEditingProject,
+  cancelEditProject,
+  updateProjectFieldError,
+  getCurrentFocusDisplay,
+  handleTaskCaptureInput,
+  openTaskCapture,
+  closeTaskCapture,
+  setTaskCaptureMode,
+  addManualTask,
+  addBatchTasks,
+  closeAISuggestions,
+  getProjectAIState,
+  handleAISuggest,
+  saveSuggestionAsTask,
+  setTaskAsFocus,
+  setProjectArchiveView
+} = useProjectsFeature({
+  notify: showToast,
+  onRefreshed: refreshedProjects => emit('refreshed', refreshedProjects)
+})
 
 function toggleProjectMenu(projectId) {
   if (menuOpenProjectId.value === projectId) {
@@ -141,365 +149,7 @@ function getStatusClass(status) {
   return classMap[status] || 'status-default'
 }
 
-// Focus Source Unification: canonical task-based focus only
-function getCurrentFocusDisplay(project) {
-  return getProjectFocusTitle(project, projectTasks.value[project._id] || [])
-}
-
-const emit = defineEmits(['refreshed'])
-
-function ensureEditProjectErrorState(projectId) {
-  if (!editProjectErrors.value[projectId]) {
-    editProjectErrors.value[projectId] = createEmptyProjectErrors()
-  }
-  return editProjectErrors.value[projectId]
-}
-
-function updateProjectFieldError(target, field, value, projectId = null) {
-  const trimmed = value.trim()
-  if (target === 'new') {
-    if (field === 'name') {
-      projectFormErrors.value.name = trimmed ? '' : projectFormErrors.value.name
-    } else {
-      projectFormErrors.value.summary = trimmed ? '' : projectFormErrors.value.summary
-    }
-    return
-  }
-
-  const errors = ensureEditProjectErrorState(projectId)
-  if (field === 'name') {
-    errors.name = trimmed ? '' : errors.name
-  } else {
-    errors.summary = trimmed ? '' : errors.summary
-  }
-}
-
-function clearEditProjectErrors(projectId) {
-  delete editProjectErrors.value[projectId]
-}
-
-function ensureTaskCaptureErrorState(projectId) {
-  if (!taskCaptureErrors.value[projectId]) {
-    taskCaptureErrors.value[projectId] = createEmptyTaskCaptureError()
-  }
-  return taskCaptureErrors.value[projectId]
-}
-
-function setTaskCaptureError(projectId, mode, message) {
-  const errors = ensureTaskCaptureErrorState(projectId)
-  errors[mode] = message
-}
-
-function clearTaskCaptureError(projectId, mode = null) {
-  if (!taskCaptureErrors.value[projectId]) return
-  if (!mode) {
-    delete taskCaptureErrors.value[projectId]
-    return
-  }
-  taskCaptureErrors.value[projectId][mode] = ''
-}
-
-function handleTaskCaptureInput(projectId, mode, value) {
-  if (value.trim()) {
-    clearTaskCaptureError(projectId, mode)
-  }
-}
-
-async function fetchProjects() {
-  loading.value = true
-  try {
-    const url = showArchived.value
-      ? `${API_BASE}/projects?archived=true`
-      : `${API_BASE}/projects`
-    const response = await fetch(url)
-    const fetchedProjects = await response.json()
-    projects.value = fetchedProjects
-    // Refresh tasks for all projects to avoid stale cache when tab/status changes
-    await Promise.all(fetchedProjects.map(p => fetchProjectTasksForCard(p._id)))
-    emit('refreshed', projects.value)
-  } catch (e) {
-    error.value = 'Failed to load projects'
-  } finally {
-    loading.value = false
-  }
-}
-
-// Watch props.projects to sync from parent (App.vue refreshAllData)
-watch(() => props.projects, (newProjects) => {
-  if (Array.isArray(newProjects)) {
-    projects.value = [...newProjects]
-    // Refresh tasks for all projects to avoid stale cache when status changes
-    projects.value.forEach(project => {
-      fetchProjectTasksForCard(project._id)
-    })
-  }
-}, { deep: true })
-
-async function createProject() {
-  const errors = validateProjectFields(projectForm.value)
-  projectFormErrors.value = errors
-  if (hasProjectErrors(errors)) return
-  loading.value = true
-  error.value = null
-  try {
-    const response = await fetch(`${API_BASE}/projects`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(projectForm.value)
-    })
-    if (!response.ok) throw new Error('Create failed')
-    const project = await response.json()
-    projects.value.unshift(project)
-    projectForm.value = { name: '', summary: '', status: 'pending' }
-    projectFormErrors.value = createEmptyProjectErrors()
-    emit('refreshed', projects.value)
-    showToast('Project created')
-    // Initialize empty task list for new project
-    projectTasks.value[project._id] = []
-  } catch (e) {
-    showToast('Failed to create project. Please try again.', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-async function updateProject(project) {
-  const errors = validateProjectFields(project)
-  editProjectErrors.value[project._id] = errors
-  if (hasProjectErrors(errors)) return
-  loading.value = true
-  error.value = null
-  try {
-    const response = await fetch(`${API_BASE}/projects/${project._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(project)
-    })
-    if (!response.ok) throw new Error('Update failed')
-    const updated = await response.json()
-    const index = projects.value.findIndex(p => p._id === project._id)
-    if (index !== -1) projects.value[index] = updated
-    // Sort: pinned first, then by updatedAt
-    projects.value.sort((a, b) => {
-      if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1
-      return new Date(b.updatedAt) - new Date(a.updatedAt)
-    })
-    editingProjectId.value = null
-    clearEditProjectErrors(project._id)
-    emit('refreshed', projects.value)
-    showToast('Project updated')
-  } catch (e) {
-    showToast('Failed to update project. Please try again.', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-async function deleteProject(id) {
-  if (!confirm('Delete this project?')) return
-  loading.value = true
-  error.value = null
-  try {
-    const response = await fetch(`${API_BASE}/projects/${id}`, { method: 'DELETE' })
-    if (!response.ok) throw new Error('Delete failed')
-    projects.value = projects.value.filter(p => p._id !== id)
-    emit('refreshed', projects.value)
-    showToast('Project deleted')
-  } catch (e) {
-    showToast('Failed to delete project. Please try again.', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-async function archiveProject(project) {
-  if (!confirm(`Archive "${project.name}"? All related tasks will be archived too.`)) return
-  loading.value = true
-  error.value = null
-  try {
-    const response = await fetch(`${API_BASE}/projects/${project._id}/archive`, { method: 'PUT' })
-    if (!response.ok) throw new Error('Archive failed')
-    await fetchProjects()
-    showToast('Project archived')
-    emit('refreshed', projects.value)
-  } catch (e) {
-    showToast('Failed to archive project. Please try again.', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-async function restoreProject(project) {
-  loading.value = true
-  error.value = null
-  try {
-    const response = await fetch(`${API_BASE}/projects/${project._id}/restore`, { method: 'PUT' })
-    if (!response.ok) throw new Error('Restore failed')
-    await fetchProjects()
-    // Refresh tasks for this project after restore (cascade restore tasks)
-    await fetchProjectTasksForCard(project._id)
-    showToast('Project restored')
-    emit('refreshed', projects.value)
-  } catch (e) {
-    showToast('Failed to restore project. Please try again.', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-async function pinProject(project) {
-  loading.value = true
-  try {
-    const response = await fetch(`${API_BASE}/projects/${project._id}/pin`, { method: 'PUT' })
-    if (!response.ok) throw new Error('Pin failed')
-    await fetchProjects()
-    showToast('Project pinned')
-  } catch (e) {
-    showToast('Failed to pin project', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-async function unpinProject(project) {
-  loading.value = true
-  try {
-    const response = await fetch(`${API_BASE}/projects/${project._id}/unpin`, { method: 'PUT' })
-    if (!response.ok) throw new Error('Unpin failed')
-    await fetchProjects()
-    showToast('Project unpinned')
-  } catch (e) {
-    showToast('Failed to unpin project', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-function startEditingProject(project) {
-  editingProjectId.value = project._id
-  editProjectErrors.value[project._id] = createEmptyProjectErrors()
-  // P0-Fix-1: Store original data for restore on cancel
-  editingOriginalData.value[project._id] = {
-    name: project.name,
-    summary: project.summary,
-    status: project.status
-  }
-}
-
-onMounted(async () => {
-  fetchProjects()
-  if (!props.projects || props.projects.length === 0) {
-    await fetchProjects()
-  } else {
-    projects.value = [...props.projects]
-  }
-  // Fetch tasks for all projects
-  projects.value.forEach(project => {
-    fetchProjectTasksForCard(project._id)
-  })
-})
-
-function cancelEditProject(project) {
-  // P0-Fix-1: Restore original data before closing edit mode
-  if (project && editingOriginalData.value[project._id]) {
-    project.name = editingOriginalData.value[project._id].name
-    project.summary = editingOriginalData.value[project._id].summary
-    project.status = editingOriginalData.value[project._id].status
-    // Clean up stored original data
-    delete editingOriginalData.value[project._id]
-  }
-  if (project?._id) {
-    clearEditProjectErrors(project._id)
-  }
-  editingProjectId.value = null
-}
-
-// Close AI suggestions by clearing data (allows reopening)
-function closeAISuggestions(projectId) {
-  delete aiSuggestions.value[projectId]
-}
-
-function getProjectAIState(projectId) {
-  if (aiLoadingProjects.value.has(projectId)) return 'pending'
-  if (aiSuggestions.value[projectId] && aiSuggestions.value[projectId].length > 0) return 'active'
-  return 'idle'
-}
-
-async function fetchProjectTasksForCard(projectId) {
-  loadingProjectTasks.value.add(projectId)
-  try {
-    const project = projects.value.find(p => p._id === projectId)
-    const archived = project?.archived === true
-    const tasks = await fetchProjectCardTasks(projectId, archived)
-    projectTasks.value[projectId] = tasks
-  } catch (e) {
-    console.error('Failed to fetch project tasks:', e)
-    projectTasks.value[projectId] = []
-  } finally {
-    loadingProjectTasks.value.delete(projectId)
-  }
-}
-
-async function handleAISuggest(project) {
-  aiLoadingProjects.value.add(project._id)
-  try {
-    const response = await fetch(`${API_BASE}/ai/projects/next-action`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(project)
-    })
-    const result = await response.json()
-    aiSuggestions.value[project._id] = result.suggestions || []
-  } catch (e) {
-    aiSuggestions.value[project._id] = ['Failed to get AI suggestion']
-  } finally {
-    aiLoadingProjects.value.delete(project._id)
-  }
-}
-
-async function saveSuggestionAsTask(projectId, suggestion) {
-  if (savedSuggestions.value.has(suggestion)) {
-    return
-  }
-  savedSuggestions.value.add(suggestion)
-  const project = projects.value.find(p => p._id === projectId)
-  const newTask = await saveTask(
-    suggestion,
-    'ai',
-    'project',
-    projectId
-  )
-  if (newTask) {
-    showToast('Saved as task')
-    await fetchProjectTasksForCard(projectId)
-  } else {
-    savedSuggestions.value.delete(suggestion)
-  }
-}
-
-async function setTaskAsFocus(project, task) {
-  if (!canSetProjectFocus(task)) return
-  try {
-    const response = await fetch(`${API_BASE}/projects/${project._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: project.name,
-        summary: project.summary,
-        status: project.status,
-        currentFocusTaskId: task._id
-      })
-    })
-    const updated = await response.json()
-    const index = projects.value.findIndex(p => p._id === project._id)
-    if (index !== -1) {
-      projects.value[index] = updated
-    }
-    emit('refreshed', projects.value)
-  } catch (e) {
-    error.value = 'Failed to set focus'
-  }
-}
+onMounted(fetchProjects)
 
 function getActiveTasks(projectId) {
   return getProjectTaskBuckets(projectTasks.value[projectId] || []).active
@@ -538,11 +188,6 @@ function getProjectPreviewToggleLabel(isExpanded, total) {
     return '收起'
   }
   return total > PROJECT_TASK_PREVIEW_LIMIT ? `展开全部 (${total})` : '展开详情'
-}
-
-function setProjectArchiveView(view) {
-  showArchived.value = view === 'archived'
-  fetchProjects()
 }
 
 function getPrimaryPreviewTasks(projectId) {
@@ -592,118 +237,6 @@ function getArchivedSectionTitle(project) {
   return project?.archived ? 'Archived Tasks' : 'Archived'
 }
 
-function openTaskCapture(projectId) {
-  const nextState = getInitialTaskCaptureState()
-
-  taskCaptureOpen.value.add(projectId)
-  taskCaptureMode.value[projectId] = nextState.mode
-  manualTaskInputs.value[projectId] = nextState.singleInput
-  taskCaptureErrors.value[projectId] = nextState.errors
-
-  if (nextState.manualProjectActive) {
-    manualTaskProjects.value.add(projectId)
-  } else {
-    manualTaskProjects.value.delete(projectId)
-  }
-}
-
-function closeTaskCapture(projectId) {
-  taskCaptureOpen.value.delete(projectId)
-  delete taskCaptureMode.value[projectId]
-  delete manualTaskInputs.value[projectId]
-  delete batchTaskInputs.value[projectId]
-  manualTaskProjects.value.delete(projectId)
-  clearTaskCaptureError(projectId)
-}
-
-function setTaskCaptureMode(projectId, mode) {
-  const nextState = getNextTaskCaptureModeState(mode, {
-    singleInput: manualTaskInputs.value[projectId],
-    batchInput: batchTaskInputs.value[projectId]
-  })
-
-  taskCaptureMode.value[projectId] = nextState.mode
-  taskCaptureErrors.value[projectId] = nextState.errors
-
-  if (nextState.manualProjectActive) {
-    manualTaskProjects.value.add(projectId)
-    manualTaskInputs.value[projectId] = nextState.singleInput
-    delete batchTaskInputs.value[projectId]
-  } else {
-    manualTaskProjects.value.delete(projectId)
-    batchTaskInputs.value[projectId] = nextState.batchInput
-    delete manualTaskInputs.value[projectId]
-  }
-}
-
-async function addManualTask(project) {
-  const taskTitle = manualTaskInputs.value[project._id]?.trim()
-  const validationError = validateSingleTaskCapture(taskTitle)
-  if (validationError) {
-    setTaskCaptureError(project._id, 'single', validationError)
-    return
-  }
-  clearTaskCaptureError(project._id, 'single')
-
-  addingManualTasks.value.add(project._id)
-  try {
-    const newTask = await saveTask(
-      taskTitle,
-      'manual',
-      'project',
-      project._id
-    )
-    if (newTask) {
-      showToast('Task added')
-      // Close capture area after successful save
-      closeTaskCapture(project._id)
-      // Refresh project tasks
-      await fetchProjectTasksForCard(project._id)
-    }
-  } catch (e) {
-    error.value = 'Failed to add task'
-  } finally {
-    addingManualTasks.value.delete(project._id)
-  }
-}
-
-// toggleBatchTaskInput removed - replaced by unified task capture
-
-async function addBatchTasks(project) {
-  const inputText = batchTaskInputs.value[project._id]
-  const validationError = validateBatchTaskCapture(inputText)
-  if (validationError) {
-    setTaskCaptureError(project._id, 'batch', validationError)
-    return
-  }
-
-  const taskTitles = parseBatchTaskTitles(inputText)
-  clearTaskCaptureError(project._id, 'batch')
-
-  addingBatchTasks.value.add(project._id)
-  try {
-    let successCount = 0
-    for (const title of taskTitles) {
-      const newTask = await saveTask(
-        title,
-        'manual',
-        'project',
-        project._id
-      )
-      if (newTask) successCount++
-    }
-
-    showToast(`Added ${successCount} task(s)`)
-    // Close capture area after successful batch save
-    closeTaskCapture(project._id)
-    // Refresh project tasks
-    await fetchProjectTasksForCard(project._id)
-  } catch (e) {
-    error.value = 'Failed to add tasks'
-  } finally {
-    addingBatchTasks.value.delete(project._id)
-  }
-}
 </script>
 
 <template>

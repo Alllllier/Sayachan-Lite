@@ -24,6 +24,15 @@
 
 ## Recorded Decisions
 
+### `Frontend feature code lives under feature modules`
+
+- Date: `2026-05-03`
+- Type: `approved`
+- Scope: `frontend architecture`
+- Decision: `Module-level API boundaries, pure rules, and stateful orchestration composables should live under `frontend/src/features/{module}/`. Page components should stay route shells, while visual components should keep rendering, DOM refs, and local UI affordances. Shared services should be reserved for cross-feature or app-level runtime concerns.`
+- Reason: `discussion_batch_014 migrated Projects, Notes, Dashboard, and Chat into feature-layer homes, removed component-adjacent behavior helpers, and clarified that task runtime and cockpit context hydration are shared services rather than module UI logic.`
+- Follow-up: `Use this as the default placement rule for future BJD/optional modules, taskService splitting, cockpit context runtime work, and any new feature extraction.`
+
 ### `Sprint selection remains human-gated`
 
 - Date: `2026-04-18`

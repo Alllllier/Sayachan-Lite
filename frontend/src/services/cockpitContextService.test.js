@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { deriveDashboardSnapshot } from './dashboardContextService.js'
+import { deriveCockpitSnapshot } from './cockpitContextService.js'
 
-describe('dashboardContextService smoke tests', () => {
+describe('cockpitContextService smoke tests', () => {
   it('counts only non-archived projects and non-archived non-completed tasks', () => {
-    const snapshot = deriveDashboardSnapshot(
+    const snapshot = deriveCockpitSnapshot(
       [
         { _id: 'project-1', status: 'pending', archived: false, name: 'Alpha' },
         { _id: 'project-2', status: 'pending', archived: true, name: 'Beta' }
@@ -22,7 +22,7 @@ describe('dashboardContextService smoke tests', () => {
   })
 
   it('ignores archived pinned projects when deriving pinnedProjectName', () => {
-    const snapshot = deriveDashboardSnapshot(
+    const snapshot = deriveCockpitSnapshot(
       [
         { _id: 'project-1', status: 'pending', archived: true, name: 'Archived Pin', isPinned: true },
         { _id: 'project-2', status: 'pending', archived: false, name: 'Live Pin', isPinned: true }
@@ -34,7 +34,7 @@ describe('dashboardContextService smoke tests', () => {
   })
 
   it('derives currentNextAction from task-based project focus only', () => {
-    const snapshot = deriveDashboardSnapshot(
+    const snapshot = deriveCockpitSnapshot(
       [
         { _id: 'project-1', status: 'pending', archived: false, name: 'Focused Project', currentFocusTaskId: 'task-2' },
         { _id: 'project-2', status: 'pending', archived: true, name: 'Archived Project', currentFocusTaskId: 'task-1' }
@@ -49,7 +49,7 @@ describe('dashboardContextService smoke tests', () => {
   })
 
   it('returns empty currentNextAction when the focused task is missing', () => {
-    const snapshot = deriveDashboardSnapshot(
+    const snapshot = deriveCockpitSnapshot(
       [
         { _id: 'project-1', status: 'pending', archived: false, name: 'Focused Project', currentFocusTaskId: 'missing-task' }
       ],

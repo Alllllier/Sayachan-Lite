@@ -9,7 +9,9 @@ import {
   removeTaskFromActiveSnapshot,
   saveTask,
   syncTaskIntoActiveSnapshot,
-  tasksRef
+  tasksRef,
+  updateTask,
+  deleteTask
 } from './taskService.js'
 
 describe('taskService smoke tests', () => {
@@ -70,6 +72,39 @@ describe('taskService smoke tests', () => {
 
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?archived=true')
     expect(tasks).toEqual([{ _id: 'archived-task', status: 'active', archived: true }])
+  })
+
+  it('updates tasks through the canonical task endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: async () => ({ _id: 'task-1', title: 'Updated task', status: 'completed' })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const task = await updateTask('task-1', { completed: true, status: 'completed' })
+
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks/task-1', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed: true, status: 'completed' })
+    })
+    expect(task).toMatchObject({
+      _id: 'task-1',
+      title: 'Updated task',
+      status: 'completed',
+      archived: false,
+      completed: true
+    })
+  })
+
+  it('deletes tasks through the canonical task endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await deleteTask('task-1')
+
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks/task-1', {
+      method: 'DELETE'
+    })
   })
 
   it('fetches project tasks using canonical projectId query', async () => {

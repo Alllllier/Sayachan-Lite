@@ -5,7 +5,7 @@ import { EditorView } from '@codemirror/view'
 import { markdown } from '@codemirror/lang-markdown'
 import 'highlight.js/styles/github.css'
 import { renderMarkdown } from '../utils/markdown.js'
-import { saveTask } from '../services/taskService.js'
+import { useNotesFeature } from '../features/notes/useNotesFeature.js'
 import {
   Card,
   CardHeaderRow,
@@ -19,33 +19,8 @@ import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
 import OverflowMenu from './ui/OverflowMenu.vue'
 import SegmentedControl from './ui/SegmentedControl.vue'
-import {
-  createEmptyNoteErrors,
-  createNoteEditSnapshot,
-  getNoteAIState as deriveNoteAIState,
-  getNoteActionEligibility,
-  hasNoteErrors,
-  restoreNoteFromSnapshot,
-  validateNoteFields
-} from './notesPanel.behavior.js'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
-
-const notes = ref([])
-const form = ref({ title: '', content: '' })
-const editingId = ref(null)
-const loading = ref(false)
-const error = ref(null)
-const showArchived = ref(false)
-const aiTasksByNote = reactive({})
-const aiLoadingNotes = ref(new Set())
-const savedTaskDrafts = ref(new Set())
 const menuOpenNoteId = ref(null)
-const newNoteErrors = ref({ title: '', content: '' })
-const editNoteErrors = ref({})
-
-// P0-Fix-1: Store original note data for cancel restore
-const editingOriginalData = ref({})
 
 // Markdown editor refs
 const newEditorRef = ref(null)
@@ -61,6 +36,21 @@ const archiveViewOptions = [
   { value: 'active', label: 'Active' },
   { value: 'archived', label: 'Archived' }
 ]
+
+function clearNewEditor() {
+  if (!newEditorView.value) return
+  const doc = newEditorView.value.state.doc
+  newEditorView.value.dispatch({
+    changes: { from: 0, to: doc.length, insert: '' }
+  })
+}
+
+function destroyEditEditor(noteId) {
+  if (editEditorViews[noteId]) {
+    editEditorViews[noteId].destroy()
+    delete editEditorViews[noteId]
+  }
+}
 
 function showToast(message, type = 'success') {
   toastMessage.value = message
@@ -83,46 +73,43 @@ function closeNoteMenu() {
   menuOpenNoteId.value = null
 }
 
-// Local draft cache
-const drafts = ref(JSON.parse(localStorage.getItem('sayachan_note_drafts') || '{}'))
-
-function saveDraft() {
-  localStorage.setItem('sayachan_note_drafts', JSON.stringify(drafts.value))
-}
-
-function clearDraft() {
-  drafts.value = {}
-  localStorage.removeItem('sayachan_note_drafts')
-}
 const emit = defineEmits(['refreshed'])
 
-function updateNewNoteError(field, value) {
-  if (field === 'title') {
-    newNoteErrors.value.title = value.trim() ? '' : newNoteErrors.value.title
-    return
-  }
-  newNoteErrors.value.content = value.trim() ? '' : newNoteErrors.value.content
-}
-
-function ensureEditNoteErrorState(noteId) {
-  if (!editNoteErrors.value[noteId]) {
-    editNoteErrors.value[noteId] = createEmptyNoteErrors()
-  }
-  return editNoteErrors.value[noteId]
-}
-
-function updateEditNoteError(noteId, field, value) {
-  const errors = ensureEditNoteErrorState(noteId)
-  if (field === 'title') {
-    errors.title = value.trim() ? '' : errors.title
-    return
-  }
-  errors.content = value.trim() ? '' : errors.content
-}
-
-function clearEditNoteErrors(noteId) {
-  delete editNoteErrors.value[noteId]
-}
+const {
+  notes,
+  form,
+  editingId,
+  loading,
+  error,
+  showArchived,
+  aiTasksByNote,
+  savedTaskDrafts,
+  newNoteErrors,
+  editNoteErrors,
+  fetchNotes,
+  createNote,
+  updateNote: updateNoteFeature,
+  deleteNote,
+  archiveNote,
+  restoreNote,
+  pinNote,
+  unpinNote,
+  startEditing: startEditingFeature,
+  cancelEdit: cancelEditFeature,
+  updateNewNoteError,
+  updateEditNoteError,
+  closeAITasks,
+  getNoteAIState,
+  canUseNoteAction,
+  setArchiveView,
+  handleAIGenerateTasks,
+  saveNoteTaskDraft
+} = useNotesFeature({
+  notify: showToast,
+  onRefreshed: refreshedNotes => emit('refreshed', refreshedNotes),
+  onNoteCreated: clearNewEditor,
+  onNoteUpdated: destroyEditEditor
+})
 
 // CodeMirror factory
 function createCodeMirror(parent, initialValue, onChange) {
@@ -206,223 +193,17 @@ function bindEditEditor(el, note) {
   })
 }
 
-async function fetchNotes() {
-  loading.value = true
-  try {
-    const url = showArchived.value
-      ? `${API_BASE}/notes?archived=true`
-      : `${API_BASE}/notes`
-    const response = await fetch(url)
-    notes.value = await response.json()
-    emit('refreshed', notes.value)
-  } catch (e) {
-    error.value = 'Failed to load notes'
-  } finally {
-    loading.value = false
-  }
-}
-
-async function createNote() {
-  const errors = validateNoteFields(form.value)
-  newNoteErrors.value = errors
-  if (hasNoteErrors(errors)) return
-  loading.value = true
-  error.value = null
-  try {
-    const response = await fetch(`${API_BASE}/notes`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value)
-    })
-    if (!response.ok) throw new Error('Save failed')
-    const note = await response.json()
-    notes.value.unshift(note)
-    form.value = { title: '', content: '' }
-    newNoteErrors.value = createEmptyNoteErrors()
-    if (newEditorView.value) {
-      const doc = newEditorView.value.state.doc
-      newEditorView.value.dispatch({
-        changes: { from: 0, to: doc.length, insert: '' }
-      })
-    }
-    emit('refreshed', notes.value)
-    showToast('Note saved')
-  } catch (e) {
-    showToast('Failed to save note. Please try again.', 'error')
-    // Save as local draft
-    drafts.value[Date.now()] = { ...form.value }
-    saveDraft()
-  } finally {
-    loading.value = false
-  }
-}
-
-async function updateNote(note) {
-  const errors = validateNoteFields(note)
-  editNoteErrors.value[note._id] = errors
-  if (hasNoteErrors(errors)) return
-  loading.value = true
-  error.value = null
-  try {
-    const response = await fetch(`${API_BASE}/notes/${note._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: note.title, content: note.content })
-    })
-    if (!response.ok) throw new Error('Update failed')
-    const updated = await response.json()
-    const index = notes.value.findIndex(n => n._id === note._id)
-    if (index !== -1) notes.value[index] = updated
-    // Sort: pinned first, then by updatedAt
-    notes.value.sort((a, b) => {
-      if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1
-      return new Date(b.updatedAt) - new Date(a.updatedAt)
-    })
-    if (editEditorViews[note._id]) {
-      editEditorViews[note._id].destroy()
-      delete editEditorViews[note._id]
-    }
-    clearEditNoteErrors(note._id)
-    editingId.value = null
-    emit('refreshed', notes.value)
-    showToast('Note updated')
-  } catch (e) {
-    showToast('Failed to update note. Please try again.', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-async function deleteNote(id) {
-  if (!confirm('Delete this note?')) return
-  loading.value = true
-  error.value = null
-  try {
-    const response = await fetch(`${API_BASE}/notes/${id}`, { method: 'DELETE' })
-    if (!response.ok) throw new Error('Delete failed')
-    notes.value = notes.value.filter(n => n._id !== id)
-    emit('refreshed', notes.value)
-    showToast('Note deleted')
-  } catch (e) {
-    showToast('Failed to delete note. Please try again.', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-async function archiveNote(note) {
-  if (!confirm(`Archive "${note.title}"? All tasks from this note will be archived too.`)) return
-  loading.value = true
-  error.value = null
-  try {
-    const response = await fetch(`${API_BASE}/notes/${note._id}/archive`, { method: 'PUT' })
-    if (!response.ok) throw new Error('Archive failed')
-    await fetchNotes()
-    showToast('Note archived')
-    emit('refreshed', notes.value)
-  } catch (e) {
-    showToast('Failed to archive note. Please try again.', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-async function restoreNote(note) {
-  loading.value = true
-  error.value = null
-  try {
-    const response = await fetch(`${API_BASE}/notes/${note._id}/restore`, { method: 'PUT' })
-    if (!response.ok) throw new Error('Restore failed')
-    await fetchNotes()
-    showToast('Note restored')
-    emit('refreshed', notes.value)
-  } catch (e) {
-    showToast('Failed to restore note. Please try again.', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-async function pinNote(note) {
-  loading.value = true
-  try {
-    const response = await fetch(`${API_BASE}/notes/${note._id}/pin`, { method: 'PUT' })
-    if (!response.ok) throw new Error('Pin failed')
-    await fetchNotes()
-    showToast('Note pinned')
-  } catch (e) {
-    showToast('Failed to pin note', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-async function unpinNote(note) {
-  loading.value = true
-  try {
-    const response = await fetch(`${API_BASE}/notes/${note._id}/unpin`, { method: 'PUT' })
-    if (!response.ok) throw new Error('Unpin failed')
-    await fetchNotes()
-    showToast('Note unpinned')
-  } catch (e) {
-    showToast('Failed to unpin note', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
 function startEditing(note) {
-  // If switching from another edit, restore that note first
   if (editingId.value && editingId.value !== note._id) {
-    const oldNote = notes.value.find(n => n._id === editingId.value)
-    if (oldNote && editingOriginalData.value[editingId.value]) {
-      restoreNoteFromSnapshot(oldNote, editingOriginalData.value[editingId.value])
-      delete editingOriginalData.value[editingId.value]
-    }
-    if (editEditorViews[editingId.value]) {
-      editEditorViews[editingId.value].destroy()
-      delete editEditorViews[editingId.value]
-    }
+    destroyEditEditor(editingId.value)
   }
-  editingId.value = note._id
-  editNoteErrors.value[note._id] = createEmptyNoteErrors()
-  editingOriginalData.value[note._id] = createNoteEditSnapshot(note)
+  startEditingFeature(note)
 }
 
 function cancelEdit(note) {
-  if (!note && editingId.value) {
-    note = notes.value.find(n => n._id === editingId.value)
-  }
-  if (note && editingOriginalData.value[note._id]) {
-    restoreNoteFromSnapshot(note, editingOriginalData.value[note._id])
-    delete editingOriginalData.value[note._id]
-  }
-  if (note && editEditorViews[note._id]) {
-    editEditorViews[note._id].destroy()
-    delete editEditorViews[note._id]
-  }
-  if (note?._id) {
-    clearEditNoteErrors(note._id)
-  }
-  editingId.value = null
-}
-
-// Close AI suggestions by clearing data (allows reopening)
-function closeAITasks(noteId) {
-  delete aiTasksByNote[noteId]
-}
-
-function getNoteAIState(noteId) {
-  return deriveNoteAIState(noteId, aiLoadingNotes.value, aiTasksByNote)
-}
-
-function canUseNoteAction(note, action) {
-  return Boolean(getNoteActionEligibility(note)[action])
-}
-
-function setArchiveView(view) {
-  showArchived.value = view === 'archived'
-  fetchNotes()
+  const noteId = note?._id || editingId.value
+  cancelEditFeature(note)
+  destroyEditEditor(noteId)
 }
 
 onMounted(() => {
@@ -436,40 +217,8 @@ onMounted(() => {
   })
 })
 
-async function handleAIGenerateTasks(note) {
-  aiLoadingNotes.value.add(note._id)
-  try {
-    const response = await fetch(`${API_BASE}/ai/notes/tasks`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(note)
-    })
-    const result = await response.json()
-    aiTasksByNote[note._id] = result.drafts || []
-  } catch (e) {
-    aiTasksByNote[note._id] = ['Failed to generate tasks']
-  } finally {
-    aiLoadingNotes.value.delete(note._id)
-  }
-}
-
-async function saveNoteTaskDraft(noteId, draft) {
-  if (savedTaskDrafts.value.has(draft)) {
-    return
-  }
-  savedTaskDrafts.value.add(draft)
-  const note = notes.value.find(n => n._id === noteId)
-  const newTask = await saveTask(
-    draft,
-    'ai',
-    'note',
-    note._id
-  )
-  if (newTask) {
-    showToast('Task saved')
-  } else {
-    savedTaskDrafts.value.delete(draft)
-  }
+async function updateNote(note) {
+  await updateNoteFeature(note)
 }
 </script>
 

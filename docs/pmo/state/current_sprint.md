@@ -5,7 +5,7 @@
 - PMO owner: `Codex`
 - Architecture owner: `Human`
 - Execution owner: `idle`
-- Last updated: `2026-04-26`
+- Last updated: `2026-05-03`
 
 ## Current State
 
@@ -15,14 +15,14 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Dashboard Saved-Task Behavior Guardrails`
-- Closeout date: `2026-04-26`
+- Sprint: `Frontend Feature-Layer Migration`
+- Closeout date: `2026-05-03`
 - Delivery status: `completed`
 - Commit state: `not committed in this closeout`
-- Documentation sync outcome: `report archived; candidate/discussion/runtime state updated; discussion_batch_013 later stabilized after selected frontend behavior gaps were covered`
-- Residual note: `Dashboard saved-task rules landed as the last formal sprint slice; follow-up micro-coverage later added Projects form/task-capture rules, Notes edit snapshots, ChatEntry send-entry rules, chatService request contract tests, runtimeControls store tests, and chat store tests. Browser/E2E/UI review, Dashboard AI workflow redesign, and Dashboard feature-layer migration remain outside this sprint.`
+- Documentation sync outcome: `discussion_batch_014 closed; current sprint and decision log updated`
+- Residual note: `Projects, Notes, Dashboard, and Chat now use feature-layer rules/composables, feature API boundaries where appropriate, pure page shells, and retired component-adjacent behavior helpers. Remaining candidates are optional module boundaries, taskService split, cockpit context runtime, and router/page-shell automation.`
 
 ## Next PMO Action
 
 - keep `execution_task.md` idle until a new sprint or micro-fix is explicitly selected
-- `discussion_batch_014` is now the active follow-up discussion for Projects / Notes / Dashboard feature-layer separation; no sprint is active until a bounded slice is promoted
+- `discussion_batch_014` has been closed as a completed frontend feature-layer migration discussion; keep `execution_task.md` idle until the human selects the next architecture thread

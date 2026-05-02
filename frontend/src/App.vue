@@ -1,5 +1,5 @@
 <script setup>
-import ChatEntry from './components/ChatEntry.vue'
+import Chat from './components/Chat.vue'
 </script>
 
 <template>
@@ -16,7 +16,7 @@ import ChatEntry from './components/ChatEntry.vue'
         <span class="nav-icon">Projects</span>
       </router-link>
     </nav>
-    <ChatEntry />
+    <Chat />
   </div>
 </template>
 

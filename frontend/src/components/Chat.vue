@@ -1,58 +1,9 @@
 <script setup>
-import { ref, nextTick, watch, computed } from 'vue'
-import { useChatStore } from '../stores/chat'
-import { useCockpitSignals } from '../stores/cockpitSignals'
-import { useRuntimeControls } from '../stores/runtimeControls'
+import { ref, nextTick, watch } from 'vue'
 import avatarUrl from '../assets/avator/temp.jpg'
-import { sendChat } from '../services/chatService'
-import { refreshDashboardContext } from '../services/dashboardContextService'
-import {
-  canSendChatMessage,
-  getChatFallbackReply,
-  getChatSendButtonLabel,
-  getChatSendText,
-  isChatInputDisabled,
-  resolveChatContextForSend,
-  shouldClearChatDraft
-} from './chatEntry.behavior.js'
+import { useChatFeature } from '../features/chat/useChatFeature.js'
 import { renderMarkdown } from '../utils/markdown.js'
-
-const chatStore = useChatStore()
-const cockpitSignals = useCockpitSignals()
-const runtimeControls = useRuntimeControls()
-
-const context = computed(() => ({
-  activeProjectsCount: cockpitSignals.activeProjectsCount,
-  activeTasksCount: cockpitSignals.activeTasksCount,
-  pinnedProjectName: cockpitSignals.pinnedProjectName,
-  currentNextAction: cockpitSignals.currentNextAction,
-}))
-const inputValue = ref('')
 const messageListRef = ref(null)
-const isPanelOpen = ref(false)
-const isHydrating = ref(false)
-const chatInputDisabled = computed(() => isChatInputDisabled({
-  isSending: chatStore.isSending,
-  isHydrating: isHydrating.value
-}))
-const chatSendButtonLabel = computed(() => getChatSendButtonLabel({
-  isSending: chatStore.isSending,
-  isHydrating: isHydrating.value
-}))
-
-function openPopup() {
-  chatStore.openChat()
-  scrollToBottom()
-}
-
-function closePopup() {
-  chatStore.closeChat()
-  isPanelOpen.value = false
-}
-
-function togglePanel() {
-  isPanelOpen.value = !isPanelOpen.value
-}
 
 function scrollToBottom() {
   nextTick(() => {
@@ -63,63 +14,32 @@ function scrollToBottom() {
   })
 }
 
+const {
+  chatStore,
+  runtimeControls,
+  inputValue,
+  isPanelOpen,
+  isHydrating,
+  chatInputDisabled,
+  chatSendButtonLabel,
+  openPopup,
+  closePopup,
+  togglePanel,
+  handleSend,
+  handleKeydown
+} = useChatFeature({
+  scrollToBottom,
+  onHydrationError: error => console.error('Failed to hydrate context:', error),
+  onSendError: error => console.error('Failed to send chat:', error)
+})
+
 watch(() => chatStore.messages.length, () => {
   scrollToBottom()
 })
-
-async function handleSend(presetText) {
-  const text = getChatSendText({
-    presetText,
-    inputValue: inputValue.value
-  })
-  if (!canSendChatMessage({
-    text,
-    isSending: chatStore.isSending,
-    isHydrating: isHydrating.value
-  })) return
-
-  if (shouldClearChatDraft(presetText)) {
-    inputValue.value = ''
-  }
-  chatStore.appendMessage({ role: 'user', content: text })
-
-  let chatContext = context.value
-  if (!cockpitSignals.hasHydrated) {
-    isHydrating.value = true
-    chatContext = await resolveChatContextForSend({
-      cockpitSignals,
-      currentContext: context.value,
-      refreshDashboardContext,
-      onHydrationError: e => console.error('Failed to hydrate context:', e)
-    })
-    isHydrating.value = false
-  }
-
-  chatStore.setSending(true)
-  try {
-    const { reply } = await sendChat(chatStore.messages, chatContext, {
-      personalityBaseline: runtimeControls.personalityBaseline
-    })
-    chatStore.appendMessage({ role: 'assistant', content: reply })
-  } catch (e) {
-    console.error('Failed to send chat:', e)
-    chatStore.appendMessage({ role: 'assistant', content: getChatFallbackReply(runtimeControls.personalityBaseline) })
-  } finally {
-    chatStore.setSending(false)
-  }
-}
-
-function handleKeydown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault()
-    handleSend()
-  }
-}
-
 </script>
 
 <template>
-  <div class="chat-entry">
+  <div class="chat">
     <!-- Floating Button -->
     <button
       v-if="!chatStore.isOpen"
@@ -291,7 +211,7 @@ function handleKeydown(e) {
 </template>
 
 <style scoped>
-.chat-entry {
+.chat {
   position: fixed;
   right: var(--space-lg);
   bottom: calc(60px + var(--space-lg));

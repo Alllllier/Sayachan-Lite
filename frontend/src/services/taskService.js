@@ -17,12 +17,13 @@ export function buildTaskPayload(title, creationMode, originModule = '', originI
 
 export function normalizeSavedTask(task) {
   if (!task) return task
+  const status = task.status === undefined ? 'active' : task.status
 
   return {
     ...task,
-    status: task.status === undefined ? 'active' : task.status,
+    status,
     archived: task.archived === undefined ? false : task.archived,
-    completed: task.completed === undefined ? false : task.completed
+    completed: task.completed === undefined ? status === 'completed' : task.completed
   }
 }
 
@@ -68,6 +69,25 @@ export async function saveTask(title, creationMode, originModule = '', originId 
   } catch (e) {
     console.error('Failed to save task:', e)
     return null
+  }
+}
+
+export async function updateTask(taskId, payload) {
+  const res = await fetch(`${API_BASE}/tasks/${taskId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  const updatedTask = await res.json()
+  return normalizeSavedTask(updatedTask)
+}
+
+export async function deleteTask(taskId) {
+  const res = await fetch(`${API_BASE}/tasks/${taskId}`, {
+    method: 'DELETE'
+  })
+  if (!res.ok) {
+    throw new Error(`Delete task failed: ${res.status}`)
   }
 }
 

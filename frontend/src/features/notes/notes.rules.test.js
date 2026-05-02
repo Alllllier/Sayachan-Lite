@@ -7,9 +7,9 @@ import {
   hasNoteErrors,
   restoreNoteFromSnapshot,
   validateNoteFields
-} from './notesPanel.behavior.js'
+} from './notes.rules.js'
 
-describe('notesPanel behavior locks', () => {
+describe('notes rules locks', () => {
   it('returns a title error for empty or whitespace-only titles', () => {
     expect(validateNoteFields({ title: '', content: 'Body' })).toEqual({
       title: 'Enter a note title.',

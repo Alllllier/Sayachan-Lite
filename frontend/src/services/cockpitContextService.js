@@ -2,7 +2,7 @@ import { useCockpitSignals } from '../stores/cockpitSignals'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
-export function deriveDashboardSnapshot(projects, tasks) {
+export function deriveCockpitSnapshot(projects, tasks) {
   const safeProjects = Array.isArray(projects) ? projects : []
   const safeTasks = Array.isArray(tasks) ? tasks : []
 
@@ -30,7 +30,7 @@ export function deriveDashboardSnapshot(projects, tasks) {
   }
 }
 
-export async function refreshDashboardContext() {
+export async function refreshCockpitContext() {
   const cockpitSignals = useCockpitSignals()
 
   try {
@@ -42,12 +42,12 @@ export async function refreshDashboardContext() {
     const projects = await projectsRes.json()
     const tasks = await tasksRes.json()
 
-    const snapshot = deriveDashboardSnapshot(projects, tasks)
+    const snapshot = deriveCockpitSnapshot(projects, tasks)
 
     cockpitSignals.setSignals(snapshot)
     return snapshot
   } catch (e) {
-    console.error('[DashboardContext] Failed to refresh context:', e)
+    console.error('[CockpitContext] Failed to refresh context:', e)
     throw e
   }
 }

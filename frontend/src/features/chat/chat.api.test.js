@@ -1,31 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createPinia, setActivePinia } from 'pinia'
-import { sendChat } from './chatService.js'
-import { useRuntimeControls } from '../stores/runtimeControls.js'
+import { buildChatRuntimePayload, sendChat } from './chat.api.js'
 
-function createLocalStorageMock() {
-  const store = new Map()
-
-  return {
-    getItem: vi.fn(key => store.get(key) ?? null),
-    setItem: vi.fn((key, value) => store.set(key, String(value))),
-    removeItem: vi.fn(key => store.delete(key)),
-    clear: vi.fn(() => store.clear())
-  }
-}
-
-describe('chatService behavior locks', () => {
+describe('chat api boundary', () => {
   beforeEach(() => {
-    vi.stubGlobal('localStorage', createLocalStorageMock())
     vi.stubGlobal('fetch', vi.fn())
-    setActivePinia(createPinia())
   })
 
   it('sends chat messages with context, runtime controls, last user message, and future slots', async () => {
-    const runtimeControls = useRuntimeControls()
-    runtimeControls.setWarmth(8)
-    runtimeControls.setConvergenceMode('decisive')
-
     fetch.mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue({ reply: 'Ready.' })
@@ -38,43 +19,41 @@ describe('chatService behavior locks', () => {
     ], {
       activeTasksCount: 3
     }, {
-      personalityBaseline: 'strict'
+      personalityBaseline: 'strict',
+      futureSlots: {
+        warmth: 8,
+        convergenceMode: 'decisive'
+      }
     })).resolves.toEqual({ reply: 'Ready.' })
 
     expect(fetch).toHaveBeenCalledWith('http://localhost:3001/ai/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [
-          { role: 'user', content: 'first' },
-          { role: 'assistant', content: 'reply' },
-          { role: 'user', content: 'latest' }
-        ],
-        context: {
-          activeTasksCount: 3
+      body: expect.any(String)
+    })
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({
+      messages: [
+        { role: 'user', content: 'first' },
+        { role: 'assistant', content: 'reply' },
+        { role: 'user', content: 'latest' }
+      ],
+      context: {
+        activeTasksCount: 3
+      },
+      runtimeControls: {
+        personalityBaseline: 'strict',
+        futureSlots: {
+          warmth: 8,
+          convergenceMode: 'decisive'
         },
-        runtimeControls: {
-          personalityBaseline: 'strict',
-          lastUserMessage: 'latest',
-          futureSlots: {
-            warmth: 8,
-            convergenceMode: 'decisive'
-          }
-        }
-      })
+        lastUserMessage: 'latest'
+      }
     })
   })
 
   it('uses an empty last user message when no user message exists', async () => {
-    fetch.mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({ reply: 'Ready.' })
-    })
-
-    await sendChat([{ role: 'assistant', content: 'hello' }], {}, {})
-
-    const payload = JSON.parse(fetch.mock.calls[0][1].body)
-    expect(payload.runtimeControls.lastUserMessage).toBe('')
+    expect(buildChatRuntimePayload([{ role: 'assistant', content: 'hello' }], {}))
+      .toEqual({ lastUserMessage: '' })
   })
 
   it('throws when the chat endpoint returns a non-ok response', async () => {

@@ -43,26 +43,26 @@ export function getChatFallbackReply(baseline) {
 export async function resolveChatContextSnapshot({
   cockpitSignals,
   currentContext,
-  refreshDashboardContext
+  refreshCockpitContext
 }) {
   if (cockpitSignals?.hasHydrated) {
     return currentContext
   }
 
-  return refreshDashboardContext()
+  return refreshCockpitContext()
 }
 
 export async function resolveChatContextForSend({
   cockpitSignals,
   currentContext,
-  refreshDashboardContext,
+  refreshCockpitContext,
   onHydrationError
 }) {
   try {
     return await resolveChatContextSnapshot({
       cockpitSignals,
       currentContext,
-      refreshDashboardContext
+      refreshCockpitContext
     })
   } catch (error) {
     onHydrationError?.(error)

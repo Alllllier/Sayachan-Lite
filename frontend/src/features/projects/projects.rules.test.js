@@ -16,9 +16,9 @@ import {
   validateBatchTaskCapture,
   validateProjectFields,
   validateSingleTaskCapture
-} from './projectsPanel.behavior.js'
+} from './projects.rules.js'
 
-describe('projectsPanel behavior locks', () => {
+describe('projects rules locks', () => {
   const mixedTasks = [
     { _id: 'task-1', title: 'Active one', status: 'active', archived: false },
     { _id: 'task-2', title: 'Completed one', status: 'completed', archived: false },

@@ -1,6 +1,6 @@
 # Runtime Baseline
 
-> Audited against the live repository on `2026-04-20`.
+> Audited against the live repository on `2026-05-03`.
 
 ## Purpose
 
@@ -51,7 +51,6 @@ Dashboard currently does all of the following:
 
 - manage saved tasks through shared task state
 - provide quick-add task creation
-- publish lightweight cockpit signals for chat context
 
 ### Chat
 
@@ -59,23 +58,23 @@ Chat currently does all of the following:
 
 - provide a global companion entrypoint
 - consume cockpit signals when already hydrated
-- hydrate dashboard context on demand when needed
+- hydrate cockpit context on demand when needed
 - send runtime controls to backend `/ai/chat`
 - render assistant replies as sanitized markdown
 - keep user-authored chat messages on plain-text rendering
 
-## Dashboard Context Runtime
+## Cockpit Context Runtime
 
-Current dashboard-to-chat context flow:
+Current chat cockpit context flow:
 
-1. `Dashboard.vue` derives lightweight cockpit signals.
-2. `cockpitSignals` store keeps:
+1. `cockpitSignals` store keeps:
    - `activeProjectsCount`
    - `activeTasksCount`
    - `pinnedProjectName`
    - `currentNextAction`
-3. `ChatEntry.vue` reads those signals as chat context.
-4. If cockpit signals are not yet hydrated, chat calls `refreshDashboardContext()` to rebuild a snapshot from backend `/projects` and `/tasks`.
+2. `Chat.vue` reads those signals as chat context.
+3. If cockpit signals are not yet hydrated, chat calls `refreshCockpitContext()` to rebuild a snapshot from backend `/projects` and `/tasks`.
+4. `cockpitContextService.js` derives and writes the cockpit snapshot.
 
 This is currently a runtime bridge, not a deeper formal context architecture.
 
@@ -90,7 +89,8 @@ Chat runtime controls currently work like this:
 
 - personality baseline, warmth, and convergence mode live in `runtimeControls` store
 - those values are stored in `localStorage`
-- `chatService.js` includes those runtime-control values in requests to backend `/ai/chat`
+- `useChatFeature.js` reads runtime-control values
+- `features/chat/chat.api.js` sends those values in requests to backend `/ai/chat`
 
 ## Focus Semantics
 

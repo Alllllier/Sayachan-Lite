@@ -1,6 +1,6 @@
 # System Baseline
 
-> Audited against the live repository on `2026-04-26`.
+> Audited against the live repository on `2026-05-03`.
 
 ## Purpose
 
@@ -28,6 +28,13 @@ Current stack at a glance:
 - public AI surfaces: backend `/ai/*` routes
 - private AI core bridge: `backend/src/ai/bridge.js`
 - private core location: `backend/private_core/sayachan-ai-core`
+
+Current frontend code shape:
+
+- route pages under `frontend/src/views/` are thin page shells
+- module feature logic lives under `frontend/src/features/{module}/`
+- feature modules use `*.api.js`, `*.rules.js`, and `use*Feature.js` where applicable
+- shared app-level services remain under `frontend/src/services/`
 
 ## Public Runtime Surfaces
 
@@ -68,23 +75,24 @@ Current Dashboard behavior includes:
 
 - quick-add tasks
 - saved-task management
-- cockpit signal publishing for chat context
 
 Important current truth:
 
 - the older fallback-only Dashboard AI Assistant surface has been removed
+- Dashboard no longer proactively publishes cockpit signals
 - any future Dashboard AI workflow should reopen as a product/AI redesign rather than reviving the removed frontend-local helper path
 
 ### Chat
 
 Current Chat behavior includes:
 
-- public UI at `frontend/src/components/ChatEntry.vue`
+- public UI at `frontend/src/components/Chat.vue`
+- feature logic under `frontend/src/features/chat/`
 - backend entrypoint at `POST /ai/chat`
 - assistant-message markdown rendering in the frontend
 - user-authored chat messages still rendered as plain text
 - runtime controls for personality baseline, warmth, and convergence mode
-- cockpit context hydration when dashboard signals are not yet loaded
+- cockpit context hydration on demand through `frontend/src/services/cockpitContextService.js`
 
 ## Backend Surface
 
@@ -171,6 +179,7 @@ Current archive / restore behavior includes:
 Observed current split:
 
 - public repo owns product UI, stores, services, route surfaces, and the public chat route
+- public frontend feature modules own module API/rules/orchestration boundaries
 - `backend/src/ai/bridge.js` is the public bridge into the private core
 - the private core owns chat orchestration, prompt kernel, provider integration used by chat runtime, and deeper context assembly policies
 
