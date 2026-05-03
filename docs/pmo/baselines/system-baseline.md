@@ -1,6 +1,6 @@
 # System Baseline
 
-> Audited against the live repository on `2026-05-03`.
+> Audited against the live repository on `2026-05-04`.
 
 ## Purpose
 
@@ -32,9 +32,18 @@ Current stack at a glance:
 Current frontend code shape:
 
 - route pages under `frontend/src/views/` are thin page shells
+- `frontend/src/App.vue` owns the global app shell, bottom navigation, and always-mounted Chat entrypoint
 - module feature logic lives under `frontend/src/features/{module}/`
 - feature modules use `*.api.js`, `*.rules.js`, and `use*Feature.js` where applicable
 - shared app-level services remain under `frontend/src/services/`
+- shared task service internals live under `frontend/src/services/tasks/` as API, rules, and runtime state modules
+
+Current repo-native validation shape:
+
+- feature and service behavior tests live alongside frontend feature/service modules
+- browser/UI review baselines live under `frontend/tests/ui-review/<surface>/`
+- current UI review surfaces are Notes, Projects, Dashboard, and Chat
+- UI review screenshots are retained as review artifacts, not golden visual assertions
 
 ## Public Runtime Surfaces
 
@@ -196,4 +205,4 @@ These are not rules, but current code-shape observations that matter for PMO tru
 - workflow-critical project/task coupling still lives mainly in route handlers
 - focus-clearing logic is implemented in route-level update/delete flows
 - chat runtime depends on the public bridge to the private core
-- top-level docs still present a simpler system than the current repo actually contains
+- authentication and account-scoped data boundaries do not exist yet in the product runtime

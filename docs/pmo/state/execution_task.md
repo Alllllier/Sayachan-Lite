@@ -2,34 +2,20 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-04-26`
-- Source reference: `none`
-- Candidate reference: `none`
+- Last updated: `2026-05-04`
 
-## Objective
+## Current State
 
-No active execution task.
+There is no active execution handoff right now.
 
-## Safe Touch Zones
+This file should be overwritten only when a new sprint or micro-fix is explicitly activated and handed off into execution.
 
-- none
+## Last Closed Sprint
 
-## In Scope
+- Sprint: `Add Chat Global Shell Browser Review Baseline`
+- Outcome: `completed and validated`
+- Report surface: `docs/pmo/history/reports/add-chat-global-shell-browser-review-baseline.md`
 
-- none
+## Next Activation Rule
 
-## Explicit Non-Goals
-
-- none
-
-## Acceptance Checks
-
-- none
-
-## Escalation Points
-
-- none
-
-## Completion Report Expectations
-
-No active completion report expected.
+- wait for explicit human sprint selection or a clearly bounded micro-fix activation before writing a new active execution contract here

@@ -7,7 +7,7 @@ import {
   fetchNotes,
   updateNote
 } from './notes.api.js'
-import { saveTask } from '../../services/taskService.js'
+import { saveTask } from '../../services/tasks/index.js'
 
 vi.mock('./notes.api.js', () => ({
   archiveNote: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock('./notes.api.js', () => ({
   updateNote: vi.fn()
 }))
 
-vi.mock('../../services/taskService.js', () => ({
+vi.mock('../../services/tasks/index.js', () => ({
   saveTask: vi.fn()
 }))
 

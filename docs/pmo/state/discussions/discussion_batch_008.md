@@ -1,8 +1,8 @@
 # Discussion Batch `discussion_batch_008`
 
 - Topic: `Post-simplification residue cleanup and testing-baseline follow-up for task/project/note`
-- Last updated: `2026-04-20`
-- Status: `active`
+- Last updated: `2026-05-03`
+- Status: `stable`
 - Discussion mode: `follow-up`
 
 ## Intake Record
@@ -219,3 +219,26 @@
 - Keep this batch open as the follow-up container for both:
   - the now-completed runtime residue cleanup as historical context
   - the larger paused testing/validation-baseline topic that should be revisited later
+
+## Parent-Batch Closeout - Validation Lines Split Out
+
+- Date: `2026-05-03`
+- Status: `stable`
+
+### What Changed
+
+- Runtime residue cleanup completed and remains recorded here as historical context.
+- Backend test architecture split to `discussion_batch_009` and stabilized after execution.
+- Frontend display semantics and frontend panel behavior coverage split through `discussion_batch_010` and `discussion_batch_013`.
+- Repo-native browser/UI review baseline split to `discussion_batch_015`.
+- Worker validation baseline gaps remain visible in policy/backlog rather than keeping this parent batch active:
+  - `docs/pmo/policies/testing-and-ui-review-guide.md`
+  - `Npx Validation Fallback Rules` in `idea_backlog.md`
+
+### Updated Parent-Batch Reading
+
+- `discussion_batch_008` is now a stable historical parent for post-simplification cleanup and validation split-out.
+- Future backend testing work should use `discussion_batch_009` context.
+- Future frontend behavior coverage should use `discussion_batch_013` context.
+- Future repo-native browser/UI review work should use `discussion_batch_015` context.
+- Future validation-command fallback rules should be shaped from the backlog item rather than reopening this parent batch.

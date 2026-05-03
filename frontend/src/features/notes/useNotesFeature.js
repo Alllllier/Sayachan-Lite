@@ -1,5 +1,5 @@
 import { reactive, ref } from 'vue'
-import { saveTask } from '../../services/taskService.js'
+import { saveTask } from '../../services/tasks/index.js'
 import {
   archiveNote as archiveNoteRequest,
   createNote as createNoteRequest,

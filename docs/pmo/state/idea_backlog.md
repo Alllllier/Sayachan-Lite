@@ -30,19 +30,6 @@
 
 ## Active Entries
 
-### `Projects Feature Layer Split`
-
-- Type: `architecture`
-- Source: `execution report`
-- Source reference: `docs/pmo/history/reports/projects-rules-behavior-coverage.md; FRONTEND_ARCHITECTURE_AUDIT_2026-04-23.md`
-- Problem / Opportunity: `ProjectsPanel still mixes rendering, local state, API calls, validation, task capture, focus management, and project-task preview orchestration. The just-completed Projects rules coverage gives the project a safer behavior baseline for a later split into clearer Projects feature layers.`
-- Why now: `The current sprint intentionally avoided architecture migration, but it clarified the preferred future direction: keep rules portable, then later introduce a feature boundary such as projects.api.js, projects.rules.js, and useProjects.js or an equivalent features/projects structure.`
-- Current status: `parked`
-- Dependencies: `A later architecture sprint that intentionally chooses the feature-layer structure and uses the new Projects rules tests as guardrails.`
-- Risks / unknowns: `If this is done too early or too broadly, it could turn into a frontend rewrite. If it is deferred indefinitely, ProjectsPanel will keep acting as view, controller, service, and state owner at once. The right boundary between composable state, API client, and pure rules still needs sprint-level shaping.`
-- Suggested next action: `Later, shape a bounded Projects feature-layer split that first moves API calls and stateful orchestration without changing product behavior, then moves the existing rules tests with the extracted rules module.`
-- Reopen trigger: `A human explicitly wants to start frontend feature-layer cleanup, or future Projects work becomes difficult because ProjectsPanel wiring remains too concentrated.`
-
 ### `Companion-Like Dashboard Day-Phase Rhythm Cue`
 
 - Type: `feature`
@@ -91,19 +78,6 @@
 - Suggested next action: `Reopen this as a near-term product discussion, identify the highest-friction inconsistency first, and then shape the work into one or more bounded UI slices for later execution.`
 - Reopen trigger: `A human explicitly wants to revisit creation-flow or list-surface consistency across Notes, Projects, and task lists, or adjacent UI work exposes the same inconsistency again.`
 
-### `Dashboard AI Workflow Redesign`
-
-- Type: `feature`
-- Source: `discussion`
-- Source reference: `README.md Dashboard AI 功能整体重构; docs/pmo/state/discussions/discussion_batch_011.md`
-- Problem / Opportunity: `Dashboard no longer carries the older fallback-only AI Assistant surface for Weekly Review, Focus Recommendation, Action Plan, and Task Drafts. A future Dashboard AI workflow may still be valuable, but it should be redesigned from current AI core, task context, and project-focus semantics rather than revived from the removed demo-era flow.`
-- Why now: `discussion_batch_011 stabilized the frontend shell/module cleanup, and the later Dashboard cleanup removed the stale AI Assistant block instead of deep-polishing it. Capturing the future redesign separately prevents the missing Dashboard AI workflow from being confused with style cleanup debt.`
-- Current status: `parked`
-- Dependencies: `A future AI/product discussion that decides whether the current dashboard AI workflow should remain, be replaced by AI core-owned surfaces, or be simplified into a smaller dashboard module.`
-- Risks / unknowns: `Premature UI cleanup could polish an interim workflow that may be removed. A broad redesign could also sprawl into AI core ownership, task draft semantics, and dashboard information architecture unless it is bounded deliberately.`
-- Suggested next action: `Reopen as a bounded product/AI workflow discussion only when Dashboard AI becomes a priority, then decide whether Weekly Review, Focus, Action Plan, and Task Drafts should remain together or split into clearer modules.`
-- Reopen trigger: `A human explicitly wants to revisit Dashboard AI workflow, or future AI core/list work exposes that the current dashboard workflow no longer fits the product runtime.`
-
 ### `Broader Sayachan Style Refresh`
 
 - Type: `feature`
@@ -130,18 +104,18 @@
 - Suggested next action: `Later, shape this into a bounded maintenance pass that first audits frontend and backend dependency age, repo-native script coverage, and the safest upgrade candidates before any broad version bumping starts.`
 - Reopen trigger: `A human explicitly wants a tooling/dependency maintenance sprint, or repeated validation/tooling confusion starts appearing across frontend or backend execution work.`
 
-### `Cross-Surface Frontend Validation Buildout`
+### `Reusable UI Review Harness Helpers`
 
 - Type: `cleanup`
-- Source: `audit`
-- Source reference: `UI Noise Reduction And Toast Consolidation closeout`
-- Problem / Opportunity: `Current repo-native browser/UI review coverage is still surface-skewed. Notes has a usable Playwright review path, but Projects and Dashboard do not yet have equivalent first-class UI review coverage, which leaves cross-surface cleanup work partially verified even when implementation itself is bounded and correct.`
-- Why now: `Recent UI cleanup work showed that validation gaps are now more about coverage structure than about one-off execution mistakes. Keeping this visible now reduces the chance that future cross-surface UI work keeps closing out with the same predictable unverified areas.`
+- Source: `execution report`
+- Source reference: `Restore Notes UI Review Path sprint follow-up; docs/pmo/state/discussions/discussion_batch_015.md; PMO recheck after Notes/Projects/Dashboard/Chat UI review baselines completed`
+- Problem / Opportunity: `Notes, Projects, Dashboard, and Chat now share a consistent folder shape for UI review files: fixtures, api-mocks, helpers, review spec, and screenshots. The actual reusable code remains thin, mostly screenshot directory/capture helpers and small JSON response helpers. Surface navigation, locators, mock state, route semantics, and review interactions remain intentionally surface-specific.`
+- Why now: `After completing four UI review surfaces, PMO can make a clearer call: forcing a harness now would mostly add indirection without reducing much risk. The useful standard is currently a folder/file convention and reporting policy, not a shared framework.`
 - Current status: `parked`
-- Dependencies: `A future bounded validation buildout that decides which frontend surfaces deserve repo-native browser review coverage first, how that coverage should be grouped, and how it should fit alongside build checks and manual review.`
-- Risks / unknowns: `If this expands too broadly, it could turn into a testing-system rewrite instead of a practical coverage pass. If it stays invisible, PMO will keep accepting avoidable browser-review gaps across non-Notes surfaces.`
-- Suggested next action: `Later, shape this into a bounded frontend validation pass that first maps the highest-value missing UI review surfaces (likely Projects and Dashboard), then adds repo-native browser review coverage incrementally rather than trying to redesign all testing at once.`
-- Reopen trigger: `A human explicitly wants a frontend validation sprint, or repeated UI closeouts keep landing with the same Projects/Dashboard browser-review gaps.`
+- Dependencies: `At least one future UI review expansion that repeats the same screenshot/capture, mock response, or route-composition code enough to make the abstraction pay for itself.`
+- Risks / unknowns: `Extracting now would likely overfit to shallow helper names while hiding surface-specific behavior in a generic layer. Waiting too long could still let tiny helper duplication drift, but the current duplication is readable and low-risk.`
+- Suggested next action: `Do not promote this now. Keep the existing surface-local helpers. If another UI review surface or second-pass expansion creates repeated capture or mock plumbing, extract only a tiny shared utility such as createScreenshotCapture(), json(), and maybe a route-fail helper; keep fixtures, locators, navigation, and interaction helpers surface-local.`
+- Reopen trigger: `A future UI review pass repeats the same nontrivial helper code across at least three surfaces, screenshot/capture behavior diverges in a way that causes review artifact inconsistency, or route mock boilerplate starts creating real maintenance mistakes.`
 
 ### `Frontend Bundle Weight Review`
 

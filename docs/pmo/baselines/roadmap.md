@@ -45,7 +45,6 @@
 - active / archived saved-task view toggle
 - saved-task complete / reactivate, archive / restore, and delete actions
 - saved-task provenance dots from canonical task provenance
-- cockpit signals for chat context
 - removed older fallback-only Dashboard AI workflow:
   - weekly review
   - focus recommendation
@@ -57,20 +56,29 @@
 - global floating chat entry
 - backend `/ai/chat` route
 - assistant-message markdown rendering with a safe basic reading subset
-- dashboard context hydration path
+- cockpit context hydration path through active projects and tasks
 - runtime controls store
 - persona baseline switch
 - warmth and convergence controls
 - bridge into private AI core
 
+### Validation And PMO Baseline
+
+- feature-layer API/rules/composable tests for Notes, Projects, Dashboard, Chat, and shared task services
+- repo-native Playwright UI review baselines for Notes, Projects, Dashboard, and Chat
+- PMO v2 runtime state, discussion index, sprint candidates, history reports, policies, and baselines
+- runtime baseline re-audited against live code on `2026-05-04`
+
 ## Active Debt
 
 - workflow domain rules are still concentrated in route handlers
-- top-level docs still over-simplify the runtime compared with current reality
-- current PMO structure still mixes mature runtime surfaces with earlier descriptive scaffolding
+- no authentication, invite flow, or account-scoped data boundary exists yet
+- frontend bundle size still carries the existing large-chunk warning from the current editor/runtime dependency shape
+- some PMO process/tooling improvements remain parked rather than execution-ready
 
 ## Near-Term Cleanup Priorities
 
-- stabilize PMO v2 and migrate active PMO use away from the old mixed structure
-- tighten top-level repo entry docs so they match the current public/private split
-- decide how much of the old PMO should move into a legacy archive once PMO v2 is running
+- shape owner-led auth and invite-gated tester accounts before external testing
+- continue the Dashboard day-phase rhythm cue discussion before promoting product work
+- keep baseline docs synced after major feature/runtime migrations
+- defer UI review harness extraction until repeated helper drift makes it worth the indirection

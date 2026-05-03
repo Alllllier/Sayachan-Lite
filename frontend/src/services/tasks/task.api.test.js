@@ -1,56 +1,38 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
 import {
-  activeTasksSnapshotRef,
-  buildTaskPayload,
+  createTask,
+  deleteTask,
   fetchProjectCardTasks,
   fetchProjectTasks,
-  fetchTasks,
-  normalizeSavedTask,
-  removeTaskFromActiveSnapshot,
-  saveTask,
-  syncTaskIntoActiveSnapshot,
-  tasksRef,
-  updateTask,
-  deleteTask
-} from './taskService.js'
+  fetchTaskList,
+  updateTask
+} from './task.api.js'
 
-describe('taskService smoke tests', () => {
+describe('task API', () => {
   beforeEach(() => {
-    tasksRef.value = []
-    activeTasksSnapshotRef.value = []
     vi.restoreAllMocks()
+    vi.unstubAllGlobals()
   })
 
-  it('builds canonical task payloads with semantic fields only', () => {
-    const payload = buildTaskPayload('Write docs', 'ai', 'note', 'note-1')
-
-    expect(payload).toEqual({
-      title: 'Write docs',
-      creationMode: 'ai',
-      originModule: 'note',
-      originId: 'note-1'
-    })
-  })
-
-  it('normalizes saved tasks to active and incomplete when backend omits fields', () => {
-    const normalized = normalizeSavedTask({ _id: 'task-1', title: 'Draft task' })
-
-    expect(normalized).toMatchObject({
-      _id: 'task-1',
-      title: 'Draft task',
-      status: 'active',
-      archived: false,
-      completed: false
-    })
-  })
-
-  it('prepends normalized saved tasks into shared task state', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+  it('creates tasks through the canonical task endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
       json: async () => ({ _id: 'task-2', title: 'Saved task' })
-    }))
+    })
+    vi.stubGlobal('fetch', fetchMock)
 
-    const result = await saveTask('Saved task', 'manual', 'project', 'project-1')
+    const result = await createTask('Saved task', 'manual', 'project', 'project-1')
 
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: 'Saved task',
+        creationMode: 'manual',
+        originModule: 'project',
+        originId: 'project-1'
+      })
+    })
     expect(result).toMatchObject({
       _id: 'task-2',
       title: 'Saved task',
@@ -58,8 +40,6 @@ describe('taskService smoke tests', () => {
       archived: false,
       completed: false
     })
-    expect(tasksRef.value[0]).toEqual(result)
-    expect(activeTasksSnapshotRef.value[0]).toEqual(result)
   })
 
   it('fetches archived tasks from the archived endpoint', async () => {
@@ -68,7 +48,7 @@ describe('taskService smoke tests', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const tasks = await fetchTasks(true)
+    const tasks = await fetchTaskList({ archived: true })
 
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?archived=true')
     expect(tasks).toEqual([{ _id: 'archived-task', status: 'active', archived: true }])
@@ -162,18 +142,5 @@ describe('taskService smoke tests', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?projectId=project-42&archived=true')
     expect(tasks).toEqual([{ _id: 'archived-project-task', archived: true, status: 'active' }])
-  })
-
-  it('keeps a separate active-task snapshot for cockpit context', () => {
-    activeTasksSnapshotRef.value = [
-      { _id: 'task-1', title: 'Active snapshot task', archived: false, status: 'active' }
-    ]
-
-    syncTaskIntoActiveSnapshot({ _id: 'task-1', title: 'Completed task', archived: false, status: 'completed' })
-    syncTaskIntoActiveSnapshot({ _id: 'task-2', title: 'New active task', archived: false, status: 'active' })
-    syncTaskIntoActiveSnapshot({ _id: 'task-2', title: 'Archived task', archived: true, status: 'active' })
-    removeTaskFromActiveSnapshot('task-1')
-
-    expect(activeTasksSnapshotRef.value).toEqual([])
   })
 })

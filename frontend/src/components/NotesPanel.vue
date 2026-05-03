@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, onMounted, defineEmits, nextTick } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { basicSetup } from 'codemirror'
 import { EditorView } from '@codemirror/view'
 import { markdown } from '@codemirror/lang-markdown'

@@ -489,6 +489,34 @@
 - `npm test`: passed, `15` files / `105` tests.
 - `npm run build`: passed; existing Vite large chunk warning remains.
 
+## Follow-Up Checkpoint - Shared Task Service Split v1
+
+- Date: `2026-05-03`
+- Status: `landed / validation passed`
+- Scope: `frontend/src/services/tasks/*`, feature imports using shared task behavior
+
+### What Landed
+
+- Split shared task service internals into:
+  - `task.rules.js` for canonical payload construction and saved-task normalization.
+  - `task.api.js` for HTTP calls, mutation endpoints, and project-card task fetch behavior.
+  - `task.runtime.js` for shared Vue refs, active-task cockpit snapshot state, and sync helpers.
+- Updated Notes, Projects, and Dashboard feature imports to use `services/tasks/index.js` directly.
+- Removed the legacy `taskService.js` compatibility re-export.
+- Split the former broad `taskService.test.js` coverage into rules/api/runtime tests.
+
+### PMO Reading
+
+- Tasks remain a shared app-level service, not a child of Notes, Projects, or Dashboard.
+- Project-note mounting should depend on canonical task provenance/linking semantics, not on reintroducing feature-owned task service copies.
+- The direct import migration is complete; future shared task work should extend `services/tasks/` rather than recreating `taskService.js`.
+
+### Validation
+
+- `npm test -- src/services/tasks/task.rules.test.js src/services/tasks/task.api.test.js src/services/tasks/task.runtime.test.js`: passed, `3` files / `16` tests.
+- `npm test`: passed, `17` files / `110` tests.
+- `npm run build`: passed; existing Vite large chunk warning remains.
+
 ### Validation
 
 - `npm test`: passed, `14` files / `100` tests.

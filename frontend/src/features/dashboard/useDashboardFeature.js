@@ -7,7 +7,7 @@ import {
   syncTaskIntoActiveSnapshot,
   tasksRef,
   updateTask
-} from '../../services/taskService'
+} from '../../services/tasks/index.js'
 import {
   applyDashboardTaskUpdate,
   buildDashboardTaskArchivePayload,

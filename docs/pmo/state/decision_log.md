@@ -24,6 +24,33 @@
 
 ## Recorded Decisions
 
+### `Removed Dashboard AI workflow is not active scope`
+
+- Date: `2026-05-04`
+- Type: `rejected`
+- Scope: `Dashboard product runtime and PMO planning`
+- Decision: `The old fallback-only Dashboard AI workflow, including Weekly Review, Focus Recommendation, Action Plan, Task Drafts, and the Dashboard AI Assistant block, is deprecated and should not be treated as active Dashboard scope or as a parked near-term sprint. Current Dashboard planning should use the saved-task surface and cockpit-signal bridge as the formal runtime surface.`
+- Reason: `The old workflow has already been removed from the real frontend and baseline docs. Keeping it as an active backlog item made Dashboard review planning sound as if a parallel AI workflow still needed to be protected or redesigned soon.`
+- Follow-up: `Only reopen Dashboard AI from a fresh product/AI discussion if the human explicitly asks for a new Dashboard AI concept. Do not revive the removed fallback workflow by default.`
+
+### `UI review screenshots are review artifacts`
+
+- Date: `2026-05-04`
+- Type: `transition-rule`
+- Scope: `PMO validation and UI review reporting`
+- Decision: `Repo-native UI review screenshots should be treated as low-noise review artifacts, not golden snapshots or automated visual assertions. Stable committed screenshots may live under surface-local `frontend/tests/ui-review/<surface>/screenshots/` directories, while temporary debug screenshots should stay out of git. Closeout reports must distinguish browser validation, artifact capture, and actual inspected UI review.`
+- Reason: `Notes and Projects now both have Playwright UI review paths that can generate screenshots. Without a durable rule, PMO closeouts could confuse a passing command or captured screenshot with actual visual inspection, and future surfaces could create inconsistent binary artifact churn.`
+- Follow-up: `Use `docs/pmo/policies/testing-and-ui-review-guide.md` as the canonical reporting and artifact-retention rule. Reopen only if screenshot churn becomes noisy or future UI review surfaces need stronger artifact conventions.`
+
+### `Shared task service uses API rules runtime split`
+
+- Date: `2026-05-03`
+- Type: `approved`
+- Scope: `frontend shared services`
+- Decision: Shared task behavior should live under `frontend/src/services/tasks/` as `task.api.js`, `task.rules.js`, and `task.runtime.js`. Feature code should import shared task behavior through the task package entrypoint, not through the removed legacy `taskService.js` path.
+- Reason: Tasks are cross-feature shared state rather than a Notes, Projects, or Dashboard-owned feature. Splitting the service by responsibility keeps future project-note mounting work from coupling module UI code to task HTTP and cockpit snapshot internals.
+- Follow-up: Do not restore implementation or compatibility exports into `taskService.js`; add future shared task capabilities under `frontend/src/services/tasks/`.
+
 ### `Frontend feature code lives under feature modules`
 
 - Date: `2026-05-03`

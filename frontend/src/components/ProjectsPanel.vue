@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, defineEmits } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useProjectsFeature } from '../features/projects/useProjectsFeature.js'
 import {
   PROJECT_TASK_PREVIEW_LIMIT,

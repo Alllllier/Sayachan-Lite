@@ -8,9 +8,9 @@ import {
   syncTaskIntoActiveSnapshot,
   tasksRef,
   updateTask
-} from '../../services/taskService'
+} from '../../services/tasks/index.js'
 
-vi.mock('../../services/taskService', () => ({
+vi.mock('../../services/tasks/index.js', () => ({
   deleteTask: vi.fn(),
   fetchTasks: vi.fn(),
   removeTaskFromActiveSnapshot: vi.fn(),
@@ -27,7 +27,7 @@ describe('useDashboardFeature orchestration', () => {
     tasksRef.value = []
   })
 
-  it('quick-adds dashboard tasks through taskService and resets input', async () => {
+  it('quick-adds dashboard tasks through the shared task runtime and resets input', async () => {
     const notify = vi.fn()
     const feature = useDashboardFeature({ notify })
     feature.quickAddInput.value = '  Write handoff  '
@@ -44,7 +44,7 @@ describe('useDashboardFeature orchestration', () => {
     expect(notify).toHaveBeenCalledWith('Task added')
   })
 
-  it('completes tasks through taskService and refreshes parent data', async () => {
+  it('completes tasks through the shared task API and refreshes parent data', async () => {
     const notify = vi.fn()
     const onRefreshed = vi.fn()
     const feature = useDashboardFeature({ notify, onRefreshed })
@@ -60,7 +60,7 @@ describe('useDashboardFeature orchestration', () => {
     expect(notify).toHaveBeenCalledWith('Task completed')
   })
 
-  it('archives tasks through taskService and removes them from the current tab', async () => {
+  it('archives tasks through the shared task API and removes them from the current tab', async () => {
     const notify = vi.fn()
     const feature = useDashboardFeature({ notify })
     tasksRef.value = [{ _id: 'task-1', title: 'Draft', archived: false }]
@@ -76,7 +76,7 @@ describe('useDashboardFeature orchestration', () => {
     expect(notify).toHaveBeenCalledWith('Task archived')
   })
 
-  it('deletes tasks through taskService and clears active snapshots', async () => {
+  it('deletes tasks through the shared task API and clears active snapshots', async () => {
     const notify = vi.fn()
     const feature = useDashboardFeature({ notify })
     tasksRef.value = [{ _id: 'task-1', title: 'Draft' }]

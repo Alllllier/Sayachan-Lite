@@ -1006,7 +1006,7 @@
 - Explicit deferrals are already captured outside this batch:
   - Notes/Projects creation flow redesign remains in `idea_backlog.md` under `Creation And List-Surface Interaction Consistency`
   - AI reveal/list cleanup remains deferred by `decision_log.md` entry `AI reveal list cleanup is deferred until AI core ownership is clearer`
-  - Dashboard AI workflow redesign has been added to `idea_backlog.md` as `Dashboard AI Workflow Redesign`
+  - Dashboard AI workflow redesign was originally added to `idea_backlog.md` as `Dashboard AI Workflow Redesign`, then superseded on 2026-05-04 by the decision-log rule that the removed fallback-only Dashboard AI workflow is not active Dashboard scope
 - Final judgment:
   - no further near-term discussion is needed inside `discussion_batch_011`
   - future work should reopen from the relevant backlog/decision item rather than continuing this style-cleanup thread

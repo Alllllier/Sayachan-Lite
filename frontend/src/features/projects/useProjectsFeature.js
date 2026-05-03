@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { saveTask, fetchProjectCardTasks } from '../../services/taskService.js'
+import { saveTask, fetchProjectCardTasks } from '../../services/tasks/index.js'
 import {
   canSetProjectFocus,
   createEmptyProjectErrors,

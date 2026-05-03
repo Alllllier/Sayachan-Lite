@@ -1,8 +1,8 @@
 # Discussion Batch `discussion_batch_010`
 
 - Topic: `Frontend display semantics and test coverage buildout`
-- Last updated: `2026-04-25`
-- Status: `active`
+- Last updated: `2026-05-03`
+- Status: `stable`
 - Discussion mode: `follow-up`
 
 ## Intake Record
@@ -236,3 +236,27 @@
   - NotesPanel behavior coverage
   - Dashboard behavior guardrails
 - `slice-003` repo-native UI review baseline remains parked as broader validation buildout and should not overtake the new behavior-coverage discussion unless a concrete UI-review blocker appears.
+
+## Split-Out Follow-Up - Repo-Native Browser And UI Review Baseline
+
+- Date: `2026-05-03`
+- Status: `split out`
+- New discussion batch: `discussion_batch_015`
+
+### Split-Out Reason
+
+- Human direction is now to promote the remaining browser/UI review line into a formal discussion.
+- The previous blockers have cleared:
+  - `slice-001` project display semantics landed.
+  - `slice-002` panel behavior coverage moved to `discussion_batch_013` and completed.
+  - feature-layer migration completed in `discussion_batch_014`, making page and feature boundaries more stable.
+- Current repo reality gives this line a concrete starting point:
+  - Playwright and repo-native UI review scripts exist.
+  - `npm run test:ui-review` currently points to a missing spec and fails with `No tests found`.
+
+### Updated Parent-Batch Reading
+
+- `discussion_batch_010` is now a stable historical parent.
+- Project display semantics should be read here as completed context.
+- Panel behavior coverage should be read through `discussion_batch_013`.
+- Repo-native browser/UI review should continue through `discussion_batch_015`.

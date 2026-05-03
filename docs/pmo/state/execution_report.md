@@ -1,8 +1,8 @@
-# Execution Report Idle Template
+# Execution Report
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-04-26`
+- Last updated: `2026-05-04`
 
 ## Current State
 
@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Dashboard Saved-Task Behavior Guardrails`
-- Report outcome: `safe to close out`
-- PMO read result: `accepted; archived to docs/pmo/history/reports/dashboard-saved-task-behavior-guardrails.md`
+- Sprint: `Add Chat Global Shell Browser Review Baseline`
+- Report outcome: `completed and validated`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/add-chat-global-shell-browser-review-baseline.md`
 
 ## Next Use
 

@@ -7,10 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ui-review": "playwright test tests/ui-review/notes-ui-review.spec.js --reporter=line",
-    "test:ui-review:headed": "playwright test tests/ui-review/notes-ui-review.spec.js --headed --reporter=line"
+    "test": "vitest run --exclude tests/ui-review/**",
+    "test:watch": "vitest --exclude tests/ui-review/**",
+    "test:ui-review": "playwright test tests/ui-review --reporter=line",
+    "test:ui-review:headed": "playwright test tests/ui-review --headed --reporter=line"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",

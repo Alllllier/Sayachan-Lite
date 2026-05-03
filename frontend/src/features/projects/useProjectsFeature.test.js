@@ -7,7 +7,7 @@ import {
   updateProject,
   updateProjectFocus
 } from './projects.api.js'
-import { fetchProjectCardTasks, saveTask } from '../../services/taskService.js'
+import { fetchProjectCardTasks, saveTask } from '../../services/tasks/index.js'
 
 vi.mock('./projects.api.js', () => ({
   archiveProject: vi.fn(),
@@ -22,7 +22,7 @@ vi.mock('./projects.api.js', () => ({
   updateProjectFocus: vi.fn()
 }))
 
-vi.mock('../../services/taskService.js', () => ({
+vi.mock('../../services/tasks/index.js', () => ({
   fetchProjectCardTasks: vi.fn(),
   saveTask: vi.fn()
 }))
