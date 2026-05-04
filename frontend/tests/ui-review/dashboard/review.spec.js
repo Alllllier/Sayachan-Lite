@@ -27,6 +27,20 @@ test.describe('Dashboard UI review', () => {
     await expect(page.getByRole('button', { name: 'Show less', exact: true })).toBeVisible()
     await captureDashboardReviewState(page, 'dashboard-active-expanded')
 
+    const lastTaskAction = dashboardTaskRow(page, 'Seventh active task confirms Show less returns to preview').getByRole('button', { name: 'Actions' })
+    await lastTaskAction.click()
+    const lastTaskDelete = page.getByRole('menu').getByRole('button', { name: 'Delete' })
+    await expect(lastTaskDelete).toBeVisible()
+    await expect(async () => {
+      const hitButtonText = await lastTaskDelete.evaluate((element) => {
+        const rect = element.getBoundingClientRect()
+        const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+        return hit?.closest('button')?.textContent?.trim()
+      })
+      expect(hitButtonText).toBe('Delete')
+    }).toPass()
+    await lastTaskAction.click()
+
     await dashboardTaskRow(page, 'Review dashboard saved-task browser baseline').getByRole('button', { name: 'Actions' }).click()
     const activeMenu = page.getByRole('menu')
     await expect(activeMenu).toBeVisible()

@@ -148,7 +148,7 @@ onMounted(loadSavedTasks)
 <style scoped>
 .dashboard-list-card {
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .dashboard-quick-add {
