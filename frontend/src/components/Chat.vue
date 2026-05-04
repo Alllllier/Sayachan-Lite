@@ -69,8 +69,8 @@ watch(() => chatStore.messages.length, () => {
 
         <!-- Body -->
         <div ref="messageListRef" class="chat-body">
-          <div class="chat-message assistant">
-            <div class="chat-bubble">{{ runtimeControls.personalityConfig.welcome }}</div>
+          <div v-if="chatStore.messages.length === 0" class="chat-empty-invite">
+            从一句话开始。
           </div>
           <div class="chat-chips">
             <button class="chip" :disabled="chatInputDisabled" @click="handleSend('帮我聚焦')">帮我聚焦</button>
@@ -362,6 +362,14 @@ watch(() => chatStore.messages.length, () => {
 .chat-bubble--thinking {
   opacity: 0.7;
   font-style: italic;
+}
+
+.chat-empty-invite {
+  align-self: center;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  padding: var(--space-sm) 0 2px;
 }
 
 .chat-message.user .chat-bubble {

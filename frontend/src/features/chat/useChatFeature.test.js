@@ -68,7 +68,6 @@ describe('useChatFeature orchestration', () => {
         convergenceMode: 'guided'
       },
       personalityConfig: {
-        welcome: 'Hi',
         toneLabel: 'Warm'
       }
     }
