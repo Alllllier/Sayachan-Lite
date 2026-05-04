@@ -18,7 +18,7 @@ router.post('/auth/register', route(async (ctx) => {
 router.post('/auth/login', route(async (ctx) => {
   const result = await authService.login(ctx.request.body || {});
   setSessionCookie(ctx, result.sessionToken);
-  ctx.body = result.user;
+  ctx.body = result;
 }));
 
 router.post('/auth/logout', route(async (ctx) => {

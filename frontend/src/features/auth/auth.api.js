@@ -1,4 +1,4 @@
-import { apiFetch } from '../../services/apiClient'
+import { apiFetch, clearAuthToken, setAuthToken } from '../../services/apiClient'
 
 async function parseJsonResponse(response, errorMessage) {
   if (!response.ok) {
@@ -29,12 +29,21 @@ export async function login(credentials) {
     method: 'POST',
     body: JSON.stringify(credentials)
   })
-  return parseJsonResponse(response, 'Login failed')
+  const result = await parseJsonResponse(response, 'Login failed')
+  if (result?.sessionToken) {
+    setAuthToken(result.sessionToken)
+    return result.user
+  }
+  return result
 }
 
 export async function logout() {
-  const response = await apiFetch('/auth/logout', { method: 'POST' })
-  return parseJsonResponse(response, 'Logout failed')
+  try {
+    const response = await apiFetch('/auth/logout', { method: 'POST' })
+    return await parseJsonResponse(response, 'Logout failed')
+  } finally {
+    clearAuthToken()
+  }
 }
 
 export async function registerTester(payload) {

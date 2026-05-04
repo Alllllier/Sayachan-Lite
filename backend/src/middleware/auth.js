@@ -36,13 +36,21 @@ function setSessionCookie(ctx, sessionToken) {
   }));
 }
 
+function getBearerSessionToken(ctx) {
+  const authorization = ctx.get('Authorization');
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : null;
+}
+
 async function authMiddleware(ctx, next) {
-  const token = ctx.cookies.get(authService.SESSION_COOKIE_NAME);
+  const cookieToken = ctx.cookies.get(authService.SESSION_COOKIE_NAME);
+  const bearerToken = getBearerSessionToken(ctx);
+  const token = bearerToken || cookieToken;
   const user = await authService.loadUserForSession(token);
 
   if (user) {
     ctx.state.user = user;
-  } else if (token) {
+  } else if (cookieToken) {
     clearSessionCookie(ctx);
   }
 

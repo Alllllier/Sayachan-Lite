@@ -21,35 +21,60 @@ function jsonResponse(body, ok = true, status = 200) {
   }
 }
 
+function createLocalStorageMock() {
+  const values = new Map()
+  return {
+    clear: vi.fn(() => values.clear()),
+    getItem: vi.fn((key) => values.get(key) || null),
+    removeItem: vi.fn((key) => values.delete(key)),
+    setItem: vi.fn((key, value) => values.set(key, String(value)))
+  }
+}
+
 describe('auth api boundary', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn())
+    vi.stubGlobal('localStorage', createLocalStorageMock())
   })
 
   afterEach(() => {
     vi.unstubAllGlobals()
   })
 
-  it('loads current user and sends login/logout through cookie-backed endpoints', async () => {
+  it('loads current user and sends login/logout through session-backed endpoints', async () => {
     fetch.mockResolvedValueOnce(jsonResponse({ email: 'owner@example.com', role: 'owner' }))
     await expect(fetchCurrentUser()).resolves.toEqual({ email: 'owner@example.com', role: 'owner' })
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/auth/me', { credentials: 'include' })
 
-    fetch.mockResolvedValueOnce(jsonResponse({ email: 'owner@example.com', role: 'owner' }))
-    await login({ email: 'owner@example.com', password: 'long-enough' })
+    fetch.mockResolvedValueOnce(jsonResponse({
+      sessionToken: 'session-token',
+      user: { email: 'owner@example.com', role: 'owner' }
+    }))
+    await expect(login({ email: 'owner@example.com', password: 'long-enough' }))
+      .resolves.toEqual({ email: 'owner@example.com', role: 'owner' })
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/auth/login', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: 'owner@example.com', password: 'long-enough' })
     })
+    expect(localStorage.getItem('sayachan_session_token')).toBe('session-token')
+
+    fetch.mockResolvedValueOnce(jsonResponse({ email: 'owner@example.com', role: 'owner' }))
+    await fetchCurrentUser()
+    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/auth/me', {
+      credentials: 'include',
+      headers: { Authorization: 'Bearer session-token' }
+    })
 
     fetch.mockResolvedValueOnce({ ok: true, status: 204 })
     await expect(logout()).resolves.toBe(null)
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/auth/logout', {
       method: 'POST',
-      credentials: 'include'
+      credentials: 'include',
+      headers: { Authorization: 'Bearer session-token' }
     })
+    expect(localStorage.getItem('sayachan_session_token')).toBe(null)
   })
 
   it('registers testers with an invite code', async () => {

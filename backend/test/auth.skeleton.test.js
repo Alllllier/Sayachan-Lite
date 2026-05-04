@@ -5,6 +5,7 @@ const User = require('../src/models/User');
 const Invite = require('../src/models/Invite');
 const Session = require('../src/models/Session');
 const authService = require('../src/services/authService');
+const { authMiddleware } = require('../src/middleware/auth');
 const routes = require('../src/routes/index.js');
 
 function createDoc(data) {
@@ -190,6 +191,40 @@ test('disabled accounts are rejected on the next authenticated session load', as
     const loadedUser = await authService.loadUserForSession('session-token');
     assert.equal(loadedUser, null);
     assert.equal(sessionDeleted, true);
+  });
+});
+
+test('auth middleware accepts bearer session tokens when cookies are unavailable', async () => {
+  let loadedToken;
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'loadUserForSession',
+      value: async (token) => {
+        loadedToken = token;
+        return { _id: 'owner-1', email: 'owner@example.com', role: 'owner' };
+      }
+    }
+  ], async () => {
+    const ctx = {
+      path: '/notes',
+      state: {},
+      cookies: {
+        get: () => null,
+        set: () => {}
+      },
+      get: (name) => (name === 'Authorization' ? 'Bearer session-token' : '')
+    };
+    let nextCalled = false;
+
+    await authMiddleware(ctx, async () => {
+      nextCalled = true;
+    });
+
+    assert.equal(loadedToken, 'session-token');
+    assert.equal(ctx.state.user.email, 'owner@example.com');
+    assert.equal(nextCalled, true);
   });
 });
 

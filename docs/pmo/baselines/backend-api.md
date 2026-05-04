@@ -11,11 +11,11 @@ It is a truth baseline, not a protocol and not a policy file.
 ## Service Basics
 
 - default backend base URL: `http://localhost:3001`
-- CORS origin: `FRONTEND_ORIGIN` or `http://localhost:5173`
-- CORS credentials: enabled for cookie-backed frontend sessions
+- CORS origins: comma-separated `FRONTEND_ORIGINS`, fallback `FRONTEND_ORIGIN`, fallback `http://localhost:5173`
+- CORS credentials: enabled for cookie-backed frontend sessions and bearer-token fallback requests
 - body parser: JSON request bodies
 - database startup is non-blocking; the server can run even when MongoDB is unavailable
-- normal non-health product/API routes require a valid `sayachan_session` cookie unless listed as public auth routes
+- normal non-health product/API routes require a valid `sayachan_session` cookie or `Authorization: Bearer <sessionToken>` unless listed as public auth routes
 - owner bootstrap may be invoked by API or by `npm run bootstrap:owner` from the backend workspace, which calls the same API against a configured backend URL
 
 ## Current Models
@@ -131,7 +131,7 @@ Current Session fields:
 - `userId`
 - `expiresAt`
 
-Sessions back the httpOnly `sayachan_session` cookie.
+Sessions back the httpOnly `sayachan_session` cookie and the frontend bearer-token fallback used when cross-site browser cookie handling is unavailable.
 
 ## Route Surface
 
@@ -176,7 +176,7 @@ Current behavior truth:
 - bootstrap creates the first owner only when no owner exists
 - bootstrap assigns legacy Notes, Projects, and Tasks without `userId` to the owner
 - tester registration requires email, password, and a valid invite code
-- login sets `sayachan_session`
+- login creates a server session, sets `sayachan_session`, and returns `{ sessionToken, user }` for the frontend bearer-token fallback
 - logout clears `sayachan_session` and deletes the server session when present
 - disabled users are rejected on session load and their sessions are removed when disabled
 - owner routes expose invite management, tester metadata/status management, and basic system status only
