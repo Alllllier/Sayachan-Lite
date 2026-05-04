@@ -137,6 +137,22 @@ describe('useProjectsFeature orchestration', () => {
     expect(notify).toHaveBeenCalledWith('Showing cached projects. Refresh failed.', 'error')
   })
 
+  it('hydrates cached project card tasks immediately with cached projects', async () => {
+    writeResourceCache('user-1', 'projects', 'active', [
+      { _id: 'project-cached', name: 'Cached', summary: 'Snapshot', archived: false }
+    ])
+    writeResourceCache('user-1', 'project-tasks', 'project-cached:active', [
+      { _id: 'task-cached', title: 'Cached task' }
+    ])
+    fetchProjects.mockRejectedValue(new Error('network'))
+
+    const feature = useProjectsFeature({ cacheUserKey: 'user-1' })
+    await feature.fetchProjects()
+
+    expect(feature.projects.value.map(project => project._id)).toEqual(['project-cached'])
+    expect(feature.projectTasks.value['project-cached']).toEqual([{ _id: 'task-cached', title: 'Cached task' }])
+  })
+
   it('guards focus updates to active non-archived tasks', async () => {
     const feature = useProjectsFeature()
     const project = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending' }

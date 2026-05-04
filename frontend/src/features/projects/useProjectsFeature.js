@@ -86,6 +86,9 @@ export function useProjectsFeature(options = {}) {
     const cachedProjects = readResourceCache(resolveCacheUserKey(), PROJECTS_CACHE_RESOURCE, resolveProjectsCacheVariant())
     if (!Array.isArray(cachedProjects)) return false
     projects.value = cachedProjects
+    projects.value.forEach(project => {
+      hydrateProjectTasksFromCache(project._id, project.archived === true)
+    })
     emitRefreshed()
     return true
   }
