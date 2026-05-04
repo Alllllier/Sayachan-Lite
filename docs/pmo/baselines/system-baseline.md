@@ -136,6 +136,7 @@ Current route behavior truth:
 - phase-one auth uses owner/tester roles, invite-gated registration, cookie-backed sessions, and lightweight owner management
 - backend owner bootstrap can be run through `backend/scripts/bootstrapOwner.mjs` or `npm run bootstrap:owner` from the backend workspace
 - Notes, Projects, and Tasks normal route/service reads and writes are scoped by current authenticated user
+- Note, Project, and Task routes resolve the current user through `backend/src/routes/currentUser.js` before calling product services, so product route handlers do not intentionally support unowned current-user reads or writes
 - public AI note/project routes reload persisted note/project context by current user ownership before constructing fallback/provider prompts
 - project next-action focus task resolution is scoped by both task id and current user ownership
 - note and project AI routes call GLM through backend route logic
@@ -155,6 +156,10 @@ Current Note fields:
 - `pinnedAt`
 - `userId`
 
+Current Note indexes include the personal-account list path:
+
+- `{ userId: 1, archived: 1, isPinned: -1, pinnedAt: -1, updatedAt: -1 }`
+
 ### Project Model
 
 Current Project fields:
@@ -168,6 +173,10 @@ Current Project fields:
 - `pinnedAt`
 - `userId`
 
+Current Project indexes include the personal-account list path:
+
+- `{ userId: 1, archived: 1, isPinned: -1, pinnedAt: -1, updatedAt: -1 }`
+
 ### Task Model
 
 Preferred Task contract fields:
@@ -180,6 +189,11 @@ Preferred Task contract fields:
 - `archived`
 - `completed`
 - `userId`
+
+Current Task indexes include personal-account list and provenance paths:
+
+- `{ userId: 1, archived: 1, createdAt: -1 }`
+- `{ userId: 1, originModule: 1, originId: 1, archived: 1 }`
 
 ### Auth Models
 

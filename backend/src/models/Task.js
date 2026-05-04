@@ -41,4 +41,7 @@ const taskSchema = new mongoose.Schema({
   timestamps: true
 });
 
+taskSchema.index({ userId: 1, archived: 1, createdAt: -1 });
+taskSchema.index({ userId: 1, originModule: 1, originId: 1, archived: 1 });
+
 module.exports = mongoose.model('Task', taskSchema);

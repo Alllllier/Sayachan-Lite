@@ -1,6 +1,7 @@
 const Router = require('@koa/router');
 const Task = require('../models/Task');
 const tasksService = require('../services/tasksService');
+const { currentUserId } = require('./currentUser');
 const {
   archiveTasks,
   buildArchiveFilter,
@@ -18,7 +19,7 @@ const router = new Router();
 // GET /tasks
 router.get('/tasks', route(async (ctx) => {
   const { projectId, archived } = ctx.query;
-  ctx.body = await tasksService.listTasks({ projectId, archived, userId: ctx.state?.user?._id });
+  ctx.body = await tasksService.listTasks({ projectId, archived, userId: currentUserId(ctx) });
 }));
 
 // POST /tasks
@@ -26,7 +27,7 @@ router.post('/tasks', route(async (ctx) => {
   const body = ctx.request.body;
   validateTaskCreate(body);
   ctx.status = 201;
-  ctx.body = await tasksService.createTask(body, { userId: ctx.state?.user?._id });
+  ctx.body = await tasksService.createTask(body, { userId: currentUserId(ctx) });
 }));
 
 // PUT /tasks/:id
@@ -34,7 +35,7 @@ router.put('/tasks/:id', route(async (ctx) => {
   const id = ctx.params.id;
   const body = ctx.request.body;
   validateTaskUpdate(body);
-  const task = await tasksService.updateTask(id, body, { userId: ctx.state?.user?._id });
+  const task = await tasksService.updateTask(id, body, { userId: currentUserId(ctx) });
   if (!task) {
     ctx.status = 404;
     ctx.body = { error: 'Task not found' };
@@ -46,7 +47,7 @@ router.put('/tasks/:id', route(async (ctx) => {
 // DELETE /tasks/:id
 router.delete('/tasks/:id', route(async (ctx) => {
   const id = ctx.params.id;
-  const deleted = await tasksService.deleteTask(id, { userId: ctx.state?.user?._id });
+  const deleted = await tasksService.deleteTask(id, { userId: currentUserId(ctx) });
   if (!deleted) {
     ctx.status = 404;
     ctx.body = { error: 'Task not found' };

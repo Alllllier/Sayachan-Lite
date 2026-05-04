@@ -14,14 +14,18 @@ function getRouteHandler(method, path) {
   return layer.stack[0];
 }
 
-function createCtx({ query = {}, params = {}, body = {} } = {}) {
-  return {
+function createCtx({ query = {}, params = {}, body = {}, userId = '000000000000000000000001' } = {}) {
+  const ctx = {
     query,
     params,
     request: { body },
     status: 200,
     body: undefined
   };
+  if (userId !== null) {
+    ctx.state = { user: { _id: userId, role: 'tester', email: `${userId}@example.com` } };
+  }
+  return ctx;
 }
 
 function createDoc(data) {
@@ -135,7 +139,8 @@ test('list and filter reads preserve canonical backend semantics for tasks, proj
   ], async () => {
     const taskDefaultCtx = createCtx();
     await taskListHandler(taskDefaultCtx, async () => {});
-    assert.deepEqual(taskQueries[0], { archived: { $ne: true } });
+    assert.equal(hasClause(taskQueries[0], (clause) => clause.archived && clause.archived.$ne === true), true);
+    assert.equal(hasClause(taskQueries[0], (clause) => clause.userId === '000000000000000000000001'), true);
     assert.equal(taskDefaultCtx.status, 200);
     assert.deepEqual(taskDefaultCtx.body[0], {
       _id: 'task-1',
@@ -149,7 +154,8 @@ test('list and filter reads preserve canonical backend semantics for tasks, proj
 
     const taskArchivedCtx = createCtx({ query: { archived: 'true' } });
     await taskListHandler(taskArchivedCtx, async () => {});
-    assert.deepEqual(taskQueries[1], { archived: true });
+    assert.equal(hasClause(taskQueries[1], (clause) => clause.archived === true), true);
+    assert.equal(hasClause(taskQueries[1], (clause) => clause.userId === '000000000000000000000001'), true);
     assert.equal(taskArchivedCtx.status, 200);
 
     const taskProjectCtx = createCtx({ query: { projectId: 'project-7' } });
@@ -178,7 +184,8 @@ test('list and filter reads preserve canonical backend semantics for tasks, proj
 
     const projectDefaultCtx = createCtx();
     await projectListHandler(projectDefaultCtx, async () => {});
-    assert.deepEqual(projectQueries[0], { archived: { $ne: true } });
+    assert.equal(hasClause(projectQueries[0], (clause) => clause.archived && clause.archived.$ne === true), true);
+    assert.equal(hasClause(projectQueries[0], (clause) => clause.userId === '000000000000000000000001'), true);
     assert.equal(projectDefaultCtx.status, 200);
     assert.deepEqual(projectDefaultCtx.body[0], {
       _id: 'project-1',
@@ -190,12 +197,14 @@ test('list and filter reads preserve canonical backend semantics for tasks, proj
 
     const projectArchivedCtx = createCtx({ query: { archived: 'true' } });
     await projectListHandler(projectArchivedCtx, async () => {});
-    assert.deepEqual(projectQueries[1], { archived: true });
+    assert.equal(hasClause(projectQueries[1], (clause) => clause.archived === true), true);
+    assert.equal(hasClause(projectQueries[1], (clause) => clause.userId === '000000000000000000000001'), true);
     assert.equal(projectArchivedCtx.status, 200);
 
     const noteDefaultCtx = createCtx();
     await noteListHandler(noteDefaultCtx, async () => {});
-    assert.deepEqual(noteQueries[0], { archived: { $ne: true } });
+    assert.equal(hasClause(noteQueries[0], (clause) => clause.archived && clause.archived.$ne === true), true);
+    assert.equal(hasClause(noteQueries[0], (clause) => clause.userId === '000000000000000000000001'), true);
     assert.equal(noteDefaultCtx.status, 200);
     assert.deepEqual(noteDefaultCtx.body[0], {
       _id: 'note-1',
@@ -206,7 +215,8 @@ test('list and filter reads preserve canonical backend semantics for tasks, proj
 
     const noteArchivedCtx = createCtx({ query: { archived: 'true' } });
     await noteListHandler(noteArchivedCtx, async () => {});
-    assert.deepEqual(noteQueries[1], { archived: true });
+    assert.equal(hasClause(noteQueries[1], (clause) => clause.archived === true), true);
+    assert.equal(hasClause(noteQueries[1], (clause) => clause.userId === '000000000000000000000001'), true);
     assert.equal(noteArchivedCtx.status, 200);
   });
 });
@@ -239,7 +249,7 @@ test('create, update, and delete routes keep first-pass status code and response
     },
     {
       target: Task,
-      key: 'findById',
+      key: 'findOne',
       value: async () => createDoc({
         _id: 'task-new',
         title: 'Ship sprint',
@@ -250,7 +260,7 @@ test('create, update, and delete routes keep first-pass status code and response
     },
     {
       target: Task,
-      key: 'findByIdAndUpdate',
+      key: 'findOneAndUpdate',
       value: async () => createDoc({
         _id: 'task-new',
         title: 'Ship sprint',
@@ -261,7 +271,7 @@ test('create, update, and delete routes keep first-pass status code and response
     },
     {
       target: Task,
-      key: 'findByIdAndDelete',
+      key: 'findOneAndDelete',
       value: async () => createDoc({
         _id: 'task-new',
         title: 'Ship sprint',
@@ -282,7 +292,7 @@ test('create, update, and delete routes keep first-pass status code and response
     },
     {
       target: Project,
-      key: 'findByIdAndUpdate',
+      key: 'findOneAndUpdate',
       value: async () => createDoc({
         _id: 'project-new',
         name: 'Project X',
@@ -294,7 +304,7 @@ test('create, update, and delete routes keep first-pass status code and response
     },
     {
       target: Project,
-      key: 'findByIdAndDelete',
+      key: 'findOneAndDelete',
       value: async () => createDoc({
         _id: 'project-new',
         name: 'Project X'
@@ -317,7 +327,7 @@ test('create, update, and delete routes keep first-pass status code and response
     },
     {
       target: Note,
-      key: 'findByIdAndUpdate',
+      key: 'findOneAndUpdate',
       value: async () => createDoc({
         _id: 'note-new',
         title: 'Scratchpad',
@@ -327,7 +337,7 @@ test('create, update, and delete routes keep first-pass status code and response
     },
     {
       target: Note,
-      key: 'findByIdAndDelete',
+      key: 'findOneAndDelete',
       value: async () => createDoc({
         _id: 'note-new',
         title: 'Scratchpad'
@@ -436,32 +446,32 @@ test('missing task, project, and note id routes return canonical 404 errors', as
   await withPatchedMethods([
     {
       target: Task,
-      key: 'findById',
+      key: 'findOne',
       value: async () => null
     },
     {
       target: Task,
-      key: 'findByIdAndDelete',
+      key: 'findOneAndDelete',
       value: async () => null
     },
     {
       target: Project,
-      key: 'findByIdAndUpdate',
+      key: 'findOneAndUpdate',
       value: async () => null
     },
     {
       target: Project,
-      key: 'findByIdAndDelete',
+      key: 'findOneAndDelete',
       value: async () => null
     },
     {
       target: Note,
-      key: 'findByIdAndUpdate',
+      key: 'findOneAndUpdate',
       value: async () => null
     },
     {
       target: Note,
-      key: 'findByIdAndDelete',
+      key: 'findOneAndDelete',
       value: async () => null
     }
   ], async () => {
@@ -517,11 +527,11 @@ test('bad create and update request bodies return stable 400 errors before servi
 
   await withPatchedMethods([
     { target: Task, key: 'create', value: forbiddenWrite },
-    { target: Task, key: 'findById', value: forbiddenWrite },
+    { target: Task, key: 'findOne', value: forbiddenWrite },
     { target: Project, key: 'create', value: forbiddenWrite },
-    { target: Project, key: 'findByIdAndUpdate', value: forbiddenWrite },
+    { target: Project, key: 'findOneAndUpdate', value: forbiddenWrite },
     { target: Note, key: 'create', value: forbiddenWrite },
-    { target: Note, key: 'findByIdAndUpdate', value: forbiddenWrite }
+    { target: Note, key: 'findOneAndUpdate', value: forbiddenWrite }
   ], async () => {
     const cases = [
       [createTaskHandler, createCtx({ body: { title: '' } })],
@@ -536,6 +546,29 @@ test('bad create and update request bodies return stable 400 errors before servi
       await handler(ctx, async () => {});
       assert.equal(ctx.status, 400);
       assert.deepEqual(ctx.body, { error: 'Invalid request body' });
+    }
+  });
+});
+
+test('product routes require a current user before model access', async () => {
+  const listNotesHandler = getRouteHandler('GET', '/notes');
+  const listProjectsHandler = getRouteHandler('GET', '/projects');
+  const listTasksHandler = getRouteHandler('GET', '/tasks');
+
+  const forbiddenRead = async () => {
+    throw new Error('missing current user should stop before model read');
+  };
+
+  await withPatchedMethods([
+    { target: Note, key: 'find', value: forbiddenRead },
+    { target: Project, key: 'find', value: forbiddenRead },
+    { target: Task, key: 'find', value: forbiddenRead }
+  ], async () => {
+    for (const handler of [listNotesHandler, listProjectsHandler, listTasksHandler]) {
+      const ctx = createCtx({ userId: null });
+      await handler(ctx, async () => {});
+      assert.equal(ctx.status, 401);
+      assert.deepEqual(ctx.body, { error: 'Authentication required' });
     }
   });
 });

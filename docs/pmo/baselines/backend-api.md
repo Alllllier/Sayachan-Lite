@@ -16,6 +16,7 @@ It is a truth baseline, not a protocol and not a policy file.
 - body parser: JSON request bodies
 - database startup is non-blocking; the server can run even when MongoDB is unavailable
 - normal non-health product/API routes require a valid `sayachan_session` cookie or `Authorization: Bearer <sessionToken>` unless listed as public auth routes
+- Note, Project, and Task product routes require a resolved current user before service invocation; they are personal-account scoped routes, not anonymous content routes
 - owner bootstrap may be invoked by API or by `npm run bootstrap:owner` from the backend workspace, which calls the same API against a configured backend URL
 
 ## Current Models
@@ -32,6 +33,10 @@ Current Note fields:
 - `userId`
 
 Timestamps are enabled.
+
+Current Note indexes:
+
+- `{ userId: 1, archived: 1, isPinned: -1, pinnedAt: -1, updatedAt: -1 }`
 
 ### Project
 
@@ -55,6 +60,10 @@ Allowed Project statuses:
 
 Timestamps are enabled.
 
+Current Project indexes:
+
+- `{ userId: 1, archived: 1, isPinned: -1, pinnedAt: -1, updatedAt: -1 }`
+
 ### Task
 
 Preferred Task contract fields:
@@ -74,6 +83,11 @@ Allowed Task statuses:
 - `completed`
 
 Timestamps are enabled.
+
+Current Task indexes:
+
+- `{ userId: 1, archived: 1, createdAt: -1 }`
+- `{ userId: 1, originModule: 1, originId: 1, archived: 1 }`
 
 ### User
 

@@ -14,11 +14,12 @@ function getRouteHandler(method, path) {
   return layer.stack[0];
 }
 
-function createCtx({ query = {}, params = {}, body = {} } = {}) {
+function createCtx({ query = {}, params = {}, body = {}, userId = '000000000000000000000001' } = {}) {
   return {
     query,
     params,
     request: { body },
+    state: { user: { _id: userId, role: 'tester', email: `${userId}@example.com` } },
     status: 200,
     body: undefined
   };
@@ -76,7 +77,7 @@ test('note archive cascades only note-origin tasks and preserves lifecycle seman
   await withPatchedMethods([
     {
       target: Note,
-      key: 'findByIdAndUpdate',
+      key: 'findOneAndUpdate',
       value: async () => createDoc({ _id: 'note-1', title: 'Sprint Note', archived: true })
     },
     {
@@ -136,7 +137,7 @@ test('note restore restores note-origin tasks and keeps completed tasks complete
   await withPatchedMethods([
     {
       target: Note,
-      key: 'findByIdAndUpdate',
+      key: 'findOneAndUpdate',
       value: async () => createDoc({ _id: 'note-1', title: 'Sprint Note', archived: false })
     },
     {
@@ -204,9 +205,9 @@ test('project archive uses canonical project provenance and clears focus', async
   await withPatchedMethods([
     {
       target: Project,
-      key: 'findByIdAndUpdate',
-      value: async (id, update) => {
-        projectUpdates.push({ id, update });
+      key: 'findOneAndUpdate',
+      value: async (query, update) => {
+        projectUpdates.push({ query, update });
         return project;
       }
     },
@@ -245,8 +246,8 @@ test('project archive uses canonical project provenance and clears focus', async
     true
   );
   assert.deepEqual(projectUpdates, [
-    { id: 'project-1', update: { archived: true } },
-    { id: 'project-1', update: { currentFocusTaskId: null } }
+    { query: { _id: 'project-1', userId: '000000000000000000000001' }, update: { archived: true } },
+    { query: { _id: 'project-1', userId: '000000000000000000000001' }, update: { currentFocusTaskId: null } }
   ]);
   assert.deepEqual(
     bulkOps.map((entry) => entry.updateOne.filter._id),
@@ -258,22 +259,22 @@ test('project restore restores archived canonical project tasks while keeping li
   const restoreHandler = getRouteHandler('PUT', '/projects/:id/restore');
   const ctx = createCtx({ params: { id: 'project-1' } });
   let bulkOps = null;
-  let findByIdCalls = 0;
+  let findProjectCalls = 0;
 
   await withPatchedMethods([
     {
       target: Project,
-      key: 'findById',
+      key: 'findOne',
       value: async () => {
-        findByIdCalls += 1;
+        findProjectCalls += 1;
         return createDoc({ _id: 'project-1', name: 'Alpha', status: 'completed', archived: true });
       }
     },
     {
       target: Project,
-      key: 'findByIdAndUpdate',
-      value: async (id, update) => {
-        assert.equal(id, 'project-1');
+      key: 'findOneAndUpdate',
+      value: async (query, update) => {
+        assert.deepEqual(query, { _id: 'project-1', userId: '000000000000000000000001' });
         assert.deepEqual(update, { archived: false, status: 'completed' });
         return createDoc({ _id: 'project-1', name: 'Alpha', status: 'completed', archived: false });
       }
@@ -309,7 +310,7 @@ test('project restore restores archived canonical project tasks while keeping li
     await restoreHandler(ctx, async () => {});
   });
 
-  assert.equal(findByIdCalls, 1);
+  assert.equal(findProjectCalls, 1);
   assert.equal(ctx.body.archived, false);
   assert.equal(ctx.body.status, 'completed');
   assert.deepEqual(
@@ -369,7 +370,7 @@ test('completing a focused canonical project task clears project focus', async (
   await withPatchedMethods([
     {
       target: Task,
-      key: 'findById',
+      key: 'findOne',
       value: async () => createDoc({
         _id: 'task-1',
         title: 'Ship it',
@@ -382,7 +383,7 @@ test('completing a focused canonical project task clears project focus', async (
     },
     {
       target: Task,
-      key: 'findByIdAndUpdate',
+      key: 'findOneAndUpdate',
       value: async () => createDoc({
         _id: 'task-1',
         title: 'Ship it',
@@ -400,9 +401,9 @@ test('completing a focused canonical project task clears project focus', async (
     },
     {
       target: Project,
-      key: 'findByIdAndUpdate',
-      value: async (id, update) => {
-        projectUpdates.push({ id, update });
+      key: 'findOneAndUpdate',
+      value: async (query, update) => {
+        projectUpdates.push({ query, update });
       }
     }
   ], async () => {
@@ -411,7 +412,7 @@ test('completing a focused canonical project task clears project focus', async (
 
   assert.equal(ctx.body.status, 'completed');
   assert.deepEqual(projectUpdates, [
-    { id: 'project-1', update: { currentFocusTaskId: null } }
+    { query: { _id: 'project-1', userId: '000000000000000000000001' }, update: { currentFocusTaskId: null } }
   ]);
 });
 
@@ -428,7 +429,7 @@ test('archiving or deleting a focused project-owned task clears project focus sy
   await withPatchedMethods([
     {
       target: Task,
-      key: 'findById',
+      key: 'findOne',
       value: async () => createDoc({
         _id: 'task-1',
         title: 'Ship it',
@@ -441,7 +442,7 @@ test('archiving or deleting a focused project-owned task clears project focus sy
     },
     {
       target: Task,
-      key: 'findByIdAndUpdate',
+      key: 'findOneAndUpdate',
       value: async () => createDoc({
         _id: 'task-1',
         title: 'Ship it',
@@ -454,7 +455,7 @@ test('archiving or deleting a focused project-owned task clears project focus sy
     },
     {
       target: Task,
-      key: 'findByIdAndDelete',
+      key: 'findOneAndDelete',
       value: async () => createDoc({
         _id: 'task-1',
         title: 'Ship it',
@@ -469,9 +470,9 @@ test('archiving or deleting a focused project-owned task clears project focus sy
     },
     {
       target: Project,
-      key: 'findByIdAndUpdate',
-      value: async (id, update) => {
-        projectUpdates.push({ id, update });
+      key: 'findOneAndUpdate',
+      value: async (query, update) => {
+        projectUpdates.push({ query, update });
       }
     }
   ], async () => {
@@ -482,8 +483,8 @@ test('archiving or deleting a focused project-owned task clears project focus sy
   assert.equal(archiveCtx.body.archived, true);
   assert.equal(deleteCtx.status, 204);
   assert.deepEqual(projectUpdates, [
-    { id: 'project-1', update: { currentFocusTaskId: null } },
-    { id: 'project-1', update: { currentFocusTaskId: null } }
+    { query: { _id: 'project-1', userId: '000000000000000000000001' }, update: { currentFocusTaskId: null } },
+    { query: { _id: 'project-1', userId: '000000000000000000000001' }, update: { currentFocusTaskId: null } }
   ]);
 });
 
@@ -540,7 +541,7 @@ test('restoring an archived task preserves existing lifecycle state', async () =
   await withPatchedMethods([
     {
       target: Task,
-      key: 'findById',
+      key: 'findOne',
       value: async () => createDoc({
         _id: 'task-1',
         title: 'Archived task',
@@ -551,8 +552,8 @@ test('restoring an archived task preserves existing lifecycle state', async () =
     },
     {
       target: Task,
-      key: 'findByIdAndUpdate',
-      value: async (_id, update) => {
+      key: 'findOneAndUpdate',
+      value: async (_query, update) => {
         updatePayload = update;
         return createDoc({
           _id: 'task-1',

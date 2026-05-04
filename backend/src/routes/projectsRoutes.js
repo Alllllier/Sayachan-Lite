@@ -1,5 +1,6 @@
 const Router = require('@koa/router');
 const projectsService = require('../services/projectsService');
+const { currentUserId } = require('./currentUser');
 const {
   validateProjectCreate,
   validateProjectUpdate
@@ -11,7 +12,7 @@ const router = new Router();
 // GET /projects
 router.get('/projects', route(async (ctx) => {
   const { archived } = ctx.query;
-  ctx.body = await projectsService.listProjects({ archived, userId: ctx.state?.user?._id });
+  ctx.body = await projectsService.listProjects({ archived, userId: currentUserId(ctx) });
 }));
 
 // POST /projects
@@ -19,7 +20,7 @@ router.post('/projects', route(async (ctx) => {
   const body = ctx.request.body;
   validateProjectCreate(body);
   ctx.status = 201;
-  ctx.body = await projectsService.createProject(body, { userId: ctx.state?.user?._id });
+  ctx.body = await projectsService.createProject(body, { userId: currentUserId(ctx) });
 }));
 
 // PUT /projects/:id
@@ -27,7 +28,7 @@ router.put('/projects/:id', route(async (ctx) => {
   const id = ctx.params.id;
   const body = ctx.request.body;
   validateProjectUpdate(body);
-  const project = await projectsService.updateProject(id, body, { userId: ctx.state?.user?._id });
+  const project = await projectsService.updateProject(id, body, { userId: currentUserId(ctx) });
   if (!project) {
     ctx.status = 404;
     ctx.body = { error: 'Project not found' };
@@ -39,7 +40,7 @@ router.put('/projects/:id', route(async (ctx) => {
 // DELETE /projects/:id
 router.delete('/projects/:id', route(async (ctx) => {
   const id = ctx.params.id;
-  const deleted = await projectsService.deleteProject(id, { userId: ctx.state?.user?._id });
+  const deleted = await projectsService.deleteProject(id, { userId: currentUserId(ctx) });
   if (!deleted) {
     ctx.status = 404;
     ctx.body = { error: 'Project not found' };
@@ -52,7 +53,7 @@ router.delete('/projects/:id', route(async (ctx) => {
 // PUT /projects/:id/pin - Pin project (does not update content timestamp)
 router.put('/projects/:id/pin', route(async (ctx) => {
   const id = ctx.params.id;
-  const project = await projectsService.pinProject(id, { userId: ctx.state?.user?._id });
+  const project = await projectsService.pinProject(id, { userId: currentUserId(ctx) });
   if (!project) {
     ctx.status = 404;
     ctx.body = { error: 'Project not found' };
@@ -64,7 +65,7 @@ router.put('/projects/:id/pin', route(async (ctx) => {
 // PUT /projects/:id/unpin - Unpin project (does not update content timestamp)
 router.put('/projects/:id/unpin', route(async (ctx) => {
   const id = ctx.params.id;
-  const project = await projectsService.unpinProject(id, { userId: ctx.state?.user?._id });
+  const project = await projectsService.unpinProject(id, { userId: currentUserId(ctx) });
   if (!project) {
     ctx.status = 404;
     ctx.body = { error: 'Project not found' };
@@ -76,7 +77,7 @@ router.put('/projects/:id/unpin', route(async (ctx) => {
 // PUT /projects/:id/archive - Archive project and cascade to tasks
 router.put('/projects/:id/archive', route(async (ctx) => {
   const id = ctx.params.id;
-  const project = await projectsService.archiveProject(id, { userId: ctx.state?.user?._id });
+  const project = await projectsService.archiveProject(id, { userId: currentUserId(ctx) });
 
   if (!project) {
     ctx.status = 404;
@@ -90,7 +91,7 @@ router.put('/projects/:id/archive', route(async (ctx) => {
 // PUT /projects/:id/restore - Restore project and cascade to tasks
 router.put('/projects/:id/restore', route(async (ctx) => {
   const id = ctx.params.id;
-  const project = await projectsService.restoreProject(id, { userId: ctx.state?.user?._id });
+  const project = await projectsService.restoreProject(id, { userId: currentUserId(ctx) });
 
   if (!project) {
     ctx.status = 404;

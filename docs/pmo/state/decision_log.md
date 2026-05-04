@@ -24,6 +24,15 @@
 
 ## Recorded Decisions
 
+### `Medium-term account model stays personal-account scoped`
+
+- Date: `2026-05-04`
+- Type: `approved`
+- Scope: `account ownership schema, product route/service boundaries, and future model planning`
+- Decision: `For the visible medium-term product direction, Sayachan should remain a personal-account product rather than introducing Workspace, Organization, Membership, or team-sharing models. User-authored product data should be owned directly by userId; current Note, Project, and Task product routes require a resolved current user before invoking services; new user-authored models should add ownership from the start. Workspace/membership/sharing should only be introduced if real collaboration or shared-space requirements appear.`
+- Reason: `The expected medium-term product is personal accounts with isolated user data, not team collaboration. Direct userId ownership is simpler and appropriate for that shape, while route-level current-user guards and ownership indexes prevent the current model from feeling like a loose post-auth patch.`
+- Follow-up: `When adding future content models such as settings, chat history, attachments, runtime preferences that are account-owned, or generated artifacts, decide explicitly whether the data is user-owned, device-level, public template data, or private-core-owned before shipping the schema.`
+
 ### `Owner-led invite-gated auth uses a lightweight phase-one boundary`
 
 - Date: `2026-05-04`
