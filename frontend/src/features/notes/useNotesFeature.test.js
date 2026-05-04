@@ -122,6 +122,20 @@ describe('useNotesFeature orchestration', () => {
     expect(notify).toHaveBeenCalledWith('Note archived')
   })
 
+  it('clears a stale load error when notes are fetched again', async () => {
+    const feature = useNotesFeature()
+    fetchNotes
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValueOnce([{ _id: 'note-1', title: 'Recovered', content: 'Ready' }])
+
+    await feature.fetchNotes()
+    expect(feature.error.value).toBe('Failed to load notes')
+
+    await feature.fetchNotes()
+    expect(feature.error.value).toBe(null)
+    expect(feature.notes.value).toEqual([{ _id: 'note-1', title: 'Recovered', content: 'Ready' }])
+  })
+
   it('generates and saves note task drafts through feature boundaries', async () => {
     const notify = vi.fn()
     const feature = useNotesFeature({ notify })

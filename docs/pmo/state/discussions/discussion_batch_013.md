@@ -460,7 +460,7 @@
   - panels call them at runtime
   - tests lock the same functions
   - they are pure business/display derivation helpers extracted from large SFCs
-- `FRONTEND_ARCHITECTURE_AUDIT_2026-04-23.md` already records this as a positive sign, but also says the next missing layer is not just more helpers:
+- `docs/pmo/history/reference/FRONTEND_ARCHITECTURE_AUDIT_2026-04-23.md` already records this as a positive sign, but also says the next missing layer is not just more helpers:
   - the frontend lacks a consistent feature-state architecture
   - large feature components still act as controllers, services, and views at the same time
   - the likely target is a composable / feature-controller layer such as `useProjectsFeature`, `useNotesFeature`, and `useDashboardTasks`

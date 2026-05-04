@@ -95,6 +95,20 @@ describe('useProjectsFeature orchestration', () => {
     expect(notify).toHaveBeenCalledWith('Project archived')
   })
 
+  it('clears a stale load error when projects are fetched again', async () => {
+    const feature = useProjectsFeature()
+    fetchProjects
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValueOnce([{ _id: 'project-1', name: 'Recovered', summary: 'Ready' }])
+
+    await feature.fetchProjects()
+    expect(feature.error.value).toBe('Failed to load projects')
+
+    await feature.fetchProjects()
+    expect(feature.error.value).toBe(null)
+    expect(feature.projects.value).toEqual([{ _id: 'project-1', name: 'Recovered', summary: 'Ready' }])
+  })
+
   it('guards focus updates to active non-archived tasks', async () => {
     const feature = useProjectsFeature()
     const project = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending' }

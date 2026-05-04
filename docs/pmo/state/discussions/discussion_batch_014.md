@@ -11,7 +11,7 @@
 - Origin trigger: `follow-up from discussion_batch_013 stable closeout after Projects, Notes, Dashboard, ChatEntry, and selected support-layer behavior coverage landed`
 - Source channel: `human discussion`
 - Why now: `The frontend behavior baseline is now strong enough to support a safer separation of rules, API access, and stateful feature orchestration without changing product behavior. The previous discussion deliberately avoided feature-layer migration; this batch is the home for that migration.`
-- Related baseline: `FRONTEND_ARCHITECTURE_AUDIT_2026-04-23.md`
+- Related baseline: `docs/pmo/history/reference/FRONTEND_ARCHITECTURE_AUDIT_2026-04-23.md`
 - Related stable discussion: `discussion_batch_013`
 
 ## Source Trace

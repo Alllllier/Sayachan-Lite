@@ -96,6 +96,7 @@ export function useNotesFeature(options = {}) {
 
   async function fetchNotes() {
     loading.value = true
+    error.value = null
     try {
       notes.value = await fetchNotesRequest({ archived: showArchived.value })
       emitRefreshed()

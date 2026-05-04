@@ -91,6 +91,7 @@ export function useProjectsFeature(options = {}) {
 
   async function fetchProjects() {
     loading.value = true
+    error.value = null
     try {
       const fetchedProjects = await fetchProjectsRequest({ archived: showArchived.value })
       projects.value = fetchedProjects

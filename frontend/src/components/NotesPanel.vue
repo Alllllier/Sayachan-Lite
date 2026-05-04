@@ -477,11 +477,12 @@ async function updateNote(note) {
 
 /* Legacy page-level error state */
 .error {
-  padding: 12px;
-  background: #fee;
-  color: #c33;
-  border-radius: 4px;
-  margin-bottom: 20px;
+  padding: var(--space-sm);
+  background: color-mix(in srgb, var(--action-danger) 10%, var(--surface-card));
+  color: var(--action-danger);
+  border: 1px solid color-mix(in srgb, var(--action-danger) 35%, var(--border-default));
+  border-radius: var(--radius-block);
+  margin-bottom: var(--space-md);
   text-align: center;
 }
 
