@@ -1,6 +1,6 @@
 const Router = require('@koa/router');
 const projectsService = require('../services/projectsService');
-const { requireCurrentUser } = require('./currentUser');
+const { requireCurrentUser } = require('../middleware/currentUser');
 const {
   validateProjectCreate,
   validateProjectUpdate

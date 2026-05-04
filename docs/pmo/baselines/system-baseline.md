@@ -136,7 +136,7 @@ Current route behavior truth:
 - phase-one auth uses owner/tester roles, invite-gated registration, cookie-backed sessions, and lightweight owner management
 - backend owner bootstrap can be run through `backend/scripts/bootstrapOwner.mjs` or `npm run bootstrap:owner` from the backend workspace
 - Notes, Projects, and Tasks normal route/service reads and writes are scoped by current authenticated user
-- Note, Project, and Task routes attach `requireCurrentUser` from `backend/src/routes/currentUser.js` before product handlers, so product handlers consume `ctx.state.userId` rather than resolving ownership themselves
+- Note, Project, and Task routes attach `requireCurrentUser` from `backend/src/middleware/currentUser.js` before product handlers, so product handlers consume `ctx.state.userId` rather than resolving ownership themselves
 - Note, Project, and Task services use `backend/src/services/ownership.js` for required owner filters and do not retain unowned single-user content fallback branches
 - public AI note/project routes reload persisted note/project context by current user ownership before constructing fallback/provider prompts
 - project next-action focus task resolution is scoped by both task id and current user ownership

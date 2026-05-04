@@ -3,7 +3,7 @@ const { chat: runChat } = require('../ai/bridge');
 const Note = require('../models/Note');
 const Project = require('../models/Project');
 const Task = require('../models/Task');
-const { requireCurrentUser } = require('./currentUser');
+const { requireCurrentUser } = require('../middleware/currentUser');
 
 const router = new Router();
 

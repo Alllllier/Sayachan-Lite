@@ -1,7 +1,7 @@
 const Router = require('@koa/router');
 const Task = require('../models/Task');
 const tasksService = require('../services/tasksService');
-const { requireCurrentUser } = require('./currentUser');
+const { requireCurrentUser } = require('../middleware/currentUser');
 const {
   archiveTasks,
   buildArchiveFilter,

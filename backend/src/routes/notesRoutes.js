@@ -1,6 +1,6 @@
 const Router = require('@koa/router');
 const notesService = require('../services/notesService');
-const { requireCurrentUser } = require('./currentUser');
+const { requireCurrentUser } = require('../middleware/currentUser');
 const {
   validateNoteCreate,
   validateNoteUpdate
