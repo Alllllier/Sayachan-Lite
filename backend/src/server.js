@@ -12,6 +12,10 @@ const { authMiddleware } = require('./middleware/auth');
 const app = new Koa();
 const PORT = process.env.PORT || 3001;
 
+// Render terminates HTTPS before forwarding requests to the Node process.
+// Trust proxy headers there so Koa can recognize secure requests for cookies.
+app.proxy = process.env.RENDER === 'true' || process.env.TRUST_PROXY === 'true';
+
 // CORS 配置，允许前端跨域请求
 app.use(cors({
   origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173',
