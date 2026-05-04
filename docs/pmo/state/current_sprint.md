@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Add Chat Global Shell Browser Review Baseline`
+- Sprint: `Backend Route Module Split`
 - Closeout date: `2026-05-04`
 - Delivery status: `completed and validated`
 - Commit state: `not committed in this closeout`
-- Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `Chat global-shell UI review baseline accepted; mocked AI failure path intentionally emits console error noise while asserting fallback UI.`
-- Report surface: `docs/pmo/history/reports/add-chat-global-shell-browser-review-baseline.md`
+- Documentation sync outcome: `documentation sync required and completed`
+- Residual note: `Non-AI backend routes now split into health/notes/projects/tasks modules; ai.js remains separately mounted by server.js by design.`
+- Report surface: `docs/pmo/history/reports/backend-route-module-split.md`
 
 ## Next PMO Action
 

@@ -502,3 +502,70 @@ test('missing task, project, and note id routes return canonical 404 errors', as
     assert.deepEqual(deleteNoteCtx.body, { error: 'Note not found' });
   });
 });
+
+test('bad create and update request bodies return stable 400 errors before service writes', async () => {
+  const createTaskHandler = getRouteHandler('POST', '/tasks');
+  const updateTaskHandler = getRouteHandler('PUT', '/tasks/:id');
+  const createProjectHandler = getRouteHandler('POST', '/projects');
+  const updateProjectHandler = getRouteHandler('PUT', '/projects/:id');
+  const createNoteHandler = getRouteHandler('POST', '/notes');
+  const updateNoteHandler = getRouteHandler('PUT', '/notes/:id');
+
+  const forbiddenWrite = async () => {
+    throw new Error('validation should stop before model write');
+  };
+
+  await withPatchedMethods([
+    { target: Task, key: 'create', value: forbiddenWrite },
+    { target: Task, key: 'findById', value: forbiddenWrite },
+    { target: Project, key: 'create', value: forbiddenWrite },
+    { target: Project, key: 'findByIdAndUpdate', value: forbiddenWrite },
+    { target: Note, key: 'create', value: forbiddenWrite },
+    { target: Note, key: 'findByIdAndUpdate', value: forbiddenWrite }
+  ], async () => {
+    const cases = [
+      [createTaskHandler, createCtx({ body: { title: '' } })],
+      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: { completed: 'yes' } })],
+      [createProjectHandler, createCtx({ body: { name: 'Project X' } })],
+      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: { status: 'archived' } })],
+      [createNoteHandler, createCtx({ body: null })],
+      [updateNoteHandler, createCtx({ params: { id: 'note-1' }, body: { title: 42 } })]
+    ];
+
+    for (const [handler, ctx] of cases) {
+      await handler(ctx, async () => {});
+      assert.equal(ctx.status, 400);
+      assert.deepEqual(ctx.body, { error: 'Invalid request body' });
+    }
+  });
+});
+
+test('unexpected backend route failures return stable 500 errors without leaking internals', async () => {
+  const listTaskHandler = getRouteHandler('GET', '/tasks');
+  const originalConsoleError = console.error;
+
+  await withPatchedMethods([
+    {
+      target: Task,
+      key: 'find',
+      value: () => {
+        throw new Error('database password leaked here');
+      }
+    },
+    {
+      target: console,
+      key: 'error',
+      value: () => {}
+    }
+  ], async () => {
+    try {
+      const ctx = createCtx();
+      await listTaskHandler(ctx, async () => {});
+
+      assert.equal(ctx.status, 500);
+      assert.deepEqual(ctx.body, { error: 'Internal server error' });
+    } finally {
+      console.error = originalConsoleError;
+    }
+  });
+});

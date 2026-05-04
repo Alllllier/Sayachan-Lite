@@ -5,7 +5,7 @@ const {
   buildArchiveFilter,
   projectTaskCascadeFilter,
   projectTaskReadFilter
-} = require('../src/routes/taskRuntimeHelpers');
+} = require('../src/services/taskRuntimeHelpers');
 
 test('buildArchiveFilter reads archived=true as archived-only semantics', () => {
   assert.deepEqual(buildArchiveFilter('true'), {

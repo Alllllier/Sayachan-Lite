@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Add Chat Global Shell Browser Review Baseline`
+- Sprint: `Backend Route Module Split`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/add-chat-global-shell-browser-review-baseline.md`
+- Report surface: `docs/pmo/history/reports/backend-route-module-split.md`
 
 ## Next Activation Rule
 

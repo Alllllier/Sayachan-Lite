@@ -1,6 +1,6 @@
 # Backend API Baseline
 
-> Audited against `backend/src/routes/index.js`, `backend/src/routes/ai.js`, and current Mongoose models on `2026-04-20`.
+> Audited against `backend/src/routes/**`, `backend/src/services/**`, and current Mongoose models on `2026-05-04`.
 
 ## Purpose
 
@@ -70,6 +70,12 @@ Allowed Task statuses:
 Timestamps are enabled.
 
 ## Route Surface
+
+### Non-AI Error Contract
+
+- malformed or invalid `POST` / `PUT` bodies on Notes, Projects, and Tasks return `400` with `{ error: 'Invalid request body' }`
+- existing missing-id route errors remain resource-specific `404` payloads such as `{ error: 'Note not found' }`, `{ error: 'Project not found' }`, and `{ error: 'Task not found' }`
+- unexpected non-AI route/service failures return `500` with `{ error: 'Internal server error' }` and do not expose raw internal error messages in the response body
 
 ### Health
 
@@ -152,7 +158,7 @@ Current behavior truth:
 ## Current Contract Notes That Matter
 
 - `/ai/chat` is the public API entrypoint into private-core chat execution
-- task-project coupling still lives mainly in route logic, not in a separate domain service layer
+- task-project coupling now lives mainly in first-pass backend service modules under `backend/src/services/`, while `backend/src/routes/index.js` acts as the non-AI route aggregator for health, notes, projects, and tasks route modules
 - changing archive semantics, focus-clearing behavior, or bridge usage should be treated as architecture-sensitive work
 - semantic task provenance fields are the canonical read and write path
 

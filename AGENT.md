@@ -197,7 +197,9 @@ Do not kill unrelated long-running services just because they happen to use thes
 | Use | Path |
 |---|---|
 | backend entry | `backend/src/server.js` |
-| main routes | `backend/src/routes/index.js` |
+| non-AI route aggregator | `backend/src/routes/index.js` |
+| non-AI route modules | `backend/src/routes/healthRoutes.js`, `backend/src/routes/notesRoutes.js`, `backend/src/routes/projectsRoutes.js`, `backend/src/routes/tasksRoutes.js` |
+| backend services | `backend/src/services/` |
 | AI routes | `backend/src/routes/ai.js` |
 | notes model | `backend/src/models/Note.js` |
 | projects model | `backend/src/models/Project.js` |

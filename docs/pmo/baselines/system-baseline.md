@@ -108,6 +108,12 @@ Current Chat behavior includes:
 Backend routes currently split into:
 
 - `backend/src/routes/index.js`
+- `backend/src/routes/healthRoutes.js`
+- `backend/src/routes/notesRoutes.js`
+- `backend/src/routes/projectsRoutes.js`
+- `backend/src/routes/tasksRoutes.js`
+- `backend/src/routes/requestValidation.js`
+- `backend/src/routes/routeBoundary.js`
 - `backend/src/routes/ai.js`
 
 Current AI route surface:
@@ -118,6 +124,8 @@ Current AI route surface:
 
 Current route behavior truth:
 
+- non-AI health/note/project/task routes are registered through `backend/src/routes/index.js` as the aggregator
+- non-AI note/project/task route orchestration is split through first-pass service modules under `backend/src/services/`
 - note and project AI routes call GLM through backend route logic
 - chat goes through `backend/src/ai/bridge.js` into the private core
 - fallback responses still exist for all current AI routes
@@ -202,7 +210,7 @@ Reference:
 
 These are not rules, but current code-shape observations that matter for PMO truth:
 
-- workflow-critical project/task coupling still lives mainly in route handlers
-- focus-clearing logic is implemented in route-level update/delete flows
+- workflow-critical note/project/task orchestration now has a first-pass service layer under `backend/src/services/`
+- focus-clearing logic is implemented through backend service flows and shared task runtime helpers
 - chat runtime depends on the public bridge to the private core
 - authentication and account-scoped data boundaries do not exist yet in the product runtime

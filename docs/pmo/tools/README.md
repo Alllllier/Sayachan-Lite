@@ -4,6 +4,10 @@ These tools are the mechanical apply layer for PMO runtime state.
 
 PMO still decides sprint selection, validation status, documentation-sync outcome, commit state, residual risk, and follow-up routing. The tool only writes the resulting state transitions.
 
+Activation also writes a handoff skeleton into `state/execution_task.md`.
+
+The skeleton intentionally includes PMO sharpening slots such as execution slices, boundary notes, acceptance checks, validation expectations, and out-of-scope confirmation. The tool does not fill those with judgment-heavy content. PMO should review and replace or extend the slots before treating the handoff as ready for execution.
+
 ## Commands
 
 Preview help:

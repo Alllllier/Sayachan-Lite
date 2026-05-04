@@ -270,6 +270,16 @@ function executionTaskFromCandidate({ sprint, date, fields }) {
 
 ${bulletBlock(fields['In scope'], 'Use the selected candidate in-scope list.')}
 
+## Execution Slices
+
+- PMO sharpening slot: replace this line with ordered execution slices when sequence, ownership, or risk deserves explicit guidance.
+- If this section is not expanded before handoff, execute the candidate as the smallest behavior-preserving change that satisfies the objective and safe touch zones.
+
+## Boundary Notes
+
+- PMO sharpening slot: name any important module, route, service, API, UI, or documentation ownership boundary that should guide implementation.
+- Keep this sprint inside the safe touch zones and non-goals unless PMO explicitly updates this handoff.
+
 ## Non-Goals
 
 ${bulletBlock(fields['Out of scope'], 'Do not expand beyond the selected candidate.')}
@@ -283,13 +293,20 @@ ${bulletBlock(fields['Out of scope'], 'Do not expand beyond the selected candida
 
 - Deliver the expected outcome from the selected candidate.
 - Preserve the explicit non-goals above.
+- PMO sharpening slot: add any behavior, API, UI, migration, or documentation checks that are specific enough to protect this sprint.
 - Report any skipped or incomplete in-scope item before PMO closeout.
 
 ## Validation Expectations
 
 - Run validation appropriate to the selected candidate risk level: \`${inline(fields['Risk level'], 'not specified')}\`.
+- PMO sharpening slot: replace or extend this with concrete commands, target test files, browser review surfaces, or intentionally skipped validation.
 - Report project-specific review expectations and whether they were performed.
 - If browser validation or UI review is relevant, state the reviewed surfaces or page states.
+
+## Out-Of-Scope Confirmation
+
+- The worker report should explicitly confirm that the non-goals stayed out of scope.
+- PMO sharpening slot: name any high-risk adjacent areas that should be called out one by one in the report.
 
 ## Escalation Points
 
@@ -299,10 +316,13 @@ ${bulletBlock(fields['Out of scope'], 'Do not expand beyond the selected candida
 
 ## Completion Report Contract
 
+Write the execution report to \`docs/pmo/state/execution_report.md\`.
+
 The execution report should state:
 
 - what was delivered
 - what validation was performed
+- whether the PMO sharpening slots above were followed, revised, or intentionally left generic
 - what remains unverified
 - what risks or escalations remain
 `;
@@ -335,6 +355,15 @@ function executionTaskForMicroFix({ sprint, goal, date }) {
 
 - Touch only the files needed for this bounded micro-fix.
 
+## Execution Slices
+
+- PMO sharpening slot: replace this line only if the micro-fix needs an explicit sequence.
+- Otherwise keep the fix as one bounded implementation pass.
+
+## Boundary Notes
+
+- PMO sharpening slot: name any adjacent files, systems, or behavior that must stay untouched.
+
 ## Non-Goals
 
 - Do not expand into adjacent refactors or broader PMO/process changes unless PMO explicitly updates this handoff.
@@ -346,12 +375,19 @@ function executionTaskForMicroFix({ sprint, goal, date }) {
 ## Acceptance Checks
 
 - Implement only the stated micro-fix goal.
+- PMO sharpening slot: add the smallest concrete behavior check that proves the micro-fix worked.
 - Report validation performed and any unverified area.
 
 ## Validation Expectations
 
 - Run the lightest validation that can catch the likely regression.
+- PMO sharpening slot: name the exact command or manual check when it is obvious.
 - State if validation is skipped and why that is acceptable.
+
+## Out-Of-Scope Confirmation
+
+- The worker report should explicitly confirm that no adjacent refactor or broader PMO/process change was included.
+- PMO sharpening slot: name any tempting adjacent cleanup that must remain deferred.
 
 ## Escalation Points
 
@@ -359,10 +395,13 @@ function executionTaskForMicroFix({ sprint, goal, date }) {
 
 ## Completion Report Contract
 
+Write the execution report to \`docs/pmo/state/execution_report.md\`.
+
 The execution report should state:
 
 - what was delivered
 - what validation was performed
+- whether the PMO sharpening slots above were followed, revised, or intentionally left generic
 - what remains unverified
 - what risks or escalations remain
 `;

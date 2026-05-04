@@ -35,8 +35,8 @@
 
 - Name: `Backend CRUD service extraction first pass`
 - Why separate: `Services are the lowest-risk first structural move because current behavior is already protected by route/behavior tests and helper guardrails.`
-- Current maturity: `emerging`
-- Likely target: `sprint_candidates`
+- Current maturity: `completed`
+- Likely target: `completed and archived`
 - Parking trigger: `If route behavior tests are not sufficient to protect the extraction boundary, return to backend testing discussion before implementation.`
 - Reopen signal: `Human selects backend service extraction as the next architecture cleanup line.`
 
@@ -44,19 +44,28 @@
 
 - Name: `Backend request validation and error boundary`
 - Why separate: `Validation and global error handling should follow or accompany service extraction, but can be shaped as its own pass if the service slice is already large.`
-- Current maturity: `not-shaped`
-- Likely target: `sprint_candidates`
+- Current maturity: `completed`
+- Likely target: `completed and archived`
 - Parking trigger: `If validation schema choices would force a new dependency or broad API error contract decision before the desired UX/API shape is clear.`
 - Reopen signal: `Malformed request handling, inconsistent error payloads, or service extraction makes route-level validation ambiguity painful.`
 
 ### `slice-003`
 
-- Name: `Backend app composition, config, and route split`
-- Why separate: `App/server split, config centralization, and route aggregation are supporting architecture moves that should not distract from the first CRUD service boundary unless needed by testing or deployment.`
-- Current maturity: `not-shaped`
-- Likely target: `idea_backlog`
+- Name: `Backend route module split`
+- Why separate: `Route module split is now useful after service extraction and request/error-boundary work because `backend/src/routes/index.js` still owns health, notes, projects, tasks, validation imports, route wrapper, and test helper exports in one file. This can be separated without pulling in broader app/server split or config work.`
+- Current maturity: `completed`
+- Likely target: `completed and archived`
 - Parking trigger: `If the backend remains small enough that composition cleanup adds indirection without reducing real friction.`
 - Reopen signal: `Integration testing, auth work, route growth, or deployment configuration makes app composition and config ownership a real blocker.`
+
+### `slice-004`
+
+- Name: `Backend app/server split and config ownership`
+- Why separate: `App/server split and config centralization are broader composition moves than route module split and should wait until integration testing, auth, route growth, or deployment configuration creates real pressure.`
+- Current maturity: `deferred`
+- Likely target: `idea_backlog`
+- Parking trigger: `If route module split is enough for current backend maintainability and deployment/test setup remains simple.`
+- Reopen signal: `Integration tests need an app instance without listening, auth middleware needs app-level composition, deployment config gets more complex, or server.js becomes a recurring friction point.`
 
 ## Open Questions
 
@@ -70,13 +79,26 @@
 
 - Do not treat backend minimal layering as completed.
 - Do not start with a broad backend rewrite.
-- Prefer a behavior-preserving service extraction first, likely around task/project/note CRUD orchestration.
-- Treat validation and global error middleware as the next likely backend architecture pair after the first service boundary is clear.
+- First-pass behavior-preserving service extraction for note/project/task CRUD orchestration has completed and is archived.
+- Request validation and error-boundary work has completed and is archived.
+- Route module split has completed and is archived.
+- Keep broader app/server split and config centralization deferred until route growth, integration testing, auth, or deployment work makes them worth the extra boundary.
 - Keep repository-layer work deferred unless query duplication or transaction complexity grows.
 - Keep auth/account scoping as a separate architecture discussion already visible in `idea_backlog.md`.
 
 ## Promotion Outcome
 
 - Active discussion opened from the archived backend architecture audit.
-- No sprint candidate has been promoted yet.
-- Next useful PMO move is to shape `slice-001` into a bounded candidate when the human selects backend architecture cleanup as the next execution line.
+- `slice-001` was promoted to `sprint_candidates.md` as `Backend CRUD Service Extraction First Pass` on `2026-05-04`.
+- `slice-001` completed and was archived on `2026-05-04`:
+  - candidate archive: `docs/pmo/history/candidates/backend-crud-service-extraction-first-pass.md`
+  - report archive: `docs/pmo/history/reports/backend-crud-service-extraction-first-pass.md`
+- `slice-002` was promoted to `sprint_candidates.md` as `Backend Request Validation And Error Boundary` on `2026-05-04`.
+- `slice-002` completed and was archived on `2026-05-04`:
+  - candidate archive: `docs/pmo/history/candidates/backend-request-validation-and-error-boundary.md`
+  - report archive: `docs/pmo/history/reports/backend-request-validation-and-error-boundary.md`
+- Route module split was promoted to `sprint_candidates.md` as `Backend Route Module Split` on `2026-05-04`.
+- Route module split completed and was archived on `2026-05-04`:
+  - candidate archive: `docs/pmo/history/candidates/backend-route-module-split.md`
+  - report archive: `docs/pmo/history/reports/backend-route-module-split.md`
+- No backend minimal-layering candidate is currently ready after slice-003. `slice-004` remains deferred until app/server composition or config ownership becomes a real blocker.
