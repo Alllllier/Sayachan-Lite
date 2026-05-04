@@ -3,7 +3,7 @@ const { chat: runChat } = require('../ai/bridge');
 const Note = require('../models/Note');
 const Project = require('../models/Project');
 const Task = require('../models/Task');
-const { currentUserId } = require('./currentUser');
+const { requireCurrentUser } = require('./currentUser');
 
 const router = new Router();
 
@@ -81,8 +81,8 @@ async function resolveOwnedProjectPayload(payload, userId) {
 }
 
 // POST /ai/notes/tasks - Generate tasks from a note
-router.post('/ai/notes/tasks', async (ctx) => {
-  const note = await resolveOwnedNotePayload(ctx.request.body, currentUserId(ctx));
+router.post('/ai/notes/tasks', requireCurrentUser, async (ctx) => {
+  const note = await resolveOwnedNotePayload(ctx.request.body, ctx.state.userId);
   if (!note) {
     ctx.status = 404;
     ctx.body = { error: 'Note not found' };
@@ -172,8 +172,8 @@ router.post('/ai/notes/tasks', async (ctx) => {
 });
 
 // POST /ai/projects/next-action - Suggest next action for a project
-router.post('/ai/projects/next-action', async (ctx) => {
-  const userId = currentUserId(ctx);
+router.post('/ai/projects/next-action', requireCurrentUser, async (ctx) => {
+  const userId = ctx.state.userId;
   const project = await resolveOwnedProjectPayload(ctx.request.body, userId);
   if (!project) {
     ctx.status = 404;

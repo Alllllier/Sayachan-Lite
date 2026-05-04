@@ -16,7 +16,7 @@ It is a truth baseline, not a protocol and not a policy file.
 - body parser: JSON request bodies
 - database startup is non-blocking; the server can run even when MongoDB is unavailable
 - normal non-health product/API routes require a valid `sayachan_session` cookie or `Authorization: Bearer <sessionToken>` unless listed as public auth routes
-- Note, Project, and Task product routes require a resolved current user before service invocation; they are personal-account scoped routes, not anonymous content routes
+- Note, Project, Task, and persisted AI note/project product route pipelines attach current-user middleware before service/model access; they are personal-account scoped routes, not anonymous content routes
 - Note, Project, and Task product services require `userId` and do not support unowned single-user content reads or writes
 - owner bootstrap may be invoked by API or by `npm run bootstrap:owner` from the backend workspace, which calls the same API against a configured backend URL
 

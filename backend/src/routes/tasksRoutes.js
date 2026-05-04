@@ -1,7 +1,7 @@
 const Router = require('@koa/router');
 const Task = require('../models/Task');
 const tasksService = require('../services/tasksService');
-const { currentUserId } = require('./currentUser');
+const { requireCurrentUser } = require('./currentUser');
 const {
   archiveTasks,
   buildArchiveFilter,
@@ -17,25 +17,25 @@ const route = require('./routeBoundary');
 const router = new Router();
 
 // GET /tasks
-router.get('/tasks', route(async (ctx) => {
+router.get('/tasks', requireCurrentUser, route(async (ctx) => {
   const { projectId, archived } = ctx.query;
-  ctx.body = await tasksService.listTasks({ projectId, archived, userId: currentUserId(ctx) });
+  ctx.body = await tasksService.listTasks({ projectId, archived, userId: ctx.state.userId });
 }));
 
 // POST /tasks
-router.post('/tasks', route(async (ctx) => {
+router.post('/tasks', requireCurrentUser, route(async (ctx) => {
   const body = ctx.request.body;
   validateTaskCreate(body);
   ctx.status = 201;
-  ctx.body = await tasksService.createTask(body, { userId: currentUserId(ctx) });
+  ctx.body = await tasksService.createTask(body, { userId: ctx.state.userId });
 }));
 
 // PUT /tasks/:id
-router.put('/tasks/:id', route(async (ctx) => {
+router.put('/tasks/:id', requireCurrentUser, route(async (ctx) => {
   const id = ctx.params.id;
   const body = ctx.request.body;
   validateTaskUpdate(body);
-  const task = await tasksService.updateTask(id, body, { userId: currentUserId(ctx) });
+  const task = await tasksService.updateTask(id, body, { userId: ctx.state.userId });
   if (!task) {
     ctx.status = 404;
     ctx.body = { error: 'Task not found' };
@@ -45,9 +45,9 @@ router.put('/tasks/:id', route(async (ctx) => {
 }));
 
 // DELETE /tasks/:id
-router.delete('/tasks/:id', route(async (ctx) => {
+router.delete('/tasks/:id', requireCurrentUser, route(async (ctx) => {
   const id = ctx.params.id;
-  const deleted = await tasksService.deleteTask(id, { userId: currentUserId(ctx) });
+  const deleted = await tasksService.deleteTask(id, { userId: ctx.state.userId });
   if (!deleted) {
     ctx.status = 404;
     ctx.body = { error: 'Task not found' };

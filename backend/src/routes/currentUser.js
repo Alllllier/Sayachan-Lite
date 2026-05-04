@@ -1,11 +1,24 @@
-function currentUserId(ctx) {
+function resolveCurrentUserId(ctx) {
   const userId = ctx.state?.user?._id;
   if (!userId) {
-    throw Object.assign(new Error('Authentication required'), { status: 401 });
+    return null;
   }
   return userId;
 }
 
+async function requireCurrentUser(ctx, next) {
+  const userId = resolveCurrentUserId(ctx);
+  if (!userId) {
+    ctx.status = 401;
+    ctx.body = { error: 'Authentication required' };
+    return;
+  }
+
+  ctx.state.userId = userId;
+  await next();
+}
+
 module.exports = {
-  currentUserId
+  requireCurrentUser,
+  resolveCurrentUserId
 };

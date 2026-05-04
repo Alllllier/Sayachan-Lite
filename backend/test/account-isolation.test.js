@@ -12,7 +12,20 @@ function getRouteHandler(router, method, path) {
   if (!layer) {
     throw new Error(`Route not found: ${method} ${path}`);
   }
-  return layer.stack[0];
+  return async (ctx, next) => {
+    let index = -1;
+    async function dispatch(position) {
+      if (position <= index) {
+        throw new Error('next() called multiple times');
+      }
+      index = position;
+      const middleware = layer.stack[position] || next;
+      if (middleware) {
+        await middleware(ctx, () => dispatch(position + 1));
+      }
+    }
+    await dispatch(0);
+  };
 }
 
 function createCtx({ query = {}, params = {}, body = {}, userId = 'user-owner' } = {}) {

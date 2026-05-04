@@ -1,6 +1,6 @@
 const Router = require('@koa/router');
 const notesService = require('../services/notesService');
-const { currentUserId } = require('./currentUser');
+const { requireCurrentUser } = require('./currentUser');
 const {
   validateNoteCreate,
   validateNoteUpdate
@@ -10,25 +10,25 @@ const route = require('./routeBoundary');
 const router = new Router();
 
 // GET /notes
-router.get('/notes', route(async (ctx) => {
+router.get('/notes', requireCurrentUser, route(async (ctx) => {
   const { archived } = ctx.query;
-  ctx.body = await notesService.listNotes({ archived, userId: currentUserId(ctx) });
+  ctx.body = await notesService.listNotes({ archived, userId: ctx.state.userId });
 }));
 
 // POST /notes
-router.post('/notes', route(async (ctx) => {
+router.post('/notes', requireCurrentUser, route(async (ctx) => {
   const body = ctx.request.body;
   validateNoteCreate(body);
   ctx.status = 201;
-  ctx.body = await notesService.createNote(body, { userId: currentUserId(ctx) });
+  ctx.body = await notesService.createNote(body, { userId: ctx.state.userId });
 }));
 
 // PUT /notes/:id
-router.put('/notes/:id', route(async (ctx) => {
+router.put('/notes/:id', requireCurrentUser, route(async (ctx) => {
   const id = ctx.params.id;
   const body = ctx.request.body;
   validateNoteUpdate(body);
-  const note = await notesService.updateNote(id, body, { userId: currentUserId(ctx) });
+  const note = await notesService.updateNote(id, body, { userId: ctx.state.userId });
   if (!note) {
     ctx.status = 404;
     ctx.body = { error: 'Note not found' };
@@ -38,9 +38,9 @@ router.put('/notes/:id', route(async (ctx) => {
 }));
 
 // DELETE /notes/:id
-router.delete('/notes/:id', route(async (ctx) => {
+router.delete('/notes/:id', requireCurrentUser, route(async (ctx) => {
   const id = ctx.params.id;
-  const deleted = await notesService.deleteNote(id, { userId: currentUserId(ctx) });
+  const deleted = await notesService.deleteNote(id, { userId: ctx.state.userId });
   if (!deleted) {
     ctx.status = 404;
     ctx.body = { error: 'Note not found' };
@@ -51,9 +51,9 @@ router.delete('/notes/:id', route(async (ctx) => {
 }));
 
 // PUT /notes/:id/pin - Pin note (does not update content timestamp)
-router.put('/notes/:id/pin', route(async (ctx) => {
+router.put('/notes/:id/pin', requireCurrentUser, route(async (ctx) => {
   const id = ctx.params.id;
-  const note = await notesService.pinNote(id, { userId: currentUserId(ctx) });
+  const note = await notesService.pinNote(id, { userId: ctx.state.userId });
   if (!note) {
     ctx.status = 404;
     ctx.body = { error: 'Note not found' };
@@ -63,9 +63,9 @@ router.put('/notes/:id/pin', route(async (ctx) => {
 }));
 
 // PUT /notes/:id/unpin - Unpin note (does not update content timestamp)
-router.put('/notes/:id/unpin', route(async (ctx) => {
+router.put('/notes/:id/unpin', requireCurrentUser, route(async (ctx) => {
   const id = ctx.params.id;
-  const note = await notesService.unpinNote(id, { userId: currentUserId(ctx) });
+  const note = await notesService.unpinNote(id, { userId: ctx.state.userId });
   if (!note) {
     ctx.status = 404;
     ctx.body = { error: 'Note not found' };
@@ -75,9 +75,9 @@ router.put('/notes/:id/unpin', route(async (ctx) => {
 }));
 
 // PUT /notes/:id/archive - Archive note and cascade to tasks
-router.put('/notes/:id/archive', route(async (ctx) => {
+router.put('/notes/:id/archive', requireCurrentUser, route(async (ctx) => {
   const id = ctx.params.id;
-  const note = await notesService.archiveNote(id, { userId: currentUserId(ctx) });
+  const note = await notesService.archiveNote(id, { userId: ctx.state.userId });
 
   if (!note) {
     ctx.status = 404;
@@ -89,9 +89,9 @@ router.put('/notes/:id/archive', route(async (ctx) => {
 }));
 
 // PUT /notes/:id/restore - Restore note and cascade to tasks
-router.put('/notes/:id/restore', route(async (ctx) => {
+router.put('/notes/:id/restore', requireCurrentUser, route(async (ctx) => {
   const id = ctx.params.id;
-  const note = await notesService.restoreNote(id, { userId: currentUserId(ctx) });
+  const note = await notesService.restoreNote(id, { userId: ctx.state.userId });
 
   if (!note) {
     ctx.status = 404;
