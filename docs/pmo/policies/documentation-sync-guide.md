@@ -12,6 +12,19 @@ It is intentionally small. It is not a full document map.
 
 ## Quick Paths
 
+## Trigger Table
+
+Use this table during closeout before widening the review.
+
+| Change type | First review targets | Typical outcome |
+| --- | --- | --- |
+| PMO workflow, runtime state shape, or handoff behavior changed | `docs/pmo/PMO_OPERATING_MANUAL.md`, affected `docs/pmo/protocols/**`, affected `docs/pmo/state/templates/**` | `update required` when canonical instructions changed |
+| PMO mechanical tooling changed | `docs/pmo/tools/README.md`, `docs/pmo/protocols/sprint-workflow.md`, `docs/pmo/protocols/execution-handoff-protocol.md` | `reviewed, no update needed` unless command behavior changes operator steps |
+| Product runtime or feature behavior changed | `docs/pmo/baselines/system-baseline.md`, `docs/pmo/baselines/runtime-baseline.md` | `update required` only when documented truth changed |
+| Backend route, model, or data-shape behavior changed | `docs/pmo/baselines/backend-api.md`, relevant runtime baseline | `update required` when public or PMO-relevant contract changed |
+| Validation expectation or UI review rule changed | `docs/pmo/policies/validation-floor-policy.md`, `docs/pmo/policies/testing-and-ui-review-guide.md`, `docs/pmo/protocols/sprint-workflow.md` | `update required` when future closeout criteria changed |
+| Implementation-local cleanup with no truth, workflow, or validation change | none beyond closeout note | `no sync needed` |
+
 ### If code truth changed
 
 Check first:

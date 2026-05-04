@@ -87,7 +87,7 @@
   - `PMO_OPERATING_MANUAL.md`
 - `CLAUDE.md` now carries an explicit growth boundary so it stays a narrow execution entrypoint rather than a second PMO manual.
 - `history/reports/` now uses a thinner, more mechanical archive snapshot pattern through:
-  - `history/reports/execution-report-archive.template.md`
+  - `history/templates/execution-report-archive.template.md`
 - human-review refinements are now expected to remain inside the active execution loop through:
   - `protocols/sprint-workflow.md`
   - `PMO_OPERATING_MANUAL.md`

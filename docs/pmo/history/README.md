@@ -11,6 +11,9 @@
 - `reference/`
   - 承接不属于 candidate 或 execution report 的历史参考材料
   - 例如迁移记录、过渡说明、重建经验、audit summary、流程评估
+- `templates/`
+  - 承接历史归档写入时使用的模板
+  - 当前包括 candidate archive 和 execution-report archive 模板
 
 这一层不应该再承担当前 PMO 的 active contract。
 

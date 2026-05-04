@@ -19,6 +19,13 @@ This file is intentionally narrower than the full sprint workflow.
 - `state/execution_report.md`
 - `state/decision_log.md`
 
+## File Roles
+
+- `state/sprint_candidates.md` is the selection and comparison surface before activation. It can remain visible as source trace, but it is not the active execution brief.
+- `state/current_sprint.md` is the lightweight PMO runtime card. It records the active sprint, phase, handoff path, report target, and next PMO action.
+- `state/execution_task.md` is the canonical worker execution contract. It owns detailed scope, safe touch zones, non-goals, validation expectations, escalation points, and report expectations.
+- `state/execution_report.md` is the execution return surface. It owns delivered outcome, validation evidence, unresolved areas, residual risk, and escalation return.
+
 ## Role Lock
 
 - Codex writes PMO framing, active execution contract, and PMO closeout updates.
@@ -30,28 +37,38 @@ Reading this protocol does not give the execution worker PMO selection authority
 ## Handoff Sequence
 
 1. Human explicitly selects a sprint.
-2. Codex updates `current_sprint.md`.
-3. Codex writes the bounded active task into `execution_task.md`.
-4. The execution worker treats `execution_task.md` as the active execution source.
-5. The execution worker writes outcomes, validation, unresolved items, and escalations into `execution_report.md`.
-6. Codex reads `execution_report.md` and decides whether the sprint is ready for closeout, needs follow-up, or must remain active.
-7. Any deferred or parked follow-up that should survive the sprint must be routed back into `idea_backlog.md` or `decision_log.md` during closeout rather than left only in the report.
+2. Codex updates `current_sprint.md` from `../state/templates/current-sprint.active.template.md`.
+3. Codex writes the bounded active task into `execution_task.md` from `../state/templates/execution-task.template.md`.
+4. If the sprint came from `sprint_candidates.md`, Codex may mark the selected entry `active` but must not expand it into a worker brief.
+5. The execution worker treats `execution_task.md` as the active execution source.
+6. The execution worker writes outcomes, validation, unresolved items, and escalations into `execution_report.md`.
+7. Codex reads `execution_report.md` and decides whether the sprint is ready for closeout, needs follow-up, or must remain active.
+8. Any deferred or parked follow-up that should survive the sprint must be routed back into `idea_backlog.md` or `decision_log.md` during closeout rather than left only in the report.
+
+After the human/PMO selection is clear, `../tools/pmo.mjs` may perform the mechanical file writes for steps 2-4. The execution contract remains a PMO-authored contract, not a tool-selected plan.
 
 ## Minimum Handoff Content
 
 An active `execution_task.md` should contain at least:
 
 - sprint or task identifier
+- source trace
 - objective
 - safe touch zones
 - explicit non-goals
+- deferred or parked follow-up routing
 - acceptance checks
+- validation expectations
+- escalation points
 - completion report expectations
 
 ## Core Rules
 
 - `current_sprint.md` remains the lightweight PMO state card, not the full execution brief
+- active `current_sprint.md` should be instantiated from `../state/templates/current-sprint.active.template.md`
 - `execution_task.md` is the canonical active execution contract
+- active `execution_task.md` should be instantiated from `../state/templates/execution-task.template.md`
+- `../tools/pmo.mjs` may instantiate active and idle runtime files after PMO chooses the values
 - any execution worker, including delegated or sub-agent workers, should consume `execution_task.md` as the default execution source rather than relying on ad hoc direct prompting as the primary brief
 - active handoff should overwrite the active task surface rather than stack stale tasks
 - no active work should be represented by an explicit `idle` state rather than by deleting files

@@ -27,6 +27,8 @@ This file is intentionally narrower than the old PMO manual.
 In addition, `operator-guides/` may hold human-facing system explanations and operator navigation aids.
 It is a companion layer, not a canonical contract layer.
 
+`tools/` may hold PMO-local automation for mechanical runtime-state transitions. It is an apply layer, not a source of PMO judgment.
+
 ### Runtime State
 
 Use this layer for active PMO state:
@@ -85,6 +87,14 @@ Use this layer for historical explanation and legacy transition:
 - `history/reference/legacy-transition-notes.md`
 - `history/candidates/README.md`
 - `history/reports/README.md`
+- `history/templates/`
+
+### Tools
+
+Use this layer for PMO-local automation:
+
+- `tools/pmo.mjs`
+- `tools/README.md`
 
 ## Canonical Runtime Set
 
@@ -99,6 +109,8 @@ When operating the active PMO loop, the minimum runtime set is:
 
 These are the files that should reflect current PMO state, not the old PMO files.
 
+`tools/pmo.mjs` may write the mechanical transitions between these files after PMO has selected the sprint, validation status, documentation-sync outcome, commit state, and follow-up routing.
+
 ## Intake And Routing Map
 
 Use this routing map when a new idea, bugfix discussion, or future architecture concept enters PMO.
@@ -110,15 +122,17 @@ Use this routing map when a new idea, bugfix discussion, or future architecture 
    - `state/idea_backlog.md` for retained work that is worth keeping visible but is not ready to start
    - `state/sprint_candidates.md` for bounded slices that are ready for human comparison
    - `state/decision_log.md` for durable decisions, explicit deferrals, or rejected paths
-5. After explicit human sprint selection, activate the selected sprint in `state/current_sprint.md` and write the active execution contract into `state/execution_task.md`.
-6. The selected candidate may remain visible in `state/sprint_candidates.md` while the sprint is active, then be marked `completed` after closeout before later archival if space is needed.
+5. After explicit human sprint selection, activate the selected sprint in `state/current_sprint.md` from `state/templates/current-sprint.active.template.md` and write the active execution contract into `state/execution_task.md` from `state/templates/execution-task.template.md`.
+6. The selected candidate may remain visible in `state/sprint_candidates.md` only as selected-source context while the sprint is active, then should be archived into `history/candidates/` with `history/templates/candidate-archive.template.md` and removed from the candidate surface during closeout.
 7. Execution returns into `state/execution_report.md`, then PMO closes out the sprint and syncs any durable decision or deferred follow-up back into the formal state files.
-8. After PMO reads a detailed execution report, archive that report into `history/reports/` before resetting `state/execution_report.md` to idle.
+8. After PMO reads a detailed execution report, archive that report into `history/reports/` with `history/templates/execution-report-archive.template.md` before resetting `state/execution_report.md` to idle.
 9. Parked future work must not live only inside the handoff or the report:
    - if it is stable enough to keep for later, record it in `state/idea_backlog.md` with status `parked`
    - if it is a durable deferral or rejected path, record it in `state/decision_log.md`
    - if it is still too raw for formal state, keep it in the discussion batch with explicit `parked` status and next review trigger
 10. When work retained in `state/idea_backlog.md` is later completed through execution, remove the finished work item from backlog unless it still represents unfinished future work. Keep durable conclusions in `state/decision_log.md` and rely on `history/reports/` for the execution history.
+
+For activation, closeout, archive, and idle-reset file writes, prefer `tools/pmo.mjs` once PMO judgment is settled.
 
 The intended operating path is:
 
@@ -262,6 +276,9 @@ Any execution worker variant, including delegated or sub-agent workers, should d
 - `current_sprint.md` stays lightweight
 - `current_sprint.md` is a state card, not a narrative summary surface
 - `execution_task.md` is the active execution contract
+- active `current_sprint.md` should be a lightweight runtime card instantiated from `state/templates/current-sprint.active.template.md`
+- active `execution_task.md` should be the worker contract instantiated from `state/templates/execution-task.template.md`
+- `sprint_candidates.md` is the comparison surface for selectable options, not an active execution brief or long completed-work ledger
 - `execution_report.md` is the active execution return surface
 - human-review refinements stay inside the active execution loop unless they force a real PMO scope or decision change
 - during live discussion, routine PMO write-backs are default-on once proposed; unless the human explicitly objects, Codex should treat the write-back as approved so discussion momentum is not repeatedly interrupted by low-risk recording steps

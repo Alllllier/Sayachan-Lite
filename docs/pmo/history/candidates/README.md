@@ -15,6 +15,6 @@
 
 使用规则：
 
-- 当 `state/sprint_candidates.md` 因总量限制需要移出较早的 completed entry 时，将它归档到这里
-- 归档时参照 `candidate-archive.template.md`
+- sprint closeout 后，将已选中并完成的 candidate 归档到这里，并从 `state/sprint_candidates.md` 移除
+- 归档时参照 `../templates/candidate-archive.template.md`
 - 不要把 still-open candidate 放到这里

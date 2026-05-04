@@ -13,8 +13,9 @@
 
 `discussion_index.md` + `discussions/` 承载新 intake 与讨论聚类，
 `idea_backlog.md` 承载保留或 parked 的未来工作，
-`sprint_candidates.md` 承载可比较的候选冲刺，
-`current_sprint.md` + `execution_task.md` 承载已选中的执行切片，
+`sprint_candidates.md` 承载可比较的未来候选冲刺，
+`current_sprint.md` 承载当前 PMO runtime 状态卡，
+`execution_task.md` 承载已选中切片的 worker 执行合同，
 `execution_report.md` 承载执行返回，
 `decision_log.md` 承载 durable decision、explicit deferral 与 rejected path。
 
@@ -35,6 +36,7 @@
 同时，这一层现在也承载与运行态文件对应的模板：
 
 - `templates/current-sprint.idle.template.md`
+- `templates/current-sprint.active.template.md`
 - `templates/execution-task.idle.template.md`
 - `templates/execution-report.idle.template.md`
 - `templates/execution-task.template.md`

@@ -76,8 +76,9 @@ Use for:
 - do not treat generic momentum or implied urgency as human authorization to activate a sprint
 - do not hide parked follow-up inside candidate notes or handoff prose without also routing it into its durable home
 - when a topic is deferred out of the current slice but still matters later, treat `decision_log.md` as the memory of the decision and `idea_backlog.md` as the memory of the work
-- when `sprint_candidates.md` still retains a recently completed entry for context, archive older completed items into `../history/candidates/` before letting the file grow past 3 total entries
-- when archiving a completed candidate, follow `../history/candidates/candidate-archive.template.md`
+- `sprint_candidates.md` is the comparison surface for selectable options; do not keep completed entries there after closeout
+- when a selected candidate closes, archive it into `../history/candidates/` during closeout and remove it from `sprint_candidates.md`
+- when archiving a completed candidate, follow `../history/templates/candidate-archive.template.md`
 
 ## Policy Touchpoints
 

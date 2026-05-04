@@ -24,6 +24,15 @@
 
 ## Recorded Decisions
 
+### `PMO runtime transitions use templates and tools as the apply layer`
+
+- Date: `2026-05-04`
+- Type: `transition-rule`
+- Scope: `PMO activation, handoff, closeout, and archival workflow`
+- Decision: `Active PMO runtime transitions should instantiate from the canonical state and history templates, and may use `docs/pmo/tools/pmo.mjs` for mechanical activation, closeout, archive, and idle-reset file writes. PMO judgment remains human/Codex-owned: sprint selection, validation status, documentation-sync outcome, commit state, residual risk, and follow-up routing must be chosen before the tool applies state changes.`
+- Reason: `The earlier handoff flow depended on live manual translation between candidate context, active runtime files, archive templates, and idle resets. That made the process paperwork-heavy and increased drift risk. The PMO automation V1 work moved those repetitive writes into a local apply layer while preserving the role boundary between judgment and mechanical state updates.`
+- Follow-up: `Use `docs/pmo/tools/README.md`, `docs/pmo/protocols/sprint-workflow.md`, and `docs/pmo/protocols/execution-handoff-protocol.md` as the canonical operating references. Reopen only if future PMO runs show that the tool-generated handoff is too rigid, misses required judgment slots, or needs integration with a worker launch path.`
+
 ### `Removed Dashboard AI workflow is not active scope`
 
 - Date: `2026-05-04`
