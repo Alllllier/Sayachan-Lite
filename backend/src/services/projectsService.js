@@ -29,15 +29,37 @@ async function createProject(body, { userId } = {}) {
   return normalizeProject(project);
 }
 
-async function updateProject(id, body, { userId } = {}) {
-  const update = { name: body.name, summary: body.summary, status: body.status };
+function buildProjectUpdate(body) {
+  const update = {};
+  if (body.name !== undefined) {
+    update.name = body.name;
+  }
+  if (body.summary !== undefined) {
+    update.summary = body.summary;
+  }
+  if (body.status !== undefined) {
+    update.status = body.status;
+  }
   if (body.currentFocusTaskId !== undefined) {
     update.currentFocusTaskId = body.currentFocusTaskId || null;
   }
+  return update;
+}
 
-  const project = await Project.findOneAndUpdate(ownedFilter(id, userId), update, { new: true, runValidators: true });
+function changedOnlyFilter(filter, update) {
+  return {
+    ...filter,
+    $or: Object.entries(update).map(([field, value]) => ({ [field]: { $ne: value } }))
+  };
+}
 
-  return normalizeProject(project);
+async function updateProject(id, body, { userId } = {}) {
+  const filter = ownedFilter(id, userId);
+  const update = buildProjectUpdate(body);
+
+  const project = await Project.findOneAndUpdate(changedOnlyFilter(filter, update), update, { new: true, runValidators: true });
+
+  return normalizeProject(project || await Project.findOne(filter));
 }
 
 async function deleteProject(id, { userId } = {}) {

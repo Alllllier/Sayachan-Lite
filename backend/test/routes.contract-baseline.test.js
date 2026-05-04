@@ -475,12 +475,22 @@ test('missing task, project, and note id routes return canonical 404 errors', as
     },
     {
       target: Project,
+      key: 'findOne',
+      value: async () => null
+    },
+    {
+      target: Project,
       key: 'findOneAndDelete',
       value: async () => null
     },
     {
       target: Note,
       key: 'findOneAndUpdate',
+      value: async () => null
+    },
+    {
+      target: Note,
+      key: 'findOne',
       value: async () => null
     },
     {
@@ -525,6 +535,83 @@ test('missing task, project, and note id routes return canonical 404 errors', as
     assert.equal(deleteNoteCtx.status, 404);
     assert.deepEqual(deleteNoteCtx.body, { error: 'Note not found' });
   });
+});
+
+test('no-op note and project updates keep existing updatedAt ordering state', async () => {
+  const updateProjectHandler = getRouteHandler('PUT', '/projects/:id');
+  const updateNoteHandler = getRouteHandler('PUT', '/notes/:id');
+  const writes = [];
+  const reads = [];
+
+  await withPatchedMethods([
+    {
+      target: Project,
+      key: 'findOneAndUpdate',
+      value: async (query, update) => {
+        writes.push({ model: 'project', query, update });
+        return null;
+      }
+    },
+    {
+      target: Project,
+      key: 'findOne',
+      value: async (query) => {
+        reads.push({ model: 'project', query });
+        return createDoc({
+          _id: 'project-1',
+          name: 'Same',
+          summary: 'Same summary',
+          status: 'pending',
+          archived: false,
+          currentFocusTaskId: null,
+          updatedAt: '2026-05-01T00:00:00.000Z'
+        });
+      }
+    },
+    {
+      target: Note,
+      key: 'findOneAndUpdate',
+      value: async (query, update) => {
+        writes.push({ model: 'note', query, update });
+        return null;
+      }
+    },
+    {
+      target: Note,
+      key: 'findOne',
+      value: async (query) => {
+        reads.push({ model: 'note', query });
+        return createDoc({
+          _id: 'note-1',
+          title: 'Same',
+          content: 'Same content',
+          archived: false,
+          updatedAt: '2026-05-01T00:00:00.000Z'
+        });
+      }
+    }
+  ], async () => {
+    const updateProjectCtx = createCtx({
+      params: { id: 'project-1' },
+      body: { name: 'Same', summary: 'Same summary', status: 'pending' }
+    });
+    await updateProjectHandler(updateProjectCtx, async () => {});
+
+    const updateNoteCtx = createCtx({
+      params: { id: 'note-1' },
+      body: { title: 'Same', content: 'Same content' }
+    });
+    await updateNoteHandler(updateNoteCtx, async () => {});
+
+    assert.equal(updateProjectCtx.status, 200);
+    assert.equal(updateProjectCtx.body.updatedAt, '2026-05-01T00:00:00.000Z');
+    assert.equal(updateNoteCtx.status, 200);
+    assert.equal(updateNoteCtx.body.updatedAt, '2026-05-01T00:00:00.000Z');
+  });
+
+  assert.equal(writes.length, 2);
+  assert.equal(writes.every((write) => Array.isArray(write.query.$or)), true);
+  assert.equal(reads.length, 2);
 });
 
 test('bad create and update request bodies return stable 400 errors before service writes', async () => {

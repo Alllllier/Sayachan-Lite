@@ -257,7 +257,9 @@ test('direct-id mutations for another account behave as not found', async () => 
 
   await withPatchedMethods([
     { target: Note, key: 'findOneAndUpdate', value: async () => null },
+    { target: Note, key: 'findOne', value: async () => null },
     { target: Project, key: 'findOneAndUpdate', value: async () => null },
+    { target: Project, key: 'findOne', value: async () => null },
     { target: Task, key: 'findOne', value: async () => null }
   ], async () => {
     const noteCtx = createCtx({ params: { id: 'owner-note' }, body: { title: 'Nope', content: 'Nope' }, userId: 'tester-4' });

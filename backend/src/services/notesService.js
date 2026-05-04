@@ -26,14 +26,34 @@ async function createNote(body, { userId } = {}) {
   return normalizeNote(note);
 }
 
+function buildNoteUpdate(body) {
+  const update = {};
+  if (body.title !== undefined) {
+    update.title = body.title;
+  }
+  if (body.content !== undefined) {
+    update.content = body.content;
+  }
+  return update;
+}
+
+function changedOnlyFilter(filter, update) {
+  return {
+    ...filter,
+    $or: Object.entries(update).map(([field, value]) => ({ [field]: { $ne: value } }))
+  };
+}
+
 async function updateNote(id, body, { userId } = {}) {
+  const filter = ownedFilter(id, userId);
+  const update = buildNoteUpdate(body);
   const note = await Note.findOneAndUpdate(
-    ownedFilter(id, userId),
-    { title: body.title, content: body.content },
+    changedOnlyFilter(filter, update),
+    update,
     { new: true, runValidators: true }
   );
 
-  return normalizeNote(note);
+  return normalizeNote(note || await Note.findOne(filter));
 }
 
 async function deleteNote(id, { userId } = {}) {
