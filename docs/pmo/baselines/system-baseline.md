@@ -39,8 +39,9 @@ Current frontend code shape:
 - feature modules use `*.api.js`, `*.rules.js`, and `use*Feature.js` where applicable
 - shared app-level services remain under `frontend/src/services/`
 - shared API requests use `frontend/src/services/apiClient.js` so session cookies are sent with product API calls
+- frontend account-scoped read snapshots use `frontend/src/services/resourceCache.js` for Notes, Projects, project-card task previews, and Dashboard saved-task lists
 - shared task service internals live under `frontend/src/services/tasks/` as API, rules, and runtime state modules
-- auth-aware account switching resets frontend-only chat/cockpit transient state and scopes Notes failure-draft localStorage by authenticated account key
+- auth-aware account switching resets frontend-only chat/cockpit transient state, clears account-scoped resource snapshots, and scopes Notes failure-draft localStorage by authenticated account key
 
 Current repo-native validation shape:
 

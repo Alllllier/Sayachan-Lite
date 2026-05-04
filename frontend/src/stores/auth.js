@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 import * as authApi from '../features/auth/auth.api'
+import { clearResourceCache } from '../services/resourceCache'
 import { useChatStore } from './chat'
 import { useCockpitSignals } from './cockpitSignals'
 
 function resetAccountScopedRuntimeState() {
+  clearResourceCache()
   useChatStore().resetChat()
   useCockpitSignals().resetSignals()
 }

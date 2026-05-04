@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useProjectsFeature } from './useProjectsFeature.js'
+import { writeResourceCache } from '../../services/resourceCache.js'
 import {
   archiveProject,
   createProject,
@@ -27,9 +28,23 @@ vi.mock('../../services/tasks/index.js', () => ({
   saveTask: vi.fn()
 }))
 
+function stubLocalStorage() {
+  const store = {}
+  vi.stubGlobal('localStorage', {
+    getItem: vi.fn(key => store[key] || null),
+    setItem: vi.fn((key, value) => {
+      store[key] = value
+    }),
+    removeItem: vi.fn(key => {
+      delete store[key]
+    })
+  })
+}
+
 describe('useProjectsFeature orchestration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    stubLocalStorage()
     vi.stubGlobal('confirm', vi.fn(() => true))
     fetchProjectCardTasks.mockResolvedValue([])
   })
@@ -107,6 +122,19 @@ describe('useProjectsFeature orchestration', () => {
     await feature.fetchProjects()
     expect(feature.error.value).toBe(null)
     expect(feature.projects.value).toEqual([{ _id: 'project-1', name: 'Recovered', summary: 'Ready' }])
+  })
+
+  it('shows cached projects when refresh fails after a previous successful load', async () => {
+    const notify = vi.fn()
+    writeResourceCache('user-1', 'projects', 'active', [{ _id: 'project-cached', name: 'Cached', summary: 'Snapshot' }])
+    fetchProjects.mockRejectedValue(new Error('network'))
+
+    const feature = useProjectsFeature({ notify, cacheUserKey: 'user-1' })
+    await feature.fetchProjects()
+
+    expect(feature.projects.value).toEqual([{ _id: 'project-cached', name: 'Cached', summary: 'Snapshot' }])
+    expect(feature.error.value).toBe(null)
+    expect(notify).toHaveBeenCalledWith('Showing cached projects. Refresh failed.', 'error')
   })
 
   it('guards focus updates to active non-archived tasks', async () => {

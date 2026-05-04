@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useDashboardFeature } from './useDashboardFeature.js'
+import { writeResourceCache } from '../../services/resourceCache.js'
 import {
   deleteTask,
   fetchTasks,
@@ -20,9 +21,23 @@ vi.mock('../../services/tasks/index.js', () => ({
   updateTask: vi.fn()
 }))
 
+function stubLocalStorage() {
+  const store = {}
+  vi.stubGlobal('localStorage', {
+    getItem: vi.fn(key => store[key] || null),
+    setItem: vi.fn((key, value) => {
+      store[key] = value
+    }),
+    removeItem: vi.fn(key => {
+      delete store[key]
+    })
+  })
+}
+
 describe('useDashboardFeature orchestration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    stubLocalStorage()
     vi.stubGlobal('confirm', vi.fn(() => true))
     tasksRef.value = []
   })
@@ -104,5 +119,17 @@ describe('useDashboardFeature orchestration', () => {
     expect(feature.isSavedTaskListExpanded.value).toBe(false)
     expect(feature.taskMenuOpen.value).toBe(null)
     expect(fetchTasks).toHaveBeenCalledWith(true)
+  })
+
+  it('shows cached dashboard tasks when refresh fails after a previous successful load', async () => {
+    const notify = vi.fn()
+    writeResourceCache('user-1', 'dashboard-tasks', 'active', [{ _id: 'task-cached', title: 'Cached' }])
+    fetchTasks.mockRejectedValue(new Error('network'))
+
+    const feature = useDashboardFeature({ notify, cacheUserKey: 'user-1' })
+    await feature.loadSavedTasks()
+
+    expect(feature.savedTasks.value).toEqual([{ _id: 'task-cached', title: 'Cached' }])
+    expect(notify).toHaveBeenCalledWith('Showing cached tasks. Refresh failed.', 'error')
   })
 })

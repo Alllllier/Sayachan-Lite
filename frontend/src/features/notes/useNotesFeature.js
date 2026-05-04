@@ -1,4 +1,5 @@
 import { reactive, ref, unref } from 'vue'
+import { readResourceCache, writeResourceCache } from '../../services/resourceCache.js'
 import { saveTask } from '../../services/tasks/index.js'
 import {
   archiveNote as archiveNoteRequest,
@@ -31,6 +32,7 @@ function sortNotes(notes) {
 }
 
 const DEFAULT_DRAFT_STORAGE_KEY = 'sayachan_note_drafts'
+const NOTES_CACHE_RESOURCE = 'notes'
 
 function readDrafts(storageKey = DEFAULT_DRAFT_STORAGE_KEY) {
   try {
@@ -46,12 +48,33 @@ export function useNotesFeature(options = {}) {
   const onNoteCreated = options.onNoteCreated || noop
   const onNoteUpdated = options.onNoteUpdated || noop
   const draftStorageKey = options.draftStorageKey || DEFAULT_DRAFT_STORAGE_KEY
+  const cacheUserKey = options.cacheUserKey || 'anonymous'
 
   function resolveDraftStorageKey() {
     const key = typeof draftStorageKey === 'function'
       ? draftStorageKey()
       : unref(draftStorageKey)
     return key || DEFAULT_DRAFT_STORAGE_KEY
+  }
+
+  function resolveCacheUserKey() {
+    return unref(cacheUserKey) || 'anonymous'
+  }
+
+  function resolveCacheVariant() {
+    return showArchived.value ? 'archived' : 'active'
+  }
+
+  function hydrateNotesFromCache() {
+    const cachedNotes = readResourceCache(resolveCacheUserKey(), NOTES_CACHE_RESOURCE, resolveCacheVariant())
+    if (!Array.isArray(cachedNotes)) return false
+    notes.value = cachedNotes
+    emitRefreshed()
+    return true
+  }
+
+  function cacheCurrentNotes() {
+    writeResourceCache(resolveCacheUserKey(), NOTES_CACHE_RESOURCE, resolveCacheVariant(), notes.value)
   }
 
   const notes = ref([])
@@ -111,11 +134,17 @@ export function useNotesFeature(options = {}) {
   async function fetchNotes() {
     loading.value = true
     error.value = null
+    const hydratedFromCache = hydrateNotesFromCache()
     try {
       notes.value = await fetchNotesRequest({ archived: showArchived.value })
+      cacheCurrentNotes()
       emitRefreshed()
     } catch (e) {
-      error.value = 'Failed to load notes'
+      if (hydratedFromCache) {
+        notify('Showing cached notes. Refresh failed.', 'error')
+      } else {
+        error.value = 'Failed to load notes'
+      }
     } finally {
       loading.value = false
     }
@@ -131,6 +160,7 @@ export function useNotesFeature(options = {}) {
     try {
       const note = await createNoteRequest(form.value)
       notes.value.unshift(note)
+      cacheCurrentNotes()
       form.value = { title: '', content: '' }
       newNoteErrors.value = createEmptyNoteErrors()
       onNoteCreated()
@@ -157,6 +187,7 @@ export function useNotesFeature(options = {}) {
       const index = notes.value.findIndex(n => n._id === note._id)
       if (index !== -1) notes.value[index] = updated
       notes.value = sortNotes(notes.value)
+      cacheCurrentNotes()
       onNoteUpdated(note._id)
       clearEditNoteErrors(note._id)
       editingId.value = null
@@ -177,6 +208,7 @@ export function useNotesFeature(options = {}) {
     try {
       await deleteNoteRequest(id)
       notes.value = notes.value.filter(n => n._id !== id)
+      cacheCurrentNotes()
       emitRefreshed()
       notify('Note deleted')
     } catch (e) {

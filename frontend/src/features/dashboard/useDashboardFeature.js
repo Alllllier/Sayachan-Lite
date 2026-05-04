@@ -1,4 +1,5 @@
-import { computed, ref } from 'vue'
+import { computed, ref, unref } from 'vue'
+import { readResourceCache, writeResourceCache } from '../../services/resourceCache.js'
 import {
   deleteTask,
   fetchTasks,
@@ -19,10 +20,12 @@ import {
 } from './dashboard.rules.js'
 
 const noop = () => {}
+const DASHBOARD_TASKS_CACHE_RESOURCE = 'dashboard-tasks'
 
 export function useDashboardFeature(options = {}) {
   const notify = options.notify || noop
   const onRefreshed = options.onRefreshed || noop
+  const cacheUserKey = options.cacheUserKey || 'anonymous'
 
   const savedTasks = tasksRef
   const taskMenuOpen = ref(null)
@@ -43,8 +46,38 @@ export function useDashboardFeature(options = {}) {
     isSavedTaskListExpanded.value
   ))
 
+  function resolveCacheUserKey() {
+    return unref(cacheUserKey) || 'anonymous'
+  }
+
+  function resolveCacheVariant() {
+    return showArchived.value ? 'archived' : 'active'
+  }
+
+  function hydrateTasksFromCache() {
+    const cachedTasks = readResourceCache(resolveCacheUserKey(), DASHBOARD_TASKS_CACHE_RESOURCE, resolveCacheVariant())
+    if (!Array.isArray(cachedTasks)) return false
+    savedTasks.value = cachedTasks
+    return true
+  }
+
+  function cacheCurrentTasks() {
+    writeResourceCache(resolveCacheUserKey(), DASHBOARD_TASKS_CACHE_RESOURCE, resolveCacheVariant(), savedTasks.value)
+  }
+
   async function loadSavedTasks() {
-    return fetchTasks(showArchived.value)
+    const hydratedFromCache = hydrateTasksFromCache()
+    try {
+      await fetchTasks(showArchived.value)
+      cacheCurrentTasks()
+    } catch (error) {
+      if (hydratedFromCache) {
+        notify('Showing cached tasks. Refresh failed.', 'error')
+      } else {
+        notify('Failed to load tasks', 'error')
+      }
+    }
+    return savedTasks.value
   }
 
   function toggleTaskMenu(taskId) {
@@ -75,6 +108,7 @@ export function useDashboardFeature(options = {}) {
     try {
       const newTask = await saveTask(title, 'manual', 'dashboard', null)
       if (newTask) {
+        cacheCurrentTasks()
         notify('Task added')
         quickAddInput.value = ''
       }
@@ -91,6 +125,7 @@ export function useDashboardFeature(options = {}) {
       const updated = await updateTask(task._id, payload)
       savedTasks.value = applyDashboardTaskUpdate(savedTasks.value, updated)
       syncTaskIntoActiveSnapshot(updated)
+      cacheCurrentTasks()
       notify(payload.status === 'completed' ? 'Task completed' : 'Task reactivated')
       onRefreshed()
     } catch (e) {
@@ -104,6 +139,7 @@ export function useDashboardFeature(options = {}) {
       const updated = await updateTask(task._id, payload)
       savedTasks.value = removeDashboardTask(savedTasks.value, updated._id)
       syncTaskIntoActiveSnapshot(updated)
+      cacheCurrentTasks()
       if (taskMenuOpen.value === task._id) {
         taskMenuOpen.value = null
       }
@@ -122,6 +158,7 @@ export function useDashboardFeature(options = {}) {
       await deleteTask(task._id)
       savedTasks.value = removeDashboardTask(savedTasks.value, task._id)
       removeTaskFromActiveSnapshot(task._id)
+      cacheCurrentTasks()
       if (taskMenuOpen.value === task._id) {
         taskMenuOpen.value = null
       }

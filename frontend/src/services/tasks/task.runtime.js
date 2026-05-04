@@ -15,7 +15,7 @@ export async function fetchTasks(archived = false) {
     return tasksRef.value
   } catch (e) {
     console.error('Failed to fetch tasks:', e)
-    return []
+    throw e
   }
 }
 

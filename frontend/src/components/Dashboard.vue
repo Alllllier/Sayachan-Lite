@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { useAuthStore } from '../stores/auth'
 import {
   deriveDashboardTaskProvenance,
   deriveDashboardTaskRowState,
@@ -16,6 +17,8 @@ import { List, ListSection, ListItem, ItemContent, ItemMeta } from './ui/list'
 const toast = ref(null)
 const toastMessage = ref('')
 const toastType = ref('success')
+const auth = useAuthStore()
+const accountCacheKey = computed(() => auth.currentUser?._id || auth.currentUser?.email || 'anonymous')
 
 function showToast(message, type = 'success') {
   toastMessage.value = message
@@ -51,6 +54,7 @@ const {
   closeTaskMenu,
   toggleSavedTaskListExpanded
 } = useDashboardFeature({
+  cacheUserKey: accountCacheKey,
   notify: showToast
 })
 

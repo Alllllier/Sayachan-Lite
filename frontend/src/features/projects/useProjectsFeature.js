@@ -1,4 +1,5 @@
-import { ref } from 'vue'
+import { ref, unref } from 'vue'
+import { readResourceCache, writeResourceCache } from '../../services/resourceCache.js'
 import { saveTask, fetchProjectCardTasks } from '../../services/tasks/index.js'
 import {
   canSetProjectFocus,
@@ -27,6 +28,8 @@ import {
 } from './projects.api.js'
 
 const noop = () => {}
+const PROJECTS_CACHE_RESOURCE = 'projects'
+const PROJECT_TASKS_CACHE_RESOURCE = 'project-tasks'
 
 function sortProjects(projects) {
   return [...projects].sort((a, b) => {
@@ -38,6 +41,7 @@ function sortProjects(projects) {
 export function useProjectsFeature(options = {}) {
   const notify = options.notify || noop
   const onRefreshed = options.onRefreshed || noop
+  const cacheUserKey = options.cacheUserKey || 'anonymous'
 
   const projects = ref([])
   const projectForm = ref({ name: '', summary: '', status: 'pending' })
@@ -66,6 +70,50 @@ export function useProjectsFeature(options = {}) {
     onRefreshed(projects.value)
   }
 
+  function resolveCacheUserKey() {
+    return unref(cacheUserKey) || 'anonymous'
+  }
+
+  function resolveProjectsCacheVariant() {
+    return showArchived.value ? 'archived' : 'active'
+  }
+
+  function resolveProjectTasksCacheVariant(projectId, archived) {
+    return `${projectId}:${archived ? 'archived' : 'active'}`
+  }
+
+  function hydrateProjectsFromCache() {
+    const cachedProjects = readResourceCache(resolveCacheUserKey(), PROJECTS_CACHE_RESOURCE, resolveProjectsCacheVariant())
+    if (!Array.isArray(cachedProjects)) return false
+    projects.value = cachedProjects
+    emitRefreshed()
+    return true
+  }
+
+  function cacheCurrentProjects() {
+    writeResourceCache(resolveCacheUserKey(), PROJECTS_CACHE_RESOURCE, resolveProjectsCacheVariant(), projects.value)
+  }
+
+  function hydrateProjectTasksFromCache(projectId, archived) {
+    const cachedTasks = readResourceCache(
+      resolveCacheUserKey(),
+      PROJECT_TASKS_CACHE_RESOURCE,
+      resolveProjectTasksCacheVariant(projectId, archived)
+    )
+    if (!Array.isArray(cachedTasks)) return false
+    projectTasks.value[projectId] = cachedTasks
+    return true
+  }
+
+  function cacheProjectTasks(projectId, archived) {
+    writeResourceCache(
+      resolveCacheUserKey(),
+      PROJECT_TASKS_CACHE_RESOURCE,
+      resolveProjectTasksCacheVariant(projectId, archived),
+      projectTasks.value[projectId] || []
+    )
+  }
+
   function syncProjects(nextProjects) {
     if (!Array.isArray(nextProjects)) return
     projects.value = [...nextProjects]
@@ -76,14 +124,18 @@ export function useProjectsFeature(options = {}) {
 
   async function fetchProjectTasksForCard(projectId) {
     loadingProjectTasks.value.add(projectId)
+    const project = projects.value.find(p => p._id === projectId)
+    const archived = project?.archived === true
+    hydrateProjectTasksFromCache(projectId, archived)
     try {
-      const project = projects.value.find(p => p._id === projectId)
-      const archived = project?.archived === true
       const tasks = await fetchProjectCardTasks(projectId, archived)
       projectTasks.value[projectId] = tasks
+      cacheProjectTasks(projectId, archived)
     } catch (e) {
       console.error('Failed to fetch project tasks:', e)
-      projectTasks.value[projectId] = []
+      if (!projectTasks.value[projectId]) {
+        projectTasks.value[projectId] = []
+      }
     } finally {
       loadingProjectTasks.value.delete(projectId)
     }
@@ -92,13 +144,19 @@ export function useProjectsFeature(options = {}) {
   async function fetchProjects() {
     loading.value = true
     error.value = null
+    const hydratedFromCache = hydrateProjectsFromCache()
     try {
       const fetchedProjects = await fetchProjectsRequest({ archived: showArchived.value })
       projects.value = fetchedProjects
+      cacheCurrentProjects()
       await Promise.all(fetchedProjects.map(project => fetchProjectTasksForCard(project._id)))
       emitRefreshed()
     } catch (e) {
-      error.value = 'Failed to load projects'
+      if (hydratedFromCache) {
+        notify('Showing cached projects. Refresh failed.', 'error')
+      } else {
+        error.value = 'Failed to load projects'
+      }
     } finally {
       loading.value = false
     }
@@ -114,6 +172,7 @@ export function useProjectsFeature(options = {}) {
     try {
       const project = await createProjectRequest(projectForm.value)
       projects.value.unshift(project)
+      cacheCurrentProjects()
       projectForm.value = { name: '', summary: '', status: 'pending' }
       projectFormErrors.value = createEmptyProjectErrors()
       projectTasks.value[project._id] = []
@@ -138,6 +197,7 @@ export function useProjectsFeature(options = {}) {
       const index = projects.value.findIndex(p => p._id === project._id)
       if (index !== -1) projects.value[index] = updated
       projects.value = sortProjects(projects.value)
+      cacheCurrentProjects()
       editingProjectId.value = null
       clearEditProjectErrors(project._id)
       emitRefreshed()
@@ -157,6 +217,7 @@ export function useProjectsFeature(options = {}) {
     try {
       await deleteProjectRequest(id)
       projects.value = projects.value.filter(p => p._id !== id)
+      cacheCurrentProjects()
       emitRefreshed()
       notify('Project deleted')
     } catch (e) {

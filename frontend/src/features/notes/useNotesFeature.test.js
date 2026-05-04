@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useNotesFeature } from './useNotesFeature.js'
+import { writeResourceCache } from '../../services/resourceCache.js'
 import {
   archiveNote,
   createNote,
@@ -162,6 +163,19 @@ describe('useNotesFeature orchestration', () => {
     await feature.fetchNotes()
     expect(feature.error.value).toBe(null)
     expect(feature.notes.value).toEqual([{ _id: 'note-1', title: 'Recovered', content: 'Ready' }])
+  })
+
+  it('shows cached notes when refresh fails after a previous successful load', async () => {
+    const notify = vi.fn()
+    writeResourceCache('user-1', 'notes', 'active', [{ _id: 'note-cached', title: 'Cached', content: 'Snapshot' }])
+    fetchNotes.mockRejectedValue(new Error('network'))
+
+    const feature = useNotesFeature({ notify, cacheUserKey: 'user-1' })
+    await feature.fetchNotes()
+
+    expect(feature.notes.value).toEqual([{ _id: 'note-cached', title: 'Cached', content: 'Snapshot' }])
+    expect(feature.error.value).toBe(null)
+    expect(notify).toHaveBeenCalledWith('Showing cached notes. Refresh failed.', 'error')
   })
 
   it('generates and saves note task drafts through feature boundaries', async () => {

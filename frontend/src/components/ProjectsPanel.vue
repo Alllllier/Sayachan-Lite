@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { useAuthStore } from '../stores/auth'
 import { useProjectsFeature } from '../features/projects/useProjectsFeature.js'
 import {
   PROJECT_TASK_PREVIEW_LIMIT,
@@ -31,6 +32,8 @@ import {
 } from './ui/list'
 
 const menuOpenProjectId = ref(null)
+const auth = useAuthStore()
+const accountCacheKey = computed(() => auth.currentUser?._id || auth.currentUser?.email || 'anonymous')
 
 // Project task preview expansion and filter state
 const expandedPrimaryPreviewProjects = ref(new Set())
@@ -112,6 +115,7 @@ const {
   setTaskAsFocus,
   setProjectArchiveView
 } = useProjectsFeature({
+  cacheUserKey: accountCacheKey,
   notify: showToast,
   onRefreshed: refreshedProjects => emit('refreshed', refreshedProjects)
 })

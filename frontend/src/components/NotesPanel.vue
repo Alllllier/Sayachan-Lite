@@ -26,6 +26,7 @@ const auth = useAuthStore()
 const noteDraftStorageKey = computed(() => (
   `sayachan_note_drafts:${auth.currentUser?._id || auth.currentUser?.email || 'anonymous'}`
 ))
+const accountCacheKey = computed(() => auth.currentUser?._id || auth.currentUser?.email || 'anonymous')
 
 // Markdown editor refs
 const newEditorRef = ref(null)
@@ -112,6 +113,7 @@ const {
   reloadDrafts
 } = useNotesFeature({
   draftStorageKey: noteDraftStorageKey,
+  cacheUserKey: accountCacheKey,
   notify: showToast,
   onRefreshed: refreshedNotes => emit('refreshed', refreshedNotes),
   onNoteCreated: clearNewEditor,

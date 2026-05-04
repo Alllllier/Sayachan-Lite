@@ -50,6 +50,7 @@ Current account-boundary truth:
 - project next-action focus-task resolution is scoped by both task id and current user ownership
 - chat receives caller-supplied public runtime context; the public runtime hydrates cockpit context from credentialed current-user `/projects` and `/tasks` reads
 - frontend-only chat/cockpit transient state resets on logout/account changes
+- frontend account-scoped read snapshots in localStorage are used only to hydrate Notes, Projects, project-card task previews, and Dashboard saved-task lists before backend refresh; successful backend reads remain canonical and write back to the snapshot
 - Notes failure drafts in localStorage are scoped by authenticated account key
 - `runtimeControls` localStorage remains device-level and unscoped because it stores AI behavior preference, not account-owned product content
 
@@ -68,6 +69,7 @@ Notes currently do all of the following:
 - generate note-based AI task drafts through `POST /ai/notes/tasks`
 - save accepted note AI drafts as tasks with `creationMode: "ai"`, `originModule: "note"`, and `originId` set to the note id
 - keep failed new-note submissions in the local `sayachan_note_drafts` residue store
+- hydrate from the last account-scoped successful Notes list snapshot while a fresh backend read is in flight
 
 ### Projects
 
@@ -81,6 +83,7 @@ Projects currently do all of the following:
 - allow only active, non-archived project tasks to become focus
 - generate AI next-action suggestions through `POST /ai/projects/next-action`
 - save accepted AI suggestions as tasks with `creationMode: "ai"`, `originModule: "project"`, and `originId` set to the project id
+- hydrate from the last account-scoped successful Projects list and project-card task preview snapshots while fresh backend reads are in flight
 
 ### Tasks
 
@@ -105,6 +108,7 @@ Dashboard currently does all of the following:
 - archive, restore, and delete saved tasks from row actions
 - show provenance dots derived from `originModule` and `creationMode`
 - keep its saved-task view local to shared task state; it does not proactively publish cockpit signals
+- hydrate saved-task lists from the last account-scoped successful Dashboard task snapshot while a fresh backend read is in flight
 
 ### Chat
 
