@@ -50,6 +50,19 @@
   margin: 0.25em 0;
 }
 
+.markdown-body .task-list-item {
+  list-style: none;
+  margin-left: -1.35em;
+}
+
+.markdown-body .task-list-item-checkbox {
+  width: 14px;
+  height: 14px;
+  margin: 0 0.45em 0 0;
+  vertical-align: -0.1em;
+  accent-color: var(--identity-primary);
+}
+
 .markdown-body blockquote {
   border-left: 3px solid var(--border-default);
   padding-left: var(--space-md);

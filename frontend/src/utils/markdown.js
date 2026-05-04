@@ -1,4 +1,5 @@
 import MarkdownIt from 'markdown-it'
+import taskLists from 'markdown-it-task-lists'
 import hljs from 'highlight.js'
 import DOMPurify from 'dompurify'
 
@@ -15,6 +16,8 @@ const md = new MarkdownIt({
     return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`
   }
 })
+
+md.use(taskLists)
 
 export function renderMarkdown(text) {
   if (!text) return ''
