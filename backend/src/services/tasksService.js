@@ -8,19 +8,12 @@ const {
   normalizeTask,
   projectTaskReadFilter
 } = require('./taskRuntimeHelpers');
-
-function buildOwnerFilter(userId) {
-  return userId ? { userId } : {};
-}
-
-function buildOwnedFilter(id, userId) {
-  return userId ? { _id: id, userId } : { _id: id };
-}
+const { ownedFilter, ownerFilter, requireUserId } = require('./ownership');
 
 async function listTasks({ projectId, archived, userId } = {}) {
   const filter = projectId
-    ? combineFilters(buildArchiveFilter(archived), projectTaskReadFilter(projectId), buildOwnerFilter(userId))
-    : combineFilters(buildArchiveFilter(archived), buildOwnerFilter(userId));
+    ? combineFilters(buildArchiveFilter(archived), projectTaskReadFilter(projectId), ownerFilter(userId))
+    : combineFilters(buildArchiveFilter(archived), ownerFilter(userId));
   const tasks = await Task.find(filter).sort({ createdAt: -1 });
   return tasks.map(normalizeTask);
 }
@@ -34,7 +27,7 @@ async function createTask(body, { userId } = {}) {
     status: 'active',
     archived: false,
     completed: false,
-    userId: userId || null
+    userId: requireUserId(userId)
   };
 
   const task = await Task.create(taskData);
@@ -63,17 +56,13 @@ function buildTaskUpdate(body) {
 }
 
 async function updateTask(id, body, { userId } = {}) {
-  const existingTask = userId
-    ? await Task.findOne(buildOwnedFilter(id, userId))
-    : await Task.findById(id);
+  const existingTask = await Task.findOne(ownedFilter(id, userId));
   if (!existingTask) {
     return null;
   }
 
   const normalizedExistingTask = normalizeTask(existingTask);
-  const task = userId
-    ? await Task.findOneAndUpdate(buildOwnedFilter(id, userId), buildTaskUpdate(body), { new: true, runValidators: true })
-    : await Task.findByIdAndUpdate(id, buildTaskUpdate(body), { new: true, runValidators: true });
+  const task = await Task.findOneAndUpdate(ownedFilter(id, userId), buildTaskUpdate(body), { new: true, runValidators: true });
   const normalizedTask = normalizeTask(task);
 
   const isBecomingCompleted = normalizedTask.status === 'completed' && normalizedExistingTask.status !== 'completed';
@@ -91,9 +80,7 @@ async function updateTask(id, body, { userId } = {}) {
 }
 
 async function deleteTask(id, { userId } = {}) {
-  const task = userId
-    ? await Task.findOneAndDelete(buildOwnedFilter(id, userId))
-    : await Task.findByIdAndDelete(id);
+  const task = await Task.findOneAndDelete(ownedFilter(id, userId));
 
   if (!task) {
     return false;

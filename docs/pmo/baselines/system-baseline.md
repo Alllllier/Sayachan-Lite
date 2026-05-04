@@ -137,6 +137,7 @@ Current route behavior truth:
 - backend owner bootstrap can be run through `backend/scripts/bootstrapOwner.mjs` or `npm run bootstrap:owner` from the backend workspace
 - Notes, Projects, and Tasks normal route/service reads and writes are scoped by current authenticated user
 - Note, Project, and Task routes resolve the current user through `backend/src/routes/currentUser.js` before calling product services, so product route handlers do not intentionally support unowned current-user reads or writes
+- Note, Project, and Task services use `backend/src/services/ownership.js` for required owner filters and do not retain unowned single-user content fallback branches
 - public AI note/project routes reload persisted note/project context by current user ownership before constructing fallback/provider prompts
 - project next-action focus task resolution is scoped by both task id and current user ownership
 - note and project AI routes call GLM through backend route logic

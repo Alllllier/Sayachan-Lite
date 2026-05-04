@@ -9,11 +9,9 @@ const router = new Router();
 
 // Phase 3: task-based focus only
 async function getProjectFocusContext(project, userId) {
-  if (project?.currentFocusTaskId) {
+  if (project?.currentFocusTaskId && userId) {
     try {
-      const focusTask = userId
-        ? await Task.findOne({ _id: project.currentFocusTaskId, userId })
-        : await Task.findById(project.currentFocusTaskId);
+      const focusTask = await Task.findOne({ _id: project.currentFocusTaskId, userId });
       if (focusTask?.title?.trim()) {
         return focusTask.title.trim();
       }
@@ -66,9 +64,7 @@ async function resolveOwnedNotePayload(payload, userId) {
     return payload || {};
   }
 
-  const note = userId
-    ? await Note.findOne({ _id: noteId, userId })
-    : await Note.findById(noteId);
+  const note = await Note.findOne({ _id: noteId, userId });
 
   return normalizeDoc(note);
 }
@@ -79,9 +75,7 @@ async function resolveOwnedProjectPayload(payload, userId) {
     return payload || {};
   }
 
-  const project = userId
-    ? await Project.findOne({ _id: projectId, userId })
-    : await Project.findById(projectId);
+  const project = await Project.findOne({ _id: projectId, userId });
 
   return normalizeDoc(project);
 }

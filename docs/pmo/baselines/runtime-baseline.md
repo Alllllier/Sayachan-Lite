@@ -42,6 +42,7 @@ Current account-boundary truth:
 
 - Notes, Projects, and Tasks carry `userId` and their normal product route/service reads and writes are scoped to the current user
 - normal Note, Project, and Task route handlers require a resolved current user before invoking product services; the product route surface is a personal-account-scoped API, not a shared or anonymous content API
+- Note, Project, and Task product services require `userId` and no longer keep unowned single-user content fallback branches; bootstrap-owner data assignment is the remaining legacy migration path for pre-auth records
 - Note, Project, and Task models carry indexes for current-user list reads, archived filters, and task provenance cascades so the personal-account model remains the intended medium-term data shape rather than a temporary patch
 - direct-id mutations across account boundaries behave as not found or owner-scoped no-ops through the covered route/service paths
 - project/task cascade and focus-clearing behavior is scoped to current-user-owned related records

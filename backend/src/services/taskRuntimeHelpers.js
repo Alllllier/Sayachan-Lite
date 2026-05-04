@@ -104,22 +104,17 @@ function isProjectOwnedTask(task) {
 }
 
 async function clearFocusForTask(Project, taskId, reason, userId) {
-  if (!taskId) {
+  if (!taskId || !userId) {
     return false;
   }
 
-  const projectFilter = userId ? { currentFocusTaskId: taskId, userId } : { currentFocusTaskId: taskId };
-  const project = await Project.findOne(projectFilter);
+  const project = await Project.findOne({ currentFocusTaskId: taskId, userId });
 
   if (!project) {
     return false;
   }
 
-  if (userId) {
-    await Project.findOneAndUpdate({ _id: project._id, userId }, { currentFocusTaskId: null });
-  } else {
-    await Project.findByIdAndUpdate(project._id, { currentFocusTaskId: null });
-  }
+  await Project.findOneAndUpdate({ _id: project._id, userId }, { currentFocusTaskId: null });
 
   if (reason) {
     console.log(`[Focus Transition] Project "${project.name}" currentFocusTaskId cleared on ${reason}`);
