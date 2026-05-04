@@ -24,6 +24,15 @@
 
 ## Recorded Decisions
 
+### `Owner-led invite-gated auth uses a lightweight phase-one boundary`
+
+- Date: `2026-05-04`
+- Type: `approved`
+- Scope: `first-phase authentication, tester onboarding, owner capabilities, account isolation, and private-core access boundary`
+- Decision: `Phase-one auth should use an owner/tester role model with a reusable registration page gated by invite code. Registration requires email, password, and invite code; invite codes are not email-bound, are single-use, expire after one month, and can be revoked by the owner. Sessions should be cookie-backed. Email is the account identifier, while email/phone verification is deferred with verification fields reserved. Tester accounts start with empty product data and get the normal current product experience scoped to their own data. The in-product owner surface stays small: manage invites, view tester account metadata, disable or restore tester login, and view basic system status. Owner should not view/edit tester content, impersonate testers, manage provider/API keys, control prompt/private-core internals, use full-site import/export, manage complex permissions, or hard-delete users in phase one.`
+- Reason: `Friend testing needs real account isolation and owner-controlled entry without prematurely building a full multi-tenant system or broad admin console. The human owner already has code and local environment access for deeper operations, so product-level owner controls should stay focused on convenient tester management.`
+- Follow-up: `Promote implementation as two bounded candidates: Auth Invite Session Owner Skeleton first, then Account Data Isolation And AI Context Boundary after reliable current-user identity exists. Revisit verification, broader admin, sharing, public-launch abuse prevention, and private-core-facing controls only when those pressures become real.`
+
 ### `PMO runtime transitions use templates and tools as the apply layer`
 
 - Date: `2026-05-04`

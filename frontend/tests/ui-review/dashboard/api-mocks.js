@@ -27,11 +27,16 @@ export async function installDashboardReviewApiMocks(page, options = {}) {
   const tasksById = createTaskStore(options)
   let createdTaskCount = 0
 
-  await page.route('http://localhost:3001/tasks**', async route => {
+  await page.route('http://localhost:3001/**', async route => {
     const request = route.request()
     const url = new URL(request.url())
     const method = request.method()
     const pathname = url.pathname
+
+    if (method === 'GET' && pathname === '/auth/me') {
+      await route.fulfill(json({ _id: 'review-tester', email: 'review-tester@example.com', role: 'tester' }))
+      return
+    }
 
     if (method === 'GET' && pathname === '/tasks') {
       const archived = url.searchParams.get('archived') === 'true'

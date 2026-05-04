@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
+import { apiFetch, API_BASE } from '../../services/apiClient'
 
 export function buildChatRuntimePayload(messages, runtimeControls = {}) {
   const lastUserMessage = messages.filter(message => message.role === 'user').pop()?.content || ''
@@ -10,7 +10,7 @@ export function buildChatRuntimePayload(messages, runtimeControls = {}) {
 }
 
 export async function sendChat(messages, context, runtimeControls = {}) {
-  const res = await fetch(`${API_BASE}/ai/chat`, {
+  const res = await apiFetch(`${API_BASE}/ai/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

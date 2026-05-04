@@ -41,17 +41,6 @@
 - Risks / unknowns: `The cue could still become too managerial, too poetic, too vague to orient, or too visually assertive for the dashboard. The exact balance between lived-time language and explicit time facts is still unresolved, and the feature may feel companion-like for some users but pressure-inducing for others if it ships without user control.`
 - Suggested next action: `Continue the active discussion by defining the day-phase structure, emotional texture, and user-control model first, then reassess whether the cue is stable enough for a bounded dashboard design slice.`
 
-### `Owner-Led Auth And Invite-Gated Tester Accounts`
-
-- Type: `architecture`
-- Source: `discussion`
-- Problem / Opportunity: `The product still lacks authentication. It needs a first-phase account model that supports owner-controlled tester onboarding, account-private runtime data, and owner-only private-core boundaries without forcing a full multi-tenant redesign yet.`
-- Why now: `Near-term friend testing needs real account isolation, and the auth direction should be settled before implementation planning begins.`
-- Current status: `exploring`
-- Dependencies: `A bounded first-phase design for user model, invite model, auth flow, account-scoped data access, and owner-only private-core capability boundaries.`
-- Risks / unknowns: `Auth mechanism, session shape, migration path for existing single-user data, and enforcement strategy for owner-only private-core entrypoints.`
-- Suggested next action: `Turn the current discussion conclusion into a bounded implementation design, then reassess promotion into sprint_candidates.md.`
-
 ### `Sayachan Dev-Mode Self-Knowledge Boundary`
 
 - Type: `future-lab`
@@ -129,6 +118,32 @@
 - Risks / unknowns: `The current warning may still be acceptable for the product stage, and a premature optimization pass could add complexity without real user benefit. But if bundle weight keeps growing invisibly, future frontend work may inherit a performance cost that nobody formally re-evaluated.`
 - Suggested next action: `Later, run a bounded frontend bundle review that checks current build output and identifies whether Notes/CodeMirror-related weight is still an acceptable tradeoff or should become a focused optimization slice.`
 - Reopen trigger: `A human explicitly wants a frontend performance/bundle review, or future build output keeps surfacing chunk-size warnings that start affecting delivery confidence.`
+
+### `Auth Production Bootstrap Hardening`
+
+- Type: `cleanup`
+- Source: `execution report`
+- Source reference: `docs/pmo/state/execution_report.md for Auth Invite Session Owner Skeleton`
+- Problem / Opportunity: `The first-owner bootstrap endpoint is intentionally public until an owner exists. This is acceptable for local/friend-test phase-one auth, but a later deployment or public-launch path should add stronger operator controls around first-owner initialization.`
+- Why now: `The auth skeleton sprint introduced the bootstrap endpoint as the practical way to assign legacy data to the initial owner. PMO should keep the production hardening need visible without blocking the friend-test skeleton closeout.`
+- Current status: `parked`
+- Dependencies: `A real deployment or public-launch hardening window; decision on how the owner initializes production data and whether bootstrap should be guarded by environment config, one-time secret, CLI setup, or another operator-only path.`
+- Risks / unknowns: `Leaving bootstrap as-is in a broader deployment could be unsafe if no owner exists and the endpoint is reachable. Hardening too early could complicate local setup and friend testing before deployment constraints are real.`
+- Suggested next action: `Before broader deployment or public launch, shape a narrow bootstrap hardening pass that protects first-owner creation without turning auth into a broad admin system.`
+- Reopen trigger: `A human prepares external deployment beyond trusted friend testing, public hosting, or production-like setup.`
+
+### `Auth Owner UI Review Coverage`
+
+- Type: `cleanup`
+- Source: `execution report`
+- Source reference: `docs/pmo/state/execution_report.md for Auth Invite Session Owner Skeleton`
+- Problem / Opportunity: `The auth skeleton added login, registration, route guards, and a lightweight owner surface, but did not add durable repo-native Playwright UI review coverage or screenshot artifacts for those auth/owner states.`
+- Why now: `Browser validation passed with mocked APIs, but auth and owner management are now important entry surfaces. A later UI review pass may be useful once the auth UI stabilizes through real use.`
+- Current status: `parked`
+- Dependencies: `A future UI review expansion window and enough auth/owner UI stability to make screenshots useful rather than churn-heavy.`
+- Risks / unknowns: `Adding review coverage too early could create noisy artifacts while auth UI is still settling; waiting too long could leave an important onboarding path without visual review coverage.`
+- Suggested next action: `When auth UI has survived initial usage, add a bounded auth/owner UI review baseline using the existing repo-native UI review conventions.`
+- Reopen trigger: `Auth/owner UI changes again, friend testing exposes visual or route-guard confusion, or PMO starts a UI review expansion pass.`
 
 ### `Repo-Native Claude Launch From PMO`
 

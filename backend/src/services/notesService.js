@@ -3,27 +3,42 @@ const Task = require('../models/Task');
 const {
   archiveTasks,
   buildArchiveFilter,
+  combineFilters,
   normalizeNote,
   restoreTasks
 } = require('./taskRuntimeHelpers');
 
-async function listNotes({ archived } = {}) {
-  const notes = await Note.find(buildArchiveFilter(archived)).sort({ isPinned: -1, pinnedAt: -1, updatedAt: -1 });
+function buildOwnerFilter(userId) {
+  return userId ? { userId } : {};
+}
+
+function buildOwnedFilter(id, userId) {
+  return userId ? { _id: id, userId } : { _id: id };
+}
+
+async function listNotes({ archived, userId } = {}) {
+  const notes = await Note.find(combineFilters(buildArchiveFilter(archived), buildOwnerFilter(userId)))
+    .sort({ isPinned: -1, pinnedAt: -1, updatedAt: -1 });
   return notes.map(normalizeNote);
 }
 
-async function createNote(body) {
+async function createNote(body, { userId } = {}) {
   const note = await Note.create({
     title: body.title,
     content: body.content || '',
-    archived: false
+    archived: false,
+    userId: userId || null
   });
 
   return normalizeNote(note);
 }
 
-async function updateNote(id, body) {
-  const note = await Note.findByIdAndUpdate(
+async function updateNote(id, body, { userId } = {}) {
+  const note = userId ? await Note.findOneAndUpdate(
+    buildOwnedFilter(id, userId),
+    { title: body.title, content: body.content },
+    { new: true, runValidators: true }
+  ) : await Note.findByIdAndUpdate(
     id,
     { title: body.title, content: body.content },
     { new: true, runValidators: true }
@@ -32,13 +47,19 @@ async function updateNote(id, body) {
   return normalizeNote(note);
 }
 
-async function deleteNote(id) {
-  const note = await Note.findByIdAndDelete(id);
+async function deleteNote(id, { userId } = {}) {
+  const note = userId
+    ? await Note.findOneAndDelete(buildOwnedFilter(id, userId))
+    : await Note.findByIdAndDelete(id);
   return Boolean(note);
 }
 
-async function pinNote(id) {
-  const note = await Note.findByIdAndUpdate(
+async function pinNote(id, { userId } = {}) {
+  const note = userId ? await Note.findOneAndUpdate(
+    buildOwnedFilter(id, userId),
+    { isPinned: true, pinnedAt: new Date() },
+    { new: true, runValidators: true, timestamps: false }
+  ) : await Note.findByIdAndUpdate(
     id,
     { isPinned: true, pinnedAt: new Date() },
     { new: true, runValidators: true, timestamps: false }
@@ -51,8 +72,12 @@ async function pinNote(id) {
   return normalizeNote(note);
 }
 
-async function unpinNote(id) {
-  const note = await Note.findByIdAndUpdate(
+async function unpinNote(id, { userId } = {}) {
+  const note = userId ? await Note.findOneAndUpdate(
+    buildOwnedFilter(id, userId),
+    { isPinned: false, pinnedAt: null },
+    { new: true, runValidators: true, timestamps: false }
+  ) : await Note.findByIdAndUpdate(
     id,
     { isPinned: false, pinnedAt: null },
     { new: true, runValidators: true, timestamps: false }
@@ -65,8 +90,12 @@ async function unpinNote(id) {
   return normalizeNote(note);
 }
 
-async function archiveNote(id) {
-  const note = await Note.findByIdAndUpdate(
+async function archiveNote(id, { userId } = {}) {
+  const note = userId ? await Note.findOneAndUpdate(
+    buildOwnedFilter(id, userId),
+    { archived: true },
+    { new: true, runValidators: true }
+  ) : await Note.findByIdAndUpdate(
     id,
     { archived: true },
     { new: true, runValidators: true }
@@ -78,7 +107,8 @@ async function archiveNote(id) {
 
   const modifiedCount = await archiveTasks(Task, {
     originId: id,
-    originModule: 'note'
+    originModule: 'note',
+    ...buildOwnerFilter(userId)
   });
 
   console.log(`[Note Archive] Note "${note.title}" archived, ${modifiedCount} tasks cascaded`);
@@ -86,8 +116,12 @@ async function archiveNote(id) {
   return normalizeNote(note);
 }
 
-async function restoreNote(id) {
-  const note = await Note.findByIdAndUpdate(
+async function restoreNote(id, { userId } = {}) {
+  const note = userId ? await Note.findOneAndUpdate(
+    buildOwnedFilter(id, userId),
+    { archived: false },
+    { new: true, runValidators: true }
+  ) : await Note.findByIdAndUpdate(
     id,
     { archived: false },
     { new: true, runValidators: true }
@@ -99,7 +133,8 @@ async function restoreNote(id) {
 
   const modifiedCount = await restoreTasks(Task, {
     originId: id,
-    originModule: 'note'
+    originModule: 'note',
+    ...buildOwnerFilter(userId)
   });
 
   console.log(`[Note Restore] Note "${note.title}" restored, ${modifiedCount} tasks cascaded`);

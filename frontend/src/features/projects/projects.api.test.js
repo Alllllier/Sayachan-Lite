@@ -32,11 +32,11 @@ describe('projects api boundary', () => {
   it('fetches active and archived project lists from the expected endpoints', async () => {
     fetch.mockResolvedValueOnce(jsonResponse([{ _id: 'project-1' }]))
     await expect(fetchProjects()).resolves.toEqual([{ _id: 'project-1' }])
-    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects')
+    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects', { credentials: 'include' })
 
     fetch.mockResolvedValueOnce(jsonResponse([{ _id: 'project-archived' }]))
     await expect(fetchProjects({ archived: true })).resolves.toEqual([{ _id: 'project-archived' }])
-    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects?archived=true')
+    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects?archived=true', { credentials: 'include' })
   })
 
   it('sends create and update payloads through project endpoints', async () => {
@@ -46,6 +46,7 @@ describe('projects api boundary', () => {
     await createProject(project)
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(project)
     })
@@ -54,6 +55,7 @@ describe('projects api boundary', () => {
     await updateProject('project-1', { ...project, status: 'in_progress' })
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1', {
       method: 'PUT',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...project, status: 'in_progress' })
     })
@@ -68,19 +70,19 @@ describe('projects api boundary', () => {
       .mockResolvedValueOnce({ ok: true })
 
     await archiveProject('project-1')
-    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1/archive', { method: 'PUT' })
+    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1/archive', { method: 'PUT', credentials: 'include' })
 
     await restoreProject('project-1')
-    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1/restore', { method: 'PUT' })
+    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1/restore', { method: 'PUT', credentials: 'include' })
 
     await pinProject('project-1')
-    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1/pin', { method: 'PUT' })
+    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1/pin', { method: 'PUT', credentials: 'include' })
 
     await unpinProject('project-1')
-    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1/unpin', { method: 'PUT' })
+    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1/unpin', { method: 'PUT', credentials: 'include' })
 
     await deleteProject('project-1')
-    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1', { method: 'DELETE' })
+    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1', { method: 'DELETE', credentials: 'include' })
   })
 
   it('keeps project AI and focus updates behind the project API boundary', async () => {
@@ -90,6 +92,7 @@ describe('projects api boundary', () => {
     await expect(fetchProjectNextActions(project)).resolves.toEqual({ suggestions: ['Write handoff'] })
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/ai/projects/next-action', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(project)
     })
@@ -98,6 +101,7 @@ describe('projects api boundary', () => {
     await updateProjectFocus(project, 'task-1')
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1', {
       method: 'PUT',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'PMO',

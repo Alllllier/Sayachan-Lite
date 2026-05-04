@@ -1,4 +1,4 @@
-import { reactive, ref } from 'vue'
+import { reactive, ref, unref } from 'vue'
 import { saveTask } from '../../services/tasks/index.js'
 import {
   archiveNote as archiveNoteRequest,
@@ -30,9 +30,11 @@ function sortNotes(notes) {
   })
 }
 
-function readDrafts() {
+const DEFAULT_DRAFT_STORAGE_KEY = 'sayachan_note_drafts'
+
+function readDrafts(storageKey = DEFAULT_DRAFT_STORAGE_KEY) {
   try {
-    return JSON.parse(localStorage.getItem('sayachan_note_drafts') || '{}')
+    return JSON.parse(localStorage.getItem(storageKey) || '{}')
   } catch (e) {
     return {}
   }
@@ -43,6 +45,14 @@ export function useNotesFeature(options = {}) {
   const onRefreshed = options.onRefreshed || noop
   const onNoteCreated = options.onNoteCreated || noop
   const onNoteUpdated = options.onNoteUpdated || noop
+  const draftStorageKey = options.draftStorageKey || DEFAULT_DRAFT_STORAGE_KEY
+
+  function resolveDraftStorageKey() {
+    const key = typeof draftStorageKey === 'function'
+      ? draftStorageKey()
+      : unref(draftStorageKey)
+    return key || DEFAULT_DRAFT_STORAGE_KEY
+  }
 
   const notes = ref([])
   const form = ref({ title: '', content: '' })
@@ -56,14 +66,18 @@ export function useNotesFeature(options = {}) {
   const newNoteErrors = ref(createEmptyNoteErrors())
   const editNoteErrors = ref({})
   const editingOriginalData = ref({})
-  const drafts = ref(readDrafts())
+  const drafts = ref(readDrafts(resolveDraftStorageKey()))
 
   function emitRefreshed() {
     onRefreshed(notes.value)
   }
 
   function saveDraft() {
-    localStorage.setItem('sayachan_note_drafts', JSON.stringify(drafts.value))
+    localStorage.setItem(resolveDraftStorageKey(), JSON.stringify(drafts.value))
+  }
+
+  function reloadDrafts() {
+    drafts.value = readDrafts(resolveDraftStorageKey())
   }
 
   function updateNewNoteError(field, value) {
@@ -332,6 +346,7 @@ export function useNotesFeature(options = {}) {
     updateNewNoteError,
     updateEditNoteError,
     clearEditNoteErrors,
+    reloadDrafts,
     closeAITasks,
     getNoteAIState,
     canUseNoteAction,

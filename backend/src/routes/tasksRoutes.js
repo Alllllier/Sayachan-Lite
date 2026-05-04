@@ -18,7 +18,7 @@ const router = new Router();
 // GET /tasks
 router.get('/tasks', route(async (ctx) => {
   const { projectId, archived } = ctx.query;
-  ctx.body = await tasksService.listTasks({ projectId, archived });
+  ctx.body = await tasksService.listTasks({ projectId, archived, userId: ctx.state?.user?._id });
 }));
 
 // POST /tasks
@@ -26,7 +26,7 @@ router.post('/tasks', route(async (ctx) => {
   const body = ctx.request.body;
   validateTaskCreate(body);
   ctx.status = 201;
-  ctx.body = await tasksService.createTask(body);
+  ctx.body = await tasksService.createTask(body, { userId: ctx.state?.user?._id });
 }));
 
 // PUT /tasks/:id
@@ -34,7 +34,7 @@ router.put('/tasks/:id', route(async (ctx) => {
   const id = ctx.params.id;
   const body = ctx.request.body;
   validateTaskUpdate(body);
-  const task = await tasksService.updateTask(id, body);
+  const task = await tasksService.updateTask(id, body, { userId: ctx.state?.user?._id });
   if (!task) {
     ctx.status = 404;
     ctx.body = { error: 'Task not found' };
@@ -46,7 +46,7 @@ router.put('/tasks/:id', route(async (ctx) => {
 // DELETE /tasks/:id
 router.delete('/tasks/:id', route(async (ctx) => {
   const id = ctx.params.id;
-  const deleted = await tasksService.deleteTask(id);
+  const deleted = await tasksService.deleteTask(id, { userId: ctx.state?.user?._id });
   if (!deleted) {
     ctx.status = 404;
     ctx.body = { error: 'Task not found' };

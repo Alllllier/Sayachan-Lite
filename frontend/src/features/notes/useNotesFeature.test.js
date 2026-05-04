@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 import { useNotesFeature } from './useNotesFeature.js'
 import {
   archiveNote,
@@ -69,17 +70,44 @@ describe('useNotesFeature orchestration', () => {
 
   it('persists a local draft when note creation fails', async () => {
     const notify = vi.fn()
-    const feature = useNotesFeature({ notify })
+    const feature = useNotesFeature({ notify, draftStorageKey: 'sayachan_note_drafts:user-1' })
     feature.form.value = { title: 'PMO', content: 'Plan notes' }
     createNote.mockRejectedValue(new Error('network'))
 
     await feature.createNote()
 
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      'sayachan_note_drafts',
+      'sayachan_note_drafts:user-1',
       expect.stringContaining('"title":"PMO"')
     )
     expect(notify).toHaveBeenCalledWith('Failed to save note. Please try again.', 'error')
+  })
+
+  it('uses the current draft storage key after an account switch', async () => {
+    const notify = vi.fn()
+    const draftStorageKey = ref('sayachan_note_drafts:user-1')
+    const feature = useNotesFeature({ notify, draftStorageKey })
+    createNote.mockRejectedValue(new Error('network'))
+
+    feature.form.value = { title: 'Owner draft', content: 'Owner content' }
+    await feature.createNote()
+
+    draftStorageKey.value = 'sayachan_note_drafts:user-2'
+    feature.reloadDrafts()
+    feature.form.value = { title: 'Tester draft', content: 'Tester content' }
+    await feature.createNote()
+
+    expect(localStorage.setItem).toHaveBeenNthCalledWith(
+      1,
+      'sayachan_note_drafts:user-1',
+      expect.stringContaining('"title":"Owner draft"')
+    )
+    expect(localStorage.setItem).toHaveBeenNthCalledWith(
+      2,
+      'sayachan_note_drafts:user-2',
+      expect.stringContaining('"title":"Tester draft"')
+    )
+    expect(localStorage.setItem.mock.calls[1][1]).not.toContain('Owner draft')
   })
 
   it('updates notes through the API and keeps pinned notes sorted first', async () => {

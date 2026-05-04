@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Backend Route Module Split`
+- Sprint: `Account Data Isolation And AI Context Boundary`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/backend-route-module-split.md`
+- Report surface: `docs/pmo/history/reports/account-data-isolation-and-ai-context-boundary.md`
 
 ## Next Activation Rule
 

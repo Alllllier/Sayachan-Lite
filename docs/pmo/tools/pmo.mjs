@@ -165,7 +165,9 @@ function parseCandidateFields(block) {
 }
 
 function replaceCandidateBlock(content, candidate, nextBlock) {
-  return `${content.slice(0, candidate.start)}${nextBlock.trimEnd()}\n${content.slice(candidate.end).replace(/^\n+/, '\n')}`;
+  const after = content.slice(candidate.end).replace(/^\n+/, '');
+  const separator = after.trim() ? '\n\n' : '\n';
+  return `${content.slice(0, candidate.start)}${nextBlock.trimEnd()}${separator}${after}`;
 }
 
 function removeCandidateBlock(content, candidate) {
@@ -434,12 +436,12 @@ function extractSection(content, names) {
 }
 
 function reportArchive({ sprint, date, deliveryStatus, docSync, report }) {
-  const delivered = extractSection(report, ['Delivered', 'Files changed']) || 'See source execution report.';
+  const delivered = extractSection(report, ['Delivered', 'Delivered Changes', 'Files changed']) || 'See source execution report.';
   const validation = [
-    extractSection(report, ['Validation Layers Performed', 'Validation', 'Browser validation', 'Browser Validation']),
+    extractSection(report, ['Validation Layers Performed', 'Validation', 'Validation Performed', 'Browser validation', 'Browser Validation']),
     extractSection(report, ['Unit/build validation', 'Unit And Build Validation']),
   ].filter(Boolean).join('\n\n') || 'See source execution report.';
-  const projectReview = extractSection(report, ['Project-Specific Review', 'Actual UI review', 'Actual UI Review']) || 'Not separately stated.';
+  const projectReview = extractSection(report, ['Project-Specific Review', 'Actual UI review', 'Actual UI Review', 'UI Review Status']) || 'Not separately stated.';
   const unverified = extractSection(report, ['Unverified Areas', 'Unverified areas']) || 'Not separately stated.';
   const risks = extractSection(report, ['Residual Risks', 'Risks or follow-ups', 'Risks Or Follow-Ups']) || 'Not separately stated.';
   const followUp = extractSection(report, ['Escalations Or Decisions Needed', 'Documentation sync notes', 'Documentation sync notes']) || 'Not separately stated.';

@@ -1,0 +1,73 @@
+# Account Data Isolation And AI Context Boundary
+
+- Archived date: `2026-05-04`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Account Data Isolation And AI Context Boundary`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Tightened public AI route context boundaries in `backend/src/routes/ai.js`.
+    - `/ai/notes/tasks` now reloads persisted note payloads by `{ _id, userId }` before using note title/content for fallback or provider prompts.
+    - `/ai/projects/next-action` now reloads persisted project payloads by `{ _id, userId }` before using project name/summary/status/current focus.
+    - Project focus task titles are now resolved by both `currentFocusTaskId` and current `userId`; the route no longer uses an unscoped `Task.findById()` for authenticated users.
+    - Missing or cross-account note/project ids return `404` instead of using caller-supplied body content.
+  - Added focused backend isolation coverage in `backend/test/account-isolation.test.js`.
+    - Notes list and direct-id update/delete/pin/archive ownership filters.
+    - Projects direct archive, cascade task filter, and focus clearing ownership filters.
+    - Tasks list/update/delete and focus-clearing ownership filters.
+    - Direct-id mutation attempts for another account behave as not found.
+    - AI note/project context reloads and scoped focus-task resolution.
+  - Aligned frontend account-switch runtime behavior.
+    - `frontend/src/stores/auth.js` now resets chat messages/open state and cockpit signals on logout, failed session load, failed login, and successful login to a different account.
+    - `frontend/src/components/NotesPanel.vue` passes a reactive account-specific note draft storage key and reloads drafts when that key changes.
+    - `frontend/src/features/notes/useNotesFeature.js` supports scoped draft storage keys, including reactive refs/computed keys, while preserving the default key for non-auth/test usage.
+    - Added `frontend/src/stores/auth.test.js` and updated notes feature tests for scoped draft storage.
+  - Updated repo-native UI review mocks to reflect authenticated runtime.
+    - `frontend/tests/ui-review/**/api-mocks.js` now mocks `/auth/me` with a tester user so Notes, Projects, Dashboard, and Chat review flows run under the credentialed app shell.
+  - Added a backend-local owner bootstrap helper:
+    - `backend/scripts/bootstrapOwner.mjs`
+    - `backend/package.json` script `bootstrap:owner`
+    - The helper calls `/auth/bootstrap-owner` from the backend deployment/workdir context, so it can be used locally or against a deployed backend URL.
+- Validation summary:
+  - Backend: `cd backend; npm test`
+    - Result: passed.
+    - Evidence: 31 tests passed, 0 failed.
+  - Frontend unit/build:
+    - Targeted PMO correction check: `cd frontend; npx vitest run src/features/notes/useNotesFeature.test.js src/stores/auth.test.js --exclude tests/ui-review/**`
+      - Result: passed.
+      - Evidence: 2 test files passed, 9 tests passed, 0 failed.
+    - `cd frontend; npm run test`
+      - Result: passed.
+      - Evidence after PMO correction: 19 test files passed, 118 tests passed, 0 failed.
+    - `cd frontend; npm run build`
+      - Result: passed.
+      - Note: Vite reported existing chunk-size warnings for large bundles.
+  - Backend bootstrap helper:
+    - `cd backend; node --check scripts/bootstrapOwner.mjs`
+      - Result: passed.
+    - `cd backend; npm run bootstrap:owner -- --help`
+      - Result: passed.
+  - Browser/UI review:
+    - `cd frontend; npm run test:ui-review`
+      - Initial result: failed because existing UI review mocks did not mock authenticated `/auth/me`, so guarded routes did not reach Notes/Projects/Dashboard/Chat page headings.
+      - Fix applied: added tester `/auth/me` mocks to the existing UI review API mocks.
+      - Final result: passed, 10 tests passed.
+      - Reviewed mocked surfaces: Notes desktop/mobile, Projects desktop/mobile, Dashboard desktop/mobile including empty states, Chat desktop/mobile including cockpit hydration and failure fallback.
+  - Dev-server hygiene:
+    - Checked ports `5173` and `3001` after UI review.
+    - Result: no owned long-running dev server remained; `5173` only appeared in `TimeWait`.
+- Project-specific review summary:
+  Not separately stated.
+- Unverified areas:
+  - No live MongoDB/manual browser pass was performed with real owner and tester accounts.
+  - No real provider calls to GLM/Kimi were performed; AI provider paths were validated with route-level mocks/fallback behavior.
+  - No private-core chat internals were inspected or changed.
+- Residual risks or escalations:
+  - AI note/project routes still allow ad hoc payloads with no `_id`; this preserves existing frontend behavior for non-persisted payload shape, but persisted direct-id payloads are now ownership-checked. If future clients send persisted content without ids, backend cannot independently verify that content.
+  - Legacy unowned records with `userId: null` remain invisible to authenticated users through current scoped routes. A data migration/backfill decision may be needed separately if owner legacy data must be assigned.
+  - `runtimeControls` localStorage remains device-level and unscoped by account; see runtime-state list below.
+- Documentation-sync outcome: `update required and completed`
+- Follow-up routing:
+  - PMO closeout should record that public AI note/project routes now enforce persisted-context ownership before prompt/fallback construction.
+  - PMO closeout should record that UI review fixtures now need authenticated `/auth/me` mocks after the auth skeleton.
+  - PMO closeout should record that `backend/scripts/bootstrapOwner.mjs` and `npm run bootstrap:owner` are the operator path for first-owner bootstrap.
+  - PMO closeout should update canonical baselines because account isolation, AI/context boundary behavior, UI review auth mocks, and backend bootstrap helper behavior changed current repo truth.

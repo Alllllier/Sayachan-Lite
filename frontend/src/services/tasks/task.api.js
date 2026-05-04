@@ -1,10 +1,10 @@
 import { buildTaskPayload, normalizeSavedTask } from './task.rules.js'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
+import { apiFetch, API_BASE } from '../apiClient'
 
 export async function fetchTaskList({ archived = false } = {}) {
   const url = archived ? `${API_BASE}/tasks?archived=true` : `${API_BASE}/tasks`
-  const res = await fetch(url)
+  const res = await apiFetch(url)
   return res.json()
 }
 
@@ -16,7 +16,7 @@ export async function createTask(title, creationMode, originModule = '', originI
     originId
   )
 
-  const res = await fetch(`${API_BASE}/tasks`, {
+  const res = await apiFetch(`${API_BASE}/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(taskData)
@@ -26,7 +26,7 @@ export async function createTask(title, creationMode, originModule = '', originI
 }
 
 export async function updateTask(taskId, payload) {
-  const res = await fetch(`${API_BASE}/tasks/${taskId}`, {
+  const res = await apiFetch(`${API_BASE}/tasks/${taskId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -36,7 +36,7 @@ export async function updateTask(taskId, payload) {
 }
 
 export async function deleteTask(taskId) {
-  const res = await fetch(`${API_BASE}/tasks/${taskId}`, {
+  const res = await apiFetch(`${API_BASE}/tasks/${taskId}`, {
     method: 'DELETE'
   })
   if (!res.ok) {
@@ -50,7 +50,7 @@ export async function fetchProjectTasks(projectId, archived = false) {
     if (archived) {
       url += '&archived=true'
     }
-    const res = await fetch(url)
+    const res = await apiFetch(url)
     const tasks = await res.json()
     return tasks
   } catch (e) {

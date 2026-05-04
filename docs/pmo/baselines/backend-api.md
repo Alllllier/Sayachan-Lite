@@ -12,8 +12,11 @@ It is a truth baseline, not a protocol and not a policy file.
 
 - default backend base URL: `http://localhost:3001`
 - CORS origin: `FRONTEND_ORIGIN` or `http://localhost:5173`
+- CORS credentials: enabled for cookie-backed frontend sessions
 - body parser: JSON request bodies
 - database startup is non-blocking; the server can run even when MongoDB is unavailable
+- normal non-health product/API routes require a valid `sayachan_session` cookie unless listed as public auth routes
+- owner bootstrap may be invoked by API or by `npm run bootstrap:owner` from the backend workspace, which calls the same API against a configured backend URL
 
 ## Current Models
 
@@ -26,6 +29,7 @@ Current Note fields:
 - `archived`
 - `isPinned`
 - `pinnedAt`
+- `userId`
 
 Timestamps are enabled.
 
@@ -40,6 +44,7 @@ Current Project fields:
 - `currentFocusTaskId`
 - `isPinned`
 - `pinnedAt`
+- `userId`
 
 Allowed Project statuses:
 
@@ -61,6 +66,7 @@ Preferred Task contract fields:
 - `status`
 - `archived`
 - `completed`
+- `userId`
 
 Allowed Task statuses:
 
@@ -68,6 +74,64 @@ Allowed Task statuses:
 - `completed`
 
 Timestamps are enabled.
+
+### User
+
+Current User fields:
+
+- `email`
+- `passwordHash`
+- `passwordSalt`
+- `role`
+- `status`
+- `emailVerifiedAt`
+- `phone`
+- `phoneVerifiedAt`
+
+Allowed User roles:
+
+- `owner`
+- `tester`
+
+Allowed User statuses:
+
+- `active`
+- `disabled`
+
+Timestamps are enabled.
+
+### Invite
+
+Current Invite fields:
+
+- `codeHash`
+- `codePreview`
+- `role`
+- `expiresAt`
+- `revokedAt`
+- `usedAt`
+- `usedBy`
+- `createdBy`
+
+Current Invite truth:
+
+- invite codes are not bound to email
+- invite codes are single-use
+- invite codes expire after one month
+- owner can revoke unused invites
+- the full invite code is returned only when created; later listing returns preview metadata
+
+Timestamps are enabled.
+
+### Session
+
+Current Session fields:
+
+- `tokenHash`
+- `userId`
+- `expiresAt`
+
+Sessions back the httpOnly `sayachan_session` cookie.
 
 ## Route Surface
 
@@ -87,6 +151,36 @@ Response includes:
 - timestamp
 - Mongo connection state
 
+### Auth And Owner
+
+Public auth routes:
+
+- `POST /auth/bootstrap-owner`
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/logout`
+- `GET /auth/me`
+
+Owner-only routes:
+
+- `POST /owner/invites`
+- `GET /owner/invites`
+- `POST /owner/invites/:id/revoke`
+- `GET /owner/testers`
+- `POST /owner/testers/:id/disable`
+- `POST /owner/testers/:id/restore`
+- `GET /owner/system-status`
+
+Current behavior truth:
+
+- bootstrap creates the first owner only when no owner exists
+- bootstrap assigns legacy Notes, Projects, and Tasks without `userId` to the owner
+- tester registration requires email, password, and a valid invite code
+- login sets `sayachan_session`
+- logout clears `sayachan_session` and deletes the server session when present
+- disabled users are rejected on session load and their sessions are removed when disabled
+- owner routes expose invite management, tester metadata/status management, and basic system status only
+
 ### Notes
 
 - `GET /notes`
@@ -102,6 +196,8 @@ Current behavior truth:
 
 - default list excludes archived notes
 - `?archived=true` returns archived notes only
+- note reads and mutations are scoped to the authenticated current user
+- direct-id mutations for another user's notes behave as not found through the scoped service path
 - sort order is pinned first, then `pinnedAt`, then `updatedAt`
 - archive sets `Note.archived=true` and cascades archive visibility to note-origin tasks
 - restore sets `Note.archived=false` and restores those note-origin tasks without flattening task lifecycle status
@@ -120,8 +216,10 @@ Current behavior truth:
 Current behavior truth:
 
 - `currentFocusTaskId` can be shadow-written through `PUT /projects/:id`
+- project reads and mutations are scoped to the authenticated current user
+- direct-id mutations for another user's projects behave as not found through the scoped service path
 - archive clears `currentFocusTaskId`
-- archive cascades through canonical project provenance (`originModule='project'` plus `originId=<projectId>`)
+- archive cascades through canonical project provenance (`originModule='project'` plus `originId=<projectId>`) scoped to the authenticated current user
 - archive sets `Project.archived=true` without rewriting project progress status
 - restore sets `Project.archived=false` and restores archived related tasks without flattening task lifecycle status
 
@@ -137,6 +235,8 @@ Current behavior truth:
 - default list excludes archived tasks
 - `?archived=true` returns archived tasks only
 - `?projectId=...` uses canonical project provenance (`originModule='project'` plus `originId=<projectId>`)
+- task reads and mutations are scoped to the authenticated current user
+- direct-id mutations for another user's tasks behave as not found through the scoped service path
 - task creation treats semantic provenance fields as canonical
 - updating a task can change `status`, `completed`, and `archived`
 - completing a focused canonical project task can clear `Project.currentFocusTaskId`
@@ -151,6 +251,12 @@ Current behavior truth:
 
 Current behavior truth:
 
+- AI routes are behind the same session gate as other normal product/API routes
+- `/ai/notes/tasks` reloads persisted note payloads by `_id` plus current `userId` before using note title/content for fallback or provider prompts
+- `/ai/projects/next-action` reloads persisted project payloads by `_id` plus current `userId` before using project name/summary/status/current focus
+- project next-action focus task title resolution is scoped by both task id and current `userId`
+- missing or cross-account persisted note/project ids return `404`
+- ad hoc AI note/project payloads without `_id` remain accepted for existing non-persisted frontend behavior
 - note and project AI currently use `GLM_API_KEY`
 - chat currently uses `KIMI_API_KEY` or `MOONSHOT_API_KEY`
 - all current AI routes still have fallback responses

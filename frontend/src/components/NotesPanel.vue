@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { computed, ref, reactive, onMounted, nextTick, watch } from 'vue'
 import { basicSetup } from 'codemirror'
 import { EditorView } from '@codemirror/view'
 import { markdown } from '@codemirror/lang-markdown'
@@ -19,8 +19,13 @@ import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
 import OverflowMenu from './ui/OverflowMenu.vue'
 import SegmentedControl from './ui/SegmentedControl.vue'
+import { useAuthStore } from '../stores/auth'
 
 const menuOpenNoteId = ref(null)
+const auth = useAuthStore()
+const noteDraftStorageKey = computed(() => (
+  `sayachan_note_drafts:${auth.currentUser?._id || auth.currentUser?.email || 'anonymous'}`
+))
 
 // Markdown editor refs
 const newEditorRef = ref(null)
@@ -103,12 +108,18 @@ const {
   canUseNoteAction,
   setArchiveView,
   handleAIGenerateTasks,
-  saveNoteTaskDraft
+  saveNoteTaskDraft,
+  reloadDrafts
 } = useNotesFeature({
+  draftStorageKey: noteDraftStorageKey,
   notify: showToast,
   onRefreshed: refreshedNotes => emit('refreshed', refreshedNotes),
   onNoteCreated: clearNewEditor,
   onNoteUpdated: destroyEditEditor
+})
+
+watch(noteDraftStorageKey, () => {
+  reloadDrafts()
 })
 
 // CodeMirror factory

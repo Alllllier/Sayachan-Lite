@@ -3,8 +3,8 @@ function route(handler) {
     try {
       await handler(ctx, next);
     } catch (error) {
-      if (error.status === 400) {
-        ctx.status = 400;
+      if (error.status && error.status >= 400 && error.status < 500) {
+        ctx.status = error.status;
         ctx.body = { error: error.message || 'Invalid request body' };
         return;
       }

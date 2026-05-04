@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Backend Route Module Split`
+- Sprint: `Account Data Isolation And AI Context Boundary`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/backend-route-module-split.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/account-data-isolation-and-ai-context-boundary.md`
 
 ## Next Use
 

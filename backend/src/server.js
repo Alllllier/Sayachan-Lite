@@ -7,6 +7,7 @@ const { bodyParser } = require('@koa/bodyparser');
 const { connectDB } = require('./database');
 const routes = require('./routes');
 const aiRoutes = require('./routes/ai');
+const { authMiddleware } = require('./middleware/auth');
 
 const app = new Koa();
 const PORT = process.env.PORT || 3001;
@@ -19,6 +20,9 @@ app.use(cors({
 
 // Body parser，处理请求体
 app.use(bodyParser());
+
+// Auth session loader and gate. Public auth/health routes opt out in the middleware.
+app.use(authMiddleware);
 
 // 挂载 AI 路由
 app.use(aiRoutes.routes(), aiRoutes.allowedMethods());

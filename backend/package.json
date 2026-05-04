@@ -7,6 +7,7 @@
     "start": "node src/server.js",
     "dev": "node src/server.js",
     "test": "node --test",
+    "bootstrap:owner": "node scripts/bootstrapOwner.mjs",
     "normalize:legacy-archived-tasks": "node scripts/normalizeLegacyArchivedTasks.js"
   },
   "keywords": [],

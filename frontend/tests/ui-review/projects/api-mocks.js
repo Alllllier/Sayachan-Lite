@@ -46,6 +46,11 @@ export async function installProjectsReviewApiMocks(page) {
     const method = request.method()
     const pathname = url.pathname
 
+    if (method === 'GET' && pathname === '/auth/me') {
+      await route.fulfill(json({ _id: 'review-tester', email: 'review-tester@example.com', role: 'tester' }))
+      return
+    }
+
     if (method === 'GET' && pathname === '/notes') {
       await route.fulfill(json([]))
       return

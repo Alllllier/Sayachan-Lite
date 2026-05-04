@@ -62,6 +62,22 @@
 - warmth and convergence controls
 - bridge into private AI core
 
+### Auth And Tester Onboarding
+
+- owner/tester role model
+- reusable registration page gated by invite code
+- non-email-bound single-use invite codes with one-month expiration and owner revocation
+- cookie-backed login/logout/current-user session flow
+- first-owner bootstrap path that assigns legacy pre-auth Notes, Projects, and Tasks to the owner
+- lightweight owner management for invites, tester metadata, tester disable/restore, and basic system status
+- tester accounts start with empty product data
+- Note/Project/Task `userId` ownership and route/service scoping
+- public AI note/project persisted-context ownership checks
+- project next-action focus-task lookup scoped by current user
+- frontend account-switch cleanup for chat/cockpit transient state and Notes failure drafts
+- auth-aware UI review mocks for guarded app-shell surfaces
+- backend owner bootstrap helper script through `npm run bootstrap:owner`
+
 ### Validation And PMO Baseline
 
 - feature-layer API/rules/composable tests for Notes, Projects, Dashboard, Chat, and shared task services
@@ -72,13 +88,14 @@
 ## Active Debt
 
 - workflow domain rules are still concentrated in route handlers
-- no authentication, invite flow, or account-scoped data boundary exists yet
+- production bootstrap hardening and durable auth/owner UI review coverage remain future follow-ups
+- live Mongo/manual multi-account validation has not yet been performed
 - frontend bundle size still carries the existing large-chunk warning from the current editor/runtime dependency shape
 - some PMO process/tooling improvements remain parked rather than execution-ready
 
 ## Near-Term Cleanup Priorities
 
-- shape owner-led auth and invite-gated tester accounts before external testing
 - continue the Dashboard day-phase rhythm cue discussion before promoting product work
 - keep baseline docs synced after major feature/runtime migrations
+- run live friend-test account validation before relying on broader external testing
 - defer UI review harness extraction until repeated helper drift makes it worth the indirection

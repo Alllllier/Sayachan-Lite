@@ -16,6 +16,40 @@ The current intended product loop is still:
 
 This loop is implemented across multiple surfaces rather than through a single workflow engine.
 
+## Auth And Account Runtime
+
+Current phase-one auth runtime:
+
+- normal product routes require an authenticated session
+- public auth/health routes are limited to health, owner bootstrap, tester registration, login, logout, and current-user lookup
+- sessions are carried by the httpOnly `sayachan_session` cookie
+- the first owner is created through `POST /auth/bootstrap-owner` only while no owner exists
+- owner bootstrap assigns legacy pre-auth Notes, Projects, and Tasks missing `userId` to the new owner
+- tester registration requires email, password, and a valid invite code
+- invite codes are not bound to email, are single-use, expire after one month, and can be revoked before use
+- tester accounts start with empty product data
+- disabled accounts have sessions removed and are rejected on authenticated requests
+
+Current lightweight owner runtime:
+
+- owner can create/list/revoke invite codes
+- owner can view tester account metadata
+- owner can disable/restore tester login
+- owner can view basic system status
+- owner does not have product UI/API support for viewing or editing tester content, impersonating testers, provider/API-key management, prompt/private-core controls, hard user deletion, or a broad admin console
+
+Current account-boundary truth:
+
+- Notes, Projects, and Tasks carry `userId` and their normal product route/service reads and writes are scoped to the current user
+- direct-id mutations across account boundaries behave as not found or owner-scoped no-ops through the covered route/service paths
+- project/task cascade and focus-clearing behavior is scoped to current-user-owned related records
+- public AI note/project routes reload persisted note/project payloads by current user ownership before prompt or fallback construction
+- project next-action focus-task resolution is scoped by both task id and current user ownership
+- chat receives caller-supplied public runtime context; the public runtime hydrates cockpit context from credentialed current-user `/projects` and `/tasks` reads
+- frontend-only chat/cockpit transient state resets on logout/account changes
+- Notes failure drafts in localStorage are scoped by authenticated account key
+- `runtimeControls` localStorage remains device-level and unscoped because it stores AI behavior preference, not account-owned product content
+
 ## Surface Responsibilities
 
 ### Notes
@@ -92,8 +126,9 @@ Current chat cockpit context flow:
    - `pinnedProjectName`
    - `currentNextAction`
 2. `Chat.vue` reads those signals as chat context.
-3. If cockpit signals are not yet hydrated, chat calls `refreshCockpitContext()` to rebuild a snapshot from backend `/projects` and `/tasks`.
+3. If cockpit signals are not yet hydrated, chat calls `refreshCockpitContext()` to rebuild a snapshot from authenticated backend `/projects` and `/tasks` reads.
 4. `cockpitContextService.js` derives and writes the cockpit snapshot.
+5. Auth account changes reset the transient cockpit snapshot before the next current-user hydration.
 
 This is currently a runtime bridge, not a deeper formal context architecture.
 
@@ -205,7 +240,8 @@ Current backend-mediated AI surfaces:
 Current fallback truth:
 
 - note task generation and project next-action use GLM when `GLM_API_KEY` exists and return route-local fallback drafts or suggestions otherwise
-- project next-action resolves the current focus task title on the backend before prompting
+- persisted note/project AI payloads are ownership-checked against the current authenticated user before fallback/provider prompt construction
+- project next-action resolves the current focus task title on the backend with current-user ownership before prompting
 - chat uses the public `/ai/chat` route and `backend/src/ai/bridge.js` to call the private AI core when `KIMI_API_KEY` or `MOONSHOT_API_KEY` exists
 - chat returns a route-local fallback reply when the key is missing or the bridge call fails
 

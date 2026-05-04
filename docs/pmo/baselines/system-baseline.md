@@ -33,16 +33,21 @@ Current frontend code shape:
 
 - route pages under `frontend/src/views/` are thin page shells
 - `frontend/src/App.vue` owns the global app shell, bottom navigation, and always-mounted Chat entrypoint
+- `frontend/src/views/LoginPage.vue`, `frontend/src/views/RegisterPage.vue`, and `frontend/src/views/OwnerPage.vue` provide the phase-one auth and lightweight owner-management shell
+- `frontend/src/stores/auth.js` owns current-user/session state on the frontend
 - module feature logic lives under `frontend/src/features/{module}/`
 - feature modules use `*.api.js`, `*.rules.js`, and `use*Feature.js` where applicable
 - shared app-level services remain under `frontend/src/services/`
+- shared API requests use `frontend/src/services/apiClient.js` so session cookies are sent with product API calls
 - shared task service internals live under `frontend/src/services/tasks/` as API, rules, and runtime state modules
+- auth-aware account switching resets frontend-only chat/cockpit transient state and scopes Notes failure-draft localStorage by authenticated account key
 
 Current repo-native validation shape:
 
 - feature and service behavior tests live alongside frontend feature/service modules
 - browser/UI review baselines live under `frontend/tests/ui-review/<surface>/`
 - current UI review surfaces are Notes, Projects, Dashboard, and Chat
+- UI review API mocks include authenticated `/auth/me` responses so guarded app-shell routes render during review
 - UI review screenshots are retained as review artifacts, not golden visual assertions
 
 ## Public Runtime Surfaces
@@ -108,6 +113,7 @@ Current Chat behavior includes:
 Backend routes currently split into:
 
 - `backend/src/routes/index.js`
+- `backend/src/routes/authRoutes.js`
 - `backend/src/routes/healthRoutes.js`
 - `backend/src/routes/notesRoutes.js`
 - `backend/src/routes/projectsRoutes.js`
@@ -124,8 +130,14 @@ Current AI route surface:
 
 Current route behavior truth:
 
-- non-AI health/note/project/task routes are registered through `backend/src/routes/index.js` as the aggregator
+- `backend/src/middleware/auth.js` loads the current user from the `sayachan_session` cookie and gates normal non-health product/API routes
+- auth, owner, health, note, project, and task routes are registered through `backend/src/routes/index.js` as the main route aggregator
 - non-AI note/project/task route orchestration is split through first-pass service modules under `backend/src/services/`
+- phase-one auth uses owner/tester roles, invite-gated registration, cookie-backed sessions, and lightweight owner management
+- backend owner bootstrap can be run through `backend/scripts/bootstrapOwner.mjs` or `npm run bootstrap:owner` from the backend workspace
+- Notes, Projects, and Tasks normal route/service reads and writes are scoped by current authenticated user
+- public AI note/project routes reload persisted note/project context by current user ownership before constructing fallback/provider prompts
+- project next-action focus task resolution is scoped by both task id and current user ownership
 - note and project AI routes call GLM through backend route logic
 - chat goes through `backend/src/ai/bridge.js` into the private core
 - fallback responses still exist for all current AI routes
@@ -141,6 +153,7 @@ Current Note fields:
 - `archived`
 - `isPinned`
 - `pinnedAt`
+- `userId`
 
 ### Project Model
 
@@ -153,6 +166,7 @@ Current Project fields:
 - `currentFocusTaskId`
 - `isPinned`
 - `pinnedAt`
+- `userId`
 
 ### Task Model
 
@@ -165,6 +179,17 @@ Preferred Task contract fields:
 - `status`
 - `archived`
 - `completed`
+- `userId`
+
+### Auth Models
+
+Current auth model truth:
+
+- `User` stores email, password hash/salt, role, status, and reserved verification fields
+- supported phase-one roles are `owner` and `tester`
+- supported phase-one statuses are `active` and `disabled`
+- `Invite` stores non-email-bound single-use invite codes, expiration, revocation, and usage metadata
+- `Session` stores cookie-backed session tokens and expiration for `sayachan_session`
 
 ## Current Domain Semantics
 
@@ -213,4 +238,5 @@ These are not rules, but current code-shape observations that matter for PMO tru
 - workflow-critical note/project/task orchestration now has a first-pass service layer under `backend/src/services/`
 - focus-clearing logic is implemented through backend service flows and shared task runtime helpers
 - chat runtime depends on the public bridge to the private core
-- authentication and account-scoped data boundaries do not exist yet in the product runtime
+- phase-one auth, invite-gated registration, cookie sessions, owner/tester roles, lightweight owner management, Note/Project/Task account ownership, and AI note/project persisted-context ownership now exist
+- no backend-persisted chat history, cockpit/dashboard context, or runtime settings are currently present

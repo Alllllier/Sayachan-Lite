@@ -21,6 +21,11 @@ const noteSchema = new mongoose.Schema({
   pinnedAt: {
     type: Date,
     default: null
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
   }
 }, {
   timestamps: true

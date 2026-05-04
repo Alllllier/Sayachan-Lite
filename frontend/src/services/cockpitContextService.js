@@ -1,6 +1,6 @@
 import { useCockpitSignals } from '../stores/cockpitSignals'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
+import { apiFetch, API_BASE } from './apiClient'
 
 export function deriveCockpitSnapshot(projects, tasks) {
   const safeProjects = Array.isArray(projects) ? projects : []
@@ -35,8 +35,8 @@ export async function refreshCockpitContext() {
 
   try {
     const [projectsRes, tasksRes] = await Promise.all([
-      fetch(`${API_BASE}/projects`),
-      fetch(`${API_BASE}/tasks`)
+      apiFetch(`${API_BASE}/projects`),
+      apiFetch(`${API_BASE}/tasks`)
     ])
 
     const projects = await projectsRes.json()

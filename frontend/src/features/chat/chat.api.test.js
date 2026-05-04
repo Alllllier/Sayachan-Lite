@@ -28,6 +28,7 @@ describe('chat api boundary', () => {
 
     expect(fetch).toHaveBeenCalledWith('http://localhost:3001/ai/chat', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: expect.any(String)
     })

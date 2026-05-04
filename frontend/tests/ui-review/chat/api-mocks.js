@@ -28,6 +28,11 @@ export async function installChatReviewApiMocks(page, options = {}) {
     const method = request.method()
     const pathname = url.pathname
 
+    if (method === 'GET' && pathname === '/auth/me') {
+      await route.fulfill(json({ _id: 'review-tester', email: 'review-tester@example.com', role: 'tester' }))
+      return
+    }
+
     if (method === 'GET' && pathname === '/projects') {
       if (cockpitGate) await cockpitGate.promise
       await route.fulfill(json(cockpitProjects))
@@ -58,4 +63,3 @@ export async function installChatReviewApiMocks(page, options = {}) {
     releaseChat: () => chatGate?.release()
   }
 }
-

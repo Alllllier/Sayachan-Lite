@@ -11,7 +11,7 @@ const router = new Router();
 // GET /notes
 router.get('/notes', route(async (ctx) => {
   const { archived } = ctx.query;
-  ctx.body = await notesService.listNotes({ archived });
+  ctx.body = await notesService.listNotes({ archived, userId: ctx.state?.user?._id });
 }));
 
 // POST /notes
@@ -19,7 +19,7 @@ router.post('/notes', route(async (ctx) => {
   const body = ctx.request.body;
   validateNoteCreate(body);
   ctx.status = 201;
-  ctx.body = await notesService.createNote(body);
+  ctx.body = await notesService.createNote(body, { userId: ctx.state?.user?._id });
 }));
 
 // PUT /notes/:id
@@ -27,7 +27,7 @@ router.put('/notes/:id', route(async (ctx) => {
   const id = ctx.params.id;
   const body = ctx.request.body;
   validateNoteUpdate(body);
-  const note = await notesService.updateNote(id, body);
+  const note = await notesService.updateNote(id, body, { userId: ctx.state?.user?._id });
   if (!note) {
     ctx.status = 404;
     ctx.body = { error: 'Note not found' };
@@ -39,7 +39,7 @@ router.put('/notes/:id', route(async (ctx) => {
 // DELETE /notes/:id
 router.delete('/notes/:id', route(async (ctx) => {
   const id = ctx.params.id;
-  const deleted = await notesService.deleteNote(id);
+  const deleted = await notesService.deleteNote(id, { userId: ctx.state?.user?._id });
   if (!deleted) {
     ctx.status = 404;
     ctx.body = { error: 'Note not found' };
@@ -52,7 +52,7 @@ router.delete('/notes/:id', route(async (ctx) => {
 // PUT /notes/:id/pin - Pin note (does not update content timestamp)
 router.put('/notes/:id/pin', route(async (ctx) => {
   const id = ctx.params.id;
-  const note = await notesService.pinNote(id);
+  const note = await notesService.pinNote(id, { userId: ctx.state?.user?._id });
   if (!note) {
     ctx.status = 404;
     ctx.body = { error: 'Note not found' };
@@ -64,7 +64,7 @@ router.put('/notes/:id/pin', route(async (ctx) => {
 // PUT /notes/:id/unpin - Unpin note (does not update content timestamp)
 router.put('/notes/:id/unpin', route(async (ctx) => {
   const id = ctx.params.id;
-  const note = await notesService.unpinNote(id);
+  const note = await notesService.unpinNote(id, { userId: ctx.state?.user?._id });
   if (!note) {
     ctx.status = 404;
     ctx.body = { error: 'Note not found' };
@@ -76,7 +76,7 @@ router.put('/notes/:id/unpin', route(async (ctx) => {
 // PUT /notes/:id/archive - Archive note and cascade to tasks
 router.put('/notes/:id/archive', route(async (ctx) => {
   const id = ctx.params.id;
-  const note = await notesService.archiveNote(id);
+  const note = await notesService.archiveNote(id, { userId: ctx.state?.user?._id });
 
   if (!note) {
     ctx.status = 404;
@@ -90,7 +90,7 @@ router.put('/notes/:id/archive', route(async (ctx) => {
 // PUT /notes/:id/restore - Restore note and cascade to tasks
 router.put('/notes/:id/restore', route(async (ctx) => {
   const id = ctx.params.id;
-  const note = await notesService.restoreNote(id);
+  const note = await notesService.restoreNote(id, { userId: ctx.state?.user?._id });
 
   if (!note) {
     ctx.status = 404;

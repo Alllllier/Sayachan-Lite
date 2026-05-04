@@ -25,6 +25,7 @@ describe('task API', () => {
 
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: 'Saved task',
@@ -50,7 +51,7 @@ describe('task API', () => {
 
     const tasks = await fetchTaskList({ archived: true })
 
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?archived=true')
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?archived=true', { credentials: 'include' })
     expect(tasks).toEqual([{ _id: 'archived-task', status: 'active', archived: true }])
   })
 
@@ -64,6 +65,7 @@ describe('task API', () => {
 
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks/task-1', {
       method: 'PUT',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ completed: true, status: 'completed' })
     })
@@ -83,7 +85,8 @@ describe('task API', () => {
     await deleteTask('task-1')
 
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks/task-1', {
-      method: 'DELETE'
+      method: 'DELETE',
+      credentials: 'include'
     })
   })
 
@@ -95,7 +98,7 @@ describe('task API', () => {
 
     const tasks = await fetchProjectTasks('project-42')
 
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?projectId=project-42')
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?projectId=project-42', { credentials: 'include' })
     expect(tasks).toEqual([{ _id: 'project-task' }])
   })
 
@@ -107,7 +110,7 @@ describe('task API', () => {
 
     const tasks = await fetchProjectTasks('project-42', true)
 
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?projectId=project-42&archived=true')
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?projectId=project-42&archived=true', { credentials: 'include' })
     expect(tasks).toEqual([{ _id: 'archived-project-task', status: 'active', archived: true }])
   })
 
@@ -123,8 +126,8 @@ describe('task API', () => {
 
     const tasks = await fetchProjectCardTasks('project-42', false)
 
-    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:3001/tasks?projectId=project-42')
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:3001/tasks?projectId=project-42&archived=true')
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:3001/tasks?projectId=project-42', { credentials: 'include' })
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:3001/tasks?projectId=project-42&archived=true', { credentials: 'include' })
     expect(tasks).toEqual([
       { _id: 'project-task', archived: false, status: 'active' },
       { _id: 'archived-project-task', archived: true, status: 'active' }
@@ -140,7 +143,7 @@ describe('task API', () => {
     const tasks = await fetchProjectCardTasks('project-42', true)
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?projectId=project-42&archived=true')
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/tasks?projectId=project-42&archived=true', { credentials: 'include' })
     expect(tasks).toEqual([{ _id: 'archived-project-task', archived: true, status: 'active' }])
   })
 })

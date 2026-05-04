@@ -1,11 +1,34 @@
 <script setup>
+import { computed } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import Chat from './components/Chat.vue'
+import { useAuthStore } from './stores/auth'
+
+const auth = useAuthStore()
+const route = useRoute()
+const router = useRouter()
+const isPublicAuthRoute = computed(() => route.meta.public)
+
+async function logout() {
+  await auth.logout()
+  await router.push('/login')
+}
 </script>
 
 <template>
-  <div class="app">
+  <div class="app" :class="{ 'app--auth': isPublicAuthRoute }">
+    <header v-if="!isPublicAuthRoute && auth.isAuthenticated" class="top-shell">
+      <div>
+        <strong>Sayachan Lite</strong>
+        <span>{{ auth.currentUser.email }}</span>
+      </div>
+      <div class="top-shell__actions">
+        <RouterLink v-if="auth.isOwner" to="/owner" class="btn btn-secondary btn-sm">Owner</RouterLink>
+        <button class="btn btn-secondary btn-sm" type="button" @click="logout">Logout</button>
+      </div>
+    </header>
     <router-view />
-    <nav class="bottom-nav">
+    <nav v-if="!isPublicAuthRoute && auth.isAuthenticated" class="bottom-nav">
       <router-link to="/notes" class="nav-item">
         <span class="nav-icon">Notes</span>
       </router-link>
@@ -16,7 +39,7 @@ import Chat from './components/Chat.vue'
         <span class="nav-icon">Projects</span>
       </router-link>
     </nav>
-    <Chat />
+    <Chat v-if="!isPublicAuthRoute && auth.isAuthenticated" />
   </div>
 </template>
 
@@ -35,7 +58,60 @@ body {
 
 .app {
   min-height: 100vh;
+  padding-top: 56px;
   padding-bottom: 60px;
+}
+
+.app--auth {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.top-shell {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 0 var(--space-md);
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--border-default);
+  z-index: 100;
+}
+
+.top-shell div:first-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.top-shell strong,
+.top-shell span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-shell strong {
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+}
+
+.top-shell span {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.top-shell__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 0;
 }
 
 .bottom-nav {

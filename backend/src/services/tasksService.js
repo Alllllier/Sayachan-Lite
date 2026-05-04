@@ -9,15 +9,23 @@ const {
   projectTaskReadFilter
 } = require('./taskRuntimeHelpers');
 
-async function listTasks({ projectId, archived } = {}) {
+function buildOwnerFilter(userId) {
+  return userId ? { userId } : {};
+}
+
+function buildOwnedFilter(id, userId) {
+  return userId ? { _id: id, userId } : { _id: id };
+}
+
+async function listTasks({ projectId, archived, userId } = {}) {
   const filter = projectId
-    ? combineFilters(buildArchiveFilter(archived), projectTaskReadFilter(projectId))
-    : buildArchiveFilter(archived);
+    ? combineFilters(buildArchiveFilter(archived), projectTaskReadFilter(projectId), buildOwnerFilter(userId))
+    : combineFilters(buildArchiveFilter(archived), buildOwnerFilter(userId));
   const tasks = await Task.find(filter).sort({ createdAt: -1 });
   return tasks.map(normalizeTask);
 }
 
-async function createTask(body) {
+async function createTask(body, { userId } = {}) {
   const taskData = {
     title: body.title,
     creationMode: body.creationMode || 'manual',
@@ -25,7 +33,8 @@ async function createTask(body) {
     originId: body.originId || null,
     status: 'active',
     archived: false,
-    completed: false
+    completed: false,
+    userId: userId || null
   };
 
   const task = await Task.create(taskData);
@@ -53,38 +62,44 @@ function buildTaskUpdate(body) {
   return update;
 }
 
-async function updateTask(id, body) {
-  const existingTask = await Task.findById(id);
+async function updateTask(id, body, { userId } = {}) {
+  const existingTask = userId
+    ? await Task.findOne(buildOwnedFilter(id, userId))
+    : await Task.findById(id);
   if (!existingTask) {
     return null;
   }
 
   const normalizedExistingTask = normalizeTask(existingTask);
-  const task = await Task.findByIdAndUpdate(id, buildTaskUpdate(body), { new: true, runValidators: true });
+  const task = userId
+    ? await Task.findOneAndUpdate(buildOwnedFilter(id, userId), buildTaskUpdate(body), { new: true, runValidators: true })
+    : await Task.findByIdAndUpdate(id, buildTaskUpdate(body), { new: true, runValidators: true });
   const normalizedTask = normalizeTask(task);
 
   const isBecomingCompleted = normalizedTask.status === 'completed' && normalizedExistingTask.status !== 'completed';
 
   if (isBecomingCompleted && isProjectOwnedTask(normalizedTask)) {
-    await clearFocusForTask(Project, normalizedTask._id, 'task completion');
+    await clearFocusForTask(Project, normalizedTask._id, 'task completion', userId);
   }
 
   const isBecomingArchived = normalizedTask.archived && !normalizedExistingTask.archived;
   if (isBecomingArchived) {
-    await clearFocusForTask(Project, normalizedTask._id, 'task archive');
+    await clearFocusForTask(Project, normalizedTask._id, 'task archive', userId);
   }
 
   return normalizedTask;
 }
 
-async function deleteTask(id) {
-  const task = await Task.findByIdAndDelete(id);
+async function deleteTask(id, { userId } = {}) {
+  const task = userId
+    ? await Task.findOneAndDelete(buildOwnedFilter(id, userId))
+    : await Task.findByIdAndDelete(id);
 
   if (!task) {
     return false;
   }
 
-  await clearFocusForTask(Project, task._id, 'task delete');
+  await clearFocusForTask(Project, task._id, 'task delete', userId);
   return true;
 }
 

@@ -1,14 +1,18 @@
 const Router = require('@koa/router');
 const { chat: runChat } = require('../ai/bridge');
+const Note = require('../models/Note');
+const Project = require('../models/Project');
 const Task = require('../models/Task');
 
 const router = new Router();
 
 // Phase 3: task-based focus only
-async function getProjectFocusContext(project) {
+async function getProjectFocusContext(project, userId) {
   if (project?.currentFocusTaskId) {
     try {
-      const focusTask = await Task.findById(project.currentFocusTaskId);
+      const focusTask = userId
+        ? await Task.findOne({ _id: project.currentFocusTaskId, userId })
+        : await Task.findById(project.currentFocusTaskId);
       if (focusTask?.title?.trim()) {
         return focusTask.title.trim();
       }
@@ -47,9 +51,49 @@ function fallback(note, project, type) {
   return {};
 }
 
+function getPayloadId(payload) {
+  return payload?._id || payload?.id || null;
+}
+
+function normalizeDoc(doc) {
+  return doc?.toObject ? doc.toObject() : doc;
+}
+
+async function resolveOwnedNotePayload(payload, userId) {
+  const noteId = getPayloadId(payload);
+  if (!noteId) {
+    return payload || {};
+  }
+
+  const note = userId
+    ? await Note.findOne({ _id: noteId, userId })
+    : await Note.findById(noteId);
+
+  return normalizeDoc(note);
+}
+
+async function resolveOwnedProjectPayload(payload, userId) {
+  const projectId = getPayloadId(payload);
+  if (!projectId) {
+    return payload || {};
+  }
+
+  const project = userId
+    ? await Project.findOne({ _id: projectId, userId })
+    : await Project.findById(projectId);
+
+  return normalizeDoc(project);
+}
+
 // POST /ai/notes/tasks - Generate tasks from a note
 router.post('/ai/notes/tasks', async (ctx) => {
-  const note = ctx.request.body;
+  const note = await resolveOwnedNotePayload(ctx.request.body, ctx.state?.user?._id);
+  if (!note) {
+    ctx.status = 404;
+    ctx.body = { error: 'Note not found' };
+    return;
+  }
+
   const API_KEY = process.env.GLM_API_KEY;
 
   // Fallback: API key missing
@@ -134,7 +178,14 @@ router.post('/ai/notes/tasks', async (ctx) => {
 
 // POST /ai/projects/next-action - Suggest next action for a project
 router.post('/ai/projects/next-action', async (ctx) => {
-  const project = ctx.request.body;
+  const userId = ctx.state?.user?._id;
+  const project = await resolveOwnedProjectPayload(ctx.request.body, userId);
+  if (!project) {
+    ctx.status = 404;
+    ctx.body = { error: 'Project not found' };
+    return;
+  }
+
   const API_KEY = process.env.GLM_API_KEY;
 
   // Fallback: API key missing
@@ -148,7 +199,7 @@ router.post('/ai/projects/next-action', async (ctx) => {
   const summary = project?.summary || '(无描述)';
   const status = project?.status || 'unknown';
   // Canonical: task-based focus only
-  const currentFocus = await getProjectFocusContext(project) || '(无)';
+  const currentFocus = await getProjectFocusContext(project, userId) || '(无)';
 
   const promptText = `始终使用简体中文输出。
 
@@ -248,3 +299,8 @@ router.post('/ai/chat', async (ctx) => {
 });
 
 module.exports = router;
+module.exports.__test__ = {
+  getProjectFocusContext,
+  resolveOwnedNotePayload,
+  resolveOwnedProjectPayload
+};
