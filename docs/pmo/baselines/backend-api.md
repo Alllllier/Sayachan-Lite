@@ -152,6 +152,7 @@ Sessions back the httpOnly `sayachan_session` cookie and the frontend bearer-tok
 
 ### Non-AI Error Contract
 
+- JSON error normalization is handled by the app-level backend error middleware before parser, auth, and route dispatch
 - malformed or invalid `POST` / `PUT` bodies on Notes, Projects, and Tasks return `400` with `{ error: 'Invalid request body' }`
 - existing missing-id route errors remain resource-specific `404` payloads such as `{ error: 'Note not found' }`, `{ error: 'Project not found' }`, and `{ error: 'Task not found' }`
 - unexpected non-AI route/service failures return `500` with `{ error: 'Internal server error' }` and do not expose raw internal error messages in the response body

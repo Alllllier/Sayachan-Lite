@@ -8,6 +8,7 @@ const { connectDB } = require('./database');
 const routes = require('./routes');
 const aiRoutes = require('./routes/ai');
 const { authMiddleware } = require('./middleware/auth');
+const { errorBoundary } = require('./middleware/errorBoundary');
 
 const app = new Koa();
 const PORT = process.env.PORT || 3001;
@@ -37,6 +38,9 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+// Normalize downstream parser/auth/route failures into stable JSON responses.
+app.use(errorBoundary);
 
 // Body parser，处理请求体
 app.use(bodyParser());

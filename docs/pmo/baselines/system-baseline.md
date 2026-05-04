@@ -119,8 +119,8 @@ Backend routes currently split into:
 - `backend/src/routes/projectsRoutes.js`
 - `backend/src/routes/tasksRoutes.js`
 - `backend/src/routes/requestValidation.js`
-- `backend/src/routes/routeBoundary.js`
 - `backend/src/routes/ai.js`
+- `backend/src/middleware/errorBoundary.js`
 
 Current AI route surface:
 
@@ -131,6 +131,7 @@ Current AI route surface:
 Current route behavior truth:
 
 - `backend/src/middleware/auth.js` loads the current user from the `sayachan_session` cookie and gates normal non-health product/API routes
+- `backend/src/middleware/errorBoundary.js` is registered before body parsing, auth, and routers so downstream parser/auth/route failures return stable JSON error payloads
 - auth, owner, health, note, project, and task routes are registered through `backend/src/routes/index.js` as the main route aggregator
 - non-AI note/project/task route orchestration is split through first-pass service modules under `backend/src/services/`
 - phase-one auth uses owner/tester roles, invite-gated registration, cookie-backed sessions, and lightweight owner management

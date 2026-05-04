@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const Note = require('../src/models/Note');
 const Project = require('../src/models/Project');
 const Task = require('../src/models/Task');
+const { errorBoundary } = require('../src/middleware/errorBoundary');
 const routes = require('../src/routes/index.js');
 
 function getRouteHandler(method, path) {
@@ -11,7 +12,7 @@ function getRouteHandler(method, path) {
   if (!layer) {
     throw new Error(`Route not found: ${method} ${path}`);
   }
-  return async (ctx, next) => {
+  return async (ctx, next) => errorBoundary(ctx, async () => {
     let index = -1;
     async function dispatch(position) {
       if (position <= index) {
@@ -24,7 +25,7 @@ function getRouteHandler(method, path) {
       }
     }
     await dispatch(0);
-  };
+  });
 }
 
 function createCtx({ query = {}, params = {}, body = {}, userId = '000000000000000000000001' } = {}) {

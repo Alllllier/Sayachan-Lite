@@ -5,6 +5,7 @@ const Note = require('../src/models/Note');
 const Project = require('../src/models/Project');
 const Task = require('../src/models/Task');
 const aiRoutes = require('../src/routes/ai');
+const { errorBoundary } = require('../src/middleware/errorBoundary');
 const routes = require('../src/routes/index.js');
 
 function getRouteHandler(router, method, path) {
@@ -12,7 +13,7 @@ function getRouteHandler(router, method, path) {
   if (!layer) {
     throw new Error(`Route not found: ${method} ${path}`);
   }
-  return async (ctx, next) => {
+  return async (ctx, next) => errorBoundary(ctx, async () => {
     let index = -1;
     async function dispatch(position) {
       if (position <= index) {
@@ -25,7 +26,7 @@ function getRouteHandler(router, method, path) {
       }
     }
     await dispatch(0);
-  };
+  });
 }
 
 function createCtx({ query = {}, params = {}, body = {}, userId = 'user-owner' } = {}) {

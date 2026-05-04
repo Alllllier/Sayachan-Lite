@@ -6,6 +6,7 @@ const Invite = require('../src/models/Invite');
 const Session = require('../src/models/Session');
 const authService = require('../src/services/authService');
 const { authMiddleware } = require('../src/middleware/auth');
+const { errorBoundary } = require('../src/middleware/errorBoundary');
 const routes = require('../src/routes/index.js');
 
 function createDoc(data) {
@@ -42,7 +43,20 @@ function getRouteHandler(method, path) {
   if (!layer) {
     throw new Error(`Route not found: ${method} ${path}`);
   }
-  return layer.stack[0];
+  return async (ctx, next) => errorBoundary(ctx, async () => {
+    let index = -1;
+    async function dispatch(position) {
+      if (position <= index) {
+        throw new Error('next() called multiple times');
+      }
+      index = position;
+      const middleware = layer.stack[position] || next;
+      if (middleware) {
+        await middleware(ctx, () => dispatch(position + 1));
+      }
+    }
+    await dispatch(0);
+  });
 }
 
 test('tester registration requires a valid single-use invite code', async () => {

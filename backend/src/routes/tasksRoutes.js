@@ -12,26 +12,25 @@ const {
   validateTaskCreate,
   validateTaskUpdate
 } = require('./requestValidation');
-const route = require('./routeBoundary');
 
 const router = new Router();
 
 // GET /tasks
-router.get('/tasks', requireCurrentUser, route(async (ctx) => {
+router.get('/tasks', requireCurrentUser, async (ctx) => {
   const { projectId, archived } = ctx.query;
   ctx.body = await tasksService.listTasks({ projectId, archived, userId: ctx.state.userId });
-}));
+});
 
 // POST /tasks
-router.post('/tasks', requireCurrentUser, route(async (ctx) => {
+router.post('/tasks', requireCurrentUser, async (ctx) => {
   const body = ctx.request.body;
   validateTaskCreate(body);
   ctx.status = 201;
   ctx.body = await tasksService.createTask(body, { userId: ctx.state.userId });
-}));
+});
 
 // PUT /tasks/:id
-router.put('/tasks/:id', requireCurrentUser, route(async (ctx) => {
+router.put('/tasks/:id', requireCurrentUser, async (ctx) => {
   const id = ctx.params.id;
   const body = ctx.request.body;
   validateTaskUpdate(body);
@@ -42,10 +41,10 @@ router.put('/tasks/:id', requireCurrentUser, route(async (ctx) => {
     return;
   }
   ctx.body = task;
-}));
+});
 
 // DELETE /tasks/:id
-router.delete('/tasks/:id', requireCurrentUser, route(async (ctx) => {
+router.delete('/tasks/:id', requireCurrentUser, async (ctx) => {
   const id = ctx.params.id;
   const deleted = await tasksService.deleteTask(id, { userId: ctx.state.userId });
   if (!deleted) {
@@ -55,7 +54,7 @@ router.delete('/tasks/:id', requireCurrentUser, route(async (ctx) => {
     ctx.status = 204;
     ctx.body = null;
   }
-}));
+});
 
 module.exports = router;
 module.exports.__test__ = {

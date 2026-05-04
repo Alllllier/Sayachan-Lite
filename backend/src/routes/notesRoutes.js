@@ -5,26 +5,25 @@ const {
   validateNoteCreate,
   validateNoteUpdate
 } = require('./requestValidation');
-const route = require('./routeBoundary');
 
 const router = new Router();
 
 // GET /notes
-router.get('/notes', requireCurrentUser, route(async (ctx) => {
+router.get('/notes', requireCurrentUser, async (ctx) => {
   const { archived } = ctx.query;
   ctx.body = await notesService.listNotes({ archived, userId: ctx.state.userId });
-}));
+});
 
 // POST /notes
-router.post('/notes', requireCurrentUser, route(async (ctx) => {
+router.post('/notes', requireCurrentUser, async (ctx) => {
   const body = ctx.request.body;
   validateNoteCreate(body);
   ctx.status = 201;
   ctx.body = await notesService.createNote(body, { userId: ctx.state.userId });
-}));
+});
 
 // PUT /notes/:id
-router.put('/notes/:id', requireCurrentUser, route(async (ctx) => {
+router.put('/notes/:id', requireCurrentUser, async (ctx) => {
   const id = ctx.params.id;
   const body = ctx.request.body;
   validateNoteUpdate(body);
@@ -35,10 +34,10 @@ router.put('/notes/:id', requireCurrentUser, route(async (ctx) => {
   } else {
     ctx.body = note;
   }
-}));
+});
 
 // DELETE /notes/:id
-router.delete('/notes/:id', requireCurrentUser, route(async (ctx) => {
+router.delete('/notes/:id', requireCurrentUser, async (ctx) => {
   const id = ctx.params.id;
   const deleted = await notesService.deleteNote(id, { userId: ctx.state.userId });
   if (!deleted) {
@@ -48,10 +47,10 @@ router.delete('/notes/:id', requireCurrentUser, route(async (ctx) => {
     ctx.status = 204;
     ctx.body = null;
   }
-}));
+});
 
 // PUT /notes/:id/pin - Pin note (does not update content timestamp)
-router.put('/notes/:id/pin', requireCurrentUser, route(async (ctx) => {
+router.put('/notes/:id/pin', requireCurrentUser, async (ctx) => {
   const id = ctx.params.id;
   const note = await notesService.pinNote(id, { userId: ctx.state.userId });
   if (!note) {
@@ -60,10 +59,10 @@ router.put('/notes/:id/pin', requireCurrentUser, route(async (ctx) => {
     return;
   }
   ctx.body = note;
-}));
+});
 
 // PUT /notes/:id/unpin - Unpin note (does not update content timestamp)
-router.put('/notes/:id/unpin', requireCurrentUser, route(async (ctx) => {
+router.put('/notes/:id/unpin', requireCurrentUser, async (ctx) => {
   const id = ctx.params.id;
   const note = await notesService.unpinNote(id, { userId: ctx.state.userId });
   if (!note) {
@@ -72,10 +71,10 @@ router.put('/notes/:id/unpin', requireCurrentUser, route(async (ctx) => {
     return;
   }
   ctx.body = note;
-}));
+});
 
 // PUT /notes/:id/archive - Archive note and cascade to tasks
-router.put('/notes/:id/archive', requireCurrentUser, route(async (ctx) => {
+router.put('/notes/:id/archive', requireCurrentUser, async (ctx) => {
   const id = ctx.params.id;
   const note = await notesService.archiveNote(id, { userId: ctx.state.userId });
 
@@ -86,10 +85,10 @@ router.put('/notes/:id/archive', requireCurrentUser, route(async (ctx) => {
   }
 
   ctx.body = note;
-}));
+});
 
 // PUT /notes/:id/restore - Restore note and cascade to tasks
-router.put('/notes/:id/restore', requireCurrentUser, route(async (ctx) => {
+router.put('/notes/:id/restore', requireCurrentUser, async (ctx) => {
   const id = ctx.params.id;
   const note = await notesService.restoreNote(id, { userId: ctx.state.userId });
 
@@ -100,6 +99,6 @@ router.put('/notes/:id/restore', requireCurrentUser, route(async (ctx) => {
   }
 
   ctx.body = note;
-}));
+});
 
 module.exports = router;
