@@ -172,10 +172,10 @@
 
 - Type: `cleanup`
 - Source: `discussion`
-- Problem / Opportunity: `A growing number of execution procedures and worker expectations still live only in PMO docs, CLAUDE.md, or scattered repo notes instead of being formalized as reusable skills. Formalizing those procedures into skills would make execution behavior more durable, reduce prompt drift, and help decouple the repo's worker model from any one named executor such as Claude.`
+- Problem / Opportunity: `A growing number of execution procedures and worker expectations still live only in PMO docs, AGENT.md, or scattered repo notes instead of being formalized as reusable skills. Formalizing those procedures into skills would make execution behavior more durable, reduce prompt drift, and help decouple the repo's worker model from any one named executor such as Claude.`
 - Why now: `Recent use of sub-agents and worker handoffs exposed that the PMO runtime is already fairly worker-abstract, but the surrounding execution procedures and entry guidance are still unevenly distributed. Capturing this now keeps the idea visible until there is time to intentionally restructure it.`
 - Current status: `parked`
-- Dependencies: `A later bounded cleanup/design pass that maps which execution procedures should become formal skills, which worker-facing instructions should move out of CLAUDE-specific docs, and how those skills should integrate with PMO execution_task handoffs.`
+- Dependencies: `A later bounded cleanup/design pass that maps which execution procedures should become formal skills, which worker-facing instructions should move out of executor-specific docs, and how those skills should integrate with PMO execution_task handoffs.`
 - Risks / unknowns: `If approached too broadly, this could sprawl into a repo-wide documentation rewrite instead of a focused worker-interface cleanup. It is also still unclear which procedures belong in durable skills versus baseline docs or operator guides.`
 - Suggested next action: `Later, run a bounded discussion that inventories scattered execution procedures, identifies the highest-value candidates for skill formalization, and defines how that work should align with broader worker/Claude decoupling.`
 - Reopen trigger: `A human explicitly wants to formalize execution procedures into skills, or worker/Claude decoupling becomes an active PMO topic.`

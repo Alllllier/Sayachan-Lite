@@ -40,7 +40,7 @@ Reading this protocol does not give the execution worker PMO selection authority
 2. Codex updates `current_sprint.md` from `../state/templates/current-sprint.active.template.md`.
 3. Codex writes the bounded active task into `execution_task.md` from `../state/templates/execution-task.template.md`.
 4. If the sprint came from `sprint_candidates.md`, Codex may mark the selected entry `active` but must not expand it into a worker brief.
-5. The execution worker treats `execution_task.md` as the active execution source.
+5. The execution worker reads root `AGENT.md` as the repository execution entrypoint, then treats `execution_task.md` as the active execution source.
 6. The execution worker writes outcomes, validation, unresolved items, and escalations into `execution_report.md`.
 7. Codex reads `execution_report.md` and decides whether the sprint is ready for closeout, needs follow-up, or must remain active.
 8. Any deferred or parked follow-up that should survive the sprint must be routed back into `idea_backlog.md` or `decision_log.md` during closeout rather than left only in the report.
@@ -52,6 +52,7 @@ After the human/PMO selection is clear, `../tools/pmo.mjs` may perform the mecha
 An active `execution_task.md` should contain at least:
 
 - sprint or task identifier
+- worker boot rule that points to root `AGENT.md`
 - source trace
 - objective
 - safe touch zones

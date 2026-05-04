@@ -14,7 +14,7 @@ The current strong sync surfaces are:
 
 - `docs/pmo/**` active runtime, protocol, policy, and history entry documents
 - `docs/pmo/baselines/**`
-- `CLAUDE.md` as the execution entrypoint
+- `AGENT.md` as the execution entrypoint
 
 `docs/ai-ops/**` is currently not treated as a mandatory strong sync surface for normal PMO closeout.
 
@@ -64,7 +64,7 @@ Run documentation review when a change alters:
 
 Primary review targets:
 
-- `CLAUDE.md`
+- `AGENT.md`
 - `docs/pmo/protocols/execution-handoff-protocol.md`
 - `docs/pmo/PMO_OPERATING_MANUAL.md` when canonical ownership or reading order changes
 

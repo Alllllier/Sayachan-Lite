@@ -51,7 +51,7 @@ Then do a weak companion check:
 
 Check first:
 
-- `CLAUDE.md`
+- `AGENT.md`
 - `docs/pmo/protocols/execution-handoff-protocol.md`
 - `docs/pmo/state/execution_task.md` or `docs/pmo/state/execution_report.md` only when canonical runtime semantics changed
 

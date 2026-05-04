@@ -31,8 +31,8 @@
 | `decision-capture-policy.md` | `discussion-workflow.md`, `promotion-workflow.md`, `sprint-workflow.md` |
 | `validation-floor-policy.md` | `sprint-workflow.md`, `execution-handoff-protocol.md`, `PMO_OPERATING_MANUAL.md` |
 | `documentation-sync-policy.md` | `sprint-workflow.md`, `PMO_OPERATING_MANUAL.md` |
-| `documentation-sync-guide.md` | `documentation-sync-policy.md`, `sprint-workflow.md`, `CLAUDE.md` |
-| `testing-and-ui-review-guide.md` | `validation-floor-policy.md`, `sprint-workflow.md`, `CLAUDE.md` |
+| `documentation-sync-guide.md` | `documentation-sync-policy.md`, `sprint-workflow.md`, `AGENT.md` |
+| `testing-and-ui-review-guide.md` | `validation-floor-policy.md`, `sprint-workflow.md`, `AGENT.md` |
 | `ai-fallback-policy.md` | `discussion-workflow.md`, `promotion-workflow.md`, `sprint-workflow.md`, `execution-handoff-protocol.md`, `PMO_OPERATING_MANUAL.md` |
-| `feature-completion-checklist.md` | `sprint-workflow.md`, `PMO_OPERATING_MANUAL.md`, `CLAUDE.md` |
-| `architecture-sensitive-areas.md` | `discussion-workflow.md`, `sprint-workflow.md`, `execution-handoff-protocol.md`, `PMO_OPERATING_MANUAL.md`, `CLAUDE.md` |
+| `feature-completion-checklist.md` | `sprint-workflow.md`, `PMO_OPERATING_MANUAL.md`, `AGENT.md` |
+| `architecture-sensitive-areas.md` | `discussion-workflow.md`, `sprint-workflow.md`, `execution-handoff-protocol.md`, `PMO_OPERATING_MANUAL.md`, `AGENT.md` |

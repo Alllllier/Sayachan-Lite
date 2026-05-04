@@ -4,6 +4,12 @@
 - Sprint: `<selected sprint name>`
 - Last updated: `<YYYY-MM-DD>`
 
+## Worker Boot Rule
+
+- Before executing, read `AGENT.md` as the repository execution entrypoint.
+- Then read this file as the canonical active execution contract.
+- Do not plan from `sprint_candidates.md`, `idea_backlog.md`, or broader PMO docs unless this handoff explicitly asks for that context.
+
 ## Source Trace
 
 - Candidate source:

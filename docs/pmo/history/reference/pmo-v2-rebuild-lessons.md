@@ -70,10 +70,10 @@ The old PMO is now legacy reference under:
 
 ## Execution-Layer Lesson
 
-- `CLAUDE.md` is not the owner of PMO rules.
+- `AGENT.md` is not the owner of PMO rules.
 - It is an execution-entry companion document.
 - PMO owns runtime, protocol, policy, and documentation-sync logic.
-- `CLAUDE.md` should only point execution threads toward canonical PMO entrypoints and behavior-sensitive docs.
+- `AGENT.md` should only point execution threads toward canonical PMO entrypoints and behavior-sensitive docs.
 
 ## AI-Ops Lesson
 
