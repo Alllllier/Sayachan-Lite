@@ -1,19 +1,19 @@
 # PMO Handoff Template
 
-Use this when Codex hands execution to Claude VS Code after a sprint review or architecture decision.
+Use this when Codex hands execution to an execution worker after a sprint review or architecture decision.
 
 ## Handoff Header
 
 - Request name:
 - Source sprint:
 - Requested by:
-- Execution owner: `Claude VS Code`
+- Execution owner: `execution worker`
 - Escalation owner: `Human`
 - PMO coordinator: `Codex`
 
 ## 1. Objective
 
-State the concrete outcome Claude should produce.
+State the concrete outcome the worker should produce.
 
 ## 2. Why This Matters Now
 
@@ -31,7 +31,7 @@ Describe the sprint or architecture reason in two lines or fewer.
 
 ## 5. Execution Notes
 
-- constraints Claude must preserve
+- constraints the worker must preserve
 - existing patterns to follow
 - dependencies or sequencing requirements
 
@@ -52,7 +52,7 @@ Describe the sprint or architecture reason in two lines or fewer.
 
 ## 8. PMO Closeout Format
 
-Ask Claude to return:
+Ask the worker to return:
 
 - what changed
 - what validation was run

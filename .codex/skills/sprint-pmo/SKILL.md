@@ -1,6 +1,6 @@
 ---
 name: sprint-pmo
-description: Operate as the PMO command center for long-running architecture programs where Codex coordinates delivery, Claude VS Code executes implementation work, and the human owns architecture decisions. Use when Codex needs to close a sprint, prepare a PMO reply, convert architecture intent into an execution handoff, track risks and technical debt across AI core, product runtime, and future labs, or propose the next sprint with minimal progressive disclosure.
+description: Operate as the PMO command center for long-running Sayachan development where Codex coordinates delivery, an execution worker implements approved slices, and the human owns architecture decisions. Use when Codex needs to shape candidates, activate or close a sprint, maintain PMO state, prepare or review an execution handoff, track risks and technical debt across AI core, product runtime, and future labs, or propose the next PMO move with minimal progressive disclosure.
 ---
 
 # Sprint PMO
@@ -18,16 +18,20 @@ Treat `docs/_legacy_pmo/**` as legacy reference only unless the new PMO surface 
 Treat roles as fixed unless the user says otherwise:
 
 - Codex: PMO command center, sprint framing, synthesis, escalation, risk visibility
-- Claude VS Code: execution worker, implementation, file changes, validation details
+- execution worker: implementation, file changes, validation details, and structured execution return
 - Human: architecture owner, priority setter, final tradeoff and scope decisions
 
-Default to three outputs in this order:
+Claude VS Code may be one execution-worker variant, but do not assume the worker is Claude unless the current handoff, user request, or tool context says so.
+
+Default to the smallest useful PMO output. When closing or planning a sprint, use these outputs only when they are actually needed:
 
 1. Sprint completion summary
 2. PMO reply and worker handoff
 3. Next sprint proposal
 
-Prefer repository-native handoff when the repo provides PMO outbox/inbox files. Write PMO state and worker-facing handoff into repo files before falling back to chat copy-paste.
+Prefer repository-native handoff. Use `docs/pmo/state/execution_task.md` as the worker contract and `docs/pmo/state/execution_report.md` as the return surface before falling back to chat copy-paste.
+
+Use `docs/pmo/tools/pmo.mjs` as the mechanical apply layer once PMO judgment is settled. The tool may write activation, closeout, archive, and idle-reset file changes, but it does not choose sprint selection, validation status, documentation-sync outcome, commit state, residual risk, or follow-up routing.
 
 Default PMO runtime set:
 
@@ -38,6 +42,11 @@ Default PMO runtime set:
 - `docs/pmo/state/execution_task.md`
 - `docs/pmo/state/execution_report.md`
 
+Default PMO automation surface:
+
+- `docs/pmo/tools/README.md`
+- `docs/pmo/tools/pmo.mjs`
+
 ## Workflow
 
 ### 1. Build context lightly
@@ -47,7 +56,8 @@ Read only the artifacts needed to answer these questions:
 - What sprint objective was intended?
 - What is actually complete, partial, blocked, or deferred?
 - Which architecture decisions need human confirmation?
-- What should Claude execute next?
+- What should the execution worker do next?
+- Are the needed file writes judgment-heavy or mechanical apply-layer writes?
 
 Avoid replaying the full project history. Compress aggressively.
 
@@ -60,13 +70,26 @@ Default reading order:
 5. `docs/pmo/state/decision_log.md`
 6. `docs/pmo/protocols/sprint-workflow.md`
 7. `docs/pmo/protocols/execution-handoff-protocol.md`
-8. `docs/pmo/baselines/system-baseline.md`
-9. `docs/pmo/baselines/runtime-baseline.md`
-10. `docs/pmo/baselines/roadmap.md`
+8. `docs/pmo/tools/README.md` when activation, closeout, archive, or idle reset is needed
+9. `docs/pmo/baselines/system-baseline.md`
+10. `docs/pmo/baselines/runtime-baseline.md`
+11. `docs/pmo/baselines/roadmap.md`
 
 Only fall back to `docs/_legacy_pmo/**` when the new PMO runtime surface does not yet answer the current question.
 
-### 2. Close the sprint
+### 2. Activate or hand off a sprint
+
+Activate only after explicit human sprint selection, or through the documented micro-fix fast path.
+
+- keep `sprint_candidates.md` as the comparison surface
+- keep `current_sprint.md` as the lightweight runtime state card
+- keep `execution_task.md` as the canonical worker contract
+- instantiate active runtime files from templates, preferably through `docs/pmo/tools/pmo.mjs activate`
+- review and edit the generated worker contract if judgment-heavy constraints need sharper wording
+
+Do not let tool automation replace PMO judgment.
+
+### 3. Close the sprint
 
 Write the sprint summary from shipped outcome, not effort spent. Separate:
 
@@ -77,11 +100,13 @@ Write the sprint summary from shipped outcome, not effort spent. Separate:
 
 If evidence is missing, say so directly instead of implying completion.
 
+For mechanical closeout writes, prefer `docs/pmo/tools/pmo.mjs closeout` after PMO has chosen delivery status, documentation-sync outcome, commit state, residual note, and follow-up routing. Candidate and report archives should be generated from the history templates, then active runtime files should return to idle.
+
 Use [references/sprint-summary-template.md](references/sprint-summary-template.md) for the full structure.
 
-### 3. Send the PMO reply
+### 4. Send the PMO reply
 
-Translate the current state into a handoff that another agent can execute without extra meetings. Include:
+Translate the current state into a worker contract that another agent can execute without extra meetings. Include:
 
 - objective
 - constraints
@@ -91,11 +116,11 @@ Translate the current state into a handoff that another agent can execute withou
 
 Keep the handoff operational and bounded. Do not duplicate the full sprint summary inside it.
 
-If `docs/pmo/state/execution_task.md` exists, prefer updating that file as the canonical worker handoff. If `docs/pmo/state/current_sprint.md` exists, update sprint state there as well.
+If `docs/pmo/state/execution_task.md` exists, prefer updating that file as the canonical worker handoff. If `docs/pmo/state/current_sprint.md` exists, update sprint state only as a lightweight runtime card.
 
 Use [references/pmo-handoff-template.md](references/pmo-handoff-template.md) for the full structure.
 
-### 4. Propose the next sprint
+### 5. Propose the next sprint
 
 Propose one primary sprint. Add a secondary option only when the tradeoff is meaningful. Every proposal should state:
 
@@ -107,7 +132,7 @@ Propose one primary sprint. Add a secondary option only when the tradeoff is mea
 
 Bias toward finishing architectural seams before opening new surfaces.
 
-### 5. Track risk and debt
+### 6. Track risk and debt
 
 Track only the risks that can change sequencing, architecture safety, or delivery confidence. Merge duplicate issues into a single line item with an owner and next action.
 
@@ -121,7 +146,7 @@ If `docs/pmo/state/execution_report.md` exists, read it before writing PMO close
 - Prefer clear status labels over long narrative
 - Distinguish fact, inference, and proposal
 - Escalate architecture tradeoffs to the human early
-- Assign implementation work to Claude in explicit slices
+- Assign implementation work to the execution worker in explicit slices
 - Keep PMO updates completion-oriented, not activity-oriented
 
 ## Commit Guidance

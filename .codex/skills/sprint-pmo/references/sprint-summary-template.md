@@ -7,7 +7,7 @@ Use this when closing a sprint or replying to PMO.
 - Sprint: `SXX - short name`
 - Date window: `YYYY-MM-DD to YYYY-MM-DD`
 - PMO owner: `Codex`
-- Execution worker: `Claude VS Code`
+- Execution worker: `execution worker`
 - Architecture owner: `Human`
 - Program lane: `AI core | product runtime | future labs | mixed`
 
