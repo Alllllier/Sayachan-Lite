@@ -132,18 +132,18 @@
 - Suggested next action: `Before broader deployment or public launch, shape a narrow bootstrap hardening pass that protects first-owner creation without turning auth into a broad admin system.`
 - Reopen trigger: `A human prepares external deployment beyond trusted friend testing, public hosting, or production-like setup.`
 
-### `Auth Owner UI Review Coverage`
+### `Account Settings And User Menu Polish`
 
-- Type: `cleanup`
-- Source: `execution report`
-- Source reference: `docs/pmo/state/execution_report.md for Auth Invite Session Owner Skeleton`
-- Problem / Opportunity: `The auth skeleton added login, registration, route guards, and a lightweight owner surface, but did not add durable repo-native Playwright UI review coverage or screenshot artifacts for those auth/owner states.`
-- Why now: `Browser validation passed with mocked APIs, but auth and owner management are now important entry surfaces. A later UI review pass may be useful once the auth UI stabilizes through real use.`
+- Type: `feature`
+- Source: `discussion`
+- Source reference: `Human note on 2026-05-04 after owner/tester auth became usable in deployed app`
+- Problem / Opportunity: `The current top user bar is intentionally minimal and now feels a little rough after the auth flow became usable. The product likely wants a lightweight account/settings surface where logout, account identity, role/status, and later account controls can live without making the main app header carry too much UI weight.`
+- Why now: `Auth is now functional enough that repeated use exposes the navigation and account-management polish gap, but the main login/session chain is already working and should not be reopened just to beautify the header.`
 - Current status: `parked`
-- Dependencies: `A future UI review expansion window and enough auth/owner UI stability to make screenshots useful rather than churn-heavy.`
-- Risks / unknowns: `Adding review coverage too early could create noisy artifacts while auth UI is still settling; waiting too long could leave an important onboarding path without visual review coverage.`
-- Suggested next action: `When auth UI has survived initial usage, add a bounded auth/owner UI review baseline using the existing repo-native UI review conventions.`
-- Reopen trigger: `Auth/owner UI changes again, friend testing exposes visual or route-guard confusion, or PMO starts a UI review expansion pass.`
+- Dependencies: `A later small product/UI slice that decides the minimal settings scope, whether owner management links belong inside settings or remain as a separate owner route, and how much of the top user bar should collapse into an account menu.`
+- Risks / unknowns: `If scoped too broadly, this could sprawl into password changes, email verification, session management, and admin settings before those capabilities are needed. If ignored too long, logout/account identity will keep feeling like scaffolding instead of product UI.`
+- Suggested next action: `Later, shape a narrow Account Settings / user-menu polish sprint: create a settings/account page for identity and logout, move the top bar toward a cleaner account menu, and leave password/email/session-management expansion as explicit future scope.`
+- Reopen trigger: `A human wants to polish auth/account UI, user testing shows logout/account identity confusion, or future auth capabilities need a natural settings home.`
 
 ### `Repo-Native Claude Launch From PMO`
 
