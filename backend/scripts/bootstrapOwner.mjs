@@ -5,7 +5,24 @@ import { stdin as input, stdout as output } from 'node:process';
 
 const DEFAULT_BACKEND_URL = 'http://localhost:3001';
 
+function defaultBackendUrl() {
+  if (process.env.SAYACHAN_BACKEND_URL) {
+    return process.env.SAYACHAN_BACKEND_URL;
+  }
+
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return process.env.RENDER_EXTERNAL_URL;
+  }
+
+  if (process.env.PORT) {
+    return `http://localhost:${process.env.PORT}`;
+  }
+
+  return DEFAULT_BACKEND_URL;
+}
+
 function usage() {
+  const currentDefaultUrl = defaultBackendUrl();
   return `Sayachan owner bootstrap
 
 Usage:
@@ -14,13 +31,15 @@ Usage:
   npm run bootstrap:owner -- --url https://your-backend.example.com --email owner@example.com
 
 Options:
-  --url       Backend base URL. Defaults to ${DEFAULT_BACKEND_URL}
+  --url       Backend base URL. Defaults to ${currentDefaultUrl}
   --email     Owner email. If omitted, the script prompts for it.
   --password  Owner password. If omitted, the script prompts for it.
   --help      Show this help.
 
 Environment alternatives:
   SAYACHAN_BACKEND_URL
+  RENDER_EXTERNAL_URL
+  PORT
   SAYACHAN_OWNER_EMAIL
   SAYACHAN_OWNER_PASSWORD
 `;
@@ -58,10 +77,11 @@ async function promptForMissing({ url, email, password }) {
     return { url, email, password };
   }
 
+  const currentDefaultUrl = defaultBackendUrl();
   const rl = readline.createInterface({ input, output });
   try {
     return {
-      url: url || (await rl.question(`Backend URL [${DEFAULT_BACKEND_URL}]: `)).trim() || DEFAULT_BACKEND_URL,
+      url: url || (await rl.question(`Backend URL [${currentDefaultUrl}]: `)).trim() || currentDefaultUrl,
       email: email || (await rl.question('Owner email: ')).trim(),
       password: password || await rl.question('Owner password (input is visible): '),
     };
@@ -104,7 +124,7 @@ async function main() {
   }
 
   const options = await promptForMissing({
-    url: args.url || process.env.SAYACHAN_BACKEND_URL || DEFAULT_BACKEND_URL,
+    url: args.url || defaultBackendUrl(),
     email: args.email || process.env.SAYACHAN_OWNER_EMAIL,
     password: args.password || process.env.SAYACHAN_OWNER_PASSWORD,
   });
@@ -130,7 +150,8 @@ main().catch((error) => {
   console.error('');
   console.error(`Owner bootstrap failed: ${error.message}`);
   console.error('');
-  console.error('Make sure the backend is running and MongoDB is connected.');
+  console.error('Make sure the backend URL is reachable and MongoDB is connected.');
+  console.error('On Render, pass --url https://your-service.onrender.com or set SAYACHAN_BACKEND_URL if RENDER_EXTERNAL_URL is not available.');
   console.error('If an owner already exists, use the normal login page instead.');
   process.exitCode = 1;
 });
