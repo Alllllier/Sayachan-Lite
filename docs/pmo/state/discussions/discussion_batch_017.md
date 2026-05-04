@@ -2,7 +2,7 @@
 
 - Topic: `Owner-led auth and invite-gated tester accounts`
 - Last updated: `2026-05-04`
-- Status: `promoted`
+- Status: `stable / closed`
 - Discussion mode: `follow-up`
 
 ## Intake Record
@@ -27,7 +27,7 @@
 - Summary: `Define the first-phase auth model for owner-led tester onboarding: user identity, invite acceptance, session behavior, account-scoped data access, and owner-only private-core boundaries.`
 - Why grouped: `These concerns are coupled: invite flow determines who can enter, auth/session shape determines how identity is carried, account scoping determines what data can be read or changed, and owner-only gates determine which powerful or private-core-adjacent capabilities remain inaccessible to testers.`
 - Current focus: `yes`
-- Status: `promoted`
+- Status: `completed`
 - For follow-up mode, the concrete issue exposed was: `External testing cannot safely start while the product still behaves as a single-user runtime with no account boundary.`
 
 ## Possible Slices
@@ -109,4 +109,14 @@
 - Opened from `idea_backlog.md` item `Owner-Led Auth And Invite-Gated Tester Accounts`.
 - Durable decision recorded in `docs/pmo/state/decision_log.md` as `Owner-led invite-gated auth uses a lightweight phase-one boundary`.
 - Promoted to `docs/pmo/state/sprint_candidates.md` as `Auth Invite Session Owner Skeleton` and `Account Data Isolation And AI Context Boundary`.
-- No active sprint yet; sprint activation still requires explicit human selection.
+- Both promoted implementation slices have since completed and moved to PMO history.
+- Deployed-runtime follow-up fixes for owner bootstrap, Render proxy cookies, cross-site session persistence, and auth/owner UI review coverage have also landed.
+- Remaining auth-adjacent follow-ups are no longer part of this discussion batch:
+  - `Auth Production Bootstrap Hardening` remains parked as a later deployment/public-launch hardening item.
+  - `Account Settings And User Menu Polish` remains parked as a later product/UI polish item.
+
+## Closeout Judgment
+
+- Discussion 17 is closed as stable source context.
+- The owner/tester invite-gated auth boundary is now decided, implemented, validated, documented in baselines, and represented in history.
+- Future auth/account work should open from the remaining backlog items or a new discussion, not by extending this batch.
