@@ -16,9 +16,25 @@ const PORT = process.env.PORT || 3001;
 // Trust proxy headers there so Koa can recognize secure requests for cookies.
 app.proxy = process.env.RENDER === 'true' || process.env.TRUST_PROXY === 'true';
 
+function allowedOrigins() {
+  const raw = process.env.FRONTEND_ORIGINS || process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
+  return raw
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+}
+
+const corsOrigins = allowedOrigins();
+
 // CORS 配置，允许前端跨域请求
 app.use(cors({
-  origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173',
+  origin: (ctx) => {
+    const requestOrigin = ctx.get('Origin');
+    if (!requestOrigin) {
+      return corsOrigins[0];
+    }
+    return corsOrigins.includes(requestOrigin) ? requestOrigin : '';
+  },
   credentials: true,
 }));
 

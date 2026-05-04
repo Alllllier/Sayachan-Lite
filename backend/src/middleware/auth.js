@@ -13,24 +13,27 @@ function isPublicPath(path) {
   return PUBLIC_PATHS.includes(path);
 }
 
-function clearSessionCookie(ctx) {
-  ctx.cookies.set(authService.SESSION_COOKIE_NAME, '', {
+function sessionCookieOptions(extra = {}) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  return {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    sameSite: isProduction ? 'none' : 'lax',
+    secure: isProduction,
+    overwrite: true,
+    ...extra
+  };
+}
+
+function clearSessionCookie(ctx) {
+  ctx.cookies.set(authService.SESSION_COOKIE_NAME, '', sessionCookieOptions({
     maxAge: 0,
-    overwrite: true
-  });
+  }));
 }
 
 function setSessionCookie(ctx, sessionToken) {
-  ctx.cookies.set(authService.SESSION_COOKIE_NAME, sessionToken, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+  ctx.cookies.set(authService.SESSION_COOKIE_NAME, sessionToken, sessionCookieOptions({
     maxAge: 1000 * 60 * 60 * 24 * 14,
-    overwrite: true
-  });
+  }));
 }
 
 async function authMiddleware(ctx, next) {
@@ -66,5 +69,6 @@ module.exports = {
   authMiddleware,
   clearSessionCookie,
   requireOwner,
+  sessionCookieOptions,
   setSessionCookie
 };
