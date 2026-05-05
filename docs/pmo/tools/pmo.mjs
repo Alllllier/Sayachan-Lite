@@ -301,6 +301,8 @@ ${bulletBlock(fields['Out of scope'], 'Do not expand beyond the selected candida
 ## Validation Expectations
 
 - Run validation appropriate to the selected candidate risk level: \`${inline(fields['Risk level'], 'not specified')}\`.
+- Candidate validation expectation:
+${bulletBlock(fields['Validation expectation'], 'No candidate-specific validation expectation was stated.')}
 - PMO sharpening slot: replace or extend this with concrete commands, target test files, browser review surfaces, or intentionally skipped validation.
 - Report project-specific review expectations and whether they were performed.
 - If browser validation or UI review is relevant, state the reviewed surfaces or page states.
@@ -315,6 +317,8 @@ ${bulletBlock(fields['Out of scope'], 'Do not expand beyond the selected candida
 - Stop and return to PMO/human review if execution would cross an explicit non-goal.
 - Stop and return to PMO/human review if dependencies are missing: \`${inline(fields['Dependencies'], 'none specified')}\`.
 - Stop and return to PMO/human review if the candidate readiness no longer holds: \`${inline(fields['Readiness'], 'not specified')}\`.
+- Candidate-specific escalation triggers:
+${bulletBlock(fields['Escalation triggers'], 'No candidate-specific escalation triggers were stated.')}
 
 ## Completion Report Contract
 
@@ -473,7 +477,8 @@ function candidateArchive({ sprint, date, candidate, fields, deliveryStatus, res
 
 - Archived date: \`${date}\`
 - Archive reason: \`completed-and-displaced\`
-- Original status at exit: \`${inline(fields['Status'], 'active')}\`
+- Exit status: \`completed\`
+- Candidate status at selection: \`${inline(fields['Status'], 'active')}\`
 - Original source reference: \`${inline(fields['Source reference'], 'none')}\`
 - Why it mattered: ${inline(fields['Why now'], 'Not separately stated.')}
 - Expected outcome: ${inline(fields['Expected outcome'], 'Not separately stated.')}
@@ -482,6 +487,15 @@ ${indentBlock(fields['In scope'] || 'Not separately stated.')}
 - Out of scope:
 ${indentBlock(fields['Out of scope'] || 'Not separately stated.')}
 - Dependencies: ${inline(fields['Dependencies'], 'Not separately stated.')}
+- Risk level: \`${inline(fields['Risk level'], 'Not separately stated.')}\`
+- Readiness at selection: \`${inline(fields['Readiness'], 'Not separately stated.')}\`
+- Start condition: ${inline(fields['Start condition'], 'Not separately stated.')}
+- Validation expectation:
+${indentBlock(fields['Validation expectation'] || 'Not separately stated.')}
+- Escalation triggers:
+${indentBlock(fields['Escalation triggers'] || 'Not separately stated.')}
+- Follow-up parking:
+${indentBlock(fields['Follow-up parking'] || 'Not separately stated.')}
 - Closeout summary: \`${deliveryStatus}\`
 - Follow-up created from this candidate: \`See execution report archive and PMO closeout routing.\`
 - Notes: \`${residualNote || 'Archived by docs/pmo/tools/pmo.mjs during closeout.'}\`

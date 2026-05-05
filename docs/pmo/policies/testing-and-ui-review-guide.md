@@ -51,7 +51,9 @@ Use logic or smoke validation when the sprint mainly changes:
 
 Current commands:
 
-- `npm run test`
+- `npm run check` from the repo root for the ordinary full quality gate
+- `npm run test` from the repo root when only the aggregated test layer is needed
+- `npm run test` from `frontend/` or `backend/` for package-local test loops
 - `npm run test:watch`
 
 ### Browser Validation
@@ -66,8 +68,10 @@ Use browser validation when the sprint mainly changes:
 
 Current commands:
 
-- `npm run test:ui-review`
-- `npm run test:ui-review:headed`
+- `npm run test:ui-review` from `frontend/`
+- `npm run test:ui-review:headed` from `frontend/`
+
+Browser validation and UI review stay outside the default root `npm run check` path unless a future sprint explicitly expands that scope.
 
 ### UI Review
 

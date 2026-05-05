@@ -40,6 +40,9 @@ Do not use this file to store:
 - Risk level: `low | medium | high`
 - Readiness: `ready | almost-ready | blocked`
 - Start condition:
+- Validation expectation:
+- Escalation triggers:
+- Follow-up parking:
 
 ## Current Candidates
 

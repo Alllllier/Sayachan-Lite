@@ -103,6 +103,9 @@ Ownership model:
 ## Core Constraints
 
 - keep the repo JavaScript-first
+- do not introduce TypeScript opportunistically inside routine feature, fix, or cleanup work
+- treat any TypeScript migration as a PMO-approved architecture slice with bounded scope, validation, and rollback expectations
+- treat the current frontend/backend same-repo layout as the active repo shape; do not introduce package-manager workspace tooling as incidental cleanup
 - avoid broad architecture refactors without explicit approval
 - preserve backward compatibility when touching persisted task data
 - every AI feature should continue to have a fallback path
@@ -138,9 +141,11 @@ Avoid:
 
 ### UI Review Defaults
 
+- use `npm run check` from the repo root for ordinary validation unless the active handoff names a narrower command
 - prefer repo-defined scripts in `frontend/package.json` first
 - do not run bare `npx playwright test ...` commands when validating product changes
 - use repo-native Playwright scripts such as `npm run test:ui-review`
+- keep UI review separate from the default root quality gate unless the active handoff explicitly expands scope
 - if the existing repo-native script does not cover the surface you changed, add or adjust a repo-native script first, then run that script
 - bare `npx playwright` use is only acceptable for clearly non-suite utility actions such as one-off inspection or screenshot capture when that does not bypass the repo-native validation path
 
@@ -216,4 +221,4 @@ Do not kill unrelated long-running services just because they happen to use thes
 
 ---
 
-*Updated: 2026-05-04*
+*Updated: 2026-05-05*

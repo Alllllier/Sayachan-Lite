@@ -2,7 +2,7 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-05-04`
+- Last updated: `2026-05-05`
 
 ## Current State
 
@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Account Data Isolation And AI Context Boundary`
+- Sprint: `Engineering Quality Gate V1`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/account-data-isolation-and-ai-context-boundary.md`
+- Report surface: `docs/pmo/history/reports/engineering-quality-gate-v1.md`
 
 ## Next Activation Rule
 

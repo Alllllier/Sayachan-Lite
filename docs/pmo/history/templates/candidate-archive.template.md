@@ -1,16 +1,21 @@
-# Candidate Archive Template
-
-### `<completed sprint candidate>`
+# `<sprint name>`
 
 - Archived date:
-- Archive reason: `completed-and-displaced | merged | replaced | other`
-- Original status at exit: `completed | withdrawn | merged`
+- Archive reason: `completed-and-displaced | merged | replaced | withdrawn | other`
+- Exit status: `completed | withdrawn | merged | replaced`
+- Candidate status at selection: `candidate | active`
 - Original source reference:
 - Why it mattered:
 - Expected outcome:
 - In scope:
 - Out of scope:
 - Dependencies:
+- Risk level:
+- Readiness at selection:
+- Start condition:
+- Validation expectation:
+- Escalation triggers:
+- Follow-up parking:
 - Closeout summary:
 - Follow-up created from this candidate:
 - Notes:

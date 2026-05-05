@@ -5,7 +5,7 @@
 - PMO owner: `Codex`
 - Architecture owner: `Human`
 - Execution owner: `execution worker`
-- Last updated: `2026-05-04`
+- Last updated: `2026-05-05`
 
 ## Current State
 
@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Account Data Isolation And AI Context Boundary`
-- Closeout date: `2026-05-04`
+- Sprint: `Engineering Quality Gate V1`
+- Closeout date: `2026-05-05`
 - Delivery status: `completed and validated`
 - Commit state: `not committed in this closeout`
 - Documentation sync outcome: `update required and completed`
-- Residual note: `Account isolation now covers Note/Project/Task route and service paths, direct-id mutation guards, cascade/focus boundaries, AI note/project persisted-context ownership, auth-aware UI review mocks, and frontend account-switch transient cleanup. Live Mongo/manual multi-account validation and public-launch hardening remain outside this closeout.`
-- Report surface: `docs/pmo/history/reports/account-data-isolation-and-ai-context-boundary.md`
+- Residual note: `Root npm run check now aggregates low-noise lint, frontend tests, backend tests, and frontend build. Minimal GitHub Actions CI runs the same root gate, frontend/backend package-local lint scripts delegate to the root config, worker-facing validation docs now point ordinary validation to npm run check, and README Node.js prerequisites are aligned with the CI Node 22 baseline. UI review remains an explicit separate path. Remote GitHub Actions execution and stricter future gates remain outside this closeout.`
+- Report surface: `docs/pmo/history/reports/engineering-quality-gate-v1.md`
 
 ## Next PMO Action
 

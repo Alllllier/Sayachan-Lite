@@ -24,6 +24,15 @@
 
 ## Recorded Decisions
 
+### `Repo constraints are JavaScript-first, not early-stage freeze rules`
+
+- Date: `2026-05-05`
+- Type: `transition-rule`
+- Scope: `repo engineering constraints, worker guidance, frontend/backend workspace shape, and future TypeScript/tooling migration planning`
+- Decision: `Sayachan should keep the current repo JavaScript-first and should not introduce TypeScript opportunistically inside routine feature, fix, or cleanup work. TypeScript is no longer treated as a permanent forbidden path; it must be promoted as a bounded PMO architecture candidate before adoption. The current frontend/backend same-repo layout is the active repo shape, so old "do not use monorepo" style constraints should not be applied. Package-manager workspace tooling such as npm workspaces or pnpm workspace should also not be introduced incidentally; it needs a separate tooling/maintenance window if repeated script or dependency friction makes it worthwhile. Pinia and Vue Router are current stack facts, not prohibited additions.`
+- Reason: `Early project constraints in README still described the scaffold-stage freeze, including prohibitions that no longer matched the audited repository. The live PMO baseline already records a frontend-backend monorepo and the frontend now uses Pinia and Vue Router. Keeping outdated freeze rules active would mislead future workers and block deliberate architecture improvement while failing to protect the genuinely sensitive areas.`
+- Follow-up: `Use README and AGENT.md as the lightweight worker-facing expression of this rule. Reopen as a sprint candidate only if the human wants a real TypeScript migration audit, npm/pnpm workspace tooling review, or broader dependency hygiene refresh.`
+
 ### `Medium-term account model stays personal-account scoped`
 
 - Date: `2026-05-04`

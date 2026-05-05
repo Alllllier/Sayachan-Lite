@@ -1,0 +1,48 @@
+# TypeScript Target Architecture Mapping
+
+- Archived date: `2026-05-05`
+- PMO closeout result: `completed and documentation-validated`
+- Source sprint: `TypeScript Target Architecture Mapping`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Created `docs/pmo/state/typescript_target_architecture_mapping.md`.
+  - Added Chinese companion artifact `docs/pmo/state/typescript_target_architecture_mapping.zh.md`.
+  - The artifact defines the target TypeScript-era responsibility model for:
+    - typed domain contracts / DTOs
+    - runtime schema and external input validation
+    - frontend feature API/rules/composable boundaries
+    - shared frontend services and stores
+    - frontend components, views, router, and UI primitives
+    - backend route/service/model/middleware boundaries
+    - public backend to private AI core bridge contract
+    - repo validation, tests, and PMO/runtime documentation
+  - The artifact maps current JS responsibilities to target architecture rows with migration action categories:
+    - `keep`
+    - `merge`
+    - `replace`
+    - `split`
+    - `defer`
+    - `delete-candidate`
+  - The artifact separately identifies:
+    - durable runtime/product boundaries that must not be collapsed merely because TypeScript can describe their inputs
+    - no-type scaffolding candidates that may become merge/delete candidates only after typed contracts and tests prove replacement safety
+  - Follow-up recommendations were returned as PMO-routable items only; no follow-up was activated or implemented.
+- Validation summary:
+  - Performed read-only repo structure and responsibility audit with `rg --files`, `rg` symbol/test scans, and targeted file reads.
+  - Cross-checked the produced mapping against the active execution handoff and PMO baselines for system shape, runtime behavior, backend API truth, and private-core boundary rules.
+  - Confirmed the artifact includes all requested migration actions and explicitly separates durable runtime/product boundaries from no-type scaffolding candidates.
+  - No runtime tests were run because the sprint was documentation-only and no executable code, package files, lockfiles, runtime configs, routes, UI files, or private-core implementation files were edited.
+- Project-specific review summary:
+  - Browser validation: `not performed; not relevant to documentation-only planning audit`.
+  - UI review: `not performed; not relevant to documentation-only planning audit`.
+  - Runtime/backend validation: `not performed; no executable backend or frontend files changed`.
+  - PMO sharpening slots: `followed`. The artifact uses the requested responsibility layers, maps current JS modules/files to target responsibilities, uses all required action labels, and keeps follow-up as recommendations only.
+- Unverified areas:
+  Not separately stated.
+- Residual risks or escalations:
+  Not separately stated.
+- Documentation-sync outcome: `reviewed, no baseline update needed`
+- Follow-up routing:
+  - Product runtime truth did not change, so `docs/pmo/baselines/system-baseline.md`, `runtime-baseline.md`, `backend-api.md`, and `private-core-boundary.md` do not require updates from this sprint.
+  - PMO runtime state was updated only through the required execution report and the new sprint planning artifact.
+  - Suggested PMO closeout action: archive the mapping/report as sprint history if accepted, and route follow-up recommendations into `idea_backlog.md` or `decision_log.md` as PMO sees fit.

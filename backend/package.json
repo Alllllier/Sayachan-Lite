@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node src/server.js",
+    "lint": "npm --prefix .. run lint:backend",
     "test": "node --test",
     "bootstrap:owner": "node scripts/bootstrapOwner.mjs",
     "normalize:legacy-archived-tasks": "node scripts/normalizeLegacyArchivedTasks.js"

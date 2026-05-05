@@ -37,7 +37,7 @@ Focus → Task → Completion → Memory → Next Focus
 ## 本地启动
 
 ### 前置要求
-- Node.js 18+
+- Node.js 22+
 - MongoDB（可选，不启动时服务仍可运行）
 
 ### 1. 环境变量配置
@@ -154,15 +154,15 @@ npm start
 | POST | `/ai/notes/tasks` | AI: 从笔记生成任务（需后端 GLM_API_KEY） |
 | POST | `/ai/projects/next-action` | AI: 生成项目下一步建议（需后端 GLM_API_KEY） |
 
-## 当前边界（暂不做项）
+## 当前工程边界
 
-- 不引入 TypeScript
-- 不引入 Pinia
-- 不引入 UI 组件库
-- 不进行 vue-router 大规模改造
-- 不新增大型功能系统
-- 不做架构升级式重构
-- 不做 UI 美化型修改
+- 项目保持 JavaScript-first；不要在普通功能或修复任务中顺手引入 TypeScript。
+- TypeScript 不再是永久禁区，但必须作为单独 PMO 架构候选来评估迁移范围、验证成本和回滚边界。
+- 当前仓库已经是 frontend / backend 同仓结构；不要把 Monorepo 现状误读为待禁止事项。
+- 不在普通任务中顺手引入 npm workspaces、pnpm workspace 或其他包管理/Monorepo 工程化迁移；这类变化需要单独维护窗口。
+- Pinia 和 Vue Router 已是当前前端栈的一部分，相关改动应尊重既有 stores/router 边界。
+- 不引入 UI 组件库，除非后续有明确设计系统或维护收益。
+- 不做无边界的大型功能系统、架构升级式重构或纯 UI 美化型修改；需要升级时先进入 PMO 候选并限定范围。
 
 ## Roadmap
 

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "lint": "npm --prefix .. run lint:frontend",
     "preview": "vite preview",
     "test": "vitest run --exclude tests/ui-review/**",
     "test:watch": "vitest --exclude tests/ui-review/**",
