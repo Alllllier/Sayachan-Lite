@@ -22,6 +22,9 @@ The backend still starts and runs as plain Node/CommonJS, not as a whole compile
 
 Current transitional type-island truth:
 
+- `npm --prefix backend run build:backend` can emit the current backend CommonJS runtime graph into ignored `backend/dist` build output as a dry-run
+- `npm --prefix backend run check:backend-build` rebuilds and smoke-loads the emitted dist route/server dependency graph without changing the active runtime startup path
+- backend `start` and `dev` still run `node src/server.js`; `backend/dist` is proof output only, not the production runtime
 - product mutation schemas and DTO types are authored in `backend/src/routes/schemas/mutations.ts`
 - `npm --prefix backend run build:schema-island` emits checked-in CommonJS artifacts under `backend/src/routes/schemas/__generated__/`
 - `npm --prefix backend run check:schema-island` compares freshly compiled schema-island output with the checked-in generated artifacts and is included in root `npm run check`

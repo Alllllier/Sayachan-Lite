@@ -8,6 +8,8 @@
     "lint:backend": "eslint backend/src backend/test backend/scripts",
     "lint": "npm run lint:frontend && npm run lint:backend",
     "test:frontend": "npm --prefix frontend run test",
+    "build:backend": "npm --prefix backend run build:backend",
+    "check:backend-build": "npm --prefix backend run check:backend-build",
     "typecheck:tasks": "npm --prefix frontend run typecheck:tasks",
     "typecheck:backend-dto": "npm --prefix backend run typecheck:dto-pilot",
     "check:schema-island": "npm --prefix backend run check:schema-island",

@@ -1,0 +1,61 @@
+# Backend Unified TSC Build Dry Run V1
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Backend Unified TSC Build Dry Run V1`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Added `backend/tsconfig.json` for a unified CommonJS `tsc` dry-run build that emits the current backend CommonJS runtime graph from `backend/src` into ignored `backend/dist`.
+  - Added backend scripts:
+    - `npm --prefix backend run build:backend`
+    - `npm --prefix backend run check:backend-build`
+  - Added root forwarding scripts:
+    - `npm run build:backend`
+    - `npm run check:backend-build`
+  - Added `backend/scripts/checkBackendDistBuild.js`, a dist smoke harness that:
+    - verifies key emitted artifacts exist under `backend/dist`
+    - loads `dist/routes`, `dist/routes/ai`, and `dist/server`
+    - patches `mongoose.connect` and `Koa.listen` inside the smoke process so server load does not require a real DB connection or open a persistent listener
+  - Kept backend `start` and `dev` unchanged: both still run `node src/server.js`.
+  - Kept schema island and Notes route island generated artifacts/facades intact.
+  - Updated PMO baseline docs to record the new named backend build dry-run/check truth.
+- Validation summary:
+  - `npm --prefix backend run build:backend`: `passed`
+  - `npm --prefix backend run check:backend-build`: `passed`
+  - `npm --prefix backend run check:schema-island`: `passed`
+  - `npm --prefix backend run check:notes-route-island`: `passed`
+  - `npm --prefix backend test`: `passed`
+  - `npm run check`: `passed`
+  - Confirmed `backend/dist` exists after the dry-run build.
+  - Confirmed `backend/dist` is ignored build output: `git status --short --ignored backend/dist` reports `!! backend/dist/`, not staged or tracked.
+  - Confirmed backend runtime scripts did not cut over:
+    - `start`: `node src/server.js`
+    - `dev`: `node src/server.js`
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states: `n/a`
+  - If skipped, why skipping was acceptable: this sprint added backend build dry-run tooling only; no frontend, browser, API behavior, or UI surface changed.
+- Unverified areas:
+  - The dry-run emits the current CommonJS runtime graph, not the final all-TS source graph.
+  - The dry-run intentionally does not type-check existing JS broadly; `allowJs: true` and `checkJs: false` avoid expanding the backend type graph.
+  - Dist smoke loads the route/server dependency graph, but production runtime still remains `src`.
+- Residual risks or escalations:
+  - `backend/src/ai/bridge.js` imports `backend/private_core/**`. A naive `allowJs` build tried to pull private_core into the build graph, so `backend/tsconfig.json` uses `noResolve: true` and includes only `src/**/*.js`. This keeps the dry-run bounded but means current TS island sources are still validated by their island commands, not by this unified dry-run yet.
+  - Final `backend/src/**/*.ts -> backend/dist/**/*.js` runtime still needs a human-approved cutover plan for retiring island facades and moving typed sources back to normal source paths.
+  - `backend/dist` is generated proof output only; future workers should not rely on it being present unless they run `npm --prefix backend run build:backend` or `check:backend-build`.
+- Documentation-sync outcome: `updated`
+- Follow-up routing:
+  - Next human decision gate: choose whether the next backend TypeScript migration step should keep using current island scaffolding while adding more dist smoke coverage, or approve a runtime-cutover planning sprint that retires facades/generated artifacts and moves toward `node dist/server.js`.
+  - Script-automatable later steps:
+    - build `backend/dist`
+    - smoke-load dist route/server graph
+    - compare/check generated artifacts while islands still exist
+    - detect whether `backend/package.json` `start`/`dev` still point at `src`
+    - clean ignored `backend/dist` before/after validation if PMO wants a clean workspace convention
+  - Sub-agent-automatable later steps after human architecture approval:
+    - move island typed sources into normal route/schema paths
+    - retire matching facades and generated artifacts
+    - update route imports/tests to target final dist runtime
+    - migrate Projects/Tasks or middleware/service boundaries in bounded slices
+    - update PMO baselines and closeout docs for runtime truth changes

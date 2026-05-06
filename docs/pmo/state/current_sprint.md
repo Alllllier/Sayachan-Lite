@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Notes Route TS Runtime Loading Pilot`
+- Sprint: `Backend Unified TSC Build Dry Run V1`
 - Closeout date: `2026-05-06`
 - Delivery status: `completed and validated`
 - Commit state: `not committed in this closeout`
 - Documentation sync outcome: `updated`
 - Residual note: `none`
-- Report surface: `docs/pmo/history/reports/notes-route-ts-runtime-loading-pilot.md`
+- Report surface: `docs/pmo/history/reports/backend-unified-tsc-build-dry-run-v1.md`
 
 ## Next PMO Action
 

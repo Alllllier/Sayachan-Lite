@@ -8,6 +8,8 @@
     "dev": "node src/server.js",
     "lint": "npm --prefix .. run lint:backend",
     "test": "node --test",
+    "build:backend": "tsc -p tsconfig.json",
+    "check:backend-build": "npm run build:backend && node scripts/checkBackendDistBuild.js",
     "typecheck:dto-pilot": "tsc -p tsconfig.dto-pilot.json",
     "build:schema-island": "tsc -p tsconfig.schema-island.json",
     "check:schema-island": "node scripts/checkSchemaIslandGenerated.js",

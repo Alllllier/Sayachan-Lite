@@ -24,6 +24,15 @@
 
 ## Recorded Decisions
 
+### `Backend TypeScript migration can automate repeated execution after human architecture gates`
+
+- Date: `2026-05-06`
+- Type: `transition-rule`
+- Scope: `backend TypeScript migration, PMO execution automation, sub-agent delegation, migration sequencing, and human decision gates`
+- Decision: `Backend TypeScript migration should move toward automated repeated execution once the architecture direction is approved. Codex/PMO may choose migration order, timing for transitional scaffolding cleanup, and whether repeated implementation is handled by scripts or sub-agents. Human confirmation is required for key architecture decision gates such as switching backend runtime from src to dist, choosing ESM instead of CommonJS, expanding the build boundary into private_core, adopting tsx/ts-node/runtime TS loaders, changing public API/Zod behavior, or accepting broad type-check/runtime validation gate changes. Routine route/service/middleware migration steps, generated artifact cleanup after an approved cutover, test/baseline updates, and parallelizable bounded implementation slices may be delegated to one or more sub-agents without per-file human approval when the active handoff gives clear boundaries and validation.`
+- Reason: `Schema, Notes route, generated-artifact guardrail, and unified tsc dry-run pilots have validated enough migration mechanics that requiring human approval for every file would slow delivery without improving architectural safety. The human wants to stay involved at real architecture forks while allowing Codex and workers to automate repetitive migration work after those forks are decided.`
+- Follow-up: `Future backend TypeScript sprints should explicitly label human decision gates versus automated execution zones. If a worker hits a decision gate, it must stop and return to PMO/human review rather than silently crossing it.`
+
 ### `Runtime schema errors keep public responses stable while internal shape improves`
 
 - Date: `2026-05-06`
