@@ -2,7 +2,7 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-05-06`
+- Last updated: `2026-05-07`
 
 ## Current State
 
@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Request Body Validation TS Migration V1`
+- Sprint: `Backend TS Migration Aftercare / Runtime Boundary Cleanup`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/request-body-validation-ts-migration-v1.md`
+- Report surface: `docs/pmo/history/reports/backend-ts-migration-aftercare-runtime-boundary-cleanup.md`
 
 ## Next Activation Rule
 

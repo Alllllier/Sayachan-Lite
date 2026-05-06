@@ -2,7 +2,7 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-05-06`
+- Last updated: `2026-05-07`
 
 ## Current State
 
@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Request Body Validation TS Migration V1`
+- Sprint: `Backend TS Migration Aftercare / Runtime Boundary Cleanup`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/request-body-validation-ts-migration-v1.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/backend-ts-migration-aftercare-runtime-boundary-cleanup.md`
 
 ## Next Use
 

@@ -5,7 +5,7 @@
 - PMO owner: `Codex`
 - Architecture owner: `Human`
 - Execution owner: `execution worker`
-- Last updated: `2026-05-06`
+- Last updated: `2026-05-07`
 
 ## Current State
 
@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Request Body Validation TS Migration V1`
-- Closeout date: `2026-05-06`
+- Sprint: `Backend TS Migration Aftercare / Runtime Boundary Cleanup`
+- Closeout date: `2026-05-07`
 - Delivery status: `completed and validated`
-- Commit state: `not committed in this closeout`
+- Commit state: `committed through bbe8b2c`
 - Documentation sync outcome: `updated`
 - Residual note: `none`
-- Report surface: `docs/pmo/history/reports/request-body-validation-ts-migration-v1.md`
+- Report surface: `docs/pmo/history/reports/backend-ts-migration-aftercare-runtime-boundary-cleanup.md`
 
 ## Next PMO Action
 
