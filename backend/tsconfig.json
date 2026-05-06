@@ -20,10 +20,12 @@
     "src/**/*.js",
     "src/routes/notesRoutes.ts",
     "src/routes/projectsRoutes.ts",
+    "src/routes/tasksRoutes.ts",
     "src/routes/schemas/mutations.ts"
   ],
   "exclude": [
     "src/routes/notesRoutes.js",
-    "src/routes/projectsRoutes.js"
+    "src/routes/projectsRoutes.js",
+    "src/routes/tasksRoutes.js"
   ]
 }

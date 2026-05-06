@@ -136,7 +136,7 @@ Backend routes currently split into:
 - `backend/src/routes/healthRoutes.js`
 - `backend/src/routes/notesRoutes.ts`
 - `backend/src/routes/projectsRoutes.ts`
-- `backend/src/routes/tasksRoutes.js`
+- `backend/src/routes/tasksRoutes.ts`
 - `backend/src/routes/schemas/mutations.js`
 - `backend/src/routes/schemas/mutations.ts`
 - `backend/src/routes/ai.js`

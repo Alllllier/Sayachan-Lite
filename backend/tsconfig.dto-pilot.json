@@ -15,7 +15,6 @@
   "include": [
     "src/middleware/requestBodyValidation.js",
     "node_modules/zod/index.d.cts",
-    "src/routes/schemas/mutations.ts",
-    "src/routes/tasksRoutes.js"
+    "src/routes/schemas/mutations.ts"
   ]
 }

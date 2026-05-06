@@ -172,6 +172,23 @@ function assertProjectsDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertTasksDistArtifactFromTypeScriptSource() {
+  const tasksDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'tasksRoutes.js'), 'utf8');
+
+  assert(
+    tasksDistSource.includes("require('./schemas/mutations')") || tasksDistSource.includes('require("./schemas/mutations")'),
+    'dist Tasks route artifact must be emitted from tasksRoutes.ts and import the normal schema route path.'
+  );
+  assert(
+    tasksDistSource.includes('__test__'),
+    'dist Tasks route artifact must preserve the route __test__ helper export.'
+  );
+  assert(
+    !tasksDistSource.includes('@ts-ignore dto-pilot'),
+    'dist Tasks route artifact must not be emitted from the old JS dto-pilot source.'
+  );
+}
+
 function assertCurrentSourceArtifactsWereEmitted() {
   const sourceFiles = walkFiles(srcRoot)
     .filter(filePath => path.extname(filePath) === '.js')
@@ -190,6 +207,7 @@ const requiredRuntimeEntrypoints = [
   path.join('routes', 'ai.js'),
   path.join('routes', 'notesRoutes.js'),
   path.join('routes', 'projectsRoutes.js'),
+  path.join('routes', 'tasksRoutes.js'),
   path.join('routes', 'schemas', 'mutations.js')
 ];
 
@@ -211,5 +229,6 @@ assertNoPathSegment(distRoot, '__route_sources__');
 assertSchemaDistArtifactFromTypeScriptSource();
 assertNotesDistArtifactFromTypeScriptSource();
 assertProjectsDistArtifactFromTypeScriptSource();
+assertTasksDistArtifactFromTypeScriptSource();
 
 console.log('Backend dist build boundary check passed.');

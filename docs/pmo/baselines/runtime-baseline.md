@@ -33,7 +33,7 @@ Current transitional type-island truth:
 - the default validation path no longer smoke-loads the source runtime, and schema generated/facade artifacts have been removed
 - Notes route orchestration is authored in `backend/src/routes/notesRoutes.ts` and emitted directly by the unified backend build
 - the Notes route island facade/generated path has been retired; root `npm run check` no longer includes `check:notes-route-island`
-- existing source Notes, Projects, and Tasks route modules still consume `backend/src/routes/schemas/mutations.js`, but backend `start`, `dev`, and tests now exercise the compiled dist runtime path
+- Notes, Projects, and Tasks route modules are authored at normal TypeScript route paths and consume compiled `backend/dist/routes/schemas/mutations.js` at runtime
 - `backend/src/routes/schemas/mutations.ts` is the schema source of truth for Notes, Projects, and Tasks mutation validation
 - the old facade/generated-source pattern has been removed from the active backend runtime path
 

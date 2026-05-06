@@ -1,0 +1,37 @@
+# Tasks Route TS Migration V1
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Tasks Route TS Migration V1`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Converted `backend/src/routes/tasksRoutes.js` to `backend/src/routes/tasksRoutes.ts`.
+  - Added minimal route-local TypeScript types for Tasks route state, validated body handoff, schemas, service boundary, runtime helper boundary, and test helper export.
+  - Preserved the existing route `__test__` helper export used by backend tests.
+  - Updated the unified backend build so `tasksRoutes.ts` emits directly to `backend/dist/routes/tasksRoutes.js`.
+  - Removed Tasks from the JS DTO pilot because the main backend build now type-checks the route source.
+  - Hardened the dist boundary guard so Tasks route output must come from the TS route source shape and preserve `__test__`.
+  - Updated PMO references to record Tasks as a normal TS route path.
+  - Did not migrate services, models, or task runtime helpers to TypeScript in this slice.
+- Validation summary:
+  - `npm --prefix backend run check:backend-dist-runtime` passed.
+  - `npm --prefix backend run typecheck:dto-pilot` passed.
+  - `npm run check` passed.
+    - Included lint, backend dist runtime readiness, frontend tests, backend tests, and frontend build.
+    - Backend tests still exercised route `__test__` helpers through the dist runtime.
+    - Frontend build retained the existing Vite chunk-size warning only.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If skipped, why skipping was acceptable:
+    - This sprint changed backend route source typing/build ownership only.
+    - Backend route contract and behavior tests passed against the dist runtime.
+- Unverified areas:
+  - No live manual browser review was run.
+- Residual risks or escalations:
+  - Services/models/task runtime helpers remain JS by design for this phase.
+  - DTO pilot is now mostly a narrow middleware/schema bridge check and may be ready for retirement.
+- Documentation-sync outcome: `updated`
+- Follow-up routing:
+  - No immediate human decision is required.
+  - Next PMO move should decide whether to retire the DTO pilot or migrate the next backend boundary, likely services/runtime helpers.
