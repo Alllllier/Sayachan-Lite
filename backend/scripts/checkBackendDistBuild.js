@@ -257,6 +257,23 @@ function assertTasksServiceDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertProjectsServiceDistArtifactFromTypeScriptSource() {
+  const projectsServiceDistSource = fs.readFileSync(path.join(distRoot, 'services', 'projectsService.js'), 'utf8');
+
+  assert(
+    projectsServiceDistSource.includes('function changedOnlyFilter'),
+    'dist projectsService artifact must preserve changedOnlyFilter.'
+  );
+  assert(
+    projectsServiceDistSource.includes('deriveProjectLifecycleStatus'),
+    'dist projectsService artifact must preserve project lifecycle restoration behavior.'
+  );
+  assert(
+    projectsServiceDistSource.includes('Project Archive Shadow'),
+    'dist projectsService artifact must preserve focus clearing log behavior.'
+  );
+}
+
 function assertCurrentSourceArtifactsWereEmitted() {
   const sourceFiles = walkFiles(srcRoot)
     .filter(filePath => path.extname(filePath) === '.js')
@@ -273,6 +290,7 @@ const requiredRuntimeEntrypoints = [
   'server.js',
   path.join('middleware', 'requestBodyValidation.js'),
   path.join('services', 'ownership.js'),
+  path.join('services', 'projectsService.js'),
   path.join('services', 'tasksService.js'),
   path.join('services', 'taskRuntimeHelpers.js'),
   path.join('routes', 'index.js'),
@@ -304,6 +322,7 @@ assertProjectsDistArtifactFromTypeScriptSource();
 assertTasksDistArtifactFromTypeScriptSource();
 assertRequestBodyValidationDistArtifactFromTypeScriptSource();
 assertOwnershipDistArtifactFromTypeScriptSource();
+assertProjectsServiceDistArtifactFromTypeScriptSource();
 assertTasksServiceDistArtifactFromTypeScriptSource();
 assertTaskRuntimeHelpersDistArtifactFromTypeScriptSource();
 
