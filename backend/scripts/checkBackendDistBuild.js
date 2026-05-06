@@ -104,6 +104,10 @@ function assertPackageRuntimeBoundary() {
     backendPackage.dependencies?.['@allier/sayachan-ai-core'] === 'file:private_core/sayachan-ai-core',
     'backend must depend on @allier/sayachan-ai-core through the local private_core package boundary.'
   );
+  assert(
+    backendScripts['normalize:legacy-archived-tasks'] === 'npm run build:backend && node scripts/normalizeLegacyArchivedTasks.js',
+    'legacy archived-task normalization must build backend dist before loading compiled models.'
+  );
 
   for (const [scriptName, scriptCommand] of Object.entries(backendScripts)) {
     assert(

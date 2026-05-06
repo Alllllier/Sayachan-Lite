@@ -26,9 +26,8 @@ It is a truth baseline, not a protocol and not a policy file.
 
 - the backend API runtime remains CommonJS, with `start` and `dev` building the backend before running `node dist/server.js`
 - Notes, Projects, and Tasks mutation schemas are authored in `backend/src/routes/schemas/mutations.ts`
-- existing route modules consume those schemas through the stable CommonJS facade at `backend/src/routes/schemas/mutations.js`
-- schema definitions live in `backend/src/routes/schemas/mutations.ts` and are emitted by the unified backend build
-- Notes route orchestration is authored in `backend/src/routes/notesRoutes.ts` and consumed from compiled backend dist output
+- route modules consume those schemas from `backend/src/routes/schemas/mutations.ts`, emitted by the unified backend build
+- backend source under `backend/src` is TypeScript and is consumed from compiled backend dist output
 - this type boundary does not change route URLs, request bodies, parsed DTO behavior, or public error payloads
 
 ## Current Models

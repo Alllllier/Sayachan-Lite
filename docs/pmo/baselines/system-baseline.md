@@ -65,9 +65,8 @@ Current backend type-adoption shape:
 - `npm --prefix backend test` builds backend dist before running backend tests, and backend tests import runtime modules from `backend/dist`
 - `backend/src/routes/schemas/mutations.ts` is the first focused TypeScript schema/DTO island for product mutation validation
 - the schema island facade/generated path has been retired; `backend/src/routes/schemas/mutations.ts` is emitted directly by the unified backend build
-- the unified backend `tsc` build also includes `backend/src/routes/schemas/mutations.ts` and emits `backend/dist/routes/schemas/mutations.js` from the TS source, while excluding the source-runtime facade from that dist artifact to avoid output collision
-- `backend/src/routes/notesRoutes.ts` is the first product route whose TypeScript source now lives at the normal route path and emits directly to `backend/dist/routes/notesRoutes.js`
-- existing route modules consume compiled `backend/dist/routes/schemas/mutations.js` at runtime
+- the unified backend `tsc` build emits the TypeScript backend source graph under `backend/src` into CommonJS runtime artifacts under `backend/dist`
+- route modules consume `backend/src/routes/schemas/mutations.ts` as the product mutation schema source and use the compiled `backend/dist/routes/schemas/mutations.js` artifact at runtime
 
 ## Public Runtime Surfaces
 

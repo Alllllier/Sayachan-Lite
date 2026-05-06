@@ -29,9 +29,9 @@ Current transitional type-island truth:
 - `backend/dist` is now the default backend runtime output for both start and development commands
 - product mutation schemas and DTO types are authored in `backend/src/routes/schemas/mutations.ts`
 - the schema island facade/generated path has been retired; root `npm run check` no longer includes `check:schema-island`
-- the unified backend `tsc` dry-run now includes `backend/src/routes/schemas/mutations.ts`, so `backend/dist/routes/schemas/mutations.js` is emitted from the TS schema source rather than from the source-runtime facade
+- the unified backend `tsc` build emits `backend/dist/routes/schemas/mutations.js` from the TS schema source
 - the default validation path no longer smoke-loads the source runtime, and schema generated/facade artifacts have been removed
-- Notes route orchestration is authored in `backend/src/routes/notesRoutes.ts` and emitted directly by the unified backend build
+- backend route orchestration is authored in TypeScript under `backend/src/routes/` and emitted directly by the unified backend build
 - the Notes route island facade/generated path has been retired; root `npm run check` no longer includes `check:notes-route-island`
 - Notes, Projects, and Tasks route modules are authored at normal TypeScript route paths and consume compiled `backend/dist/routes/schemas/mutations.js` at runtime
 - `backend/src/routes/schemas/mutations.ts` is the schema source of truth for Notes, Projects, and Tasks mutation validation

@@ -2,7 +2,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const mongoose = require('mongoose');
-const Task = require('../src/models/Task');
+const Task = require('../dist/models/Task');
 
 async function main() {
   const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/personal-os-lite';
