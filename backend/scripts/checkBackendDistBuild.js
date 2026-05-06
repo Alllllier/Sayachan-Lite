@@ -240,6 +240,23 @@ function assertOwnershipDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertTasksServiceDistArtifactFromTypeScriptSource() {
+  const tasksServiceDistSource = fs.readFileSync(path.join(distRoot, 'services', 'tasksService.js'), 'utf8');
+
+  assert(
+    tasksServiceDistSource.includes('function buildTaskUpdate'),
+    'dist tasksService artifact must preserve buildTaskUpdate.'
+  );
+  assert(
+    tasksServiceDistSource.includes('clearFocusForTask'),
+    'dist tasksService artifact must preserve focus clearing behavior.'
+  );
+  assert(
+    tasksServiceDistSource.includes('require("./ownership")') || tasksServiceDistSource.includes("require('./ownership')"),
+    'dist tasksService artifact must keep the local ownership service boundary.'
+  );
+}
+
 function assertCurrentSourceArtifactsWereEmitted() {
   const sourceFiles = walkFiles(srcRoot)
     .filter(filePath => path.extname(filePath) === '.js')
@@ -256,6 +273,7 @@ const requiredRuntimeEntrypoints = [
   'server.js',
   path.join('middleware', 'requestBodyValidation.js'),
   path.join('services', 'ownership.js'),
+  path.join('services', 'tasksService.js'),
   path.join('services', 'taskRuntimeHelpers.js'),
   path.join('routes', 'index.js'),
   path.join('routes', 'ai.js'),
@@ -286,6 +304,7 @@ assertProjectsDistArtifactFromTypeScriptSource();
 assertTasksDistArtifactFromTypeScriptSource();
 assertRequestBodyValidationDistArtifactFromTypeScriptSource();
 assertOwnershipDistArtifactFromTypeScriptSource();
+assertTasksServiceDistArtifactFromTypeScriptSource();
 assertTaskRuntimeHelpersDistArtifactFromTypeScriptSource();
 
 console.log('Backend dist build boundary check passed.');

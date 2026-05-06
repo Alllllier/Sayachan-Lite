@@ -20,6 +20,7 @@
     "src/**/*.js",
     "src/middleware/requestBodyValidation.ts",
     "src/services/ownership.ts",
+    "src/services/tasksService.ts",
     "src/services/taskRuntimeHelpers.ts",
     "src/routes/notesRoutes.ts",
     "src/routes/projectsRoutes.ts",
@@ -32,6 +33,7 @@
     "src/routes/tasksRoutes.js",
     "src/middleware/requestBodyValidation.js",
     "src/services/ownership.js",
+    "src/services/tasksService.js",
     "src/services/taskRuntimeHelpers.js"
   ]
 }

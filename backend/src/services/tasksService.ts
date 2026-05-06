@@ -1,3 +1,8 @@
+import type {
+  TaskCreateDto,
+  TaskUpdateDto
+} from '../routes/schemas/mutations';
+
 const Project = require('../models/Project');
 const Task = require('../models/Task');
 const {
@@ -10,7 +15,28 @@ const {
 } = require('./taskRuntimeHelpers');
 const { ownedFilter, ownerFilter, requireUserId } = require('./ownership');
 
-async function listTasks({ projectId, archived, userId } = {}) {
+type ServiceOptions = {
+  userId?: unknown;
+};
+
+type ListTasksOptions = ServiceOptions & {
+  projectId?: unknown;
+  archived?: unknown;
+};
+
+type TaskUpdate = {
+  status?: TaskUpdateDto['status'];
+  archived?: boolean;
+  completed?: boolean;
+};
+
+type NormalizedTask = {
+  _id?: unknown;
+  status?: unknown;
+  archived?: unknown;
+};
+
+async function listTasks({ projectId, archived, userId }: ListTasksOptions = {}) {
   const filter = projectId
     ? combineFilters(buildArchiveFilter(archived), projectTaskReadFilter(projectId), ownerFilter(userId))
     : combineFilters(buildArchiveFilter(archived), ownerFilter(userId));
@@ -18,7 +44,7 @@ async function listTasks({ projectId, archived, userId } = {}) {
   return tasks.map(normalizeTask);
 }
 
-async function createTask(body, { userId } = {}) {
+async function createTask(body: TaskCreateDto, { userId }: ServiceOptions = {}) {
   const taskData = {
     title: body.title,
     creationMode: body.creationMode || 'manual',
@@ -34,8 +60,8 @@ async function createTask(body, { userId } = {}) {
   return normalizeTask(task);
 }
 
-function buildTaskUpdate(body) {
-  const update = {};
+function buildTaskUpdate(body: TaskUpdateDto): TaskUpdate {
+  const update: TaskUpdate = {};
 
   if (body.status !== undefined) {
     update.status = body.status;
@@ -55,15 +81,15 @@ function buildTaskUpdate(body) {
   return update;
 }
 
-async function updateTask(id, body, { userId } = {}) {
+async function updateTask(id: unknown, body: TaskUpdateDto, { userId }: ServiceOptions = {}) {
   const existingTask = await Task.findOne(ownedFilter(id, userId));
   if (!existingTask) {
     return null;
   }
 
-  const normalizedExistingTask = normalizeTask(existingTask);
+  const normalizedExistingTask = normalizeTask(existingTask) as NormalizedTask;
   const task = await Task.findOneAndUpdate(ownedFilter(id, userId), buildTaskUpdate(body), { new: true, runValidators: true });
-  const normalizedTask = normalizeTask(task);
+  const normalizedTask = normalizeTask(task) as NormalizedTask;
 
   const isBecomingCompleted = normalizedTask.status === 'completed' && normalizedExistingTask.status !== 'completed';
 
@@ -79,7 +105,7 @@ async function updateTask(id, body, { userId } = {}) {
   return normalizedTask;
 }
 
-async function deleteTask(id, { userId } = {}) {
+async function deleteTask(id: unknown, { userId }: ServiceOptions = {}) {
   const task = await Task.findOneAndDelete(ownedFilter(id, userId));
 
   if (!task) {
@@ -90,7 +116,7 @@ async function deleteTask(id, { userId } = {}) {
   return true;
 }
 
-module.exports = {
+export = {
   createTask,
   deleteTask,
   listTasks,
