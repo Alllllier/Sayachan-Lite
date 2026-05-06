@@ -87,12 +87,9 @@ function assertPackageRuntimeBoundary() {
   const backendTsconfig = readJson(path.join(backendRoot, 'tsconfig.json'));
   const backendScripts = backendPackage.scripts || {};
   const rootScripts = rootPackage.scripts || {};
-  const backendDependencies = {
-    ...backendPackage.dependencies,
-    ...backendPackage.devDependencies
-  };
+  const backendDependencies = backendPackage.dependencies || {};
+  const backendDevDependencies = backendPackage.devDependencies || {};
   const runtimeLoaderPackageNames = [
-    'tsx',
     'ts-node',
     'ts-node-dev',
     '@swc-node/register',
@@ -114,8 +111,12 @@ function assertPackageRuntimeBoundary() {
     'backend start script must build and run "node dist/server.js".'
   );
   assert(
-    backendScripts.dev === 'npm run build:backend && node dist/server.js',
-    'backend dev script must build and run "node dist/server.js".'
+    backendScripts.dev === 'tsx watch src/server.ts',
+    'backend dev script may use tsx watch for source-mode local development.'
+  );
+  assert(
+    backendScripts['dev:dist'] === 'npm run build:backend && node dist/server.js',
+    'backend dev:dist script must preserve the dist-backed local runtime path.'
   );
   assert(
     backendPackage.main === 'dist/server.js',
@@ -143,6 +144,9 @@ function assertPackageRuntimeBoundary() {
   );
 
   for (const [scriptName, scriptCommand] of Object.entries(backendScripts)) {
+    if (scriptName === 'dev') {
+      continue;
+    }
     assert(
       !runtimeLoaderScriptPattern.test(scriptCommand),
       `backend script "${scriptName}" must not introduce a runtime TS loader: ${scriptCommand}`
@@ -151,10 +155,15 @@ function assertPackageRuntimeBoundary() {
 
   for (const packageName of runtimeLoaderPackageNames) {
     assert(
-      !Object.prototype.hasOwnProperty.call(backendDependencies, packageName),
+      !Object.prototype.hasOwnProperty.call({ ...backendDependencies, ...backendDevDependencies }, packageName),
       `backend package must not introduce runtime TS loader dependency: ${packageName}`
     );
   }
+  assert(
+    !Object.prototype.hasOwnProperty.call(backendDependencies, 'tsx') &&
+      Object.prototype.hasOwnProperty.call(backendDevDependencies, 'tsx'),
+    'tsx must remain a backend devDependency used only by the dev script.'
+  );
 
   assert(
     !/\bcheck:backend-build\b|\bbuild:backend\b/.test(rootScripts.check || ''),

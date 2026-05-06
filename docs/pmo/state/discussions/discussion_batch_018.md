@@ -1,7 +1,7 @@
 # Discussion Batch `discussion_batch_018`
 
 - Topic: `Engineering modernization path after MVP guardrails`
-- Last updated: `2026-05-05`
+- Last updated: `2026-05-07`
 - Status: `active`
 - Discussion mode: `follow-up`
 
@@ -191,6 +191,73 @@
 - Runtime schema guardrails may be as important as TypeScript for account/API/AI boundaries because they protect live inputs.
 - The runtime-schema placement is now `backend/src/middleware/requestBodyValidation.ts` plus `backend/src/routes/schemas/mutations.ts` for product mutation schemas. Product mutation routes now use `ctx.state.validatedBody` as the parsed DTO boundary while preserving raw `ctx.request.body`; Auth/AI migration, strip/trim/default/coerce semantics, and broader payload validation remain separate decisions.
 
+## Backend Migration Lessons For Frontend TypeScript
+
+The backend migration produced several rules that should guide frontend TypeScript work before PMO promotes the next frontend TS candidate.
+
+### 1. Do not start from the integration hub
+
+- Backend lesson: route handlers looked like a convenient place to type because they see the whole request/response path, but they immediately pulled in Koa generics, services, models, ObjectId parsing, auth state, runtime validation, and module-system decisions.
+- Frontend implication: do not start frontend TS from Vue SFCs, page shells, router-wide guards, or large composables if the goal is low-risk migration. Those are frontend integration hubs and will pull UI state, stores, API calls, refs, lifecycle hooks, CSS-facing props, router metadata, and component emits into the same decision.
+- Better first targets: pure rules, DTO modules, API response/request contracts, shared service helpers, and small stores only after their API/rules dependencies are typed enough.
+
+### 2. Prove the build/runtime path before expanding files
+
+- Backend lesson: the biggest migration risk was not syntax; it was runtime loading. CommonJS vs ESM, source vs dist, generated artifacts, package import boundaries, and private_core all mattered more than converting one file.
+- Frontend implication: Vite can compile `.ts` and Vue SFC TypeScript more naturally than plain Node, but PMO still needs a clear typecheck/build story before broad conversion. Decide whether the frontend path is checkJs, typed islands, `vue-tsc`, Vite-only transpilation, or a staged combination before touching many files.
+- Guardrail: a `.ts` file that Vite can bundle is not automatically part of a useful typecheck gate. The frontend should not confuse successful dev/build transpilation with a coherent TypeScript validation boundary.
+
+### 3. Treat transitional scaffolding as explicit debt
+
+- Backend lesson: generated JS, DTO pilots, route facades, `__generated__`, external module declarations, and shared route-state aliases were acceptable only because PMO named them as transitional and later removed or consolidated them.
+- Frontend implication: `frontend/src/services/tasks/typecheck-shims.d.ts`, scoped tsconfig `noResolve`, JSDoc typedefs, and any local Vue/ref shims must be labeled as pilot scaffolding. They should not silently become the permanent frontend TS architecture.
+- Guardrail: each frontend TS candidate should say which scaffolding is expected to remain, shrink, or be deleted during closeout.
+
+### 4. Let TypeScript expose architecture debt, then classify before deleting
+
+- Backend lesson: TypeScript exposed real issues such as route state duplication, weak middleware typing, ObjectId assumptions, model typing gaps, and JS-era normalizers. Some were deleted or simplified; others were confirmed as durable runtime boundaries.
+- Frontend implication: when TS exposes frontend duplication, PMO should classify it before action:
+  - durable product/runtime boundary: keep and type
+  - no-type shape scaffolding: merge or delete only after typed contracts and tests exist
+  - mixed integration surface: split before converting
+- Guardrail: do not delete feature rules, composables, stores, API modules, or UI-local state merely because a type can describe their inputs. Delete only after proving the file has no behavior, side effects, product semantics, or public boundary value.
+
+### 5. Keep runtime validation separate from type safety
+
+- Backend lesson: Zod and TypeScript solved different problems. TypeScript clarified internal contracts; Zod protected external HTTP inputs and produced parsed DTOs.
+- Frontend implication: TS should not replace runtime checks for untrusted API responses, localStorage/resource-cache snapshots, runtimeControls persistence, markdown sanitation, or future AI payloads. Types can describe expected shape, but runtime guards still protect persisted and external data.
+- Guardrail: frontend TS work should explicitly name which data is trusted internal state and which data remains runtime-validated or normalized.
+
+### 6. Expand through reusable boundaries, not blanket checkJs
+
+- Backend lesson: broad checkJs from route handlers was noisy; pure typed islands worked better. The useful pattern was to expand through boundaries that could become reusable architecture.
+- Frontend implication: the completed task-service and apiClient pilots are useful, but the next step should not be full-repo checkJs. It should either:
+  - create a durable frontend type-support plan, or
+  - promote another narrow typed boundary with low import-graph risk.
+- Good next candidates may include frontend DTO/type placement, API result helper typing, resource-cache snapshot typing, runtimeControls store typing, or a pure rules typed island. Poor next candidates are broad Vue SFC conversion, router-wide conversion, or feature composable conversion before API/rules contracts are stable.
+
+### 7. Human gates should be architecture gates, not per-file gates
+
+- Backend lesson: after the big decisions were approved, repeated migration could be automated. Human review mattered at architecture forks: dist runtime, ESM, private_core boundary, runtime loaders, public behavior changes.
+- Frontend implication: PMO can automate repetitive conversion once the frontend TS path is decided, but should stop for real gates:
+  - whether to introduce `vue-tsc`
+  - whether frontend typecheck enters root `npm run check`
+  - whether to convert Vue SFCs
+  - whether to introduce shared contract packages/workspaces
+  - whether to change API response normalization/runtime validation
+  - whether to remove pilot shims or no-type scaffolding
+
+### 8. Candidate shape for the next frontend TS move
+
+- Recommended next PMO move is not full migration. It should be a planning or bounded implementation candidate such as `Frontend TypeScript Support Boundary Plan`.
+- Expected output should answer:
+  - what the frontend TS validation command should be
+  - whether `typecheck:tasks` remains explicit or enters root `npm run check`
+  - whether `noResolve` and `typecheck-shims.d.ts` remain pilot-only
+  - where frontend DTO/domain types should live before any workspace/shared package exists
+  - which first typed island should follow after support boundary cleanup
+  - which frontend surfaces are explicitly out of scope until lower layers are typed
+
 ## Promotion Outcome
 
 - `slice-001` was promoted to `docs/pmo/state/sprint_candidates.md` as `Engineering Quality Gate V1`, executed, validated through root `npm run check`, and accepted for closeout.
@@ -220,4 +287,5 @@
 - Type-Aware Backend DTO Pilot executed, validated through backend DTO typecheck, focused backend tests, full backend tests, and root `npm run check`, and accepted for closeout.
 - Completed backend DTO pilot report: `docs/pmo/history/reports/type-aware-backend-dto-pilot.md`
 - Follow-up candidate created from backend DTO pilot: `Backend Schema Typed Island Pilot`.
+- Backend TypeScript/ESM migration through route/service/model/middleware cleanup and Route Middleware Typing Cleanup produced the frontend migration lessons recorded above. Use them before promoting the next frontend TS candidate.
 - `slice-004` through `slice-007` remain discussion-shaped follow-ons until Quality Gate V1, target architecture mapping, or a concrete architecture pressure makes them execution-ready.

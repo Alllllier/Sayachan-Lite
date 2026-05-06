@@ -72,10 +72,12 @@ cp frontend/.env.local.example frontend/.env.local
 ```bash
 cd backend
 npm install
-npm start
+npm run dev
 ```
 
 后端将运行在 `http://localhost:3001`
+
+`npm run dev` 使用 `tsx watch src/server.ts` 直接运行 TypeScript 源码，适合本地开发。`npm start` 会先执行 `tsc` 构建，再运行 `dist/server.js`，用于验证正式后端产物路径。
 
 ### 3. 启动前端
 
