@@ -2,6 +2,7 @@ import Router, { type RouterMiddleware } from '@koa/router';
 
 import type {
   TaskCreateDto,
+  TaskCreationMode,
   TaskUpdateDto
 } from './schemas/mutations';
 import { type ObjectId } from '../middleware/objectIdParsing';
@@ -56,6 +57,9 @@ const {
 const router = new Router<TasksState>();
 
 type TaskCreateServiceBody = Omit<TaskCreateDto, 'originId'> & {
+  title: string;
+  creationMode?: TaskCreationMode;
+  originModule?: string;
   originId?: ObjectId | null;
 };
 

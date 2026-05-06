@@ -1,5 +1,6 @@
 import type {
   TaskCreateDto,
+  TaskCreationMode,
   TaskUpdateDto
 } from '../routes/schemas/mutations';
 import type { ObjectId } from '../middleware/objectIdParsing';
@@ -20,7 +21,7 @@ import ProjectModel = require('../models/Project');
 import TaskModel = require('../models/Task');
 
 const Project = ProjectModel as any;
-const Task = TaskModel as any;
+const Task = TaskModel;
 
 type ServiceOptions = {
   userId: ObjectId;
@@ -32,6 +33,9 @@ type ListTasksOptions = ServiceOptions & {
 };
 
 type TaskCreateInput = Omit<TaskCreateDto, 'originId'> & {
+  title: string;
+  creationMode?: TaskCreationMode;
+  originModule?: string;
   originId?: ObjectId | null;
 };
 
