@@ -38,7 +38,6 @@ const userSchema = new mongoose.Schema({
 });
 
 type UserAttrs = mongoose.InferSchemaType<typeof userSchema>;
-type UserDocument = mongoose.HydratedDocument<UserAttrs>;
 
 const User = mongoose.model<UserAttrs, mongoose.Model<UserAttrs>>('User', userSchema);
 

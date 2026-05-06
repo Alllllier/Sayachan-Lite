@@ -37,7 +37,6 @@ const inviteSchema = new mongoose.Schema({
 });
 
 type InviteAttrs = mongoose.InferSchemaType<typeof inviteSchema>;
-type InviteDocument = mongoose.HydratedDocument<InviteAttrs>;
 
 const Invite = mongoose.model<InviteAttrs, mongoose.Model<InviteAttrs>>('Invite', inviteSchema);
 

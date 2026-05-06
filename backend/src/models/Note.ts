@@ -34,7 +34,6 @@ const noteSchema = new mongoose.Schema({
 noteSchema.index({ userId: 1, archived: 1, isPinned: -1, pinnedAt: -1, updatedAt: -1 });
 
 type NoteAttrs = mongoose.InferSchemaType<typeof noteSchema>;
-type NoteDocument = mongoose.HydratedDocument<NoteAttrs>;
 
 const Note = mongoose.model<NoteAttrs, mongoose.Model<NoteAttrs>>('Note', noteSchema);
 

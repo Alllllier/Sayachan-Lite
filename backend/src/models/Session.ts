@@ -20,7 +20,6 @@ const sessionSchema = new mongoose.Schema({
 });
 
 type SessionAttrs = mongoose.InferSchemaType<typeof sessionSchema>;
-type SessionDocument = mongoose.HydratedDocument<SessionAttrs>;
 
 const Session = mongoose.model<SessionAttrs, mongoose.Model<SessionAttrs>>('Session', sessionSchema);
 

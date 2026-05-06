@@ -45,7 +45,6 @@ taskSchema.index({ userId: 1, archived: 1, createdAt: -1 });
 taskSchema.index({ userId: 1, originModule: 1, originId: 1, archived: 1 });
 
 type TaskAttrs = mongoose.InferSchemaType<typeof taskSchema>;
-type TaskDocument = mongoose.HydratedDocument<TaskAttrs>;
 
 const Task = mongoose.model<TaskAttrs, mongoose.Model<TaskAttrs>>('Task', taskSchema);
 
