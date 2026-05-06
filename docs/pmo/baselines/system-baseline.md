@@ -141,7 +141,7 @@ Backend routes currently split into:
 - `backend/src/routes/schemas/mutations.ts`
 - `backend/src/routes/ai.js`
 - `backend/src/middleware/requestBodyValidation.ts`
-- `backend/src/middleware/errorBoundary.js`
+- `backend/src/middleware/errorBoundary.ts`
 
 Current AI route surface:
 
@@ -152,13 +152,13 @@ Current AI route surface:
 Current route behavior truth:
 
 - `backend/src/middleware/auth.js` loads the current user from the `sayachan_session` cookie and gates normal non-health product/API routes
-- `backend/src/middleware/errorBoundary.js` is registered before body parsing, auth, and routers so downstream parser/auth/route failures return stable JSON error payloads
+- `backend/src/middleware/errorBoundary.ts` is registered before body parsing, auth, and routers so downstream parser/auth/route failures return stable JSON error payloads
 - auth, owner, health, note, project, and task routes are registered through `backend/src/routes/index.js` as the main route aggregator
 - non-AI note/project/task route orchestration is split through first-pass service modules under `backend/src/services/`
 - phase-one auth uses owner/tester roles, invite-gated registration, cookie-backed sessions, and lightweight owner management
 - backend owner bootstrap can be run through `backend/scripts/bootstrapOwner.mjs` or `npm run bootstrap:owner` from the backend workspace
 - Notes, Projects, and Tasks normal route/service reads and writes are scoped by current authenticated user
-- Note, Project, and Task routes attach `requireCurrentUser` from `backend/src/middleware/currentUser.js` before product handlers, so product handlers consume `ctx.state.userId` rather than resolving ownership themselves
+- Note, Project, and Task routes attach `requireCurrentUser` from `backend/src/middleware/currentUser.ts` before product handlers, so product handlers consume `ctx.state.userId` rather than resolving ownership themselves
 - Note, Project, and Task create/update routes validate product mutation bodies through `backend/src/middleware/requestBodyValidation.ts` and route-owned Zod schemas, then pass `ctx.state.validatedBody` to services while preserving raw `ctx.request.body`
 - Note, Project, and Task services use `backend/src/services/ownership.ts` for required owner filters and do not retain unowned single-user content fallback branches
 - public AI note/project routes reload persisted note/project context by current user ownership before constructing fallback/provider prompts

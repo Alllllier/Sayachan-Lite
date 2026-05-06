@@ -1,4 +1,6 @@
-function resolveCurrentUserId(ctx) {
+import type { Context, Next } from 'koa';
+
+export function resolveCurrentUserId(ctx: Context): unknown | null {
   const userId = ctx.state?.user?._id;
   if (!userId) {
     return null;
@@ -6,7 +8,7 @@ function resolveCurrentUserId(ctx) {
   return userId;
 }
 
-async function requireCurrentUser(ctx, next) {
+export async function requireCurrentUser(ctx: Context, next: Next): Promise<void> {
   const userId = resolveCurrentUserId(ctx);
   if (!userId) {
     ctx.status = 401;
@@ -17,8 +19,3 @@ async function requireCurrentUser(ctx, next) {
   ctx.state.userId = userId;
   await next();
 }
-
-module.exports = {
-  requireCurrentUser,
-  resolveCurrentUserId
-};

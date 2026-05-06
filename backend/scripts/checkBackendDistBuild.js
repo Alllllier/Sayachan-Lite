@@ -206,6 +206,32 @@ function assertRequestBodyValidationDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertCurrentUserDistArtifactFromTypeScriptSource() {
+  const currentUserDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'currentUser.js'), 'utf8');
+
+  assert(
+    currentUserDistSource.includes('function resolveCurrentUserId'),
+    'dist currentUser artifact must preserve resolveCurrentUserId.'
+  );
+  assert(
+    currentUserDistSource.includes('Authentication required'),
+    'dist currentUser artifact must preserve authentication error payload.'
+  );
+}
+
+function assertErrorBoundaryDistArtifactFromTypeScriptSource() {
+  const errorBoundaryDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'errorBoundary.js'), 'utf8');
+
+  assert(
+    errorBoundaryDistSource.includes('function errorBoundary'),
+    'dist errorBoundary artifact must preserve errorBoundary.'
+  );
+  assert(
+    errorBoundaryDistSource.includes('Internal server error'),
+    'dist errorBoundary artifact must preserve stable 500 payload.'
+  );
+}
+
 function assertTaskRuntimeHelpersDistArtifactFromTypeScriptSource() {
   const helpersDistSource = fs.readFileSync(path.join(distRoot, 'services', 'taskRuntimeHelpers.js'), 'utf8');
 
@@ -360,6 +386,8 @@ function assertCurrentSourceArtifactsWereEmitted() {
 
 const requiredRuntimeEntrypoints = [
   'server.js',
+  path.join('middleware', 'currentUser.js'),
+  path.join('middleware', 'errorBoundary.js'),
   path.join('middleware', 'requestBodyValidation.js'),
   path.join('models', 'Invite.js'),
   path.join('models', 'Note.js'),
@@ -400,6 +428,8 @@ assertSchemaDistArtifactFromTypeScriptSource();
 assertNotesDistArtifactFromTypeScriptSource();
 assertProjectsDistArtifactFromTypeScriptSource();
 assertTasksDistArtifactFromTypeScriptSource();
+assertCurrentUserDistArtifactFromTypeScriptSource();
+assertErrorBoundaryDistArtifactFromTypeScriptSource();
 assertRequestBodyValidationDistArtifactFromTypeScriptSource();
 assertAuthServiceDistArtifactFromTypeScriptSource();
 assertAuthModelDistArtifactsFromTypeScriptSource();
