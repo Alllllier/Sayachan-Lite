@@ -96,6 +96,10 @@ function assertPackageRuntimeBoundary() {
     'backend dev script must build and run "node dist/server.js".'
   );
   assert(
+    backendPackage.main === 'dist/server.js',
+    'backend package main must point at the compiled dist server entrypoint.'
+  );
+  assert(
     backendPackage.dependencies?.['@allier/sayachan-ai-core'] === 'file:private_core/sayachan-ai-core',
     'backend must depend on @allier/sayachan-ai-core through the local private_core package boundary.'
   );
@@ -215,6 +219,36 @@ function assertRouteIndexDistArtifactFromTypeScriptSource() {
       `dist route index artifact must register ${routeModule}.`
     );
   }
+}
+
+function assertDatabaseDistArtifactFromTypeScriptSource() {
+  const databaseDistSource = fs.readFileSync(path.join(distRoot, 'database.js'), 'utf8');
+
+  assert(
+    databaseDistSource.includes('async function connectDB'),
+    'dist database artifact must preserve connectDB.'
+  );
+  assert(
+    databaseDistSource.includes('MongoDB connection failed (service will continue running)'),
+    'dist database artifact must preserve non-blocking startup warning behavior.'
+  );
+}
+
+function assertServerDistArtifactFromTypeScriptSource() {
+  const serverDistSource = fs.readFileSync(path.join(distRoot, 'server.js'), 'utf8');
+
+  assert(
+    serverDistSource.includes('require("./database")'),
+    'dist server artifact must import the compiled database module.'
+  );
+  assert(
+    serverDistSource.includes('errorBoundary'),
+    'dist server artifact must preserve error boundary registration.'
+  );
+  assert(
+    serverDistSource.includes('Health check available at http://localhost:'),
+    'dist server artifact must preserve health startup log.'
+  );
 }
 
 function assertRequestBodyValidationDistArtifactFromTypeScriptSource() {
@@ -430,6 +464,7 @@ function assertCurrentSourceArtifactsWereEmitted() {
 }
 
 const requiredRuntimeEntrypoints = [
+  'database.js',
   'server.js',
   path.join('middleware', 'currentUser.js'),
   path.join('middleware', 'errorBoundary.js'),
@@ -477,6 +512,8 @@ assertProjectsDistArtifactFromTypeScriptSource();
 assertTasksDistArtifactFromTypeScriptSource();
 assertHealthRoutesDistArtifactFromTypeScriptSource();
 assertRouteIndexDistArtifactFromTypeScriptSource();
+assertDatabaseDistArtifactFromTypeScriptSource();
+assertServerDistArtifactFromTypeScriptSource();
 assertObjectIdDistArtifactFromTypeScriptSource();
 assertCurrentUserDistArtifactFromTypeScriptSource();
 assertErrorBoundaryDistArtifactFromTypeScriptSource();

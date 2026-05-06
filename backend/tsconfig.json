@@ -18,6 +18,8 @@
   },
   "include": [
     "src/**/*.js",
+    "src/database.ts",
+    "src/server.ts",
     "src/middleware/currentUser.ts",
     "src/middleware/errorBoundary.ts",
     "src/middleware/requestBodyValidation.ts",
@@ -41,6 +43,8 @@
     "src/routes/schemas/mutations.ts"
   ],
   "exclude": [
+    "src/database.js",
+    "src/server.js",
     "src/routes/healthRoutes.js",
     "src/routes/index.js",
     "src/routes/notesRoutes.js",

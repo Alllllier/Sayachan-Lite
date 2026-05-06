@@ -201,14 +201,14 @@ Do not kill unrelated long-running services just because they happen to use thes
 
 | Use | Path |
 |---|---|
-| backend entry | `backend/src/server.js` |
-| non-AI route aggregator | `backend/src/routes/index.js` |
-| non-AI route modules | `backend/src/routes/healthRoutes.js`, `backend/src/routes/notesRoutes.js`, `backend/src/routes/projectsRoutes.js`, `backend/src/routes/tasksRoutes.js` |
+| backend entry | `backend/src/server.ts` |
+| non-AI route aggregator | `backend/src/routes/index.ts` |
+| non-AI route modules | `backend/src/routes/healthRoutes.ts`, `backend/src/routes/notesRoutes.ts`, `backend/src/routes/projectsRoutes.ts`, `backend/src/routes/tasksRoutes.ts` |
 | backend services | `backend/src/services/` |
 | AI routes | `backend/src/routes/ai.js` |
-| notes model | `backend/src/models/Note.js` |
-| projects model | `backend/src/models/Project.js` |
-| tasks model | `backend/src/models/Task.js` |
+| notes model | `backend/src/models/Note.ts` |
+| projects model | `backend/src/models/Project.ts` |
+| tasks model | `backend/src/models/Task.ts` |
 | frontend entry | `frontend/src/main.js` |
 | frontend router | `frontend/src/router/index.js` |
 | dashboard page | `frontend/src/views/DashboardPage.vue` |

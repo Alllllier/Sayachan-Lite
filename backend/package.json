@@ -2,7 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "src/server.js",
+  "main": "dist/server.js",
   "scripts": {
     "start": "npm run build:backend && node dist/server.js",
     "dev": "npm run build:backend && node dist/server.js",

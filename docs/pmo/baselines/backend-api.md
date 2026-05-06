@@ -24,7 +24,7 @@ It is a truth baseline, not a protocol and not a policy file.
 
 ## Backend Type Boundary
 
-- the backend API runtime remains CommonJS and does not require a whole-backend build before `node src/server.js`
+- the backend API runtime remains CommonJS, with `start` and `dev` building the backend before running `node dist/server.js`
 - Notes, Projects, and Tasks mutation schemas are authored in `backend/src/routes/schemas/mutations.ts`
 - existing route modules consume those schemas through the stable CommonJS facade at `backend/src/routes/schemas/mutations.js`
 - schema definitions live in `backend/src/routes/schemas/mutations.ts` and are emitted by the unified backend build
