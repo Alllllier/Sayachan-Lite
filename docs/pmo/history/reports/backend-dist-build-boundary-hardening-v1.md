@@ -1,0 +1,66 @@
+# Backend Dist Build Boundary Hardening V1
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Backend Dist Build Boundary Hardening V1`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Hardened `backend/scripts/checkBackendDistBuild.js` so `npm --prefix backend run check:backend-build` now verifies the backend dist dry-run boundary more explicitly.
+  - Added automatic verification that every current `backend/src/**/*.js` source artifact is emitted under `backend/dist`.
+  - Added explicit required runtime artifact checks for current dist entrypoints and island facade dependencies, including:
+    - `dist/server.js`
+    - `dist/routes/index.js`
+    - `dist/routes/ai.js`
+    - `dist/routes/notesRoutes.js`
+    - `dist/routes/__generated__/notesRoutes.js`
+    - `dist/routes/schemas/mutations.js`
+    - `dist/routes/schemas/__generated__/mutations.js`
+  - Added package/runtime boundary checks:
+    - `backend/package.json` remains `"type": "commonjs"`.
+    - `backend/package.json` `start` remains `node src/server.js`.
+    - `backend/package.json` `dev` remains `node src/server.js`.
+    - backend scripts and dependencies do not introduce runtime TS loaders such as `tsx`, `ts-node`, `ts-node-dev`, `@swc-node/register`, `esbuild-register`, or `@babel/register`.
+    - root `npm run check` does not include the backend dist dry-run without a human gate.
+  - Added dist boundary checks:
+    - `backend/dist/private_core` must not exist.
+    - no emitted dist file may contain a `private_core` path segment.
+    - no emitted dist file may contain a `__route_sources__` path segment.
+  - Left `backend/tsconfig.json`, backend/root `package.json`, runtime scripts, route/service/model files, schema/Notes islands, and public API behavior unchanged.
+- Validation summary:
+  - `npm --prefix backend run check:backend-build` passed.
+    - This rebuilt backend dist with `tsc -p tsconfig.json`.
+    - The hardened guard verified required artifacts, source runtime scripts, CommonJS package type, no runtime TS loader, no private core emission, no route-source island emission, and no root-check inclusion of backend dist dry-run.
+  - `npm run lint:backend` passed.
+    - Run because this sprint changed a backend script covered by backend lint.
+  - `npm --prefix backend run check:schema-island` passed.
+    - Run as a low-cost confirmation that schema island guardrails remained stable.
+  - `npm --prefix backend run check:notes-route-island` passed.
+    - Run as a low-cost confirmation that Notes route island guardrails remained stable.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states:
+  - If skipped, why skipping was acceptable:
+    - This sprint changed only backend build guard/check behavior.
+    - No UI, browser surface, API contract, route behavior, frontend behavior, or runtime startup mode was changed.
+- Unverified areas:
+  - `npm --prefix backend test` was not run.
+    - The handoff required `check:backend-build` and recommended backend tests only if touched files or findings made them relevant.
+    - This sprint changed only the backend dist build guard script and did not change runtime behavior.
+  - `npm run check` was not run.
+    - The handoff explicitly said not to add backend dist validation to root `npm run check`; the changed guard also asserts that root `check` does not call `check:backend-build`.
+- Residual risks or escalations:
+  - `backend/tsconfig.json` still uses `noResolve: true` as the current dry-run boundary. This remains intentional for now because replacing it could force private-core resolution or broader type/build architecture decisions.
+  - The guard proves that `backend/private_core` is not emitted into `backend/dist`, but it does not decide the future private-core build architecture.
+  - The current dist smoke still imports dist server/routes under mocks; it is a dry-run check, not a production runtime cutover.
+  - Future route TS migration or island retirement will need to update this guard's artifact expectations deliberately.
+- Documentation-sync outcome: `reviewed, no update needed`
+- Follow-up routing:
+  - Human/PMO approval is still required before:
+    - switching runtime from `node src/server.js` to `node dist/server.js`
+    - switching CommonJS to ESM
+    - including `backend/private_core/**` in the backend build
+    - introducing `tsx`, `ts-node`, or any runtime TS loader
+    - deleting schema or Notes island generated artifacts/facades
+    - changing public API/Zod behavior
+    - adding heavier backend dist validation to root `npm run check`
