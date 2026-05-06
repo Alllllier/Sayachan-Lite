@@ -7,7 +7,7 @@ Last updated: 2026-05-06
 
 - backend `start` builds and runs `node dist/server.js`
 - backend `dev` builds and runs `node dist/server.js`
-- schema generated/facade scaffolding still exists
+- schema generated/facade scaffolding has been retired
 - Notes route generated/facade scaffolding has been retired
 - root `npm run check` includes schema island guardrail and backend dist runtime readiness
 
@@ -15,16 +15,16 @@ Last updated: 2026-05-06
 
 ### Schema Island
 
-Current source runtime still needs:
+Schema source-runtime scaffold has been retired:
 
-- `backend/src/routes/schemas/mutations.js`
-- `backend/src/routes/schemas/__generated__/mutations.js`
-- `backend/src/routes/schemas/__generated__/mutations.d.ts`
+- `backend/src/routes/schemas/mutations.ts` is now the single schema source
+- unified backend build emits `backend/dist/routes/schemas/mutations.js`
+- `backend/src/routes/schemas/mutations.js`, `backend/src/routes/schemas/mutations.d.ts`, and `backend/src/routes/schemas/__generated__/mutations.*` are no longer active
 
 Reason:
 
-- Projects and Tasks source routes still require `./schemas/mutations`
-- backend `dev` runs dist runtime, but Projects and Tasks source files still keep the source schema facade in place until schema cleanup
+- backend default runtime and backend tests run from dist
+- Projects and Tasks compiled route artifacts require compiled `./schemas/mutations`
 - Node cannot require `mutations.ts` directly without introducing a runtime TS loader
 
 Current dist runtime already uses:
@@ -33,7 +33,7 @@ Current dist runtime already uses:
 
 Decision:
 
-- schema scaffold deletion is now a cleanup candidate, but should happen in its own focused slice
+- schema scaffold deletion is complete
 
 ### Notes Route Island
 
@@ -54,18 +54,7 @@ Decision:
 
 ## Safe Follow-Up Options
 
-### Option A: Retire Schema Scaffold
-
-Pros:
-
-- removes the remaining generated/facade source compatibility layer
-- lets schema TS source become the direct build/runtime source of truth
-
-Cons:
-
-- requires updating Projects and Tasks source route imports or moving them toward TS/dist-only assumptions
-
-### Option B: Continue Route TS Migration
+### Option A: Continue Route TS Migration
 
 Pros:
 
@@ -78,6 +67,6 @@ Cons:
 
 ## Recommendation
 
-Notes scaffold cleanup is complete. Recommended next step:
+Notes and schema scaffold cleanup is complete. Recommended next step:
 
-- retire the remaining schema generated/facade scaffold in a focused slice, or first migrate Projects/Tasks routes to reduce dependency on the source schema facade
+- migrate Projects or Tasks routes to TypeScript using the normal source path and unified backend build

@@ -13,8 +13,6 @@
     "check:backend-dist-runtime": "npm run build:backend && node scripts/checkBackendDistBuild.js && node scripts/smokeBackendDistRuntime.js",
     "check:backend-build": "npm run build:backend && node scripts/checkBackendDistBuild.js && node scripts/smokeBackendDistRuntime.js",
     "typecheck:dto-pilot": "tsc -p tsconfig.dto-pilot.json",
-    "build:schema-island": "tsc -p tsconfig.schema-island.json",
-    "check:schema-island": "node scripts/checkSchemaIslandGenerated.js",
     "bootstrap:owner": "node scripts/bootstrapOwner.mjs",
     "normalize:legacy-archived-tasks": "node scripts/normalizeLegacyArchivedTasks.js"
   },

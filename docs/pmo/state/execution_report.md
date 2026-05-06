@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Notes Route Scaffold Retirement V1`
+- Sprint: `Schema Scaffold Retirement V1`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/notes-route-scaffold-retirement-v1.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/schema-scaffold-retirement-v1.md`
 
 ## Next Use
 

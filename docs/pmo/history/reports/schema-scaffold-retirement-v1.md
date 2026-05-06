@@ -1,0 +1,44 @@
+# Schema Scaffold Retirement V1
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Schema Scaffold Retirement V1`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Removed schema facade and generated artifacts:
+    - `backend/src/routes/schemas/mutations.js`
+    - `backend/src/routes/schemas/mutations.d.ts`
+    - `backend/src/routes/schemas/__generated__/mutations.js`
+    - `backend/src/routes/schemas/__generated__/mutations.d.ts`
+  - Removed schema island build/check config and script:
+    - `backend/tsconfig.schema-island.json`
+    - `backend/scripts/checkSchemaIslandGenerated.js`
+    - `build:schema-island`
+    - `check:schema-island`
+    - root `check:schema-island`
+  - Updated backend build config so `backend/src/routes/schemas/mutations.ts` is the single schema source emitted by the unified backend build.
+  - Hardened the dist boundary guard so schema generated artifacts cannot remain under dist.
+  - Updated PMO baselines and migration references to record the retired schema scaffold.
+  - Did not migrate Projects or Tasks routes to TypeScript in this slice.
+- Validation summary:
+  - `npm --prefix backend run check:backend-dist-runtime` passed.
+  - `npm --prefix backend run typecheck:dto-pilot` passed.
+  - `npm run check` passed.
+    - Included lint, backend dist runtime readiness, frontend tests, backend tests, and frontend build.
+    - Frontend build retained the existing Vite chunk-size warning only.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If skipped, why skipping was acceptable:
+    - This sprint changed backend build/runtime wiring for schema modules and did not change UI/browser behavior.
+    - Backend route contract and behavior tests passed against the dist runtime.
+- Unverified areas:
+  - No live manual browser review was run.
+  - Source runtime is no longer preserved as a supported execution path during the migration window.
+- Residual risks or escalations:
+  - Projects and Tasks routes remain JS, but their runtime path now consumes compiled schema TS through dist.
+  - DTO pilot remains as a narrow JS-route typecheck bridge until Projects/Tasks route migration replaces it.
+- Documentation-sync outcome: `updated`
+- Follow-up routing:
+  - No immediate human decision is required.
+  - Next PMO move can migrate Projects or Tasks routes to TypeScript through the normal source path and unified backend build.

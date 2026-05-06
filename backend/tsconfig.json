@@ -22,7 +22,6 @@
     "src/routes/schemas/mutations.ts"
   ],
   "exclude": [
-    "src/routes/notesRoutes.js",
-    "src/routes/schemas/mutations.js"
+    "src/routes/notesRoutes.js"
   ]
 }

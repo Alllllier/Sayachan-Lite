@@ -19,7 +19,7 @@ This document is a plan only. It does not approve a runtime cutover, ESM migrati
 | --- | --- | --- |
 | Backend runtime | `backend/package.json` uses `"type": "commonjs"`, `start` and `dev` run `node src/server.js`. | Runtime still loads source files. Dist is dry-run only. |
 | Unified dry-run build | `backend/tsconfig.json` emits JS from `src` to `dist` with `allowJs: true`, `checkJs: false`, `noResolve: true`; `npm --prefix backend run check:backend-build` runs `tsc` plus `scripts/checkBackendDistBuild.js`. | Dist generation exists but is not authoritative runtime. `noResolve` is a boundary marker, not final architecture. |
-| Schema typed island | Source: `backend/src/routes/schemas/mutations.ts`; facade: `backend/src/routes/schemas/mutations.js`; generated: `backend/src/routes/schemas/__generated__/mutations.js` and `.d.ts`; guardrail: `check:schema-island`. | Keep until normal dist runtime can load compiled TS output without source facades. |
+| Schema module | Source: `backend/src/routes/schemas/mutations.ts`; emitted artifact: `backend/dist/routes/schemas/mutations.js`. | Schema facade/generated scaffolding has been retired. |
 | Notes route | Source: `backend/src/routes/notesRoutes.ts`; emitted artifact: `backend/dist/routes/notesRoutes.js`. | Notes island facade/generated scaffolding has been retired. |
 | DTO pilot | `backend/tsconfig.dto-pilot.json` type-checks JS routes and DTO/schema coupling. | Retire only after real route TS migration and unified build cover the same constraints. |
 | Product routes | `backend/src/routes/notesRoutes.ts`, `projectsRoutes.js`, `tasksRoutes.js` remain public runtime entrypoints through compiled dist output. | Projects/Tasks are future route TS batches. Notes has retired its island facade. |
@@ -69,11 +69,10 @@ The following require explicit human/architecture approval before implementation
 
 ### Phase 0: Current Checkpoint
 
-Current checkpoint after dist runtime cutover keeps the remaining schema island guardrail intact.
+Current checkpoint after dist runtime cutover has retired the schema and Notes island guardrails.
 
 Expected validation:
 
-- `npm --prefix backend run check:schema-island`
 - `npm --prefix backend run typecheck:dto-pilot`
 - `npm --prefix backend run check:backend-build`
 - `npm --prefix backend test`
@@ -116,24 +115,24 @@ Automation fit:
 
 Exit condition: dist can be tested without becoming the default runtime.
 
-### Phase 3: Schema Island Retirement Prep
+### Phase 3: Schema Island Retirement
 
-Goal: prepare `mutations.ts` to be consumed from normal dist output instead of checked-in generated CJS artifacts.
+Goal: retire checked-in generated schema artifacts so `mutations.ts` is consumed from normal dist output.
 
 Likely work:
 
-- Verify all imports still use `backend/src/routes/schemas/mutations.js` facade until cutover.
-- Plan final runtime path for compiled schema module under `dist/routes/schemas/mutations.js`.
+- `backend/src/routes/schemas/mutations.ts` now emits to `dist/routes/schemas/mutations.js`.
+- Dist runtime route modules consume the compiled schema module.
 - Confirm API/Zod behavior baseline is unchanged.
 
-Do not yet delete:
+Retired:
 
 - `backend/src/routes/schemas/mutations.js`
 - `backend/src/routes/schemas/__generated__/mutations.js`
 - `backend/src/routes/schemas/__generated__/mutations.d.ts`
 - `check:schema-island`
 
-Exit condition: PMO has an approved retirement batch for schema generated artifacts after dist runtime is authoritative.
+Exit condition: schema generated artifacts are removed and dist validation remains green.
 
 ### Phase 4: Notes Route Island Retirement
 
@@ -226,9 +225,7 @@ Goal: remove temporary scaffolding only after dist runtime is stable.
 
 Cleanup candidates:
 
-- Schema generated artifacts and facade.
 - Per-island build/check scripts.
-- `backend/tsconfig.schema-island.json`
 - `backend/tsconfig.dto-pilot.json`, once route TS coverage replaces it.
 - PMO references that describe islands as active runtime requirements.
 
@@ -265,7 +262,7 @@ Human-owned:
 
 | Phase | Required validation |
 | --- | --- |
-| Current checkpoint | `npm --prefix backend run check:schema-island`; `npm --prefix backend run typecheck:dto-pilot`; `npm --prefix backend run check:backend-build`; `npm --prefix backend test`; `npm run check` |
+| Current checkpoint | `npm --prefix backend run typecheck:dto-pilot`; `npm --prefix backend run check:backend-build`; `npm --prefix backend test`; `npm run check` |
 | Dist build hardening | `npm --prefix backend run build:backend`; `npm --prefix backend run check:backend-build`; targeted script tests if added |
 | Dist smoke prep | dist smoke/check command; dist backend tests; contract baseline |
 | Schema/Notes retirement prep | remaining island checks still green before retirement; unified build emits expected dist modules |
@@ -306,6 +303,5 @@ Non-goals:
 Suggested validation:
 
 - `npm --prefix backend run check:backend-build`
-- `npm --prefix backend run check:schema-island`
 - `npm --prefix backend test`
 - `npm run check`

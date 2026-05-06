@@ -28,16 +28,14 @@ Current transitional type-island truth:
 - backend `start` and `dev` both build and run `node dist/server.js`
 - `backend/dist` is now the default backend runtime output for both start and development commands
 - product mutation schemas and DTO types are authored in `backend/src/routes/schemas/mutations.ts`
-- `npm --prefix backend run build:schema-island` emits checked-in CommonJS artifacts under `backend/src/routes/schemas/__generated__/`
-- `npm --prefix backend run check:schema-island` compares freshly compiled schema-island output with the checked-in generated artifacts and is included in root `npm run check`
+- the schema island facade/generated path has been retired; root `npm run check` no longer includes `check:schema-island`
 - the unified backend `tsc` dry-run now includes `backend/src/routes/schemas/mutations.ts`, so `backend/dist/routes/schemas/mutations.js` is emitted from the TS schema source rather than from the source-runtime facade
-- the default validation path no longer smoke-loads the source runtime, so checked-in generated schema artifacts and the facade are now cleanup candidates rather than default runtime requirements
+- the default validation path no longer smoke-loads the source runtime, and schema generated/facade artifacts have been removed
 - Notes route orchestration is authored in `backend/src/routes/notesRoutes.ts` and emitted directly by the unified backend build
 - the Notes route island facade/generated path has been retired; root `npm run check` no longer includes `check:notes-route-island`
 - existing source Notes, Projects, and Tasks route modules still consume `backend/src/routes/schemas/mutations.js`, but backend `start`, `dev`, and tests now exercise the compiled dist runtime path
-- `backend/src/routes/schemas/mutations.js` is a source compatibility facade over the generated artifact until schema scaffold cleanup removes the source facade layer
-- generated schema-island files are migration scaffolding and should be regenerated with `npm --prefix backend run build:schema-island` after edits to `mutations.ts` until the cleanup slice retires that guardrail
-- the long-term cleanup target is to remove this facade/generated-source pattern once the backend has an approved whole-TypeScript build/runtime path
+- `backend/src/routes/schemas/mutations.ts` is the schema source of truth for Notes, Projects, and Tasks mutation validation
+- the old facade/generated-source pattern has been removed from the active backend runtime path
 
 ## Auth And Account Runtime
 

@@ -176,8 +176,7 @@ const requiredRuntimeEntrypoints = [
   path.join('routes', 'index.js'),
   path.join('routes', 'ai.js'),
   path.join('routes', 'notesRoutes.js'),
-  path.join('routes', 'schemas', 'mutations.js'),
-  path.join('routes', 'schemas', '__generated__', 'mutations.js')
+  path.join('routes', 'schemas', 'mutations.js')
 ];
 
 assertPackageRuntimeBoundary();
@@ -191,6 +190,8 @@ for (const artifact of requiredRuntimeEntrypoints) {
 assertNotExists(path.join('dist', 'private_core'));
 assertNotExists(path.join('dist', 'routes', '__generated__', 'notesRoutes.js'));
 assertNotExists(path.join('dist', 'routes', '__generated__', 'notesRoutes.d.ts'));
+assertNotExists(path.join('dist', 'routes', 'schemas', '__generated__', 'mutations.js'));
+assertNotExists(path.join('dist', 'routes', 'schemas', '__generated__', 'mutations.d.ts'));
 assertNoPathSegment(distRoot, 'private_core');
 assertNoPathSegment(distRoot, '__route_sources__');
 assertSchemaDistArtifactFromTypeScriptSource();
