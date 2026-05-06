@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Schema Scaffold Retirement V1`
+- Sprint: `Projects Route TS Migration V1`
 - Closeout date: `2026-05-06`
 - Delivery status: `completed and validated`
 - Commit state: `not committed in this closeout`
 - Documentation sync outcome: `updated`
 - Residual note: `none`
-- Report surface: `docs/pmo/history/reports/schema-scaffold-retirement-v1.md`
+- Report surface: `docs/pmo/history/reports/projects-route-ts-migration-v1.md`
 
 ## Next PMO Action
 

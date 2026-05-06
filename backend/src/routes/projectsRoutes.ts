@@ -1,14 +1,71 @@
-// @ts-ignore dto-pilot keeps module resolution narrow and relies on runtime package loading.
-const Router = require('@koa/router');
-const projectsService = require('../services/projectsService');
-const { requireCurrentUser } = require('../middleware/currentUser');
-const { validateBody } = require('../middleware/requestBodyValidation');
+import Router, { type RouterMiddleware } from '@koa/router';
+
+import type {
+  ProjectCreateDto,
+  ProjectUpdateDto
+} from './schemas/mutations';
+
+type CurrentUserState = {
+  user?: {
+    _id?: unknown;
+    role?: string;
+    email?: string;
+  };
+  userId: unknown;
+};
+
+type ProjectsState = CurrentUserState & {
+  validatedBody?: unknown;
+};
+
+type ProjectsMiddleware = RouterMiddleware<ProjectsState>;
+type ProjectsHandler = RouterMiddleware<ProjectsState>;
+
+type RequestBodySchema<TBody> = {
+  safeParse(body: unknown): { success: true; data: TBody } | { success: false; error: unknown };
+};
+
+type ValidateBody = <TBody>(schema: RequestBodySchema<TBody>) => ProjectsMiddleware;
+
+type ProjectsServiceOptions = {
+  userId: unknown;
+};
+
+type ListProjectsOptions = ProjectsServiceOptions & {
+  archived?: unknown;
+};
+
+type ProjectsService = {
+  listProjects(options: ListProjectsOptions): Promise<unknown>;
+  createProject(body: ProjectCreateDto, options: ProjectsServiceOptions): Promise<unknown>;
+  updateProject(id: string, body: ProjectUpdateDto, options: ProjectsServiceOptions): Promise<unknown>;
+  deleteProject(id: string, options: ProjectsServiceOptions): Promise<boolean>;
+  pinProject(id: string, options: ProjectsServiceOptions): Promise<unknown>;
+  unpinProject(id: string, options: ProjectsServiceOptions): Promise<unknown>;
+  archiveProject(id: string, options: ProjectsServiceOptions): Promise<unknown>;
+  restoreProject(id: string, options: ProjectsServiceOptions): Promise<unknown>;
+};
+
+const projectsService = require('../services/projectsService') as ProjectsService;
+const { requireCurrentUser } = require('../middleware/currentUser') as {
+  requireCurrentUser: ProjectsMiddleware;
+};
+const { validateBody } = require('../middleware/requestBodyValidation') as {
+  validateBody: ValidateBody;
+};
 const {
   projectCreateSchema,
   projectUpdateSchema
-} = require('./schemas/mutations');
+} = require('./schemas/mutations') as {
+  projectCreateSchema: RequestBodySchema<ProjectCreateDto>;
+  projectUpdateSchema: RequestBodySchema<ProjectUpdateDto>;
+};
 
-const router = new Router();
+const router = new Router<ProjectsState>();
+
+function validatedBody<TBody>(ctx: Parameters<ProjectsHandler>[0]): TBody {
+  return ctx.state.validatedBody as TBody;
+}
 
 // GET /projects
 router.get('/projects', requireCurrentUser, async (ctx) => {
@@ -18,8 +75,7 @@ router.get('/projects', requireCurrentUser, async (ctx) => {
 
 // POST /projects
 router.post('/projects', requireCurrentUser, validateBody(projectCreateSchema), async (ctx) => {
-  /** @type {import('./schemas/mutations').ProjectCreateDto} */
-  const body = ctx.state.validatedBody;
+  const body = validatedBody<ProjectCreateDto>(ctx);
   ctx.status = 201;
   ctx.body = await projectsService.createProject(body, { userId: ctx.state.userId });
 });
@@ -27,8 +83,7 @@ router.post('/projects', requireCurrentUser, validateBody(projectCreateSchema), 
 // PUT /projects/:id
 router.put('/projects/:id', requireCurrentUser, validateBody(projectUpdateSchema), async (ctx) => {
   const id = ctx.params.id;
-  /** @type {import('./schemas/mutations').ProjectUpdateDto} */
-  const body = ctx.state.validatedBody;
+  const body = validatedBody<ProjectUpdateDto>(ctx);
   const project = await projectsService.updateProject(id, body, { userId: ctx.state.userId });
   if (!project) {
     ctx.status = 404;
@@ -103,4 +158,4 @@ router.put('/projects/:id/restore', requireCurrentUser, async (ctx) => {
   ctx.body = project;
 });
 
-module.exports = router;
+export = router;

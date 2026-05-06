@@ -159,6 +159,19 @@ function assertNotesDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertProjectsDistArtifactFromTypeScriptSource() {
+  const projectsDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'projectsRoutes.js'), 'utf8');
+
+  assert(
+    projectsDistSource.includes("require('./schemas/mutations')") || projectsDistSource.includes('require("./schemas/mutations")'),
+    'dist Projects route artifact must be emitted from projectsRoutes.ts and import the normal schema route path.'
+  );
+  assert(
+    !projectsDistSource.includes('@ts-ignore dto-pilot'),
+    'dist Projects route artifact must not be emitted from the old JS dto-pilot source.'
+  );
+}
+
 function assertCurrentSourceArtifactsWereEmitted() {
   const sourceFiles = walkFiles(srcRoot)
     .filter(filePath => path.extname(filePath) === '.js')
@@ -176,6 +189,7 @@ const requiredRuntimeEntrypoints = [
   path.join('routes', 'index.js'),
   path.join('routes', 'ai.js'),
   path.join('routes', 'notesRoutes.js'),
+  path.join('routes', 'projectsRoutes.js'),
   path.join('routes', 'schemas', 'mutations.js')
 ];
 
@@ -196,5 +210,6 @@ assertNoPathSegment(distRoot, 'private_core');
 assertNoPathSegment(distRoot, '__route_sources__');
 assertSchemaDistArtifactFromTypeScriptSource();
 assertNotesDistArtifactFromTypeScriptSource();
+assertProjectsDistArtifactFromTypeScriptSource();
 
 console.log('Backend dist build boundary check passed.');

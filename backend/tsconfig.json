@@ -19,9 +19,11 @@
   "include": [
     "src/**/*.js",
     "src/routes/notesRoutes.ts",
+    "src/routes/projectsRoutes.ts",
     "src/routes/schemas/mutations.ts"
   ],
   "exclude": [
-    "src/routes/notesRoutes.js"
+    "src/routes/notesRoutes.js",
+    "src/routes/projectsRoutes.js"
   ]
 }

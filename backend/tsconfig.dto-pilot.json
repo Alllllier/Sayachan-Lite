@@ -16,7 +16,6 @@
     "src/middleware/requestBodyValidation.js",
     "node_modules/zod/index.d.cts",
     "src/routes/schemas/mutations.ts",
-    "src/routes/projectsRoutes.js",
     "src/routes/tasksRoutes.js"
   ]
 }

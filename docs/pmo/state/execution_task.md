@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Schema Scaffold Retirement V1`
+- Sprint: `Projects Route TS Migration V1`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/schema-scaffold-retirement-v1.md`
+- Report surface: `docs/pmo/history/reports/projects-route-ts-migration-v1.md`
 
 ## Next Activation Rule
 

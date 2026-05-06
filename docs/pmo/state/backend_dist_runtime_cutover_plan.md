@@ -22,7 +22,7 @@ This document is a plan only. It does not approve a runtime cutover, ESM migrati
 | Schema module | Source: `backend/src/routes/schemas/mutations.ts`; emitted artifact: `backend/dist/routes/schemas/mutations.js`. | Schema facade/generated scaffolding has been retired. |
 | Notes route | Source: `backend/src/routes/notesRoutes.ts`; emitted artifact: `backend/dist/routes/notesRoutes.js`. | Notes island facade/generated scaffolding has been retired. |
 | DTO pilot | `backend/tsconfig.dto-pilot.json` type-checks JS routes and DTO/schema coupling. | Retire only after real route TS migration and unified build cover the same constraints. |
-| Product routes | `backend/src/routes/notesRoutes.ts`, `projectsRoutes.js`, `tasksRoutes.js` remain public runtime entrypoints through compiled dist output. | Projects/Tasks are future route TS batches. Notes has retired its island facade. |
+| Product routes | `backend/src/routes/notesRoutes.ts`, `projectsRoutes.ts`, `tasksRoutes.js` remain public runtime entrypoints through compiled dist output. | Tasks is the remaining JS product route batch. Notes and Projects now compile from normal TS route paths. |
 | Services/models/middleware | Plain CommonJS JS under `backend/src/services`, `backend/src/models`, `backend/src/middleware`. | They can remain JS during early dist runtime if emitted unchanged; type migration is separable. |
 | Private core | `backend/src/ai/bridge.js` crosses into `backend/private_core/sayachan-ai-core`. | Inclusion in backend build is a human architecture gate. Do not absorb implicitly. |
 | Root check | Root `npm run check` includes lint, schema island check, backend dist runtime readiness, tests, frontend build. | Dist validation has been added after human approval. |
@@ -159,7 +159,7 @@ Goal: migrate remaining product routers after Notes proves the runtime path.
 
 Recommended sub-agent batches:
 
-- Projects route batch: `backend/src/routes/projectsRoutes.js` to TS with existing service/model imports preserved.
+- Projects route batch completed: `backend/src/routes/projectsRoutes.ts` compiles through the unified backend build with existing service/model imports preserved.
 - Tasks route batch: `backend/src/routes/tasksRoutes.js` to TS with existing validation behavior preserved.
 - Route index batch only if required by emitted dist layout; otherwise leave `backend/src/routes/index.js` CommonJS until a broader cleanup.
 
