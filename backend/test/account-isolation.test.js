@@ -413,7 +413,11 @@ test('AI routes validate request bodies before downstream AI or model work', asy
       [chatAiHandler, createCtx({ body: null })],
       [chatAiHandler, createCtx({ body: [] })],
       [chatAiHandler, createCtx({ body: { messages: 'hello' } })],
-      [chatAiHandler, createCtx({ body: { context: 'dashboard' } })]
+      [chatAiHandler, createCtx({ body: { context: 'dashboard' } })],
+      [chatAiHandler, createCtx({ body: { runtimeControls: 'warm' } })],
+      [chatAiHandler, createCtx({ body: { runtimeControls: { personalityBaseline: 'cold' } } })],
+      [chatAiHandler, createCtx({ body: { runtimeControls: { futureSlots: { warmth: 11 } } } })],
+      [chatAiHandler, createCtx({ body: { runtimeControls: { futureSlots: { convergenceMode: 'random' } } } })]
     ];
 
     for (const [handler, ctx] of cases) {
@@ -443,7 +447,19 @@ test('AI chat validation strips unknown message fields before bridge handoff', a
         { role: 'user', content: 'hello', unknownField: 'strip me' }
       ],
       context: { activeTask: 'task-1' },
-      runtimeControls: { lastUserMessage: 'hello' }
+      runtimeControls: {
+        personalityBaseline: 'strict',
+        futureSlots: {
+          warmth: 8,
+          reflectionDepth: null,
+          convergenceMode: 'decisive',
+          thinking: null,
+          debugContext: null,
+          unknownFutureSlot: 'strip me too'
+        },
+        lastUserMessage: 'hello',
+        unknownRuntimeField: 'strip me'
+      }
     };
     const ctx = createCtx({ body: requestBody });
 
@@ -453,5 +469,16 @@ test('AI chat validation strips unknown message fields before bridge handoff', a
     assert.deepEqual(ctx.body, { reply: 'ok' });
     assert.equal(ctx.request.body.messages[0].unknownField, 'strip me');
     assert.deepEqual(capturedBody.messages, [{ role: 'user', content: 'hello' }]);
+    assert.deepEqual(capturedBody.runtimeControls, {
+      personalityBaseline: 'strict',
+      futureSlots: {
+        warmth: 8,
+        reflectionDepth: null,
+        convergenceMode: 'decisive',
+        thinking: null,
+        debugContext: null
+      },
+      lastUserMessage: 'hello'
+    });
   });
 });
