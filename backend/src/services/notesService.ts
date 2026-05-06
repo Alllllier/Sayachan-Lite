@@ -6,17 +6,17 @@ import type { ObjectId } from '../middleware/objectIdParsing';
 import {
   buildArchiveFilter,
   combineFilters
-} from './tasks/queryFilters';
+} from '../domain/tasks/queryFilters';
 import {
   archiveTasks,
   restoreTasks
-} from './tasks/cascade';
-import { toNoteDto } from './dtos/productDtos';
+} from '../domain/tasks/cascade';
+import { toNoteDto } from '../domain/dtos/productDtos';
 import {
   ownedFilter,
   ownerFilter,
   requireUserId
-} from './ownership';
+} from '../domain/ownership';
 import NoteModel = require('../models/Note');
 import TaskModel = require('../models/Task');
 

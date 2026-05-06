@@ -8,17 +8,17 @@ import {
   buildArchiveFilter,
   combineFilters,
   projectTaskRelationFilter,
-} from './tasks/queryFilters';
+} from '../domain/tasks/queryFilters';
 import {
   clearFocusForTask,
   isProjectOwnedTask
-} from './tasks/cascade';
-import { toTaskDto } from './dtos/productDtos';
+} from '../domain/tasks/cascade';
+import { toTaskDto } from '../domain/dtos/productDtos';
 import {
   ownedFilter,
   ownerFilter,
   requireUserId
-} from './ownership';
+} from '../domain/ownership';
 import ProjectModel = require('../models/Project');
 import TaskModel = require('../models/Task');
 

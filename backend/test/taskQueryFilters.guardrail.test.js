@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const {
   buildArchiveFilter,
   projectTaskRelationFilter
-} = require('../dist/services/tasks/queryFilters');
+} = require('../dist/domain/tasks/queryFilters');
 
 test('buildArchiveFilter reads archived=true as archived-only semantics', () => {
   assert.deepEqual(buildArchiveFilter('true'), {

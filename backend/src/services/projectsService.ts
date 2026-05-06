@@ -7,20 +7,20 @@ import {
   buildArchiveFilter,
   combineFilters,
   projectTaskRelationFilter
-} from './tasks/queryFilters';
+} from '../domain/tasks/queryFilters';
 import {
   archiveTasks,
   restoreTasks
-} from './tasks/cascade';
+} from '../domain/tasks/cascade';
 import {
   deriveProjectLifecycleStatus,
   toProjectDto
-} from './dtos/productDtos';
+} from '../domain/dtos/productDtos';
 import {
   ownedFilter,
   ownerFilter,
   requireUserId
-} from './ownership';
+} from '../domain/ownership';
 import ProjectModel = require('../models/Project');
 import TaskModel = require('../models/Task');
 

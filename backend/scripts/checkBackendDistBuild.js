@@ -397,7 +397,7 @@ function assertErrorBoundaryDistArtifactFromTypeScriptSource() {
 }
 
 function assertProductDtosDistArtifactFromTypeScriptSource() {
-  const dtoDistSource = fs.readFileSync(path.join(distRoot, 'services', 'dtos', 'productDtos.js'), 'utf8');
+  const dtoDistSource = fs.readFileSync(path.join(distRoot, 'domain', 'dtos', 'productDtos.js'), 'utf8');
 
   assert(
     dtoDistSource.includes('function toTaskDto'),
@@ -414,7 +414,7 @@ function assertProductDtosDistArtifactFromTypeScriptSource() {
 }
 
 function assertTaskCascadeDistArtifactFromTypeScriptSource() {
-  const cascadeDistSource = fs.readFileSync(path.join(distRoot, 'services', 'tasks', 'cascade.js'), 'utf8');
+  const cascadeDistSource = fs.readFileSync(path.join(distRoot, 'domain', 'tasks', 'cascade.js'), 'utf8');
 
   assert(
     cascadeDistSource.includes('function clearFocusForTask'),
@@ -423,7 +423,7 @@ function assertTaskCascadeDistArtifactFromTypeScriptSource() {
 }
 
 function assertTaskQueryFiltersDistArtifactFromTypeScriptSource() {
-  const queryFiltersDistSource = fs.readFileSync(path.join(distRoot, 'services', 'tasks', 'queryFilters.js'), 'utf8');
+  const queryFiltersDistSource = fs.readFileSync(path.join(distRoot, 'domain', 'tasks', 'queryFilters.js'), 'utf8');
 
   assert(
     queryFiltersDistSource.includes('function buildArchiveFilter'),
@@ -436,7 +436,7 @@ function assertTaskQueryFiltersDistArtifactFromTypeScriptSource() {
 }
 
 function assertOwnershipDistArtifactFromTypeScriptSource() {
-  const ownershipDistSource = fs.readFileSync(path.join(distRoot, 'services', 'ownership.js'), 'utf8');
+  const ownershipDistSource = fs.readFileSync(path.join(distRoot, 'domain', 'ownership.js'), 'utf8');
 
   assert(
     ownershipDistSource.includes('function requireUserId'),
@@ -464,8 +464,8 @@ function assertTasksServiceDistArtifactFromTypeScriptSource() {
     'dist tasksService artifact must preserve focus clearing behavior.'
   );
   assert(
-    tasksServiceDistSource.includes('require("./ownership")') || tasksServiceDistSource.includes("require('./ownership')"),
-    'dist tasksService artifact must keep the local ownership service boundary.'
+    tasksServiceDistSource.includes('require("../domain/ownership")') || tasksServiceDistSource.includes("require('../domain/ownership')"),
+    'dist tasksService artifact must use the domain ownership boundary.'
   );
 }
 
@@ -577,6 +577,10 @@ const requiredRuntimeEntrypoints = [
   path.join('middleware', 'errorBoundary.js'),
   path.join('middleware', 'objectIdParsing.js'),
   path.join('middleware', 'requestBodyValidation.js'),
+  path.join('domain', 'dtos', 'productDtos.js'),
+  path.join('domain', 'ownership.js'),
+  path.join('domain', 'tasks', 'cascade.js'),
+  path.join('domain', 'tasks', 'queryFilters.js'),
   path.join('models', 'Invite.js'),
   path.join('models', 'Note.js'),
   path.join('models', 'Project.js'),
@@ -585,12 +589,8 @@ const requiredRuntimeEntrypoints = [
   path.join('models', 'User.js'),
   path.join('services', 'authService.js'),
   path.join('services', 'notesService.js'),
-  path.join('services', 'ownership.js'),
   path.join('services', 'projectsService.js'),
   path.join('services', 'tasksService.js'),
-  path.join('services', 'tasks', 'cascade.js'),
-  path.join('services', 'dtos', 'productDtos.js'),
-  path.join('services', 'tasks', 'queryFilters.js'),
   path.join('routes', 'index.js'),
   path.join('routes', 'ai.js'),
   path.join('routes', 'authRoutes.js'),
