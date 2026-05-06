@@ -785,7 +785,7 @@ test('parsed body rollout stores parsed DTOs and mutation routes consume them wi
     await createNoteHandler(noteCreateCtx, async () => {});
     assert.strictEqual(calls.noteCreate, noteCreateCtx.state.validatedBody);
     assert.notStrictEqual(calls.noteCreate, noteCreateBody);
-    assert.deepEqual(calls.noteCreate, noteCreateBody);
+    assert.deepEqual(calls.noteCreate, { title: 'Note', content: 'Body' });
     assert.strictEqual(noteCreateCtx.request.body, noteCreateBody);
     assert.deepEqual(noteCreateCtx.request.body, noteCreateBody);
 
@@ -794,7 +794,7 @@ test('parsed body rollout stores parsed DTOs and mutation routes consume them wi
     await updateNoteHandler(noteUpdateCtx, async () => {});
     assert.strictEqual(calls.noteUpdate, noteUpdateCtx.state.validatedBody);
     assert.notStrictEqual(calls.noteUpdate, noteUpdateBody);
-    assert.deepEqual(calls.noteUpdate, noteUpdateBody);
+    assert.deepEqual(calls.noteUpdate, { content: 'Updated' });
     assert.strictEqual(noteUpdateCtx.request.body, noteUpdateBody);
     assert.deepEqual(noteUpdateCtx.request.body, noteUpdateBody);
 
@@ -807,7 +807,7 @@ test('parsed body rollout stores parsed DTOs and mutation routes consume them wi
     await createProjectHandler(projectCreateCtx, async () => {});
     assert.strictEqual(calls.projectCreate, projectCreateCtx.state.validatedBody);
     assert.notStrictEqual(calls.projectCreate, projectCreateBody);
-    assert.deepEqual(calls.projectCreate, projectCreateBody);
+    assert.deepEqual(calls.projectCreate, { name: 'Project X', summary: 'Summary' });
     assert.strictEqual(projectCreateCtx.request.body, projectCreateBody);
     assert.deepEqual(projectCreateCtx.request.body, projectCreateBody);
 
@@ -816,7 +816,7 @@ test('parsed body rollout stores parsed DTOs and mutation routes consume them wi
     await updateProjectHandler(projectUpdateCtx, async () => {});
     assert.strictEqual(calls.projectUpdate, projectUpdateCtx.state.validatedBody);
     assert.notStrictEqual(calls.projectUpdate, projectUpdateBody);
-    assert.deepEqual(calls.projectUpdate, projectUpdateBody);
+    assert.deepEqual(calls.projectUpdate, { status: 'in_progress' });
     assert.strictEqual(projectUpdateCtx.request.body, projectUpdateBody);
     assert.deepEqual(projectUpdateCtx.request.body, projectUpdateBody);
 
@@ -824,7 +824,7 @@ test('parsed body rollout stores parsed DTOs and mutation routes consume them wi
     const taskCreateCtx = createCtx({ body: taskCreateBody });
     await createTaskHandler(taskCreateCtx, async () => {});
     assert.notStrictEqual(calls.taskCreate, taskCreateBody);
-    assert.deepEqual(calls.taskCreate, taskCreateBody);
+    assert.deepEqual(calls.taskCreate, { title: 'Task' });
     assert.notStrictEqual(calls.taskCreate, taskCreateCtx.state.validatedBody);
     assert.strictEqual(taskCreateCtx.request.body, taskCreateBody);
     assert.deepEqual(taskCreateCtx.request.body, taskCreateBody);
@@ -834,7 +834,7 @@ test('parsed body rollout stores parsed DTOs and mutation routes consume them wi
     await updateTaskHandler(taskUpdateCtx, async () => {});
     assert.strictEqual(calls.taskUpdate, taskUpdateCtx.state.validatedBody);
     assert.notStrictEqual(calls.taskUpdate, taskUpdateBody);
-    assert.deepEqual(calls.taskUpdate, taskUpdateBody);
+    assert.deepEqual(calls.taskUpdate, { status: 'completed' });
     assert.strictEqual(taskUpdateCtx.request.body, taskUpdateBody);
     assert.deepEqual(taskUpdateCtx.request.body, taskUpdateBody);
   });
@@ -894,7 +894,7 @@ test('notes and projects mutation validation covers Zod create and update body c
   });
 });
 
-test('notes and projects mutation validation preserves valid payload and unknown-field compatibility', async () => {
+test('notes and projects mutation validation strips unknown fields from validated DTOs', async () => {
   const createProjectHandler = getRouteHandler('POST', '/projects');
   const updateProjectHandler = getRouteHandler('PUT', '/projects/:id');
   const createNoteHandler = getRouteHandler('POST', '/notes');
@@ -989,15 +989,23 @@ test('notes and projects mutation validation preserves valid payload and unknown
     assert.equal(updateProjectCtxWithUnknown.status, 200);
     assert.equal(createNoteCtxWithUnknown.status, 201);
     assert.equal(updateNoteCtxWithUnknown.status, 200);
+    assert.equal(createProjectCtxWithUnknown.request.body.unknownField, 'accepted by validation');
+    assert.equal(updateProjectCtxWithUnknown.request.body.unknownField, 'accepted by validation');
+    assert.equal(createNoteCtxWithUnknown.request.body.unknownField, 'accepted by validation');
+    assert.equal(updateNoteCtxWithUnknown.request.body.unknownField, 'accepted by validation');
   });
 
   assert.equal(projectCreates[0].name, 'Project X');
   assert.equal(projectCreates[0].summary, 'Summary');
   assert.equal(projectCreates[0].status, 'in_progress');
+  assert.equal('unknownField' in projectCreates[0], false);
   assert.equal(projectUpdates[0].update.currentFocusTaskId, null);
+  assert.equal('unknownField' in projectUpdates[0].update, false);
   assert.equal(noteCreates[0].title, 'Note');
   assert.equal(noteCreates[0].content, '');
+  assert.equal('unknownField' in noteCreates[0], false);
   assert.equal(noteUpdates[0].update.content, 'Updated content');
+  assert.equal('unknownField' in noteUpdates[0].update, false);
 });
 
 test('task mutation validation covers Zod pilot create and update body contracts', async () => {
@@ -1072,7 +1080,7 @@ test('task mutation Zod validation errors carry internal metadata only', async (
   );
 });
 
-test('task mutation validation preserves valid payload and unknown-field behavior', async () => {
+test('task mutation validation strips unknown fields from validated DTOs', async () => {
   const createTaskHandler = getRouteHandler('POST', '/tasks');
   const updateTaskHandler = getRouteHandler('PUT', '/tasks/:id');
   const taskCreates = [];
@@ -1135,14 +1143,18 @@ test('task mutation validation preserves valid payload and unknown-field behavio
 
     assert.equal(createCtxWithUnknown.status, 201);
     assert.equal(updateCtxWithUnknown.status, 200);
+    assert.equal(createCtxWithUnknown.request.body.unknownField, 'preserved by route contract');
+    assert.equal(updateCtxWithUnknown.request.body.unknownField, 'preserved by route contract');
   });
 
   assert.equal(taskCreates[0].title, 'Ship it');
   assert.equal(taskCreates[0].creationMode, 'ai');
   assert.equal(taskCreates[0].originModule, 'project');
   assert.equal(taskCreates[0].originId.toHexString(), '000000000000000000000201');
+  assert.equal('unknownField' in taskCreates[0], false);
   assert.equal(taskUpdates[0].update.status, 'completed');
   assert.equal(taskUpdates[0].update.archived, false);
+  assert.equal('unknownField' in taskUpdates[0].update, false);
 });
 
 test('product routes require a current user before model access', async () => {
