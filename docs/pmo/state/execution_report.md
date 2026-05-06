@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Backend Unified TSC Build Dry Run V1`
+- Sprint: `Backend Dist Runtime Cutover Plan V1`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/backend-unified-tsc-build-dry-run-v1.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/backend-dist-runtime-cutover-plan-v1.md`
 
 ## Next Use
 

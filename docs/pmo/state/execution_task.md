@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Backend Unified TSC Build Dry Run V1`
+- Sprint: `Backend Dist Runtime Cutover Plan V1`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/backend-unified-tsc-build-dry-run-v1.md`
+- Report surface: `docs/pmo/history/reports/backend-dist-runtime-cutover-plan-v1.md`
 
 ## Next Activation Rule
 

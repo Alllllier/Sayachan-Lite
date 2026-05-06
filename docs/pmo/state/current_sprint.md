@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Backend Unified TSC Build Dry Run V1`
+- Sprint: `Backend Dist Runtime Cutover Plan V1`
 - Closeout date: `2026-05-06`
 - Delivery status: `completed and validated`
 - Commit state: `not committed in this closeout`
 - Documentation sync outcome: `updated`
 - Residual note: `none`
-- Report surface: `docs/pmo/history/reports/backend-unified-tsc-build-dry-run-v1.md`
+- Report surface: `docs/pmo/history/reports/backend-dist-runtime-cutover-plan-v1.md`
 
 ## Next PMO Action
 
