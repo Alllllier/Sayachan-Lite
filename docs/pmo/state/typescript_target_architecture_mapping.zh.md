@@ -178,7 +178,7 @@
 | UI primitive components | `frontend/src/components/ui/**` | `defer` | 行为较轻的 shared presentation primitives，主要承担 prop contracts。 | 等 app-level SFC typing patterns 确定后再转换。 |
 | Backend server composition | `backend/src/server.js`、`backend/src/database.js`、`backend/src/routes/index.js` | `keep` | 负责 Koa app composition、CORS/body/auth/error middleware order、database startup、route aggregation。 | middleware order 是行为；类型变更不得重排。 |
 | Backend auth/session/owner service | `backend/src/services/authService.js`、`backend/src/routes/authRoutes.js`、`backend/src/middleware/auth.js`、`backend/src/models/User.js`、`Invite.js`、`Session.js` | `keep` | 负责 phase-one auth、invite flow、owner bootstrap、legacy data assignment、sessions、owner operations、role/status model shape。 | security/account boundary；未来 DTO/schema types 应保守。 |
-| Backend current-user ownership boundary | `backend/src/middleware/currentUser.js`、`backend/src/services/ownership.js` | `keep` | 负责 user id resolution 和 product services 使用的 owner-scoped query filters。 | 持久 account isolation boundary；永远不要当作 scaffolding。 |
+| Backend current-user ownership boundary | `backend/src/middleware/currentUser.js`、`backend/src/services/ownership.ts` | `keep` | 负责 user id resolution 和 product services 使用的 owner-scoped query filters。 | 持久 account isolation boundary；永远不要当作 scaffolding。 |
 | Backend Notes route/service/model | `backend/src/routes/notesRoutes.ts`、`backend/src/services/notesService.js`、`backend/src/models/Note.js` | `keep` | scoped note CRUD、pinning、archive/restore、note-origin task cascades 的持久 route/service/model 分离。 | service behavior 拥有 archive cascade semantics；route validation 未来可被替换。 |
 | Backend Projects route/service/model | `backend/src/routes/projectsRoutes.ts`、`backend/src/services/projectsService.js`、`backend/src/models/Project.js` | `keep` | scoped project CRUD、status、focus task id、pinning、archive/restore、project-task cascades 的持久分离。 | focus/archive behavior 是 architecture-sensitive。 |
 | Backend Tasks route/service/model | `backend/src/routes/tasksRoutes.ts`、`backend/src/services/tasksService.js`、`backend/src/models/Task.js` | `keep` | scoped task reads/writes、provenance、lifecycle status、archive visibility、focus clearing 的持久分离。 | model/API response separation 很重要；task status/completed/archived typing 应显式。 |
@@ -199,7 +199,7 @@
 这些不应仅因为 TypeScript 能描述输入，就被折叠为 deletion candidates：
 
 - `backend/src/ai/bridge.js` 与 public/private AI responsibility split。
-- account/session/ownership boundaries：`frontend/src/stores/auth.js`、`frontend/src/services/resourceCache.js`、`backend/src/middleware/auth.js`、`backend/src/middleware/currentUser.js`、`backend/src/services/ownership.js`、`backend/src/services/authService.js`、auth models/routes。
+- account/session/ownership boundaries：`frontend/src/stores/auth.js`、`frontend/src/services/resourceCache.js`、`backend/src/middleware/auth.js`、`backend/src/middleware/currentUser.js`、`backend/src/services/ownership.ts`、`backend/src/services/authService.js`、auth models/routes。
 - focus/task workflow semantics：project `currentFocusTaskId`、task provenance、active/completed/archived lifecycle、focus clearing。
 - note/project/task services 与 backend task runtime helpers 中的 archive/restore cascades。
 - dashboard-to-chat cockpit context：`frontend/src/services/cockpitContextService.js`、`frontend/src/stores/cockpitSignals.js`、chat context hydration rules。
