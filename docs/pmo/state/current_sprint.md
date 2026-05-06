@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Schema Island Unified Build Inclusion V1`
+- Sprint: `Notes Route Unified Build Inclusion V1`
 - Closeout date: `2026-05-06`
 - Delivery status: `completed and validated`
 - Commit state: `not committed in this closeout`
-- Documentation sync outcome: `updated`
+- Documentation sync outcome: `reviewed, no update needed`
 - Residual note: `none`
-- Report surface: `docs/pmo/history/reports/schema-island-unified-build-inclusion-v1.md`
+- Report surface: `docs/pmo/history/reports/notes-route-unified-build-inclusion-v1.md`
 
 ## Next PMO Action
 
