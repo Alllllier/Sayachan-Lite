@@ -27,7 +27,6 @@ function allowedOrigins(): string[] {
 }
 
 const corsOrigins = allowedOrigins();
-const useMiddleware = app.use as unknown as (...middleware: Koa.Middleware[]) => Koa;
 
 // CORS 配置，允许前端跨域请求
 app.use(cors({
@@ -51,18 +50,12 @@ app.use(bodyParser());
 app.use(authMiddleware);
 
 // 挂载 AI 路由
-useMiddleware.call(
-  app,
-  aiRoutes.routes() as unknown as Koa.Middleware,
-  aiRoutes.allowedMethods() as unknown as Koa.Middleware
-);
+app.use(aiRoutes.routes());
+app.use(aiRoutes.allowedMethods());
 
 // 挂载主业务路由
-useMiddleware.call(
-  app,
-  routes.routes() as unknown as Koa.Middleware,
-  routes.allowedMethods() as unknown as Koa.Middleware
-);
+app.use(routes.routes());
+app.use(routes.allowedMethods());
 
 // 统一 404 处理（最后执行，仅处理真正未匹配的路由）
 app.use(async (ctx: Koa.Context, next: Koa.Next) => {

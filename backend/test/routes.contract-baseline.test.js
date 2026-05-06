@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const Koa = require('koa');
 
 const Note = require('../dist/models/Note');
 const Project = require('../dist/models/Project');
@@ -111,6 +112,48 @@ function withPatchedMethods(patches, run) {
       }
     });
 }
+
+function listen(app) {
+  return new Promise((resolve, reject) => {
+    const server = app.listen(0, '127.0.0.1');
+    server.once('listening', () => resolve(server));
+    server.once('error', reject);
+  });
+}
+
+async function closeServer(server) {
+  await new Promise((resolve, reject) => {
+    server.close((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+async function requestKoaApp(app, path, options = {}) {
+  const server = await listen(app);
+  const { port } = server.address();
+
+  try {
+    return await fetch(`http://127.0.0.1:${port}${path}`, options);
+  } finally {
+    await closeServer(server);
+  }
+}
+
+test('route allowedMethods returns 405 and Allow header for matched path with wrong method', async () => {
+  const app = new Koa();
+  app.use(routes.routes());
+  app.use(routes.allowedMethods());
+
+  const response = await requestKoaApp(app, '/health', { method: 'POST' });
+
+  assert.equal(response.status, 405);
+  assert.equal(response.headers.get('allow'), 'HEAD, GET');
+});
 
 test('list and filter reads preserve canonical backend semantics for tasks, projects, and notes', async () => {
   const taskListHandler = getRouteHandler('GET', '/tasks');
