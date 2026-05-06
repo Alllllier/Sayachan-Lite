@@ -2,28 +2,25 @@ import type {
   TaskCreateDto,
   TaskCreationMode,
   TaskUpdateDto
-} from '../routes/schemas/mutations';
-import type { ObjectId } from '../middleware/objectIdParsing';
+} from '../routes/schemas/mutations.js';
+import type { ObjectId } from '../middleware/objectIdParsing.js';
 import {
   buildArchiveFilter,
   combineFilters,
   projectTaskRelationFilter,
-} from '../domain/tasks/queryFilters';
+} from '../domain/tasks/queryFilters.js';
 import {
   clearFocusForTask,
   isProjectOwnedTask
-} from '../domain/tasks/cascade';
-import { toTaskDto } from '../domain/dtos/productDtos';
+} from '../domain/tasks/cascade.js';
+import { toTaskDto } from '../domain/dtos/productDtos.js';
 import {
   ownedFilter,
   ownerFilter,
   requireUserId
-} from '../domain/ownership';
-import ProjectModel = require('../models/Project');
-import TaskModel = require('../models/Task');
-
-const Project = ProjectModel;
-const Task = TaskModel;
+} from '../domain/ownership.js';
+import Project from '../models/Project.js';
+import Task from '../models/Task.js';
 
 type ServiceOptions = {
   userId: ObjectId;
@@ -53,7 +50,7 @@ type NormalizedTask = {
   archived?: unknown;
 };
 
-async function listTasks({ projectId, archived, userId }: ListTasksOptions) {
+export async function listTasks({ projectId, archived, userId }: ListTasksOptions) {
   const filter = projectId
     ? combineFilters(buildArchiveFilter(archived), projectTaskRelationFilter(projectId), ownerFilter(userId))
     : combineFilters(buildArchiveFilter(archived), ownerFilter(userId));
@@ -61,7 +58,7 @@ async function listTasks({ projectId, archived, userId }: ListTasksOptions) {
   return tasks.map(toTaskDto);
 }
 
-async function createTask(body: TaskCreateInput, { userId }: ServiceOptions) {
+export async function createTask(body: TaskCreateInput, { userId }: ServiceOptions) {
   const taskData = {
     title: body.title,
     creationMode: body.creationMode || 'manual',
@@ -77,7 +74,7 @@ async function createTask(body: TaskCreateInput, { userId }: ServiceOptions) {
   return toTaskDto(task);
 }
 
-function buildTaskUpdate(body: TaskUpdateDto): TaskUpdate {
+export function buildTaskUpdate(body: TaskUpdateDto): TaskUpdate {
   const update: TaskUpdate = {};
 
   if (body.status !== undefined) {
@@ -98,7 +95,7 @@ function buildTaskUpdate(body: TaskUpdateDto): TaskUpdate {
   return update;
 }
 
-async function updateTask(id: ObjectId, body: TaskUpdateDto, { userId }: ServiceOptions) {
+export async function updateTask(id: ObjectId, body: TaskUpdateDto, { userId }: ServiceOptions) {
   const existingTask = await Task.findOne(ownedFilter(id, userId));
   if (!existingTask) {
     return null;
@@ -122,7 +119,7 @@ async function updateTask(id: ObjectId, body: TaskUpdateDto, { userId }: Service
   return normalizedTask;
 }
 
-async function deleteTask(id: ObjectId, { userId }: ServiceOptions) {
+export async function deleteTask(id: ObjectId, { userId }: ServiceOptions) {
   const task = await Task.findOneAndDelete(ownedFilter(id, userId));
 
   if (!task) {
@@ -133,7 +130,7 @@ async function deleteTask(id: ObjectId, { userId }: ServiceOptions) {
   return true;
 }
 
-export = {
+export default {
   createTask,
   deleteTask,
   listTasks,

@@ -1,27 +1,24 @@
 import type {
   NoteCreateDto,
   NoteUpdateDto
-} from '../routes/schemas/mutations';
-import type { ObjectId } from '../middleware/objectIdParsing';
+} from '../routes/schemas/mutations.js';
+import type { ObjectId } from '../middleware/objectIdParsing.js';
 import {
   buildArchiveFilter,
   combineFilters
-} from '../domain/tasks/queryFilters';
+} from '../domain/tasks/queryFilters.js';
 import {
   archiveTasks,
   restoreTasks
-} from '../domain/tasks/cascade';
-import { toNoteDto } from '../domain/dtos/productDtos';
+} from '../domain/tasks/cascade.js';
+import { toNoteDto } from '../domain/dtos/productDtos.js';
 import {
   ownedFilter,
   ownerFilter,
   requireUserId
-} from '../domain/ownership';
-import NoteModel = require('../models/Note');
-import TaskModel = require('../models/Task');
-
-const Note = NoteModel;
-const Task = TaskModel;
+} from '../domain/ownership.js';
+import Note from '../models/Note.js';
+import Task from '../models/Task.js';
 
 type ServiceOptions = {
   userId: ObjectId;
@@ -38,13 +35,13 @@ type NoteUpdate = {
 
 type QueryFilter = Record<string, unknown>;
 
-async function listNotes({ archived, userId }: ListNotesOptions) {
+export async function listNotes({ archived, userId }: ListNotesOptions) {
   const notes = await Note.find(combineFilters(buildArchiveFilter(archived), ownerFilter(userId)))
     .sort({ isPinned: -1, pinnedAt: -1, updatedAt: -1 });
   return notes.map(toNoteDto);
 }
 
-async function createNote(body: NoteCreateDto, { userId }: ServiceOptions) {
+export async function createNote(body: NoteCreateDto, { userId }: ServiceOptions) {
   const note = await Note.create({
     title: body.title,
     content: body.content || '',
@@ -55,7 +52,7 @@ async function createNote(body: NoteCreateDto, { userId }: ServiceOptions) {
   return toNoteDto(note);
 }
 
-function buildNoteUpdate(body: NoteUpdateDto): NoteUpdate {
+export function buildNoteUpdate(body: NoteUpdateDto): NoteUpdate {
   const update: NoteUpdate = {};
   if (body.title !== undefined) {
     update.title = body.title;
@@ -66,14 +63,14 @@ function buildNoteUpdate(body: NoteUpdateDto): NoteUpdate {
   return update;
 }
 
-function changedOnlyFilter(filter: QueryFilter, update: NoteUpdate): QueryFilter {
+export function changedOnlyFilter(filter: QueryFilter, update: NoteUpdate): QueryFilter {
   return {
     ...filter,
     $or: Object.entries(update).map(([field, value]) => ({ [field]: { $ne: value } }))
   };
 }
 
-async function updateNote(id: ObjectId, body: NoteUpdateDto, { userId }: ServiceOptions) {
+export async function updateNote(id: ObjectId, body: NoteUpdateDto, { userId }: ServiceOptions) {
   const filter = ownedFilter(id, userId);
   const update = buildNoteUpdate(body);
   const note = await Note.findOneAndUpdate(
@@ -85,12 +82,12 @@ async function updateNote(id: ObjectId, body: NoteUpdateDto, { userId }: Service
   return toNoteDto(note || await Note.findOne(filter));
 }
 
-async function deleteNote(id: ObjectId, { userId }: ServiceOptions) {
+export async function deleteNote(id: ObjectId, { userId }: ServiceOptions) {
   const note = await Note.findOneAndDelete(ownedFilter(id, userId));
   return Boolean(note);
 }
 
-async function pinNote(id: ObjectId, { userId }: ServiceOptions) {
+export async function pinNote(id: ObjectId, { userId }: ServiceOptions) {
   const note = await Note.findOneAndUpdate(
     ownedFilter(id, userId),
     { isPinned: true, pinnedAt: new Date() },
@@ -104,7 +101,7 @@ async function pinNote(id: ObjectId, { userId }: ServiceOptions) {
   return toNoteDto(note);
 }
 
-async function unpinNote(id: ObjectId, { userId }: ServiceOptions) {
+export async function unpinNote(id: ObjectId, { userId }: ServiceOptions) {
   const note = await Note.findOneAndUpdate(
     ownedFilter(id, userId),
     { isPinned: false, pinnedAt: null },
@@ -118,7 +115,7 @@ async function unpinNote(id: ObjectId, { userId }: ServiceOptions) {
   return toNoteDto(note);
 }
 
-async function archiveNote(id: ObjectId, { userId }: ServiceOptions) {
+export async function archiveNote(id: ObjectId, { userId }: ServiceOptions) {
   const note = await Note.findOneAndUpdate(
     ownedFilter(id, userId),
     { archived: true },
@@ -140,7 +137,7 @@ async function archiveNote(id: ObjectId, { userId }: ServiceOptions) {
   return toNoteDto(note);
 }
 
-async function restoreNote(id: ObjectId, { userId }: ServiceOptions) {
+export async function restoreNote(id: ObjectId, { userId }: ServiceOptions) {
   const note = await Note.findOneAndUpdate(
     ownedFilter(id, userId),
     { archived: false },
@@ -162,7 +159,7 @@ async function restoreNote(id: ObjectId, { userId }: ServiceOptions) {
   return toNoteDto(note);
 }
 
-export = {
+export default {
   archiveNote,
   createNote,
   deleteNote,

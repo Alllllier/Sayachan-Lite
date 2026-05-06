@@ -1,28 +1,24 @@
-const crypto = require('crypto');
-import UserModel = require('../models/User');
-import InviteModel = require('../models/Invite');
-import SessionModel = require('../models/Session');
+import crypto from 'crypto';
+import User from '../models/User.js';
+import Invite from '../models/Invite.js';
+import Session from '../models/Session.js';
 import {
   toPublicInviteDto,
   toPublicUserDto,
   type UserAuthRecord
-} from '../domain/dtos/authDtos';
+} from '../domain/dtos/authDtos.js';
 import {
   BadRequestError,
   ConflictError,
   ForbiddenError,
   NotFoundError,
   UnauthorizedError
-} from '../errors/httpErrors';
-const Note = require('../models/Note');
-const Project = require('../models/Project');
-const Task = require('../models/Task');
+} from '../errors/httpErrors.js';
+import Note from '../models/Note.js';
+import Project from '../models/Project.js';
+import Task from '../models/Task.js';
 
-const User = UserModel;
-const Invite = InviteModel;
-const Session = SessionModel;
-
-const SESSION_COOKIE_NAME = 'sayachan_session';
+export const SESSION_COOKIE_NAME = 'sayachan_session';
 const PASSWORD_ITERATIONS = 210000;
 const PASSWORD_KEY_LENGTH = 32;
 const PASSWORD_DIGEST = 'sha256';
@@ -101,7 +97,7 @@ async function assignLegacyDataToOwner(ownerId: unknown): Promise<void> {
   ]);
 }
 
-async function bootstrapOwner({ email, password }: AuthCredentials) {
+export async function bootstrapOwner({ email, password }: AuthCredentials) {
   validateEmailPassword(email, password);
 
   const existingOwner = await User.findOne({ role: 'owner' });
@@ -127,7 +123,7 @@ async function bootstrapOwner({ email, password }: AuthCredentials) {
   return toPublicUserDto(owner);
 }
 
-async function createInvite(owner: UserAuthRecord) {
+export async function createInvite(owner: UserAuthRecord) {
   const rawCode = crypto.randomBytes(12).toString('base64url').toUpperCase();
   const invite = await Invite.create({
     codeHash: hashInviteCode(rawCode),
@@ -142,12 +138,12 @@ async function createInvite(owner: UserAuthRecord) {
   };
 }
 
-async function listInvites() {
+export async function listInvites() {
   const invites = await Invite.find({}).sort({ createdAt: -1 });
   return invites.map(toPublicInviteDto);
 }
 
-async function revokeInvite(inviteId: unknown) {
+export async function revokeInvite(inviteId: unknown) {
   const invite = await Invite.findByIdAndUpdate(
     inviteId,
     { revokedAt: new Date() },
@@ -161,7 +157,7 @@ async function revokeInvite(inviteId: unknown) {
   return toPublicInviteDto(invite);
 }
 
-async function registerTester({ email, password, inviteCode }: RegisterTesterInput) {
+export async function registerTester({ email, password, inviteCode }: RegisterTesterInput) {
   validateEmailPassword(email, password);
 
   const normalizedInviteCode = String(inviteCode || '').trim();
@@ -204,7 +200,7 @@ async function createSessionForUser(user: UserAuthRecord): Promise<string> {
   return token;
 }
 
-async function login({ email, password }: AuthCredentials) {
+export async function login({ email, password }: AuthCredentials) {
   validateEmailPassword(email, password);
 
   const user = await User.findOne({ email: normalizeEmail(email) });
@@ -226,7 +222,7 @@ async function login({ email, password }: AuthCredentials) {
   };
 }
 
-async function loadUserForSession(sessionToken: string | null | undefined) {
+export async function loadUserForSession(sessionToken: string | null | undefined) {
   if (!sessionToken) {
     return null;
   }
@@ -248,18 +244,18 @@ async function loadUserForSession(sessionToken: string | null | undefined) {
   return toPublicUserDto(user);
 }
 
-async function logout(sessionToken: string | null | undefined): Promise<void> {
+export async function logout(sessionToken: string | null | undefined): Promise<void> {
   if (sessionToken) {
     await Session.findOneAndDelete({ tokenHash: hashToken(sessionToken) });
   }
 }
 
-async function listTesters() {
+export async function listTesters() {
   const users = await User.find({ role: 'tester' }).sort({ createdAt: -1 });
   return users.map(toPublicUserDto);
 }
 
-async function setTesterDisabled(userId: unknown, disabled: unknown) {
+export async function setTesterDisabled(userId: unknown, disabled: unknown) {
   const update = disabled
     ? { disabled: true, disabledAt: new Date() }
     : { disabled: false, disabledAt: null };
@@ -280,7 +276,7 @@ async function setTesterDisabled(userId: unknown, disabled: unknown) {
   return toPublicUserDto(user);
 }
 
-async function getSystemStatus() {
+export async function getSystemStatus() {
   const [userCount, testerCount, inviteCount, activeSessionCount] = await Promise.all([
     User.countDocuments({}),
     User.countDocuments({ role: 'tester' }),
@@ -297,7 +293,14 @@ async function getSystemStatus() {
   };
 }
 
-export = {
+export const __test__ = {
+  assignLegacyDataToOwner,
+  hashInviteCode,
+  hashPassword,
+  verifyPassword
+};
+
+export default {
   SESSION_COOKIE_NAME,
   bootstrapOwner,
   createInvite,
@@ -310,10 +313,5 @@ export = {
   registerTester,
   revokeInvite,
   setTesterDisabled,
-  __test__: {
-    assignLegacyDataToOwner,
-    hashInviteCode,
-    hashPassword,
-    verifyPassword
-  }
+  __test__
 };

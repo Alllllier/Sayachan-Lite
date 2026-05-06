@@ -1,4 +1,4 @@
-import mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const projectSchema = new mongoose.Schema({
   name: {
@@ -47,4 +47,4 @@ type ProjectAttrs = mongoose.InferSchemaType<typeof projectSchema>;
 
 const Project = mongoose.model<ProjectAttrs, mongoose.Model<ProjectAttrs>>('Project', projectSchema);
 
-export = Project;
+export default Project;

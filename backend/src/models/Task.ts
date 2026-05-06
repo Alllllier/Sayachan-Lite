@@ -1,4 +1,4 @@
-import mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const taskSchema = new mongoose.Schema({
   title: {
@@ -48,4 +48,4 @@ type TaskAttrs = mongoose.InferSchemaType<typeof taskSchema>;
 
 const Task = mongoose.model<TaskAttrs, mongoose.Model<TaskAttrs>>('Task', taskSchema);
 
-export = Task;
+export default Task;

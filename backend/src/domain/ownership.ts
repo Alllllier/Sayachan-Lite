@@ -1,5 +1,5 @@
-import type { ObjectId } from '../middleware/objectIdParsing';
-import { UnauthorizedError } from '../errors/httpErrors';
+import type { ObjectId } from '../middleware/objectIdParsing.js';
+import { UnauthorizedError } from '../errors/httpErrors.js';
 
 export function requireUserId(userId: ObjectId | null | undefined): ObjectId {
   if (!userId) {

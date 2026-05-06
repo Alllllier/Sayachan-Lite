@@ -1,10 +1,10 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
-const {
+import {
   buildArchiveFilter,
   projectTaskRelationFilter
-} = require('../dist/domain/tasks/queryFilters');
+} from '../dist/domain/tasks/queryFilters.js';
 
 test('buildArchiveFilter reads archived=true as archived-only semantics', () => {
   assert.deepEqual(buildArchiveFilter('true'), {

@@ -1,5 +1,5 @@
 import type { Context, Next } from 'koa';
-import { toObjectId, type ObjectId } from './objectIdParsing';
+import { toObjectId, type ObjectId } from './objectIdParsing.js';
 
 export function resolveCurrentUserId(ctx: Context): ObjectId | null {
   const userId = ctx.state?.user?._id;
@@ -9,7 +9,7 @@ export function resolveCurrentUserId(ctx: Context): ObjectId | null {
   return toObjectId(userId, 'state.user._id');
 }
 
-export async function requireCurrentUser(ctx: Context, next: Next): Promise<void> {
+export const requireCurrentUser: any = async (ctx: Context, next: Next): Promise<void> => {
   const userId = resolveCurrentUserId(ctx);
   if (!userId) {
     ctx.status = 401;
@@ -19,4 +19,4 @@ export async function requireCurrentUser(ctx: Context, next: Next): Promise<void
 
   ctx.state.userId = userId;
   await next();
-}
+};

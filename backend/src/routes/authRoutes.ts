@@ -3,20 +3,14 @@ import Router, { type RouterMiddleware } from '@koa/router';
 import type {
   AuthCredentialsDto,
   RegisterTesterDto
-} from './schemas/auth';
-
-const authService = require('../services/authService') as typeof import('../services/authService');
-const { clearSessionCookie, requireOwner, setSessionCookie } = require('../middleware/auth') as typeof import('../middleware/auth');
-const {
+} from './schemas/auth.js';
+import authService from '../services/authService.js';
+import { clearSessionCookie, requireOwner, setSessionCookie } from '../middleware/auth.js';
+import {
   authCredentialsSchema,
   registerTesterSchema
-} = require('./schemas/auth') as {
-  authCredentialsSchema: RequestBodySchema<AuthCredentialsDto>;
-  registerTesterSchema: RequestBodySchema<RegisterTesterDto>;
-};
-const { validateBody } = require('../middleware/requestBodyValidation') as {
-  validateBody: ValidateBody;
-};
+} from './schemas/auth.js';
+import { validateBody } from '../middleware/requestBodyValidation.js';
 
 type OwnerUser = Parameters<typeof authService.createInvite>[0];
 
@@ -102,4 +96,4 @@ router.get('/owner/system-status', (async (ctx) => {
   ctx.body = await authService.getSystemStatus();
 }) as AuthHandler);
 
-export = router;
+export default router;

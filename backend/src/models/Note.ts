@@ -1,4 +1,4 @@
-import mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const noteSchema = new mongoose.Schema({
   title: {
@@ -37,4 +37,4 @@ type NoteAttrs = mongoose.InferSchemaType<typeof noteSchema>;
 
 const Note = mongoose.model<NoteAttrs, mongoose.Model<NoteAttrs>>('Note', noteSchema);
 
-export = Note;
+export default Note;

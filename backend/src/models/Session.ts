@@ -1,4 +1,4 @@
-import mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const sessionSchema = new mongoose.Schema({
   tokenHash: {
@@ -23,4 +23,4 @@ type SessionAttrs = mongoose.InferSchemaType<typeof sessionSchema>;
 
 const Session = mongoose.model<SessionAttrs, mongoose.Model<SessionAttrs>>('Session', sessionSchema);
 
-export = Session;
+export default Session;

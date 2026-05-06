@@ -1,15 +1,14 @@
-import Koa = require('koa');
-import { connectDB } from './database';
-import routes = require('./routes');
-import aiRoutes = require('./routes/ai');
-import { errorBoundary } from './middleware/errorBoundary';
+import Koa from 'koa';
+import { connectDB } from './database.js';
+import routes from './routes/index.js';
+import aiRoutes from './routes/ai.js';
+import { errorBoundary } from './middleware/errorBoundary.js';
+import dotenv from 'dotenv';
+import cors from '@koa/cors';
+import { bodyParser } from '@koa/bodyparser';
+import { authMiddleware } from './middleware/auth.js';
 
-const dotenv = require('dotenv') as { config(): void };
 dotenv.config();
-
-const cors = require('@koa/cors');
-const { bodyParser } = require('@koa/bodyparser');
-const { authMiddleware } = require('./middleware/auth');
 
 const app = new Koa();
 const PORT = process.env.PORT || 3001;

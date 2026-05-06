@@ -1,4 +1,6 @@
 // Public AI bridge: re-export from the private AI core package boundary.
+import aiCore from '@allier/sayachan-ai-core';
+
 type ChatMessage = {
   role?: unknown;
   content?: unknown;
@@ -20,6 +22,8 @@ type Chat = (
   options?: ChatOptions
 ) => Promise<ChatResult>;
 
-const { chat } = require('@allier/sayachan-ai-core') as { chat: Chat };
+const { chat } = aiCore as { chat: Chat };
 
-export = { chat };
+export { chat };
+
+export default { chat };

@@ -1,21 +1,21 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const Koa = require('koa');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import Koa from 'koa';
 
-const Note = require('../dist/models/Note');
-const Project = require('../dist/models/Project');
-const Task = require('../dist/models/Task');
-const notesService = require('../dist/services/notesService');
-const projectsService = require('../dist/services/projectsService');
-const tasksService = require('../dist/services/tasksService');
-const { errorBoundary } = require('../dist/middleware/errorBoundary');
-const routes = require('../dist/routes/index.js');
-const { BadRequestError } = require('../dist/errors/httpErrors');
-const { assertZodSchema } = require('../dist/middleware/requestBodyValidation');
-const {
+import Note from '../dist/models/Note.js';
+import Project from '../dist/models/Project.js';
+import Task from '../dist/models/Task.js';
+import notesService from '../dist/services/notesService.js';
+import projectsService from '../dist/services/projectsService.js';
+import tasksService from '../dist/services/tasksService.js';
+import { errorBoundary } from '../dist/middleware/errorBoundary.js';
+import routes from '../dist/routes/index.js';
+import { BadRequestError } from '../dist/errors/httpErrors.js';
+import { assertZodSchema } from '../dist/middleware/requestBodyValidation.js';
+import {
   taskCreateSchema,
   taskUpdateSchema
-} = require('../dist/routes/schemas/mutations');
+} from '../dist/routes/schemas/mutations.js';
 
 function getRouteHandler(method, path) {
   const layer = routes.stack.find((entry) => entry.path === path && entry.methods.includes(method));

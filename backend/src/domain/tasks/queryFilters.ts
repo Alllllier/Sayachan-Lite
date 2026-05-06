@@ -1,4 +1,4 @@
-import type { ObjectId } from '../../middleware/objectIdParsing';
+import type { ObjectId } from '../../middleware/objectIdParsing.js';
 
 export type QueryFilter = Record<string, unknown>;
 

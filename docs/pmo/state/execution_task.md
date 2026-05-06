@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Backend ESM Cutover Prep`
+- Sprint: `Backend ESM Cutover`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/backend-esm-cutover-prep.md`
+- Report surface: `docs/pmo/history/reports/backend-esm-cutover.md`
 
 ## Next Activation Rule
 

@@ -1,14 +1,14 @@
-import type { ObjectId } from '../../middleware/objectIdParsing';
+import type { ObjectId } from '../../middleware/objectIdParsing.js';
 import {
   buildArchiveFilter,
   combineFilters
-} from './queryFilters';
+} from './queryFilters.js';
 import {
   deriveTaskLifecycleStatus,
   type ProjectRuntimeRecord,
   type RuntimeDocument,
   type TaskRuntimeRecord
-} from '../dtos/productDtos';
+} from '../dtos/productDtos.js';
 
 type FindableModel = {
   find(filter: unknown): Promise<TaskRuntimeRecord[]>;

@@ -1,4 +1,4 @@
-import mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const inviteSchema = new mongoose.Schema({
   codeHash: {
@@ -40,4 +40,4 @@ type InviteAttrs = mongoose.InferSchemaType<typeof inviteSchema>;
 
 const Invite = mongoose.model<InviteAttrs, mongoose.Model<InviteAttrs>>('Invite', inviteSchema);
 
-export = Invite;
+export default Invite;

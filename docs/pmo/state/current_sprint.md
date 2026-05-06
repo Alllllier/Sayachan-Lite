@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Backend ESM Cutover Prep`
+- Sprint: `Backend ESM Cutover`
 - Closeout date: `2026-05-07`
 - Delivery status: `completed and validated`
 - Commit state: `pending commit after closeout`
-- Documentation sync outcome: `updated active PMO/runtime planning references only`
-- Residual note: `Actual backend ESM cutover still needs NodeNext source import conversion and backend test ESM loading strategy; private_core remains CommonJS through the bridge boundary.`
-- Report surface: `docs/pmo/history/reports/backend-esm-cutover-prep.md`
+- Documentation sync outcome: `reviewed, no additional baseline update needed`
+- Residual note: `Route/middleware helper typing still has pragmatic any boundaries exposed by the ESM cutover; private_core remains CommonJS through the backend bridge and can be migrated in a separate future thread.`
+- Report surface: `docs/pmo/history/reports/backend-esm-cutover.md`
 
 ## Next PMO Action
 

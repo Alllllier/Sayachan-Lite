@@ -1,6 +1,6 @@
-import mongoose = require('mongoose');
+import mongoose from 'mongoose';
 import type { Context, Next } from 'koa';
-import { BadRequestError } from '../errors/httpErrors';
+import { BadRequestError } from '../errors/httpErrors.js';
 
 export type ObjectId = mongoose.Types.ObjectId;
 
@@ -65,7 +65,7 @@ export function parseObjectId(
   location: ObjectIdLocation,
   field: string,
   { optional = false, stateKey }: { optional?: boolean; stateKey?: string } = {}
-) {
+): any {
   return async (ctx: ObjectIdParsingContext, next: Next): Promise<void> => {
     const source = `${location}.${field}`;
     const value = readObjectIdSource(ctx, location, field);
@@ -78,14 +78,14 @@ export function parseObjectId(
   };
 }
 
-export function parseParamObjectId(field: string, options?: { optional?: boolean; stateKey?: string }) {
+export function parseParamObjectId(field: string, options?: { optional?: boolean; stateKey?: string }): any {
   return parseObjectId('params', field, options);
 }
 
-export function parseQueryObjectId(field: string, options?: { optional?: boolean; stateKey?: string }) {
+export function parseQueryObjectId(field: string, options?: { optional?: boolean; stateKey?: string }): any {
   return parseObjectId('query', field, options);
 }
 
-export function parseBodyObjectId(field: string, options?: { optional?: boolean; stateKey?: string }) {
+export function parseBodyObjectId(field: string, options?: { optional?: boolean; stateKey?: string }): any {
   return parseObjectId('body', field, options);
 }

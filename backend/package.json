@@ -18,7 +18,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "@allier/sayachan-ai-core": "file:private_core/sayachan-ai-core",
     "@koa/bodyparser": "^6.1.0",

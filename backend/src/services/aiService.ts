@@ -1,13 +1,12 @@
-import { type ObjectId, optionalObjectId } from '../middleware/objectIdParsing';
+import { type ObjectId, optionalObjectId } from '../middleware/objectIdParsing.js';
 import type {
   AiChatDto,
   AiResourcePayloadDto
-} from '../routes/schemas/ai';
-
-const { chat: runChat } = require('../ai/bridge') as typeof import('../ai/bridge');
-const Note = require('../models/Note') as typeof import('../models/Note');
-const Project = require('../models/Project') as typeof import('../models/Project');
-const Task = require('../models/Task') as typeof import('../models/Task');
+} from '../routes/schemas/ai.js';
+import { chat as runChat } from '../ai/bridge.js';
+import Note from '../models/Note.js';
+import Project from '../models/Project.js';
+import Task from '../models/Task.js';
 
 type AiPayload = {
   _id?: unknown;
@@ -134,7 +133,7 @@ async function resolveOwnedProjectPayload(payload: AiPayload | null | undefined,
   return normalizeDoc(project);
 }
 
-async function generateNoteTaskDrafts(
+export async function generateNoteTaskDrafts(
   payload: AiResourcePayloadDto,
   userId: ObjectId
 ): Promise<AiBodyResult<{ drafts: string[] }> | AiNotFoundResult> {
@@ -215,7 +214,7 @@ async function generateNoteTaskDrafts(
   }
 }
 
-async function suggestProjectNextActions(
+export async function suggestProjectNextActions(
   payload: AiResourcePayloadDto,
   userId: ObjectId
 ): Promise<AiBodyResult<{ suggestions: string[] }> | AiNotFoundResult> {
@@ -303,7 +302,7 @@ async function suggestProjectNextActions(
   }
 }
 
-async function chat({ messages, context, runtimeControls }: AiChatDto) {
+export async function chat({ messages, context, runtimeControls }: AiChatDto) {
   const KIMI_KEY = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
   if (!KIMI_KEY) {
     console.warn('[AI Route] KIMI_API_KEY not found, using fallback');
@@ -322,13 +321,15 @@ async function chat({ messages, context, runtimeControls }: AiChatDto) {
   }
 }
 
-export = {
+export const __test__ = {
+  getProjectFocusContext,
+  resolveOwnedNotePayload,
+  resolveOwnedProjectPayload
+};
+
+export default {
   chat,
   generateNoteTaskDrafts,
   suggestProjectNextActions,
-  __test__: {
-    getProjectFocusContext,
-    resolveOwnedNotePayload,
-    resolveOwnedProjectPayload
-  }
+  __test__
 };

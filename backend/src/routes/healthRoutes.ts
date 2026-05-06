@@ -1,5 +1,5 @@
 import Router, { type RouterMiddleware } from '@koa/router';
-import mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const router = new Router();
 
@@ -13,4 +13,4 @@ router.get('/health', ((ctx) => {
   };
 }) as RouterMiddleware);
 
-export = router;
+export default router;

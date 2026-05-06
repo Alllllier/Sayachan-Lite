@@ -1,8 +1,8 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
-const Task = require('../dist/models/Task');
-const { restoreTasks } = require('../dist/domain/tasks/cascade');
+import Task from '../dist/models/Task.js';
+import { restoreTasks } from '../dist/domain/tasks/cascade.js';
 
 test('restoreTasks keeps canonical project scope when reading archived tasks', async () => {
   const originalFind = Task.find;

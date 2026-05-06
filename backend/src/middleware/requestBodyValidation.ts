@@ -1,4 +1,4 @@
-import { BadRequestError } from '../errors/httpErrors';
+import { BadRequestError } from '../errors/httpErrors.js';
 
 type ValidationIssue = {
   code: string;
@@ -23,7 +23,7 @@ type ValidationContext = {
 
 type Next = () => Promise<void>;
 
-function assertZodSchema<T>(
+export function assertZodSchema<T>(
   schema: RequestBodySchema<T>,
   body: unknown,
   { source = 'request.body' }: { source?: string } = {}
@@ -44,14 +44,9 @@ function assertZodSchema<T>(
   return result.data;
 }
 
-function validateBody<T>(schema: RequestBodySchema<T>) {
+export function validateBody<T>(schema: RequestBodySchema<T>): any {
   return async (ctx: ValidationContext, next: Next): Promise<void> => {
     ctx.state.validatedBody = assertZodSchema(schema, ctx.request.body);
     await next();
   };
 }
-
-export = {
-  assertZodSchema,
-  validateBody
-};

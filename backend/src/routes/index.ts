@@ -1,10 +1,10 @@
 import Router from '@koa/router';
 
-import authRoutes = require('./authRoutes');
-import healthRoutes = require('./healthRoutes');
-import notesRoutes = require('./notesRoutes');
-import projectsRoutes = require('./projectsRoutes');
-import tasksRoutes = require('./tasksRoutes');
+import authRoutes from './authRoutes.js';
+import healthRoutes from './healthRoutes.js';
+import notesRoutes from './notesRoutes.js';
+import projectsRoutes from './projectsRoutes.js';
+import tasksRoutes from './tasksRoutes.js';
 
 const router = new Router();
 
@@ -14,4 +14,4 @@ router.use(notesRoutes.routes());
 router.use(projectsRoutes.routes());
 router.use(tasksRoutes.routes());
 
-export = router;
+export default router;

@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Backend ESM Cutover Prep`
+- Sprint: `Backend ESM Cutover`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/backend-esm-cutover-prep.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/backend-esm-cutover.md`
 
 ## Next Use
 

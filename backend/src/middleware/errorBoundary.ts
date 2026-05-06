@@ -1,5 +1,5 @@
 import type { Context, Next } from 'koa';
-import { isHttpError } from '../errors/httpErrors';
+import { isHttpError } from '../errors/httpErrors.js';
 
 export async function errorBoundary(ctx: Context, next: Next): Promise<void> {
   try {

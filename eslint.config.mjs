@@ -69,7 +69,22 @@ export default [
     }
   },
   {
-    files: ['backend/**/*.js', 'backend/**/*.cjs'],
+    files: ['backend/test/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        ...globals.es2024
+      }
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      ...lowNoiseRules
+    }
+  },
+  {
+    files: ['backend/scripts/**/*.cjs'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'commonjs',

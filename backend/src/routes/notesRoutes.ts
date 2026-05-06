@@ -3,8 +3,8 @@ import Router, { type RouterMiddleware } from '@koa/router';
 import type {
   NoteCreateDto,
   NoteUpdateDto
-} from './schemas/mutations';
-import { type ObjectId } from '../middleware/objectIdParsing';
+} from './schemas/mutations.js';
+import { type ObjectId } from '../middleware/objectIdParsing.js';
 
 type CurrentUserState = {
   user?: {
@@ -29,23 +29,14 @@ type RequestBodySchema<TBody> = {
 
 type ValidateBody = <TBody>(schema: RequestBodySchema<TBody>) => NotesMiddleware;
 
-const notesService = require('../services/notesService') as typeof import('../services/notesService');
-const {
+import notesService from '../services/notesService.js';
+import {
   noteCreateSchema,
   noteUpdateSchema
-} = require('./schemas/mutations') as {
-  noteCreateSchema: RequestBodySchema<NoteCreateDto>;
-  noteUpdateSchema: RequestBodySchema<NoteUpdateDto>;
-};
-const { requireCurrentUser } = require('../middleware/currentUser') as {
-  requireCurrentUser: NotesMiddleware;
-};
-const { validateBody } = require('../middleware/requestBodyValidation') as {
-  validateBody: ValidateBody;
-};
-const { parseParamObjectId } = require('../middleware/objectIdParsing') as {
-  parseParamObjectId: (field: string) => NotesMiddleware;
-};
+} from './schemas/mutations.js';
+import { requireCurrentUser } from '../middleware/currentUser.js';
+import { validateBody } from '../middleware/requestBodyValidation.js';
+import { parseParamObjectId } from '../middleware/objectIdParsing.js';
 
 const router = new Router<NotesState>();
 
@@ -149,4 +140,4 @@ router.put('/notes/:id/unpin', requireCurrentUser, parseParamObjectId('id'), unp
 router.put('/notes/:id/archive', requireCurrentUser, parseParamObjectId('id'), archiveNoteHandler);
 router.put('/notes/:id/restore', requireCurrentUser, parseParamObjectId('id'), restoreNoteHandler);
 
-export = router;
+export default router;

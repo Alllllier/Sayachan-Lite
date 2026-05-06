@@ -1,23 +1,17 @@
 import Router, { type RouterMiddleware } from '@koa/router';
 
-import { type ObjectId } from '../middleware/objectIdParsing';
+import { type ObjectId } from '../middleware/objectIdParsing.js';
 import type {
   AiChatDto,
   AiResourcePayloadDto
-} from './schemas/ai';
-
-const aiService = require('../services/aiService') as typeof import('../services/aiService');
-const { requireCurrentUser } = require('../middleware/currentUser') as typeof import('../middleware/currentUser');
-const { validateBody } = require('../middleware/requestBodyValidation') as {
-  validateBody: ValidateBody;
-};
-const {
+} from './schemas/ai.js';
+import aiService from '../services/aiService.js';
+import { requireCurrentUser } from '../middleware/currentUser.js';
+import { validateBody } from '../middleware/requestBodyValidation.js';
+import {
   aiChatSchema,
   aiResourcePayloadSchema
-} = require('./schemas/ai') as {
-  aiChatSchema: RequestBodySchema<AiChatDto>;
-  aiResourcePayloadSchema: RequestBodySchema<AiResourcePayloadDto>;
-};
+} from './schemas/ai.js';
 
 type AiState = {
   userId: ObjectId;
@@ -73,4 +67,4 @@ const exportedRouter = Object.assign(router, {
   __test__: aiService.__test__
 });
 
-export = exportedRouter;
+export default exportedRouter;

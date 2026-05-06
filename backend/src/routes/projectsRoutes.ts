@@ -3,8 +3,8 @@ import Router, { type RouterMiddleware } from '@koa/router';
 import type {
   ProjectCreateDto,
   ProjectUpdateDto
-} from './schemas/mutations';
-import { type ObjectId } from '../middleware/objectIdParsing';
+} from './schemas/mutations.js';
+import { type ObjectId } from '../middleware/objectIdParsing.js';
 
 type CurrentUserState = {
   user?: {
@@ -33,27 +33,17 @@ type ProjectUpdateServiceBody = Omit<ProjectUpdateDto, 'currentFocusTaskId'> & {
   currentFocusTaskId?: ObjectId | null;
 };
 
-const projectsService = require('../services/projectsService') as typeof import('../services/projectsService');
-const { requireCurrentUser } = require('../middleware/currentUser') as {
-  requireCurrentUser: ProjectsMiddleware;
-};
-const { validateBody } = require('../middleware/requestBodyValidation') as {
-  validateBody: ValidateBody;
-};
-const {
+import projectsService from '../services/projectsService.js';
+import { requireCurrentUser } from '../middleware/currentUser.js';
+import { validateBody } from '../middleware/requestBodyValidation.js';
+import {
   parseBodyObjectId,
   parseParamObjectId
-} = require('../middleware/objectIdParsing') as {
-  parseBodyObjectId: (field: string, options?: { optional?: boolean }) => ProjectsMiddleware;
-  parseParamObjectId: (field: string) => ProjectsMiddleware;
-};
-const {
+} from '../middleware/objectIdParsing.js';
+import {
   projectCreateSchema,
   projectUpdateSchema
-} = require('./schemas/mutations') as {
-  projectCreateSchema: RequestBodySchema<ProjectCreateDto>;
-  projectUpdateSchema: RequestBodySchema<ProjectUpdateDto>;
-};
+} from './schemas/mutations.js';
 
 const router = new Router<ProjectsState>();
 
@@ -174,4 +164,4 @@ router.put('/projects/:id/restore', requireCurrentUser, parseParamObjectId('id')
   ctx.body = project;
 });
 
-export = router;
+export default router;

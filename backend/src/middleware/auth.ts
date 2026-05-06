@@ -1,7 +1,6 @@
 import type { Context, Next } from 'koa';
-import { ForbiddenError, UnauthorizedError } from '../errors/httpErrors';
-
-const authService = require('../services/authService') as typeof import('../services/authService');
+import { ForbiddenError, UnauthorizedError } from '../errors/httpErrors.js';
+import authService from '../services/authService.js';
 
 type SessionCookieOptions = {
   httpOnly: boolean;
@@ -35,13 +34,13 @@ function sessionCookieOptions(extra: Partial<SessionCookieOptions> = {}): Sessio
   };
 }
 
-function clearSessionCookie(ctx: Context): void {
+export function clearSessionCookie(ctx: Context): void {
   ctx.cookies.set(authService.SESSION_COOKIE_NAME, '', sessionCookieOptions({
     maxAge: 0,
   }));
 }
 
-function setSessionCookie(ctx: Context, sessionToken: string): void {
+export function setSessionCookie(ctx: Context, sessionToken: string): void {
   ctx.cookies.set(authService.SESSION_COOKIE_NAME, sessionToken, sessionCookieOptions({
     maxAge: 1000 * 60 * 60 * 24 * 14,
   }));
@@ -53,7 +52,7 @@ function getBearerSessionToken(ctx: Context): string | null {
   return match ? match[1].trim() : null;
 }
 
-async function authMiddleware(ctx: Context, next: Next): Promise<void> {
+export async function authMiddleware(ctx: Context, next: Next): Promise<void> {
   const cookieToken = ctx.cookies.get(authService.SESSION_COOKIE_NAME);
   const bearerToken = getBearerSessionToken(ctx);
   const token = bearerToken || cookieToken;
@@ -74,7 +73,7 @@ async function authMiddleware(ctx: Context, next: Next): Promise<void> {
   await next();
 }
 
-function requireOwner(ctx: Context): void {
+export function requireOwner(ctx: Context): void {
   if (!ctx.state.user) {
     throw new UnauthorizedError();
   }
@@ -84,7 +83,11 @@ function requireOwner(ctx: Context): void {
   }
 }
 
-export = {
+export {
+  sessionCookieOptions
+};
+
+export default {
   authMiddleware,
   clearSessionCookie,
   requireOwner,

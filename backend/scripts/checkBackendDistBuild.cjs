@@ -102,8 +102,8 @@ function assertPackageRuntimeBoundary() {
   const runtimeLoaderScriptPattern = /\b(?:tsx|ts-node|ts-node-dev|babel-node|esbuild-register)\b|@swc-node\/register|@babel\/register|--loader\b/;
 
   assert(
-    backendPackage.type === 'commonjs' || backendPackage.type === 'module',
-    'backend/package.json type must be an explicit supported Node module type.'
+    backendPackage.type === 'module',
+    'backend/package.json must remain "type": "module" after the backend ESM cutover.'
   );
   assert(
     backendScripts['build:backend'] === 'node scripts/cleanBackendDist.cjs && tsc -p tsconfig.json',

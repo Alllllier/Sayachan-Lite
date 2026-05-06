@@ -1,11 +1,11 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
-const Note = require('../dist/models/Note');
-const Project = require('../dist/models/Project');
-const Task = require('../dist/models/Task');
-const { errorBoundary } = require('../dist/middleware/errorBoundary');
-const routes = require('../dist/routes/index.js');
+import Note from '../dist/models/Note.js';
+import Project from '../dist/models/Project.js';
+import Task from '../dist/models/Task.js';
+import { errorBoundary } from '../dist/middleware/errorBoundary.js';
+import routes from '../dist/routes/index.js';
 
 function getRouteHandler(method, path) {
   const layer = routes.stack.find((entry) => entry.path === path && entry.methods.includes(method));

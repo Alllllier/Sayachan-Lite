@@ -4,8 +4,8 @@ import type {
   TaskCreateDto,
   TaskCreationMode,
   TaskUpdateDto
-} from './schemas/mutations';
-import { type ObjectId } from '../middleware/objectIdParsing';
+} from './schemas/mutations.js';
+import { type ObjectId } from '../middleware/objectIdParsing.js';
 
 type CurrentUserState = {
   user?: {
@@ -30,29 +30,18 @@ type RequestBodySchema<TBody> = {
 
 type ValidateBody = <TBody>(schema: RequestBodySchema<TBody>) => TasksMiddleware;
 
-const tasksService = require('../services/tasksService') as typeof import('../services/tasksService');
-const { requireCurrentUser } = require('../middleware/currentUser') as {
-  requireCurrentUser: TasksMiddleware;
-};
-const { validateBody } = require('../middleware/requestBodyValidation') as {
-  validateBody: ValidateBody;
-};
-const {
+import tasksService from '../services/tasksService.js';
+import { requireCurrentUser } from '../middleware/currentUser.js';
+import { validateBody } from '../middleware/requestBodyValidation.js';
+import {
   parseBodyObjectId,
   parseParamObjectId,
   parseQueryObjectId
-} = require('../middleware/objectIdParsing') as {
-  parseBodyObjectId: (field: string, options?: { optional?: boolean }) => TasksMiddleware;
-  parseParamObjectId: (field: string) => TasksMiddleware;
-  parseQueryObjectId: (field: string, options?: { optional?: boolean }) => TasksMiddleware;
-};
-const {
+} from '../middleware/objectIdParsing.js';
+import {
   taskCreateSchema,
   taskUpdateSchema
-} = require('./schemas/mutations') as {
-  taskCreateSchema: RequestBodySchema<TaskCreateDto>;
-  taskUpdateSchema: RequestBodySchema<TaskUpdateDto>;
-};
+} from './schemas/mutations.js';
 
 const router = new Router<TasksState>();
 
@@ -126,4 +115,4 @@ router.delete('/tasks/:id', requireCurrentUser, parseParamObjectId('id'), async 
   }
 });
 
-export = router;
+export default router;

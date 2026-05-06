@@ -1,4 +1,4 @@
-import mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -41,4 +41,4 @@ type UserAttrs = mongoose.InferSchemaType<typeof userSchema>;
 
 const User = mongoose.model<UserAttrs, mongoose.Model<UserAttrs>>('User', userSchema);
 
-export = User;
+export default User;
