@@ -2,6 +2,11 @@ const crypto = require('crypto');
 import UserModel = require('../models/User');
 import InviteModel = require('../models/Invite');
 import SessionModel = require('../models/Session');
+import {
+  toPublicInviteDto,
+  toPublicUserDto,
+  type UserAuthRecord
+} from '../domain/dtos/authDtos';
 const Note = require('../models/Note');
 const Project = require('../models/Project');
 const Task = require('../models/Task');
@@ -19,10 +24,6 @@ const INVITE_TTL_MS = 1000 * 60 * 60 * 24 * 31;
 
 type StatusError = Error & {
   status: number;
-};
-
-type DocumentLike = Record<string, any> & {
-  toObject?: () => Record<string, any>;
 };
 
 type AuthCredentials = {
@@ -70,42 +71,27 @@ function hashPassword(password: string, salt: string = crypto.randomBytes(16).to
   return { passwordHash, passwordSalt: salt };
 }
 
-function verifyPassword(password: string, user: DocumentLike): boolean {
-  const { passwordHash } = hashPassword(password, user.passwordSalt);
-  const expected = Buffer.from(user.passwordHash, 'hex');
-  const actual = Buffer.from(passwordHash, 'hex');
-  return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
-}
-
-function publicUser(user: DocumentLike | null | undefined) {
-  if (!user) {
+function userPasswordRecord(user: UserAuthRecord): { passwordHash: string; passwordSalt: string } | null {
+  if (typeof user.passwordHash !== 'string' || typeof user.passwordSalt !== 'string') {
     return null;
   }
 
-  const normalized = user.toObject ? user.toObject() : { ...user };
   return {
-    _id: normalized._id,
-    email: normalized.email,
-    role: normalized.role,
-    disabled: normalized.disabled === true,
-    createdAt: normalized.createdAt,
-    updatedAt: normalized.updatedAt,
-    lastLoginAt: normalized.lastLoginAt
+    passwordHash: user.passwordHash,
+    passwordSalt: user.passwordSalt
   };
 }
 
-function publicInvite(invite: DocumentLike) {
-  const normalized = invite.toObject ? invite.toObject() : { ...invite };
-  return {
-    _id: normalized._id,
-    codePreview: normalized.codePreview,
-    createdBy: normalized.createdBy,
-    expiresAt: normalized.expiresAt,
-    revokedAt: normalized.revokedAt,
-    usedAt: normalized.usedAt,
-    usedBy: normalized.usedBy,
-    createdAt: normalized.createdAt
-  };
+function verifyPassword(password: string, user: UserAuthRecord): boolean {
+  const storedPassword = userPasswordRecord(user);
+  if (!storedPassword) {
+    return false;
+  }
+
+  const { passwordHash } = hashPassword(password, storedPassword.passwordSalt);
+  const expected = Buffer.from(storedPassword.passwordHash, 'hex');
+  const actual = Buffer.from(passwordHash, 'hex');
+  return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
 }
 
 async function assignLegacyDataToOwner(ownerId: unknown): Promise<void> {
@@ -141,10 +127,10 @@ async function bootstrapOwner({ email, password }: AuthCredentials) {
   // Phase-one bootstrap: claim pre-auth single-user data for the first owner.
   await assignLegacyDataToOwner(owner._id);
 
-  return publicUser(owner);
+  return toPublicUserDto(owner);
 }
 
-async function createInvite(owner: DocumentLike) {
+async function createInvite(owner: UserAuthRecord) {
   const rawCode = crypto.randomBytes(12).toString('base64url').toUpperCase();
   const invite = await Invite.create({
     codeHash: hashInviteCode(rawCode),
@@ -154,14 +140,14 @@ async function createInvite(owner: DocumentLike) {
   });
 
   return {
-    ...publicInvite(invite),
+    ...toPublicInviteDto(invite),
     code: rawCode
   };
 }
 
 async function listInvites() {
   const invites = await Invite.find({}).sort({ createdAt: -1 });
-  return invites.map(publicInvite);
+  return invites.map(toPublicInviteDto);
 }
 
 async function revokeInvite(inviteId: unknown) {
@@ -175,7 +161,7 @@ async function revokeInvite(inviteId: unknown) {
     throw statusError(404, 'Invite not found');
   }
 
-  return publicInvite(invite);
+  return toPublicInviteDto(invite);
 }
 
 async function registerTester({ email, password, inviteCode }: RegisterTesterInput) {
@@ -207,10 +193,10 @@ async function registerTester({ email, password, inviteCode }: RegisterTesterInp
   invite.usedBy = tester._id;
   await invite.save();
 
-  return publicUser(tester);
+  return toPublicUserDto(tester);
 }
 
-async function createSessionForUser(user: DocumentLike): Promise<string> {
+async function createSessionForUser(user: UserAuthRecord): Promise<string> {
   const token = crypto.randomBytes(32).toString('base64url');
   await Session.create({
     tokenHash: hashToken(token),
@@ -239,7 +225,7 @@ async function login({ email, password }: AuthCredentials) {
   const sessionToken = await createSessionForUser(user);
   return {
     sessionToken,
-    user: publicUser(user)
+    user: toPublicUserDto(user)
   };
 }
 
@@ -262,7 +248,7 @@ async function loadUserForSession(sessionToken: string | null | undefined) {
     return null;
   }
 
-  return publicUser(user);
+  return toPublicUserDto(user);
 }
 
 async function logout(sessionToken: string | null | undefined): Promise<void> {
@@ -273,7 +259,7 @@ async function logout(sessionToken: string | null | undefined): Promise<void> {
 
 async function listTesters() {
   const users = await User.find({ role: 'tester' }).sort({ createdAt: -1 });
-  return users.map(publicUser);
+  return users.map(toPublicUserDto);
 }
 
 async function setTesterDisabled(userId: unknown, disabled: unknown) {
@@ -294,7 +280,7 @@ async function setTesterDisabled(userId: unknown, disabled: unknown) {
     await Session.deleteMany({ userId: user._id });
   }
 
-  return publicUser(user);
+  return toPublicUserDto(user);
 }
 
 async function getSystemStatus() {

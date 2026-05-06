@@ -413,6 +413,19 @@ function assertProductDtosDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertAuthDtosDistArtifactFromTypeScriptSource() {
+  const authDtosDistSource = fs.readFileSync(path.join(distRoot, 'domain', 'dtos', 'authDtos.js'), 'utf8');
+
+  assert(
+    authDtosDistSource.includes('function toPublicUserDto'),
+    'dist authDtos artifact must preserve toPublicUserDto.'
+  );
+  assert(
+    authDtosDistSource.includes('function toPublicInviteDto'),
+    'dist authDtos artifact must preserve toPublicInviteDto.'
+  );
+}
+
 function assertTaskCascadeDistArtifactFromTypeScriptSource() {
   const cascadeDistSource = fs.readFileSync(path.join(distRoot, 'domain', 'tasks', 'cascade.js'), 'utf8');
 
@@ -577,6 +590,7 @@ const requiredRuntimeEntrypoints = [
   path.join('middleware', 'errorBoundary.js'),
   path.join('middleware', 'objectIdParsing.js'),
   path.join('middleware', 'requestBodyValidation.js'),
+  path.join('domain', 'dtos', 'authDtos.js'),
   path.join('domain', 'dtos', 'productDtos.js'),
   path.join('domain', 'ownership.js'),
   path.join('domain', 'tasks', 'cascade.js'),
@@ -640,6 +654,7 @@ assertOwnershipDistArtifactFromTypeScriptSource();
 assertProjectsServiceDistArtifactFromTypeScriptSource();
 assertTasksServiceDistArtifactFromTypeScriptSource();
 assertProductDtosDistArtifactFromTypeScriptSource();
+assertAuthDtosDistArtifactFromTypeScriptSource();
 assertTaskCascadeDistArtifactFromTypeScriptSource();
 assertTaskQueryFiltersDistArtifactFromTypeScriptSource();
 
