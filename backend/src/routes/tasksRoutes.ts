@@ -29,23 +29,7 @@ type RequestBodySchema<TBody> = {
 
 type ValidateBody = <TBody>(schema: RequestBodySchema<TBody>) => TasksMiddleware;
 
-type TasksServiceOptions = {
-  userId: ObjectId;
-};
-
-type ListTasksOptions = TasksServiceOptions & {
-  projectId?: ObjectId | null;
-  archived?: unknown;
-};
-
-type TasksService = {
-  listTasks(options: ListTasksOptions): Promise<unknown>;
-  createTask(body: TaskCreateDto, options: TasksServiceOptions): Promise<unknown>;
-  updateTask(id: ObjectId, body: TaskUpdateDto, options: TasksServiceOptions): Promise<unknown>;
-  deleteTask(id: ObjectId, options: TasksServiceOptions): Promise<boolean>;
-};
-
-const tasksService = require('../services/tasksService') as TasksService;
+const tasksService = require('../services/tasksService') as typeof import('../services/tasksService');
 const { requireCurrentUser } = require('../middleware/currentUser') as {
   requireCurrentUser: TasksMiddleware;
 };

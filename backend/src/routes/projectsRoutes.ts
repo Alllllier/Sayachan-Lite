@@ -29,30 +29,11 @@ type RequestBodySchema<TBody> = {
 
 type ValidateBody = <TBody>(schema: RequestBodySchema<TBody>) => ProjectsMiddleware;
 
-type ProjectsServiceOptions = {
-  userId: ObjectId;
-};
-
-type ListProjectsOptions = ProjectsServiceOptions & {
-  archived?: unknown;
-};
-
 type ProjectUpdateServiceBody = Omit<ProjectUpdateDto, 'currentFocusTaskId'> & {
   currentFocusTaskId?: ObjectId | null;
 };
 
-type ProjectsService = {
-  listProjects(options: ListProjectsOptions): Promise<unknown>;
-  createProject(body: ProjectCreateDto, options: ProjectsServiceOptions): Promise<unknown>;
-  updateProject(id: ObjectId, body: ProjectUpdateServiceBody, options: ProjectsServiceOptions): Promise<unknown>;
-  deleteProject(id: ObjectId, options: ProjectsServiceOptions): Promise<boolean>;
-  pinProject(id: ObjectId, options: ProjectsServiceOptions): Promise<unknown>;
-  unpinProject(id: ObjectId, options: ProjectsServiceOptions): Promise<unknown>;
-  archiveProject(id: ObjectId, options: ProjectsServiceOptions): Promise<unknown>;
-  restoreProject(id: ObjectId, options: ProjectsServiceOptions): Promise<unknown>;
-};
-
-const projectsService = require('../services/projectsService') as ProjectsService;
+const projectsService = require('../services/projectsService') as typeof import('../services/projectsService');
 const { requireCurrentUser } = require('../middleware/currentUser') as {
   requireCurrentUser: ProjectsMiddleware;
 };

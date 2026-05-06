@@ -29,26 +29,7 @@ type RequestBodySchema<TBody> = {
 
 type ValidateBody = <TBody>(schema: RequestBodySchema<TBody>) => NotesMiddleware;
 
-type NotesServiceOptions = {
-  userId: ObjectId;
-};
-
-type ListNotesOptions = NotesServiceOptions & {
-  archived?: unknown;
-};
-
-type NotesService = {
-  listNotes(options: ListNotesOptions): Promise<unknown>;
-  createNote(body: NoteCreateDto, options: NotesServiceOptions): Promise<unknown>;
-  updateNote(id: ObjectId, body: NoteUpdateDto, options: NotesServiceOptions): Promise<unknown>;
-  deleteNote(id: ObjectId, options: NotesServiceOptions): Promise<boolean>;
-  pinNote(id: ObjectId, options: NotesServiceOptions): Promise<unknown>;
-  unpinNote(id: ObjectId, options: NotesServiceOptions): Promise<unknown>;
-  archiveNote(id: ObjectId, options: NotesServiceOptions): Promise<unknown>;
-  restoreNote(id: ObjectId, options: NotesServiceOptions): Promise<unknown>;
-};
-
-const notesService = require('../services/notesService') as NotesService;
+const notesService = require('../services/notesService') as typeof import('../services/notesService');
 const {
   noteCreateSchema,
   noteUpdateSchema
