@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Backend Schema Typed Island Pilot`
+- Sprint: `Backend Type-Island Guardrail V1`
 - Closeout date: `2026-05-06`
 - Delivery status: `completed and validated`
 - Commit state: `not committed in this closeout`
-- Documentation sync outcome: `reviewed, no update needed`
+- Documentation sync outcome: `updated`
 - Residual note: `none`
-- Report surface: `docs/pmo/history/reports/backend-schema-typed-island-pilot.md`
+- Report surface: `docs/pmo/history/reports/backend-type-island-guardrail-v1.md`
 
 ## Next PMO Action
 

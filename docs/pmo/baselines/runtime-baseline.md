@@ -24,9 +24,10 @@ Current transitional type-island truth:
 
 - product mutation schemas and DTO types are authored in `backend/src/routes/schemas/mutations.ts`
 - `npm --prefix backend run build:schema-island` emits checked-in CommonJS artifacts under `backend/src/routes/schemas/__generated__/`
+- `npm --prefix backend run check:schema-island` compares freshly compiled schema-island output with the checked-in generated artifacts and is included in root `npm run check`
 - existing Notes, Projects, and Tasks route modules still consume `backend/src/routes/schemas/mutations.js`
 - `backend/src/routes/schemas/mutations.js` is a stable facade over the generated artifact so route import paths do not churn during migration
-- generated schema-island files are migration scaffolding and should be regenerated after edits to `mutations.ts`
+- generated schema-island files are migration scaffolding and should be regenerated with `npm --prefix backend run build:schema-island` after edits to `mutations.ts`
 - the long-term cleanup target is to remove this facade/generated-source pattern once the backend has an approved whole-TypeScript build/runtime path
 
 ## Auth And Account Runtime

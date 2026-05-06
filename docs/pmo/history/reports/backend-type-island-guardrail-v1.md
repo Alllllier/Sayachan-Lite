@@ -1,0 +1,37 @@
+# Backend Type-Island Guardrail V1
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Backend Type-Island Guardrail V1`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Added backend guardrail command `npm --prefix backend run check:schema-island`.
+  - Added root forwarding command `npm run check:schema-island`.
+  - Wired the schema-island guardrail into root `npm run check`.
+  - Added `backend/scripts/checkSchemaIslandGenerated.js`, which compiles `backend/src/routes/schemas/mutations.ts` into a temporary directory and compares the fresh `mutations.js` and `mutations.d.ts` output with the checked-in files under `backend/src/routes/schemas/__generated__/`.
+  - Updated PMO baseline docs to record the durable rule: after editing `backend/src/routes/schemas/mutations.ts`, regenerate checked-in artifacts with `npm --prefix backend run build:schema-island`, then verify with `npm --prefix backend run check:schema-island` or root `npm run check`.
+  - Existing route imports and public validation responses remain unchanged. No route, facade, runtime schema, generated artifact, API contract, or frontend implementation files were changed as final deliverables.
+  - Out-of-scope confirmation: no new TypeScript island, no route/service/model TypeScript conversion, no backend runtime loader or `dist` runtime change, no Zod behavior change, no API contract change, and no frontend work.
+- Validation summary:
+  - `npm --prefix backend run build:schema-island`: `passed`
+  - `npm --prefix backend run check:schema-island`: `passed`
+  - Stale-artifact proof: temporarily changed `backend/src/routes/schemas/__generated__/mutations.js`, then `npm --prefix backend run check:schema-island` failed as expected with `Schema-island generated artifacts are stale` and named `src/routes/schemas/__generated__/mutations.js`; `npm --prefix backend run build:schema-island` restored the generated artifact afterward.
+  - `npm --prefix backend run typecheck:dto-pilot`: `passed`
+  - `npm run check`: `passed`
+    - This now includes `npm run check:schema-island`, so the schema-island guardrail is part of the ordinary root quality gate.
+  - `npm --prefix backend test -- test/routes.contract-baseline.test.js`: `not run separately`; the handoff only required this if runtime schema files, facade files, or route-adjacent files were changed beyond scripts/docs. Final changes were limited to scripts, package scripts, docs, and the full backend test suite ran through `npm run check`.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states: `n/a`
+  - If skipped, why skipping was acceptable: the sprint only added a backend schema-island generated-artifact check and documentation; no UI, browser behavior, route behavior, or public API surface changed.
+- Unverified areas:
+  - No separate browser/UI review was performed because no frontend or rendered product surface changed.
+  - The guardrail verifies the current schema-island generated artifact pair only: `mutations.js` and `mutations.d.ts`.
+- Residual risks or escalations:
+  - The guardrail catches drift for the current backend schema island, but future schema islands would need to be added explicitly to the check if PMO approves more TypeScript islands.
+  - The generated CommonJS artifact pattern remains transitional migration scaffolding until a whole-backend TypeScript build/runtime path is approved.
+- Documentation-sync outcome: `updated`
+- Follow-up routing:
+  - None for this sprint.
+  - PMO can decide later whether backend DTO typecheck should also join root `npm run check`; this sprint only wired the generated-artifact drift guardrail into the root gate.

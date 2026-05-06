@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Backend Schema Typed Island Pilot`
+- Sprint: `Backend Type-Island Guardrail V1`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/backend-schema-typed-island-pilot.md`
+- Report surface: `docs/pmo/history/reports/backend-type-island-guardrail-v1.md`
 
 ## Next Activation Rule
 

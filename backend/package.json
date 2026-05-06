@@ -10,6 +10,7 @@
     "test": "node --test",
     "typecheck:dto-pilot": "tsc -p tsconfig.dto-pilot.json",
     "build:schema-island": "tsc -p tsconfig.schema-island.json",
+    "check:schema-island": "node scripts/checkSchemaIslandGenerated.js",
     "bootstrap:owner": "node scripts/bootstrapOwner.mjs",
     "normalize:legacy-archived-tasks": "node scripts/normalizeLegacyArchivedTasks.js"
   },
@@ -28,6 +29,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/koa": "^3.0.2",
     "@types/node": "^22.15.0",
     "typescript": "^5.9.3"
   }

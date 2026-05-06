@@ -60,8 +60,9 @@ Current backend type-adoption shape:
 - backend runtime remains plain Node/CommonJS through `node src/server.js`; there is no whole-backend `dist` runtime yet
 - `backend/src/routes/schemas/mutations.ts` is the first focused TypeScript schema/DTO island for product mutation validation
 - `npm --prefix backend run build:schema-island` compiles that island into checked-in CommonJS artifacts under `backend/src/routes/schemas/__generated__/`
+- `npm --prefix backend run check:schema-island` verifies those checked-in generated artifacts are in sync with `mutations.ts`; the root `npm run check` quality gate includes this guardrail
 - `backend/src/routes/schemas/mutations.js` remains the stable CommonJS facade consumed by existing route modules
-- checked-in generated schema-island artifacts are transitional migration scaffolding and should be removed or replaced when a whole-backend TypeScript build/runtime is approved
+- checked-in generated schema-island artifacts are transitional migration scaffolding; regenerate them with `npm --prefix backend run build:schema-island` after editing `mutations.ts`, and remove or replace the pattern when a whole-backend TypeScript build/runtime is approved
 
 ## Public Runtime Surfaces
 
