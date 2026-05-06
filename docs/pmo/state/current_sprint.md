@@ -18,7 +18,7 @@
 - Sprint: `Route Middleware Typing Cleanup`
 - Closeout date: `2026-05-07`
 - Delivery status: `completed and validated`
-- Commit state: `not committed in this closeout`
+- Commit state: `committed after closeout: 4c4a6b2 chore(backend): centralize route middleware types`
 - Documentation sync outcome: `reviewed, no update needed`
 - Residual note: `none`
 - Report surface: `docs/pmo/history/reports/route-middleware-typing-cleanup.md`
