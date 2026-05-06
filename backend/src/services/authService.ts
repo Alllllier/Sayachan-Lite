@@ -13,31 +13,48 @@ const PASSWORD_DIGEST = 'sha256';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14;
 const INVITE_TTL_MS = 1000 * 60 * 60 * 24 * 31;
 
-function statusError(status, message) {
-  const error = new Error(message);
+type StatusError = Error & {
+  status: number;
+};
+
+type DocumentLike = Record<string, any> & {
+  toObject?: () => Record<string, any>;
+};
+
+type AuthCredentials = {
+  email: unknown;
+  password: string;
+};
+
+type RegisterTesterInput = AuthCredentials & {
+  inviteCode: unknown;
+};
+
+function statusError(status: number, message: string): StatusError {
+  const error = new Error(message) as StatusError;
   error.status = status;
   return error;
 }
 
-function normalizeEmail(email) {
+function normalizeEmail(email: unknown): string {
   return String(email || '').trim().toLowerCase();
 }
 
-function validateEmailPassword(email, password) {
+function validateEmailPassword(email: unknown, password: unknown): void {
   if (!normalizeEmail(email) || typeof password !== 'string' || password.length < 8) {
     throw statusError(400, 'Email and password are required');
   }
 }
 
-function hashToken(token) {
+function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
-function hashInviteCode(code) {
+function hashInviteCode(code: unknown): string {
   return hashToken(String(code || '').trim().toUpperCase());
 }
 
-function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
+function hashPassword(password: string, salt: string = crypto.randomBytes(16).toString('hex')) {
   const passwordHash = crypto.pbkdf2Sync(
     password,
     salt,
@@ -49,14 +66,14 @@ function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
   return { passwordHash, passwordSalt: salt };
 }
 
-function verifyPassword(password, user) {
+function verifyPassword(password: string, user: DocumentLike): boolean {
   const { passwordHash } = hashPassword(password, user.passwordSalt);
   const expected = Buffer.from(user.passwordHash, 'hex');
   const actual = Buffer.from(passwordHash, 'hex');
   return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
 }
 
-function publicUser(user) {
+function publicUser(user: DocumentLike | null | undefined) {
   if (!user) {
     return null;
   }
@@ -73,7 +90,7 @@ function publicUser(user) {
   };
 }
 
-function publicInvite(invite) {
+function publicInvite(invite: DocumentLike) {
   const normalized = invite.toObject ? invite.toObject() : { ...invite };
   return {
     _id: normalized._id,
@@ -87,7 +104,7 @@ function publicInvite(invite) {
   };
 }
 
-async function assignLegacyDataToOwner(ownerId) {
+async function assignLegacyDataToOwner(ownerId: unknown): Promise<void> {
   const unsetOwner = { $or: [{ userId: null }, { userId: { $exists: false } }] };
 
   await Promise.all([
@@ -97,7 +114,7 @@ async function assignLegacyDataToOwner(ownerId) {
   ]);
 }
 
-async function bootstrapOwner({ email, password }) {
+async function bootstrapOwner({ email, password }: AuthCredentials) {
   validateEmailPassword(email, password);
 
   const existingOwner = await User.findOne({ role: 'owner' });
@@ -123,7 +140,7 @@ async function bootstrapOwner({ email, password }) {
   return publicUser(owner);
 }
 
-async function createInvite(owner) {
+async function createInvite(owner: DocumentLike) {
   const rawCode = crypto.randomBytes(12).toString('base64url').toUpperCase();
   const invite = await Invite.create({
     codeHash: hashInviteCode(rawCode),
@@ -143,7 +160,7 @@ async function listInvites() {
   return invites.map(publicInvite);
 }
 
-async function revokeInvite(inviteId) {
+async function revokeInvite(inviteId: unknown) {
   const invite = await Invite.findByIdAndUpdate(
     inviteId,
     { revokedAt: new Date() },
@@ -157,7 +174,7 @@ async function revokeInvite(inviteId) {
   return publicInvite(invite);
 }
 
-async function registerTester({ email, password, inviteCode }) {
+async function registerTester({ email, password, inviteCode }: RegisterTesterInput) {
   validateEmailPassword(email, password);
 
   const normalizedInviteCode = String(inviteCode || '').trim();
@@ -189,7 +206,7 @@ async function registerTester({ email, password, inviteCode }) {
   return publicUser(tester);
 }
 
-async function createSessionForUser(user) {
+async function createSessionForUser(user: DocumentLike): Promise<string> {
   const token = crypto.randomBytes(32).toString('base64url');
   await Session.create({
     tokenHash: hashToken(token),
@@ -200,7 +217,7 @@ async function createSessionForUser(user) {
   return token;
 }
 
-async function login({ email, password }) {
+async function login({ email, password }: AuthCredentials) {
   validateEmailPassword(email, password);
 
   const user = await User.findOne({ email: normalizeEmail(email) });
@@ -222,7 +239,7 @@ async function login({ email, password }) {
   };
 }
 
-async function loadUserForSession(sessionToken) {
+async function loadUserForSession(sessionToken: string | null | undefined) {
   if (!sessionToken) {
     return null;
   }
@@ -244,7 +261,7 @@ async function loadUserForSession(sessionToken) {
   return publicUser(user);
 }
 
-async function logout(sessionToken) {
+async function logout(sessionToken: string | null | undefined): Promise<void> {
   if (sessionToken) {
     await Session.findOneAndDelete({ tokenHash: hashToken(sessionToken) });
   }
@@ -255,7 +272,7 @@ async function listTesters() {
   return users.map(publicUser);
 }
 
-async function setTesterDisabled(userId, disabled) {
+async function setTesterDisabled(userId: unknown, disabled: unknown) {
   const update = disabled
     ? { disabled: true, disabledAt: new Date() }
     : { disabled: false, disabledAt: null };
@@ -293,7 +310,7 @@ async function getSystemStatus() {
   };
 }
 
-module.exports = {
+export = {
   SESSION_COOKIE_NAME,
   bootstrapOwner,
   createInvite,

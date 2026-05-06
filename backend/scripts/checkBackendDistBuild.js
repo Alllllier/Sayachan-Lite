@@ -291,6 +291,23 @@ function assertNotesServiceDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertAuthServiceDistArtifactFromTypeScriptSource() {
+  const authServiceDistSource = fs.readFileSync(path.join(distRoot, 'services', 'authService.js'), 'utf8');
+
+  assert(
+    authServiceDistSource.includes('function hashPassword'),
+    'dist authService artifact must preserve password hashing.'
+  );
+  assert(
+    authServiceDistSource.includes('function assignLegacyDataToOwner'),
+    'dist authService artifact must preserve owner bootstrap legacy assignment.'
+  );
+  assert(
+    authServiceDistSource.includes('__test__'),
+    'dist authService artifact must preserve service-level test helpers.'
+  );
+}
+
 function assertCurrentSourceArtifactsWereEmitted() {
   const sourceFiles = walkFiles(srcRoot)
     .filter(filePath => path.extname(filePath) === '.js')
@@ -306,6 +323,7 @@ function assertCurrentSourceArtifactsWereEmitted() {
 const requiredRuntimeEntrypoints = [
   'server.js',
   path.join('middleware', 'requestBodyValidation.js'),
+  path.join('services', 'authService.js'),
   path.join('services', 'notesService.js'),
   path.join('services', 'ownership.js'),
   path.join('services', 'projectsService.js'),
@@ -339,6 +357,7 @@ assertNotesDistArtifactFromTypeScriptSource();
 assertProjectsDistArtifactFromTypeScriptSource();
 assertTasksDistArtifactFromTypeScriptSource();
 assertRequestBodyValidationDistArtifactFromTypeScriptSource();
+assertAuthServiceDistArtifactFromTypeScriptSource();
 assertNotesServiceDistArtifactFromTypeScriptSource();
 assertOwnershipDistArtifactFromTypeScriptSource();
 assertProjectsServiceDistArtifactFromTypeScriptSource();

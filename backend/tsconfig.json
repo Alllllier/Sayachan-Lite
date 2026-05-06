@@ -19,6 +19,7 @@
   "include": [
     "src/**/*.js",
     "src/middleware/requestBodyValidation.ts",
+    "src/services/authService.ts",
     "src/services/notesService.ts",
     "src/services/ownership.ts",
     "src/services/projectsService.ts",
@@ -34,6 +35,7 @@
     "src/routes/projectsRoutes.js",
     "src/routes/tasksRoutes.js",
     "src/middleware/requestBodyValidation.js",
+    "src/services/authService.js",
     "src/services/notesService.js",
     "src/services/ownership.js",
     "src/services/projectsService.js",
