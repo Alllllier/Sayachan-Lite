@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Backend TS Build Boundary Decision Prep V1`
+- Sprint: `Private Core Package Import Boundary V1`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/backend-ts-build-boundary-decision-prep-v1.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/private-core-package-import-boundary-v1.md`
 
 ## Next Use
 

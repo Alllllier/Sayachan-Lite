@@ -1,6 +1,6 @@
 # Backend TS Build Boundary Decision Prep
 
-Status: decision-prep reference
+Status: decision resolved by `Private Core Package Import Boundary V1`
 Last updated: 2026-05-06
 
 ## Why This Exists
@@ -130,6 +130,17 @@ Suggested default answer:
 - keep private core outside backend dist
 - prepare a future package-boundary/monorepo slice
 - continue backend TS migration only where it does not require changing that boundary
+
+## Decision Outcome
+
+Resolved on 2026-05-06:
+
+- keep `backend/private_core/sayachan-ai-core` outside backend dist
+- consume it from backend through the package name `@allier/sayachan-ai-core`
+- represent it as a backend-local file dependency pointing at the existing submodule package
+- reject future regressions back to relative private-core source imports from `backend/src/ai/bridge.js`
+
+Implemented by `Private Core Package Import Boundary V1`.
 
 ## Follow-Up Candidates
 

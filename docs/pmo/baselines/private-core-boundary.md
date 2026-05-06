@@ -16,7 +16,9 @@ It is not a general workflow file and not a Git/submodule mechanism note.
 ## Current Shape
 
 - public bridge: `backend/src/ai/bridge.js`
-- private core location: `backend/private_core/sayachan-ai-core`
+- private core package: `@allier/sayachan-ai-core`
+- private core submodule location: `backend/private_core/sayachan-ai-core`
+- backend dependency: `@allier/sayachan-ai-core` via `file:private_core/sayachan-ai-core`
 - public chat route: `backend/src/routes/ai.js`
 
 ## Public Repo Responsibilities
@@ -41,6 +43,16 @@ The private core currently owns:
 ## Boundary Rule
 
 Treat `backend/src/ai/bridge.js` as the only intended public bridge into the private core.
+
+The bridge should consume the private core by package name:
+
+- `require('@allier/sayachan-ai-core')`
+
+It should not reach into the submodule through a relative source path such as:
+
+- `require('../../private_core/sayachan-ai-core')`
+
+That package import boundary keeps the private core outside the backend dist build while still allowing normal Node package resolution.
 
 Any work that changes one of these should be treated as architecture-sensitive:
 

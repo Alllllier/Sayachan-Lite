@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Backend TS Build Boundary Decision Prep V1`
+- Sprint: `Private Core Package Import Boundary V1`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/backend-ts-build-boundary-decision-prep-v1.md`
+- Report surface: `docs/pmo/history/reports/private-core-package-import-boundary-v1.md`
 
 ## Next Activation Rule
 

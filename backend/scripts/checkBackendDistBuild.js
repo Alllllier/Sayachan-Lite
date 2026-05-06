@@ -89,6 +89,10 @@ function assertPackageRuntimeBoundary() {
   assert(backendPackage.type === 'commonjs', 'backend/package.json must remain "type": "commonjs".');
   assert(backendScripts.start === 'node src/server.js', 'backend start script must remain "node src/server.js".');
   assert(backendScripts.dev === 'node src/server.js', 'backend dev script must remain "node src/server.js".');
+  assert(
+    backendPackage.dependencies?.['@allier/sayachan-ai-core'] === 'file:private_core/sayachan-ai-core',
+    'backend must depend on @allier/sayachan-ai-core through the local private_core package boundary.'
+  );
 
   for (const [scriptName, scriptCommand] of Object.entries(backendScripts)) {
     assert(
@@ -107,6 +111,19 @@ function assertPackageRuntimeBoundary() {
   assert(
     !/\bcheck:backend-build\b|\bbuild:backend\b/.test(rootScripts.check || ''),
     'root npm run check must not include the backend dist dry-run without a human gate.'
+  );
+}
+
+function assertPrivateCorePackageBoundary() {
+  const bridgeSource = fs.readFileSync(path.join(srcRoot, 'ai', 'bridge.js'), 'utf8');
+
+  assert(
+    bridgeSource.includes("require('@allier/sayachan-ai-core')"),
+    'backend AI bridge must import @allier/sayachan-ai-core by package name.'
+  );
+  assert(
+    !bridgeSource.includes('private_core/sayachan-ai-core'),
+    'backend AI bridge must not import private_core by relative source path.'
   );
 }
 
@@ -133,6 +150,7 @@ const requiredRuntimeEntrypoints = [
 ];
 
 assertPackageRuntimeBoundary();
+assertPrivateCorePackageBoundary();
 assertCurrentSourceArtifactsWereEmitted();
 
 for (const artifact of requiredRuntimeEntrypoints) {
