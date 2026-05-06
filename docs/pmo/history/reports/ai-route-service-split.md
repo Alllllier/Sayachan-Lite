@@ -10,9 +10,11 @@
   - Slimmed `backend/src/routes/ai.ts` down to route registration, middleware, validated body reads, user id reads, not-found status mapping, and `ctx.body` assignment.
   - Preserved route `__test__` compatibility by forwarding service helper exports through the route test surface.
   - Updated backend dist boundary checks to require the compiled `services/aiService.js` artifact and to verify that AI routes use the service boundary while the service uses the public AI bridge.
+  - Follow-up patch `3af6ada` removed `passthrough()` from AI chat message schema so unknown message fields are stripped before service/bridge handoff.
 - Validation summary:
   - `npm --prefix backend run test`
   - `npm run check`
+  - Re-ran both after follow-up patch `3af6ada`.
 - Project-specific review summary:
   - Required for this sprint: `no`
   - Performed: `no`
@@ -22,7 +24,7 @@
   - No live external AI provider call was performed; existing backend tests and dist runtime smoke covered local behavior, fallback paths, route contracts, and build/runtime boundaries.
 - Residual risks or escalations:
   - `aiService.ts` is intentionally a single service file for now. If provider, prompt, or runtimeControls logic grows independently, a later `services/ai/` decomposition may become useful.
-  - RuntimeControls semantics remain unchanged and still shallow-validated from the prior sprint.
+  - RuntimeControls semantics remain unchanged and still shallow-validated from the prior sprint; this is now routed into the next candidate.
 - Documentation-sync outcome: `reviewed, no update needed`
 - Follow-up routing:
   - No blocking escalation.

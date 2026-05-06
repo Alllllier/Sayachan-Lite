@@ -18,9 +18,9 @@
 - Sprint: `AI Route Service Split`
 - Closeout date: `2026-05-07`
 - Delivery status: `completed and validated`
-- Commit state: `committed through 84ac639`
+- Commit state: `committed through 3af6ada`
 - Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `aiService intentionally remains a single file; future decomposition parked if it grows too dense`
+- Residual note: `aiService intentionally remains a single file; follow-up 3af6ada stripped unknown AI chat message fields; future decomposition parked if it grows too dense`
 - Report surface: `docs/pmo/history/reports/ai-route-service-split.md`
 
 ## Next PMO Action
