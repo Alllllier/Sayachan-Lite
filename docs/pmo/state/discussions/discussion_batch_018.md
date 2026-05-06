@@ -65,21 +65,50 @@
 
 - Name: `Type-Aware JavaScript Baseline`
 - Why separate: `TypeScript can add value before file migration by using allowJs/checkJs/noEmit and JSDoc/type annotations around high-risk boundaries. This keeps JavaScript-first execution while adding type feedback.`
-- Current maturity: `emerging`
+- Current maturity: `promoted`
 - Likely target: `sprint_candidates | idea_backlog`
 - Parking trigger: `Park until root validation commands and linting are stable enough that type errors do not become a noisy second gate.`
 - Reopen signal: `Quality Gate V1 lands, API/service payload bugs appear, or the human wants a TypeScript migration audit.`
 - Source input after audit: `docs/pmo/state/typescript_target_architecture_mapping.md` and `docs/pmo/state/typescript_target_architecture_mapping.zh.md`
 - Construction note: `Do not shape this as full TypeScript migration. If promoted, it should start as a bounded implementation slice that adds type feedback or typed boundary scaffolding around a small, high-signal area identified by the target architecture mapping.`
+- Proposed pilot: `Type-Aware JS Pilot: Shared Task Boundary`
+- Why shared task service first: `frontend/src/services/tasks/ already has a clean API/rules/runtime split, is imported by Notes/Projects/Dashboard through the approved package entrypoint, and has focused tests for payload construction, normalization, API calls, and active snapshot behavior. It is cross-feature enough to prove type feedback value, but smaller and less architecture-sensitive than chat/AI or auth.`
+- Initial target files: `frontend/src/services/tasks/task.rules.js`, `frontend/src/services/tasks/task.api.js`, `frontend/src/services/tasks/task.runtime.js`, `frontend/src/services/tasks/index.js`, and their colocated tests as validation context.`
+- Proposed implementation shape: `Add a low-noise TypeScript check path scoped to the shared task service, likely through a dedicated tsconfig or equivalent include list. Prefer JSDoc typedefs and checkJs/noEmit for the pilot rather than renaming files to .ts. Keep root npm run check stable; add typecheck as an explicit pilot command unless PMO later decides it is quiet enough for the default gate.`
+- Candidate boundary: `No full-repo checkJs, no .ts migration, no workspace/shared package migration, no runtime schema library, no behavior changes, and no deletion of current task service scaffolding during the pilot.`
+- Success signal: `The pilot should prove whether type feedback can express Task payload/status/provenance/archived/completed contracts with low noise, while preserving the current task service tests and runtime behavior.`
+- Continuity rule: `slice-002 owns only the first type-aware JS pilot. Repository-wide TypeScript migration, checkJs expansion, typed-island conversion, runtime schema adoption, and shared contract/package design must be shaped as separate future PMO slices.`
+- Closeout routing requirement: `When the pilot closes, PMO must not leave follow-up only inside the execution report. It should route the next recommended step into sprint_candidates.md, idea_backlog.md, or decision_log.md, even if the decision is to pause TypeScript expansion.`
+- Promoted candidate: `docs/pmo/state/sprint_candidates.md#type-aware-js-pilot-shared-task-boundary`
+- Follow-up from execution: `The task-service pilot passed but used noResolve plus a local Vue ref shim to stay scoped. PMO routed the next step as Type-Aware JS Pilot Phase 2: Shared Frontend Support Boundary, focused on deciding whether apiClient and minimal shared Vue/support typing should become a reusable typed support layer before expanding more feature boundaries.`
+- Phase 2 readiness note: `Human accepted the candidate direction on 2026-05-05. PMO narrowed the ready boundary to apiClient plus minimal Vue/ref support typing only. If the import graph starts pulling in broader frontend modules, the worker should stop and report rather than expanding checkJs scope.`
 
 ### `slice-003`
 
 - Name: `Runtime Schema And API Contract Guardrails`
 - Why separate: `Runtime validation protects real API/AI/account-boundary inputs where TypeScript alone cannot prove safety. Good candidates include auth payloads, task/note/project mutations, AI route payloads, and frontend API response normalization.`
-- Current maturity: `emerging`
+- Current maturity: `completed with follow-up`
 - Likely target: `idea_backlog | sprint_candidates`
 - Parking trigger: `Park if no concrete payload defect or route-boundary churn exists after root gates are stable.`
 - Reopen signal: `New account-owned models, persisted chat/settings/runtime preferences, or API payload drift across frontend/backend.`
+- Human preference: `Prefer introducing Zod rather than building another hand-written validator layer if the runtime schema boundary is likely to become durable. The concern is that hand-written validators may create a temporary architecture that later needs to be migrated again.`
+- PMO shaping note: `A first runtime-schema pilot should still be bounded. The likely first candidate is a task mutation schema pilot that introduces Zod only at a narrow backend request boundary, preserves current error response behavior, and reports whether the pattern should expand to Notes, Projects, Auth, AI payloads, frontend response normalization, or localStorage snapshots.`
+- Promoted candidate: `docs/pmo/state/sprint_candidates.md#task-mutation-zod-schema-pilot`
+- Completed pilot: `docs/pmo/history/reports/task-mutation-zod-schema-pilot.md`
+- Closeout readback: `Task create/update request validation now uses a narrow Zod-backed schema boundary while preserving public 400 error responses, unknown-field compatibility, and task lifecycle semantics. The follow-up Validation Error Shape V1 also completed, keeping BadRequestError as the single public 400 validation error type while letting Zod-backed validation carry internal code/source/details through the inlined assertZodSchema mapping.`
+- Completed follow-up: `docs/pmo/history/reports/validation-error-shape-v1.md`
+- Target placement direction: `If runtime schema adoption continues beyond a couple of route-body boundaries, the likely durable shape is routes/schemas/*.js or an equivalent route-owned schema folder. Do not split files yet just to satisfy a future shape; first migrate the next low-risk boundary and let real file pressure justify the extraction.`
+- Next small-step candidate direction: `Promote Notes/Projects Mutation Zod Boundary before Auth/AI. This tests the schema pattern on ordinary product CRUD payloads while avoiding account/security and AI-contract complexity.`
+- Completed product-boundary expansion: `docs/pmo/history/reports/notes-projects-mutation-zod-boundary.md`
+- Schema placement trigger: `After the Notes/Projects expansion, requestValidation.js now carries task, note, and project Zod schemas plus shared validation behavior. PMO should promote route schema placement before Auth/AI payload migration so runtime-schema adoption continues from a cleaner boundary.`
+- Middleware placement direction: `Route Schema Placement V1 should prefer backend/src/middleware/requestBodyValidation.js for Koa middleware concerns and backend/src/routes/schemas/mutations.js for product mutation schemas. requestValidation.js can retire rather than remain as a middleman, while routes should stay thin by declaring validateBody(schema) before handlers.`
+- Parsed body long-term note: `Long-term, schema validation should likely move from validate-only to a trusted parsed-body boundary, preferably by writing parsed data to ctx.state.validatedBody rather than silently overwriting ctx.request.body. This should not be included in Route Schema Placement V1. It needs a later Parsed Body Boundary Decision/Pilot to decide passthrough vs strip, trim/default/coerce ownership, and whether services should accept validated DTOs.`
+- Completed schema placement: `docs/pmo/history/reports/route-schema-placement-v1.md`
+- Placement closeout readback: `Route Schema Placement V1 moved request-body validation runtime into backend/src/middleware/requestBodyValidation.js, moved task/note/project mutation schemas into backend/src/routes/schemas/mutations.js, deleted backend/src/routes/requestValidation.js, and kept validateBody(schema) validate-only with no parsed-body assignment.`
+- Parsed-body pilot closeout: `docs/pmo/history/reports/parsed-body-pilot-notes-boundary.md`
+- Parsed-body closeout readback: `validateBody now writes successful Zod parse results to ctx.state.validatedBody while preserving ctx.request.body as raw input. Notes create/update consumed the parsed DTO first; the follow-up Projects/Tasks rollout then moved product mutation routes onto the same trusted DTO boundary. Public 400 responses and schema semantics remain unchanged.`
+- Completed parsed-body rollout: `docs/pmo/history/reports/parsed-body-rollout-projects-and-tasks.md`
+- Next routing choice: `Runtime-schema adoption should now either move to Auth payloads, open a separate AI payload discussion, make a strip/trim/default/coerce decision, or pause so the current product mutation boundary can settle.`
 
 ### `slice-004`
 
@@ -154,13 +183,31 @@
 - A stronger planning route is to define the TypeScript-era target architecture first, then map the current JavaScript repo into it by responsibility. This makes migration a structured fill-in exercise and identifies delete/merge candidates without making every current file feel like a special case.
 - Package workspace tooling should be delayed until root command consolidation proves insufficient or a real shared package/contract need appears.
 - Runtime schema guardrails may be as important as TypeScript for account/API/AI boundaries because they protect live inputs.
+- The runtime-schema placement is now `backend/src/middleware/requestBodyValidation.js` plus `backend/src/routes/schemas/mutations.js` for product mutation schemas. Product mutation routes now use `ctx.state.validatedBody` as the parsed DTO boundary while preserving raw `ctx.request.body`; Auth/AI migration, strip/trim/default/coerce semantics, and broader payload validation remain separate decisions.
 
 ## Promotion Outcome
 
 - `slice-001` was promoted to `docs/pmo/state/sprint_candidates.md` as `Engineering Quality Gate V1`, executed, validated through root `npm run check`, and accepted for closeout.
 - Completed quality-gate report: `docs/pmo/history/reports/engineering-quality-gate-v1.md`
+- `slice-002` has been promoted to `docs/pmo/state/sprint_candidates.md` as `Type-Aware JS Pilot: Shared Task Boundary`.
+- Follow-up candidate created from slice-002 execution: `Type-Aware JS Pilot Phase 2: Shared Frontend Support Boundary`.
 - `slice-008` was promoted to `docs/pmo/state/sprint_candidates.md` as `TypeScript Target Architecture Mapping`, executed, and accepted for closeout.
 - Completed audit artifact: `docs/pmo/state/typescript_target_architecture_mapping.md`
 - Completed Chinese companion: `docs/pmo/state/typescript_target_architecture_mapping.zh.md`
-- `slice-002` is now the main discussion home for a future concrete TypeScript construction slice, using the completed mapping as its source input.
-- `slice-003` through `slice-007` remain discussion-shaped follow-ons until Quality Gate V1, target architecture mapping, or a concrete architecture pressure makes them execution-ready.
+- `slice-003` was promoted to `docs/pmo/state/sprint_candidates.md` as `Task Mutation Zod Schema Pilot`, executed, validated through focused backend tests, full backend tests, and root `npm run check`, and accepted for closeout.
+- Completed runtime-schema pilot report: `docs/pmo/history/reports/task-mutation-zod-schema-pilot.md`
+- Follow-up candidate created from slice-003 execution: `Validation Error Shape V1`, executed, validated through focused backend tests, full backend tests, and root `npm run check`, and accepted for closeout.
+- Completed validation-error report: `docs/pmo/history/reports/validation-error-shape-v1.md`
+- Follow-up candidate shaped from slice-003 direction: `Notes/Projects Mutation Zod Boundary`.
+- Notes/Projects candidate executed, validated through focused backend tests, full backend tests, and root `npm run check`, and accepted for closeout.
+- Completed Notes/Projects runtime-schema report: `docs/pmo/history/reports/notes-projects-mutation-zod-boundary.md`
+- Follow-up candidate created from Notes/Projects execution: `Route Schema Placement V1`.
+- Route Schema Placement V1 executed, validated through focused backend tests, full backend tests, and root `npm run check`, and accepted for closeout.
+- Completed route schema placement report: `docs/pmo/history/reports/route-schema-placement-v1.md`
+- Follow-up candidate created from Route Schema Placement V1: `Parsed Body Boundary Decision`.
+- Parsed Body Pilot: Notes Boundary executed, validated through focused backend tests, full backend tests, and root `npm run check`, and accepted for closeout.
+- Completed parsed-body pilot report: `docs/pmo/history/reports/parsed-body-pilot-notes-boundary.md`
+- Follow-up candidate created from parsed-body pilot: `Parsed Body Rollout: Projects And Tasks`.
+- Parsed Body Rollout: Projects And Tasks executed, validated through focused backend tests, full backend tests, and root `npm run check`, and accepted for closeout.
+- Completed parsed-body rollout report: `docs/pmo/history/reports/parsed-body-rollout-projects-and-tasks.md`
+- `slice-004` through `slice-007` remain discussion-shaped follow-ons until Quality Gate V1, target architecture mapping, or a concrete architecture pressure makes them execution-ready.

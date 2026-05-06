@@ -1,0 +1,32 @@
+# Notes Projects Mutation Zod Boundary
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Notes Projects Mutation Zod Boundary`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Migrated Notes create/update and Projects create/update request-body validation to Zod inside `backend/src/routes/requestValidation.js`.
+  - Kept validation inside the current request validation surface; no `routes/schemas/*.js` files were created.
+  - Preserved public invalid-body response behavior through the existing `assertZodSchema` and `BadRequestError` path.
+  - Preserved task validation from the completed Zod pilot.
+  - Preserved unknown-field compatibility for valid Notes/Projects mutation bodies by using passthrough Zod object schemas while still requiring at least one known update field.
+  - Added focused route contract coverage for Notes/Projects invalid and valid mutation payloads in `backend/test/routes.contract-baseline.test.js`, including non-object bodies, missing required fields, blank required strings, invalid status, invalid `currentFocusTaskId`, empty update payloads, and unknown-field compatibility.
+- Validation summary:
+  - `npm --prefix backend test -- test/routes.contract-baseline.test.js` -> passed, 12 tests passed.
+  - `npm --prefix backend test` -> passed, 39 tests passed.
+  - `npm run check` -> passed: frontend lint, backend lint, frontend tests, backend tests, and frontend build all completed successfully.
+  - Public response-shape confirmation: invalid Notes/Projects mutation payloads are covered by route tests asserting status `400` and body `{ error: 'Invalid request body' }`.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states: `n/a`
+  - If skipped, why skipping was acceptable: backend-only request validation migration with no frontend, interaction, rendering, or browser-facing UI behavior changes.
+- Unverified areas:
+  - No browser/UI review was performed because it was not expected for this backend-only validation migration.
+  - No live database or manual API smoke test was performed beyond the automated route contract and backend suites.
+- Residual risks or escalations:
+  - `backend/src/routes/requestValidation.js` is now crowded with task, note, and project schemas plus shared helper behavior. It is still acceptable for this sprint boundary, but the next schema expansion should probably promote schema placement instead of continuing to grow this file.
+- Documentation-sync outcome: `update required and completed`
+- Follow-up routing:
+  - Recommended next runtime-schema step: promote schema placement before migrating Auth payloads. A future sprint should create the approved schema organization first, then continue runtime-schema adoption from that cleaner boundary.
+  - No escalation was needed during implementation.

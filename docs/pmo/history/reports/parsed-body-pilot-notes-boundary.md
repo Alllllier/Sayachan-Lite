@@ -1,0 +1,33 @@
+# Parsed Body Pilot: Notes Boundary
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Parsed Body Pilot: Notes Boundary`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Updated `validateBody(schema)` so successful `safeParse` results are stored as `ctx.state.validatedBody` before route handlers run.
+  - Preserved `ctx.request.body` as the original raw request body; it is not overwritten or mutated by the validation middleware.
+  - Updated only Notes create/update handlers to pass `ctx.state.validatedBody` to `notesService.createNote` and `notesService.updateNote`.
+  - Confirmed Projects and Tasks create/update handlers still pass `ctx.request.body` to their services.
+  - Kept mutation schemas behavior-compatible: passthrough unknown fields, existing non-empty checks only, no strip, trim transform, defaults, coerce, or schema semantic changes.
+  - Added a focused backend route contract test proving Notes services receive the parsed DTO from `ctx.state.validatedBody`, raw request bodies remain untouched, Projects/Tasks still use raw request bodies, and existing valid/invalid Notes behavior remains compatible.
+  - Public invalid-body response shape remains status `400` with `{ error: 'Invalid request body' }`.
+- Validation summary:
+  - `npm --prefix backend test -- test/routes.contract-baseline.test.js` -> passed, 13 tests passed.
+  - `npm --prefix backend test` -> passed, 40 tests passed.
+  - `npm run check` -> passed. This ran frontend lint/tests, backend lint/tests, and frontend build successfully. Vite emitted the existing large chunk warning during build; it did not fail the check.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states: `n/a`
+  - If skipped, why skipping was acceptable: backend-only route DTO boundary pilot with no frontend-facing behavior change.
+- Unverified areas:
+  - No browser/UI review was performed because this sprint did not touch frontend behavior.
+  - No live HTTP server/manual API exercise was performed; route contract tests exercised the Koa route stack and middleware directly.
+- Residual risks or escalations:
+  - `ctx.state.validatedBody` is now available for all routes using `validateBody`, but only Notes consumes it in this sprint by design.
+  - Projects/Tasks parsed-body rollout should still be handled as a separate PMO-approved slice so service-boundary behavior can be verified explicitly per route.
+- Documentation-sync outcome: `update required and completed`
+- Follow-up routing:
+  - No blockers or architecture escalations remain for this sprint.
+  - Recommendation: Projects/Tasks parsed-body rollout is ready as the next candidate step because middleware behavior is validated and the Notes pilot passed focused and full quality gates. Keep the rollout incremental and route-contract tested.

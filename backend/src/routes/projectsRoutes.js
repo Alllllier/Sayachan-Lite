@@ -1,10 +1,11 @@
 const Router = require('@koa/router');
 const projectsService = require('../services/projectsService');
 const { requireCurrentUser } = require('../middleware/currentUser');
+const { validateBody } = require('../middleware/requestBodyValidation');
 const {
-  validateProjectCreate,
-  validateProjectUpdate
-} = require('./requestValidation');
+  projectCreateSchema,
+  projectUpdateSchema
+} = require('./schemas/mutations');
 
 const router = new Router();
 
@@ -15,18 +16,16 @@ router.get('/projects', requireCurrentUser, async (ctx) => {
 });
 
 // POST /projects
-router.post('/projects', requireCurrentUser, async (ctx) => {
-  const body = ctx.request.body;
-  validateProjectCreate(body);
+router.post('/projects', requireCurrentUser, validateBody(projectCreateSchema), async (ctx) => {
+  const body = ctx.state.validatedBody;
   ctx.status = 201;
   ctx.body = await projectsService.createProject(body, { userId: ctx.state.userId });
 });
 
 // PUT /projects/:id
-router.put('/projects/:id', requireCurrentUser, async (ctx) => {
+router.put('/projects/:id', requireCurrentUser, validateBody(projectUpdateSchema), async (ctx) => {
   const id = ctx.params.id;
-  const body = ctx.request.body;
-  validateProjectUpdate(body);
+  const body = ctx.state.validatedBody;
   const project = await projectsService.updateProject(id, body, { userId: ctx.state.userId });
   if (!project) {
     ctx.status = 404;

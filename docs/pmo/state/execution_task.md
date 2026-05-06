@@ -2,7 +2,7 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-05-05`
+- Last updated: `2026-05-06`
 
 ## Current State
 
@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Engineering Quality Gate V1`
+- Sprint: `Parsed Body Rollout: Projects And Tasks`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/engineering-quality-gate-v1.md`
+- Report surface: `docs/pmo/history/reports/parsed-body-rollout-projects-and-tasks.md`
 
 ## Next Activation Rule
 

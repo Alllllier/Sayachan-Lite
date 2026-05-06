@@ -2,7 +2,7 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-05-05`
+- Last updated: `2026-05-06`
 
 ## Current State
 
@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Engineering Quality Gate V1`
+- Sprint: `Parsed Body Rollout: Projects And Tasks`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/engineering-quality-gate-v1.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/parsed-body-rollout-projects-and-tasks.md`
 
 ## Next Use
 

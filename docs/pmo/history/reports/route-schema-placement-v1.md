@@ -1,0 +1,37 @@
+# Route Schema Placement V1
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Route Schema Placement V1`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Moved request-body validation runtime into `backend/src/middleware/requestBodyValidation.js`.
+  - Added `BadRequestError`, `assertZodSchema`, and `validateBody(schema)` middleware in the new middleware module.
+  - Moved current task/note/project mutation Zod schemas into `backend/src/routes/schemas/mutations.js`.
+  - Updated notes, projects, and tasks mutation routes to use `validateBody(schema)` before existing handlers.
+  - Preserved route handlers passing the original `ctx.request.body` to existing services.
+  - Updated focused route contract tests to import `BadRequestError`/`assertZodSchema` from the middleware module and task schemas from the schemas module.
+  - Deleted `backend/src/routes/requestValidation.js`; reference sweep found no remaining imports.
+  - Confirmed public invalid request body response shape remains status `400` with `{ error: 'Invalid request body' }` through focused route contract assertions.
+- Validation summary:
+  - `npm --prefix backend test -- test/routes.contract-baseline.test.js`: passed, 12 tests.
+  - `npm --prefix backend test`: passed, 39 tests.
+  - `npm run check`: passed.
+  - `npm run check` included frontend lint, backend lint, frontend tests, backend tests, and frontend production build.
+  - Build completed with the existing Vite large chunk warning only.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states:
+  - If skipped, why skipping was acceptable: backend-only route validation placement refactor; no frontend or interaction behavior was changed.
+- Unverified areas:
+  - No browser/UI review was performed.
+  - No live server or database-backed manual API smoke test was performed.
+- Residual risks or escalations:
+  - Zod schemas remain scoped to existing task/note/project mutation bodies only; Auth and AI payloads remain on their existing validation paths.
+  - Future parsed-body work still needs an explicit boundary decision before assigning parsed data to request or state.
+- Documentation-sync outcome: `update required and completed`
+- Follow-up routing:
+  - No sprint-blocking escalation remains.
+  - Recommended next runtime-schema step: run a parsed-body boundary decision/pilot before broadening middleware behavior, because this sprint intentionally validates only and does not assign parsed data.
+  - After that decision, PMO can choose whether to migrate Auth payloads next; AI payload validation should remain a separate discussion because it crosses the AI route/public-private-core boundary.

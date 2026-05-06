@@ -1,10 +1,11 @@
 const Router = require('@koa/router');
 const notesService = require('../services/notesService');
 const { requireCurrentUser } = require('../middleware/currentUser');
+const { validateBody } = require('../middleware/requestBodyValidation');
 const {
-  validateNoteCreate,
-  validateNoteUpdate
-} = require('./requestValidation');
+  noteCreateSchema,
+  noteUpdateSchema
+} = require('./schemas/mutations');
 
 const router = new Router();
 
@@ -15,18 +16,16 @@ router.get('/notes', requireCurrentUser, async (ctx) => {
 });
 
 // POST /notes
-router.post('/notes', requireCurrentUser, async (ctx) => {
-  const body = ctx.request.body;
-  validateNoteCreate(body);
+router.post('/notes', requireCurrentUser, validateBody(noteCreateSchema), async (ctx) => {
+  const body = ctx.state.validatedBody;
   ctx.status = 201;
   ctx.body = await notesService.createNote(body, { userId: ctx.state.userId });
 });
 
 // PUT /notes/:id
-router.put('/notes/:id', requireCurrentUser, async (ctx) => {
+router.put('/notes/:id', requireCurrentUser, validateBody(noteUpdateSchema), async (ctx) => {
   const id = ctx.params.id;
-  const body = ctx.request.body;
-  validateNoteUpdate(body);
+  const body = ctx.state.validatedBody;
   const note = await notesService.updateNote(id, body, { userId: ctx.state.userId });
   if (!note) {
     ctx.status = 404;

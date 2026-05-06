@@ -154,6 +154,7 @@ Sessions back the httpOnly `sayachan_session` cookie and the frontend bearer-tok
 
 - JSON error normalization is handled by the app-level backend error middleware before parser, auth, and route dispatch
 - malformed or invalid `POST` / `PUT` bodies on Notes, Projects, and Tasks return `400` with `{ error: 'Invalid request body' }`
+- Notes, Projects, and Tasks create/update routes validate request bodies through route-owned Zod schemas and pass the parsed DTO from `ctx.state.validatedBody` into services while leaving raw `ctx.request.body` unchanged
 - existing missing-id route errors remain resource-specific `404` payloads such as `{ error: 'Note not found' }`, `{ error: 'Project not found' }`, and `{ error: 'Task not found' }`
 - unexpected non-AI route/service failures return `500` with `{ error: 'Internal server error' }` and do not expose raw internal error messages in the response body
 

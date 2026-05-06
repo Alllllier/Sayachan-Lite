@@ -5,7 +5,7 @@
 - PMO owner: `Codex`
 - Architecture owner: `Human`
 - Execution owner: `execution worker`
-- Last updated: `2026-05-05`
+- Last updated: `2026-05-06`
 
 ## Current State
 
@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Engineering Quality Gate V1`
-- Closeout date: `2026-05-05`
+- Sprint: `Parsed Body Rollout: Projects And Tasks`
+- Closeout date: `2026-05-06`
 - Delivery status: `completed and validated`
 - Commit state: `not committed in this closeout`
-- Documentation sync outcome: `update required and completed`
-- Residual note: `Root npm run check now aggregates low-noise lint, frontend tests, backend tests, and frontend build. Minimal GitHub Actions CI runs the same root gate, frontend/backend package-local lint scripts delegate to the root config, worker-facing validation docs now point ordinary validation to npm run check, and README Node.js prerequisites are aligned with the CI Node 22 baseline. UI review remains an explicit separate path. Remote GitHub Actions execution and stricter future gates remain outside this closeout.`
-- Report surface: `docs/pmo/history/reports/engineering-quality-gate-v1.md`
+- Documentation sync outcome: `reviewed, no update needed`
+- Residual note: `none`
+- Report surface: `docs/pmo/history/reports/parsed-body-rollout-projects-and-tasks.md`
 
 ## Next PMO Action
 

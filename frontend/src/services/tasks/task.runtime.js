@@ -2,9 +2,20 @@ import { ref } from 'vue'
 
 import { createTask, fetchTaskList } from './task.api.js'
 
+/** @typedef {{ value: import('./task.rules.js').TaskApiTask[] }} RuntimeTaskListRef */
+/** @typedef {import('./task.rules.js').TaskApiTask} RuntimeTask */
+/** @typedef {import('./task.rules.js').NormalizedTask} RuntimeNormalizedTask */
+
+/** @type {RuntimeTaskListRef} */
 export const tasksRef = ref([])
+
+/** @type {RuntimeTaskListRef} */
 export const activeTasksSnapshotRef = ref([])
 
+/**
+ * @param {boolean} [archived]
+ * @returns {Promise<RuntimeTask[]>}
+ */
 export async function fetchTasks(archived = false) {
   try {
     const tasks = await fetchTaskList({ archived })
@@ -19,6 +30,13 @@ export async function fetchTasks(archived = false) {
   }
 }
 
+/**
+ * @param {string} title
+ * @param {string} creationMode
+ * @param {string} [originModule]
+ * @param {string | null} [originId]
+ * @returns {Promise<RuntimeNormalizedTask | null>}
+ */
 export async function saveTask(title, creationMode, originModule = '', originId = null) {
   try {
     const newTask = await createTask(
@@ -40,6 +58,10 @@ export async function saveTask(title, creationMode, originModule = '', originId 
   }
 }
 
+/**
+ * @param {RuntimeTask | null | undefined} task
+ * @returns {void}
+ */
 export function syncTaskIntoActiveSnapshot(task) {
   if (!task?._id) return
 
@@ -61,6 +83,10 @@ export function syncTaskIntoActiveSnapshot(task) {
   activeTasksSnapshotRef.value = nextTasks
 }
 
+/**
+ * @param {string} taskId
+ * @returns {void}
+ */
 export function removeTaskFromActiveSnapshot(taskId) {
   activeTasksSnapshotRef.value = activeTasksSnapshotRef.value.filter(
     task => task?._id !== taskId

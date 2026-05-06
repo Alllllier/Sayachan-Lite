@@ -2,6 +2,7 @@ const Router = require('@koa/router');
 const Task = require('../models/Task');
 const tasksService = require('../services/tasksService');
 const { requireCurrentUser } = require('../middleware/currentUser');
+const { validateBody } = require('../middleware/requestBodyValidation');
 const {
   archiveTasks,
   buildArchiveFilter,
@@ -9,9 +10,9 @@ const {
   restoreTasks
 } = require('../services/taskRuntimeHelpers');
 const {
-  validateTaskCreate,
-  validateTaskUpdate
-} = require('./requestValidation');
+  taskCreateSchema,
+  taskUpdateSchema
+} = require('./schemas/mutations');
 
 const router = new Router();
 
@@ -22,18 +23,16 @@ router.get('/tasks', requireCurrentUser, async (ctx) => {
 });
 
 // POST /tasks
-router.post('/tasks', requireCurrentUser, async (ctx) => {
-  const body = ctx.request.body;
-  validateTaskCreate(body);
+router.post('/tasks', requireCurrentUser, validateBody(taskCreateSchema), async (ctx) => {
+  const body = ctx.state.validatedBody;
   ctx.status = 201;
   ctx.body = await tasksService.createTask(body, { userId: ctx.state.userId });
 });
 
 // PUT /tasks/:id
-router.put('/tasks/:id', requireCurrentUser, async (ctx) => {
+router.put('/tasks/:id', requireCurrentUser, validateBody(taskUpdateSchema), async (ctx) => {
   const id = ctx.params.id;
-  const body = ctx.request.body;
-  validateTaskUpdate(body);
+  const body = ctx.state.validatedBody;
   const task = await tasksService.updateTask(id, body, { userId: ctx.state.userId });
   if (!task) {
     ctx.status = 404;

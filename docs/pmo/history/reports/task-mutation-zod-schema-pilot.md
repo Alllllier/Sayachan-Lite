@@ -1,0 +1,30 @@
+# Task Mutation Zod Schema Pilot
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Task Mutation Zod Schema Pilot`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Added `zod` as a backend runtime dependency only.
+  - Replaced task create/update request-body validation in `backend/src/routes/requestValidation.js` with narrow Zod schemas.
+  - Kept Notes, Projects, Auth, AI, and all non-task validators on the existing handwritten validation path.
+  - Preserved task create contract: body must be an object, `title` must be a non-empty string after trim, `creationMode` may be `ai` or `manual`, and `originModule` may be a string.
+  - Preserved task update contract: body must be an object and include at least one of `status`, `archived`, or `completed`; `status` may be `active` or `completed`; `archived` and `completed` must be booleans.
+  - Used `.passthrough()` on the task Zod schemas so unknown extra fields continue to follow the current effective route-validation behavior.
+  - Added focused backend route contract coverage for valid and invalid task mutation bodies, including non-object body, missing/blank title, invalid enum values, invalid booleans, empty update payload, and unknown-field compatibility.
+- Validation summary:
+  - `npm --prefix backend test -- test/routes.contract-baseline.test.js` - passed, 9 tests.
+  - `npm --prefix backend test` - passed, 36 tests.
+  - `npm run check` - passed. This ran frontend lint, backend lint, frontend tests, backend tests, and frontend build.
+- Project-specific review summary:
+  - Browser/UI review was not performed because this was a backend-only request-validation pilot with no frontend edits.
+  - No PMO sharpening slots were revised; the handoff constraints were followed as written.
+- Unverified areas:
+  - No live HTTP server or browser-level manual route exercise was performed.
+  - No production-like MongoDB persistence check was performed; route tests patch model methods and existing backend tests cover behavior contracts.
+- Residual risks or escalations:
+  - Zod looks suitable to expand cautiously to the next runtime-schema boundary, preferably behind a small shared helper that centralizes `safeParse` to `BadRequestError` mapping before broader adoption.
+  - No escalation is needed for this slice.
+- Documentation-sync outcome: `update required and completed`
+- Follow-up routing:
+  - PMO should record a follow-up candidate for `Validation Error Shape V1`: keep the public 400 response stable while making the internal `BadRequestError` shape carry code/source/details for Zod-backed validation.

@@ -1,0 +1,33 @@
+# Parsed Body Rollout: Projects And Tasks
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Parsed Body Rollout: Projects And Tasks`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Updated Projects create and update routes to pass `ctx.state.validatedBody` into `projectsService.createProject` and `projectsService.updateProject`.
+  - Updated Tasks create and update routes to pass `ctx.state.validatedBody` into `tasksService.createTask` and `tasksService.updateTask`.
+  - Updated focused route contract coverage to prove Notes, Projects, and Tasks mutation services receive parsed DTO objects while `ctx.request.body` remains the original raw transport body.
+  - Preserved the existing public validation response shape `{ error: 'Invalid request body' }`.
+  - Preserved schema semantics: no strip, trim, default, or coerce changes were made.
+  - Preserved explicit non-goals: no Auth/AI payload migration, no frontend changes, no TypeScript migration, no workspace or tooling changes, and no service/model/archive/focus/ownership/lifecycle refactor.
+- Validation summary:
+  - `npm --prefix backend test -- test/routes.contract-baseline.test.js` passed.
+  - `npm --prefix backend test` passed.
+  - `npm run check` passed.
+  - Focused contract coverage confirmed Projects/Tasks valid mutation routes consume parsed DTOs and raw request bodies remain unmutated.
+  - Focused and broader backend route coverage confirmed public 400 validation responses remain `{ error: 'Invalid request body' }`.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states: `n/a`
+  - If skipped, why skipping was acceptable: route payload handoff and backend contract-test-only change; no frontend or rendered UI behavior changed.
+- Unverified areas:
+  - No browser validation or UI review was performed because the sprint did not change frontend interaction, rendering, or presentation.
+  - No live database/manual API smoke test was performed; validation used route contract tests, full backend tests, and the root quality gate.
+- Residual risks or escalations:
+  - Low residual risk: this rollout changes only which already-validated route DTO object is passed to Projects/Tasks services. Contract tests now cover object identity, passthrough compatibility, raw-body preservation, and public 400 shape.
+  - Existing Vite production build warning about chunks larger than 500 kB appeared during `npm run check`; it did not fail validation and is unrelated to this backend route slice.
+- Documentation-sync outcome: `reviewed, no update needed`
+- Follow-up routing:
+  - None for this sprint.

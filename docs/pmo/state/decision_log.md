@@ -24,6 +24,24 @@
 
 ## Recorded Decisions
 
+### `Runtime schema errors keep public responses stable while internal shape improves`
+
+- Date: `2026-05-06`
+- Type: `transition-rule`
+- Scope: `backend runtime validation, Zod adoption, BadRequestError, and public API error responses`
+- Decision: `Runtime schema adoption should preserve the current public validation response shape by default, especially { error: 'Invalid request body' } for 400 request-body failures. Zod-backed validation may carry internal BadRequestError code/source/details, but those details must not be exposed to frontend/API clients unless a separate product/API decision explicitly selects that behavior. Current route-body validation uses backend/src/middleware/requestBodyValidation.js for BadRequestError/assertZodSchema/validateBody and backend/src/routes/schemas/mutations.js for task/note/project mutation schemas. validateBody writes parsed data to ctx.state.validatedBody and must not overwrite ctx.request.body. Routes should adopt ctx.state.validatedBody incrementally with route-contract tests.`
+- Reason: `The task, notes, and projects Zod pilots proved Zod can replace handwritten product mutation validation while preserving route behavior. Validation Error Shape V1 gave the internal error path useful schema metadata without changing public responses, Route Schema Placement V1 removed requestValidation.js in favor of Koa middleware plus route-owned schemas, Parsed Body Pilot: Notes Boundary proved ctx.state.validatedBody can serve as a trusted DTO boundary without mutating raw request input, and Parsed Body Rollout: Projects And Tasks completed the product mutation route adoption.`
+- Follow-up: `Keep strip/trim/default/coerce decisions separate. Now that product mutation routes consume validated DTOs, choose whether to migrate Auth payloads, open an AI payload discussion, or pause runtime-schema adoption before expanding the boundary further.`
+
+### `Type-aware JS pilots expand only through narrow reusable boundaries`
+
+- Date: `2026-05-05`
+- Type: `transition-rule`
+- Scope: `Type-aware JavaScript pilots, scoped checkJs expansion, shared frontend support typing, and future TypeScript migration planning`
+- Decision: `Type-aware JavaScript work should expand by proving narrow, reusable boundaries rather than by spreading JSDoc/checkJs across the repo. The shared task service and apiClient support pilots show that scoped checkJs can work when the import graph stays explicit and narrow. Future pilots may reuse the pattern for import-free or similarly small shared support modules, but should stop and return to PMO when the import graph begins pulling in feature modules, Vue SFCs, broad runtime surfaces, or behavior-sensitive support code. JSDoc/checkJs should be treated as a boundary-discovery tool and typed-island precursor, not as a requirement to annotate the whole JavaScript repo before TypeScript migration.`
+- Reason: `The task-service pilot passed with JSDoc/checkJs/noEmit but needed noResolve and a local Vue ref shim. The Phase 2 apiClient pilot proved a minimal shared support boundary can be included without broadening the graph, while also confirming that the shim remains a pilot artifact rather than durable frontend-wide typing.`
+- Follow-up: `For the next TypeScript step, choose either another narrow shared support/service pilot or pause to design a durable frontend type-support plan if the next target imports feature modules, Vue SFCs, or broad shared runtime code. Do not promote full-repo checkJs or full TypeScript migration directly from these pilots.`
+
 ### `Repo constraints are JavaScript-first, not early-stage freeze rules`
 
 - Date: `2026-05-05`

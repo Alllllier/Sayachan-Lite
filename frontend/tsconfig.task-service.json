@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "strict": false,
+    "noResolve": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/services/tasks/typecheck-shims.d.ts",
+    "src/services/apiClient.js",
+    "src/services/tasks/index.js",
+    "src/services/tasks/task.rules.js",
+    "src/services/tasks/task.api.js",
+    "src/services/tasks/task.runtime.js"
+  ]
+}

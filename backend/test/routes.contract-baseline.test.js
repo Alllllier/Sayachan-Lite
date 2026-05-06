@@ -4,8 +4,19 @@ const assert = require('node:assert/strict');
 const Note = require('../src/models/Note');
 const Project = require('../src/models/Project');
 const Task = require('../src/models/Task');
+const notesService = require('../src/services/notesService');
+const projectsService = require('../src/services/projectsService');
+const tasksService = require('../src/services/tasksService');
 const { errorBoundary } = require('../src/middleware/errorBoundary');
 const routes = require('../src/routes/index.js');
+const {
+  BadRequestError,
+  assertZodSchema
+} = require('../src/middleware/requestBodyValidation');
+const {
+  taskCreateSchema,
+  taskUpdateSchema
+} = require('../src/routes/schemas/mutations');
 
 function getRouteHandler(method, path) {
   const layer = routes.stack.find((entry) => entry.path === path && entry.methods.includes(method));
@@ -649,6 +660,423 @@ test('bad create and update request bodies return stable 400 errors before servi
       assert.deepEqual(ctx.body, { error: 'Invalid request body' });
     }
   });
+});
+
+test('parsed body rollout stores parsed DTOs and mutation routes consume them without mutating raw bodies', async () => {
+  const createTaskHandler = getRouteHandler('POST', '/tasks');
+  const updateTaskHandler = getRouteHandler('PUT', '/tasks/:id');
+  const createProjectHandler = getRouteHandler('POST', '/projects');
+  const updateProjectHandler = getRouteHandler('PUT', '/projects/:id');
+  const createNoteHandler = getRouteHandler('POST', '/notes');
+  const updateNoteHandler = getRouteHandler('PUT', '/notes/:id');
+  const calls = {};
+
+  await withPatchedMethods([
+    {
+      target: notesService,
+      key: 'createNote',
+      value: async (body) => {
+        calls.noteCreate = body;
+        return { _id: 'note-new', ...body, archived: false };
+      }
+    },
+    {
+      target: notesService,
+      key: 'updateNote',
+      value: async (id, body) => {
+        calls.noteUpdate = body;
+        return { _id: id, title: body.title || 'Note', content: body.content || '' };
+      }
+    },
+    {
+      target: projectsService,
+      key: 'createProject',
+      value: async (body) => {
+        calls.projectCreate = body;
+        return { _id: 'project-new', ...body };
+      }
+    },
+    {
+      target: projectsService,
+      key: 'updateProject',
+      value: async (id, body) => {
+        calls.projectUpdate = body;
+        return { _id: id, ...body };
+      }
+    },
+    {
+      target: tasksService,
+      key: 'createTask',
+      value: async (body) => {
+        calls.taskCreate = body;
+        return { _id: 'task-new', ...body };
+      }
+    },
+    {
+      target: tasksService,
+      key: 'updateTask',
+      value: async (id, body) => {
+        calls.taskUpdate = body;
+        return { _id: id, ...body };
+      }
+    }
+  ], async () => {
+    const noteCreateBody = { title: 'Note', content: 'Body', unknownField: 'kept' };
+    const noteCreateCtx = createCtx({ body: noteCreateBody });
+    await createNoteHandler(noteCreateCtx, async () => {});
+    assert.strictEqual(calls.noteCreate, noteCreateCtx.state.validatedBody);
+    assert.notStrictEqual(calls.noteCreate, noteCreateBody);
+    assert.deepEqual(calls.noteCreate, noteCreateBody);
+    assert.strictEqual(noteCreateCtx.request.body, noteCreateBody);
+    assert.deepEqual(noteCreateCtx.request.body, noteCreateBody);
+
+    const noteUpdateBody = { content: 'Updated', unknownField: 'kept' };
+    const noteUpdateCtx = createCtx({ params: { id: 'note-1' }, body: noteUpdateBody });
+    await updateNoteHandler(noteUpdateCtx, async () => {});
+    assert.strictEqual(calls.noteUpdate, noteUpdateCtx.state.validatedBody);
+    assert.notStrictEqual(calls.noteUpdate, noteUpdateBody);
+    assert.deepEqual(calls.noteUpdate, noteUpdateBody);
+    assert.strictEqual(noteUpdateCtx.request.body, noteUpdateBody);
+    assert.deepEqual(noteUpdateCtx.request.body, noteUpdateBody);
+
+    const projectCreateBody = {
+      name: 'Project X',
+      summary: 'Summary',
+      unknownField: 'kept'
+    };
+    const projectCreateCtx = createCtx({ body: projectCreateBody });
+    await createProjectHandler(projectCreateCtx, async () => {});
+    assert.strictEqual(calls.projectCreate, projectCreateCtx.state.validatedBody);
+    assert.notStrictEqual(calls.projectCreate, projectCreateBody);
+    assert.deepEqual(calls.projectCreate, projectCreateBody);
+    assert.strictEqual(projectCreateCtx.request.body, projectCreateBody);
+    assert.deepEqual(projectCreateCtx.request.body, projectCreateBody);
+
+    const projectUpdateBody = { status: 'in_progress', unknownField: 'kept' };
+    const projectUpdateCtx = createCtx({ params: { id: 'project-1' }, body: projectUpdateBody });
+    await updateProjectHandler(projectUpdateCtx, async () => {});
+    assert.strictEqual(calls.projectUpdate, projectUpdateCtx.state.validatedBody);
+    assert.notStrictEqual(calls.projectUpdate, projectUpdateBody);
+    assert.deepEqual(calls.projectUpdate, projectUpdateBody);
+    assert.strictEqual(projectUpdateCtx.request.body, projectUpdateBody);
+    assert.deepEqual(projectUpdateCtx.request.body, projectUpdateBody);
+
+    const taskCreateBody = { title: 'Task', unknownField: 'kept' };
+    const taskCreateCtx = createCtx({ body: taskCreateBody });
+    await createTaskHandler(taskCreateCtx, async () => {});
+    assert.strictEqual(calls.taskCreate, taskCreateCtx.state.validatedBody);
+    assert.notStrictEqual(calls.taskCreate, taskCreateBody);
+    assert.deepEqual(calls.taskCreate, taskCreateBody);
+    assert.strictEqual(taskCreateCtx.request.body, taskCreateBody);
+    assert.deepEqual(taskCreateCtx.request.body, taskCreateBody);
+
+    const taskUpdateBody = { status: 'completed', unknownField: 'kept' };
+    const taskUpdateCtx = createCtx({ params: { id: 'task-1' }, body: taskUpdateBody });
+    await updateTaskHandler(taskUpdateCtx, async () => {});
+    assert.strictEqual(calls.taskUpdate, taskUpdateCtx.state.validatedBody);
+    assert.notStrictEqual(calls.taskUpdate, taskUpdateBody);
+    assert.deepEqual(calls.taskUpdate, taskUpdateBody);
+    assert.strictEqual(taskUpdateCtx.request.body, taskUpdateBody);
+    assert.deepEqual(taskUpdateCtx.request.body, taskUpdateBody);
+  });
+});
+
+test('notes and projects mutation validation covers Zod create and update body contracts', async () => {
+  const createProjectHandler = getRouteHandler('POST', '/projects');
+  const updateProjectHandler = getRouteHandler('PUT', '/projects/:id');
+  const createNoteHandler = getRouteHandler('POST', '/notes');
+  const updateNoteHandler = getRouteHandler('PUT', '/notes/:id');
+
+  const forbiddenWrite = async () => {
+    throw new Error('notes/projects validation should stop before service writes');
+  };
+
+  await withPatchedMethods([
+    { target: Project, key: 'create', value: forbiddenWrite },
+    { target: Project, key: 'findOneAndUpdate', value: forbiddenWrite },
+    { target: Note, key: 'create', value: forbiddenWrite },
+    { target: Note, key: 'findOneAndUpdate', value: forbiddenWrite }
+  ], async () => {
+    const cases = [
+      [createNoteHandler, createCtx({ body: null })],
+      [createNoteHandler, createCtx({ body: [] })],
+      [createNoteHandler, createCtx({ body: {} })],
+      [createNoteHandler, createCtx({ body: { title: '' } })],
+      [createNoteHandler, createCtx({ body: { title: '   ' } })],
+      [createNoteHandler, createCtx({ body: { title: 'Note', content: 42 } })],
+      [updateNoteHandler, createCtx({ params: { id: 'note-1' }, body: null })],
+      [updateNoteHandler, createCtx({ params: { id: 'note-1' }, body: [] })],
+      [updateNoteHandler, createCtx({ params: { id: 'note-1' }, body: {} })],
+      [updateNoteHandler, createCtx({ params: { id: 'note-1' }, body: { extra: true } })],
+      [updateNoteHandler, createCtx({ params: { id: 'note-1' }, body: { title: '' } })],
+      [updateNoteHandler, createCtx({ params: { id: 'note-1' }, body: { content: 42 } })],
+      [createProjectHandler, createCtx({ body: null })],
+      [createProjectHandler, createCtx({ body: [] })],
+      [createProjectHandler, createCtx({ body: {} })],
+      [createProjectHandler, createCtx({ body: { name: 'Project X' } })],
+      [createProjectHandler, createCtx({ body: { name: '', summary: 'Summary' } })],
+      [createProjectHandler, createCtx({ body: { name: 'Project X', summary: '   ' } })],
+      [createProjectHandler, createCtx({ body: { name: 'Project X', summary: 'Summary', status: 'archived' } })],
+      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: null })],
+      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: [] })],
+      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: {} })],
+      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: { extra: true } })],
+      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: { name: '' } })],
+      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: { summary: '   ' } })],
+      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: { status: 'archived' } })],
+      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: { currentFocusTaskId: 42 } })]
+    ];
+
+    for (const [handler, ctx] of cases) {
+      await handler(ctx, async () => {});
+      assert.equal(ctx.status, 400);
+      assert.deepEqual(ctx.body, { error: 'Invalid request body' });
+    }
+  });
+});
+
+test('notes and projects mutation validation preserves valid payload and unknown-field compatibility', async () => {
+  const createProjectHandler = getRouteHandler('POST', '/projects');
+  const updateProjectHandler = getRouteHandler('PUT', '/projects/:id');
+  const createNoteHandler = getRouteHandler('POST', '/notes');
+  const updateNoteHandler = getRouteHandler('PUT', '/notes/:id');
+  const projectCreates = [];
+  const projectUpdates = [];
+  const noteCreates = [];
+  const noteUpdates = [];
+
+  await withPatchedMethods([
+    {
+      target: Project,
+      key: 'create',
+      value: async (data) => {
+        projectCreates.push(data);
+        return createDoc({ _id: 'project-created', ...data });
+      }
+    },
+    {
+      target: Project,
+      key: 'findOneAndUpdate',
+      value: async (query, update) => {
+        projectUpdates.push({ query, update });
+        return createDoc({
+          _id: 'project-1',
+          name: 'Project X',
+          summary: update.summary || 'Summary',
+          status: update.status || 'pending',
+          currentFocusTaskId: update.currentFocusTaskId
+        });
+      }
+    },
+    {
+      target: Note,
+      key: 'create',
+      value: async (data) => {
+        noteCreates.push(data);
+        return createDoc({ _id: 'note-created', ...data });
+      }
+    },
+    {
+      target: Note,
+      key: 'findOneAndUpdate',
+      value: async (query, update) => {
+        noteUpdates.push({ query, update });
+        return createDoc({
+          _id: 'note-1',
+          title: update.title || 'Note',
+          content: update.content || 'Content'
+        });
+      }
+    }
+  ], async () => {
+    const createProjectCtxWithUnknown = createCtx({
+      body: {
+        name: 'Project X',
+        summary: 'Summary',
+        status: 'in_progress',
+        unknownField: 'accepted by validation'
+      }
+    });
+    await createProjectHandler(createProjectCtxWithUnknown, async () => {});
+
+    const updateProjectCtxWithUnknown = createCtx({
+      params: { id: 'project-1' },
+      body: {
+        currentFocusTaskId: null,
+        unknownField: 'accepted by validation'
+      }
+    });
+    await updateProjectHandler(updateProjectCtxWithUnknown, async () => {});
+
+    const createNoteCtxWithUnknown = createCtx({
+      body: {
+        title: 'Note',
+        content: '',
+        unknownField: 'accepted by validation'
+      }
+    });
+    await createNoteHandler(createNoteCtxWithUnknown, async () => {});
+
+    const updateNoteCtxWithUnknown = createCtx({
+      params: { id: 'note-1' },
+      body: {
+        content: 'Updated content',
+        unknownField: 'accepted by validation'
+      }
+    });
+    await updateNoteHandler(updateNoteCtxWithUnknown, async () => {});
+
+    assert.equal(createProjectCtxWithUnknown.status, 201);
+    assert.equal(updateProjectCtxWithUnknown.status, 200);
+    assert.equal(createNoteCtxWithUnknown.status, 201);
+    assert.equal(updateNoteCtxWithUnknown.status, 200);
+  });
+
+  assert.equal(projectCreates[0].name, 'Project X');
+  assert.equal(projectCreates[0].summary, 'Summary');
+  assert.equal(projectCreates[0].status, 'in_progress');
+  assert.equal(projectUpdates[0].update.currentFocusTaskId, null);
+  assert.equal(noteCreates[0].title, 'Note');
+  assert.equal(noteCreates[0].content, '');
+  assert.equal(noteUpdates[0].update.content, 'Updated content');
+});
+
+test('task mutation validation covers Zod pilot create and update body contracts', async () => {
+  const createTaskHandler = getRouteHandler('POST', '/tasks');
+  const updateTaskHandler = getRouteHandler('PUT', '/tasks/:id');
+
+  const forbiddenWrite = async () => {
+    throw new Error('task validation should stop before service writes');
+  };
+
+  await withPatchedMethods([
+    { target: Task, key: 'create', value: forbiddenWrite },
+    { target: Task, key: 'findOne', value: forbiddenWrite }
+  ], async () => {
+    const cases = [
+      [createTaskHandler, createCtx({ body: null })],
+      [createTaskHandler, createCtx({ body: [] })],
+      [createTaskHandler, createCtx({ body: {} })],
+      [createTaskHandler, createCtx({ body: { title: '' } })],
+      [createTaskHandler, createCtx({ body: { title: '   ' } })],
+      [createTaskHandler, createCtx({ body: { title: 'Ship it', creationMode: 'robot' } })],
+      [createTaskHandler, createCtx({ body: { title: 'Ship it', originModule: 42 } })],
+      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: null })],
+      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: [] })],
+      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: {} })],
+      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: { extra: true } })],
+      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: { status: 'done' } })],
+      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: { archived: 'false' } })],
+      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: { completed: 1 } })]
+    ];
+
+    for (const [handler, ctx] of cases) {
+      await handler(ctx, async () => {});
+      assert.equal(ctx.status, 400);
+      assert.deepEqual(ctx.body, { error: 'Invalid request body' });
+    }
+  });
+});
+
+test('task mutation Zod validation errors carry internal metadata only', async () => {
+  assert.throws(
+    () => assertZodSchema(taskCreateSchema, { title: '', creationMode: 'robot' }),
+    (error) => {
+      assert.equal(error instanceof BadRequestError, true);
+      assert.equal(error.status, 400);
+      assert.equal(error.message, 'Invalid request body');
+      assert.equal(error.code, 'VALIDATION_ERROR');
+      assert.equal(error.source, 'request.body');
+      assert.equal(Array.isArray(error.details), true);
+      assert.equal(error.details.length >= 1, true);
+      assert.equal(error.details.some((detail) => detail.path.includes('creationMode')), true);
+      assert.equal(error.details.every((detail) => typeof detail.message === 'string'), true);
+      return true;
+    }
+  );
+
+  assert.throws(
+    () => assertZodSchema(taskUpdateSchema, { extra: true }),
+    (error) => {
+      assert.equal(error instanceof BadRequestError, true);
+      assert.equal(error.code, 'VALIDATION_ERROR');
+      assert.equal(error.source, 'request.body');
+      assert.equal(Array.isArray(error.details), true);
+      assert.equal(error.message, 'Invalid request body');
+      return true;
+    }
+  );
+});
+
+test('task mutation validation preserves valid payload and unknown-field behavior', async () => {
+  const createTaskHandler = getRouteHandler('POST', '/tasks');
+  const updateTaskHandler = getRouteHandler('PUT', '/tasks/:id');
+  const taskCreates = [];
+  const taskUpdates = [];
+
+  await withPatchedMethods([
+    {
+      target: Task,
+      key: 'create',
+      value: async (data) => {
+        taskCreates.push(data);
+        return createDoc({
+          _id: 'task-created',
+          ...data
+        });
+      }
+    },
+    {
+      target: Task,
+      key: 'findOne',
+      value: async () => createDoc({
+        _id: 'task-1',
+        title: 'Ship it',
+        status: 'active',
+        archived: false,
+        completed: false
+      })
+    },
+    {
+      target: Task,
+      key: 'findOneAndUpdate',
+      value: async (query, update) => {
+        taskUpdates.push({ query, update });
+        return createDoc({
+          _id: 'task-1',
+          title: 'Ship it',
+          status: update.status,
+          archived: update.archived,
+          completed: false
+        });
+      }
+    }
+  ], async () => {
+    const createCtxWithUnknown = createCtx({
+      body: {
+        title: 'Ship it',
+        creationMode: 'ai',
+        originModule: 'dashboard',
+        unknownField: 'preserved by route contract'
+      }
+    });
+    await createTaskHandler(createCtxWithUnknown, async () => {});
+
+    const updateCtxWithUnknown = createCtx({
+      params: { id: 'task-1' },
+      body: { status: 'completed', unknownField: 'preserved by route contract' }
+    });
+    await updateTaskHandler(updateCtxWithUnknown, async () => {});
+
+    assert.equal(createCtxWithUnknown.status, 201);
+    assert.equal(updateCtxWithUnknown.status, 200);
+  });
+
+  assert.equal(taskCreates[0].title, 'Ship it');
+  assert.equal(taskCreates[0].creationMode, 'ai');
+  assert.equal(taskCreates[0].originModule, 'dashboard');
+  assert.equal(taskUpdates[0].update.status, 'completed');
+  assert.equal(taskUpdates[0].update.archived, false);
 });
 
 test('product routes require a current user before model access', async () => {

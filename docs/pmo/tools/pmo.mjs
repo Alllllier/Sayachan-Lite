@@ -324,6 +324,8 @@ ${bulletBlock(fields['Escalation triggers'], 'No candidate-specific escalation t
 
 Write the execution report to \`docs/pmo/state/execution_report.md\`.
 
+Use \`docs/pmo/state/templates/execution-report.template.md\` as the report shape unless PMO explicitly narrows the contract for this sprint.
+
 The execution report should state:
 
 - what was delivered
@@ -402,6 +404,8 @@ function executionTaskForMicroFix({ sprint, goal, date }) {
 ## Completion Report Contract
 
 Write the execution report to \`docs/pmo/state/execution_report.md\`.
+
+Use \`docs/pmo/state/templates/execution-report.template.md\` as the report shape unless PMO explicitly narrows the contract for this sprint.
 
 The execution report should state:
 

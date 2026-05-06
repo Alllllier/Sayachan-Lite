@@ -9,6 +9,7 @@
     "lint": "npm --prefix .. run lint:frontend",
     "preview": "vite preview",
     "test": "vitest run --exclude tests/ui-review/**",
+    "typecheck:tasks": "tsc -p tsconfig.task-service.json",
     "test:watch": "vitest --exclude tests/ui-review/**",
     "test:ui-review": "playwright test tests/ui-review --reporter=line",
     "test:ui-review:headed": "playwright test tests/ui-review --headed --reporter=line"
@@ -29,6 +30,7 @@
   "devDependencies": {
     "@playwright/test": "1.59.1",
     "@vitejs/plugin-vue": "^6.0.5",
+    "typescript": "^5.9.3",
     "vite": "^8.0.1",
     "vitest": "^3.2.4"
   }
