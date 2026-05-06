@@ -1,10 +1,13 @@
-import Router, { type RouterMiddleware } from '@koa/router';
+import Router from '@koa/router';
 
-import { type ObjectId } from '../middleware/objectIdParsing.js';
 import type {
   AiChatDto,
   AiResourcePayloadDto
 } from './schemas/ai.js';
+import type {
+  AuthenticatedRouteState,
+  RouteHandler
+} from './routeTypes.js';
 import aiService from '../services/aiService.js';
 import { requireCurrentUser } from '../middleware/currentUser.js';
 import { validateBody } from '../middleware/requestBodyValidation.js';
@@ -13,29 +16,17 @@ import {
   aiResourcePayloadSchema
 } from './schemas/ai.js';
 
-type AiState = {
-  userId: ObjectId;
-  validatedBody?: unknown;
-};
+type AiState = AuthenticatedRouteState;
+type AiHandler = RouteHandler<AiState>;
 
-type AiHandler = RouterMiddleware<AiState>;
-type AiMiddleware = RouterMiddleware<AiState>;
-
-type RequestBodySchema<TBody> = {
-  safeParse(body: unknown): { success: true; data: TBody } | { success: false; error: unknown };
-};
-
-type ValidateBody = <TBody>(schema: RequestBodySchema<TBody>) => AiMiddleware;
-
-const router = new Router();
-const requireAiCurrentUser = requireCurrentUser as AiHandler;
+const router = new Router<AiState>();
 
 function validatedBody<TBody>(ctx: Parameters<AiHandler>[0]): TBody {
   return ctx.state.validatedBody as TBody;
 }
 
 // POST /ai/notes/tasks - Generate tasks from a note
-router.post('/ai/notes/tasks', requireAiCurrentUser, validateBody(aiResourcePayloadSchema), (async (ctx) => {
+router.post('/ai/notes/tasks', requireCurrentUser, validateBody<AiResourcePayloadDto, AiState>(aiResourcePayloadSchema), (async (ctx) => {
   const result = await aiService.generateNoteTaskDrafts(validatedBody<AiResourcePayloadDto>(ctx), ctx.state.userId);
   if (!result.found) {
     ctx.status = 404;
@@ -47,7 +38,7 @@ router.post('/ai/notes/tasks', requireAiCurrentUser, validateBody(aiResourcePayl
 }) as AiHandler);
 
 // POST /ai/projects/next-action - Suggest next action for a project
-router.post('/ai/projects/next-action', requireAiCurrentUser, validateBody(aiResourcePayloadSchema), (async (ctx) => {
+router.post('/ai/projects/next-action', requireCurrentUser, validateBody<AiResourcePayloadDto, AiState>(aiResourcePayloadSchema), (async (ctx) => {
   const result = await aiService.suggestProjectNextActions(validatedBody<AiResourcePayloadDto>(ctx), ctx.state.userId);
   if (!result.found) {
     ctx.status = 404;
@@ -59,7 +50,7 @@ router.post('/ai/projects/next-action', requireAiCurrentUser, validateBody(aiRes
 }) as AiHandler);
 
 // POST /ai/chat - Orchestrated chat entry for AI substrate v0.1
-router.post('/ai/chat', validateBody(aiChatSchema), (async (ctx) => {
+router.post('/ai/chat', validateBody<AiChatDto, AiState>(aiChatSchema), (async (ctx) => {
   ctx.body = await aiService.chat(validatedBody<AiChatDto>(ctx));
 }) as AiHandler);
 

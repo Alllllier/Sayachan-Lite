@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
-import type { Context, Next } from 'koa';
 import { BadRequestError } from '../errors/httpErrors.js';
+import type {
+  ObjectIdsState,
+  RouteContext,
+  RouteMiddleware,
+  ValidatedBodyState
+} from '../routes/routeTypes.js';
 
 export type ObjectId = mongoose.Types.ObjectId;
 
@@ -37,15 +42,19 @@ export function optionalObjectId(value: unknown, source: string): ObjectId | nul
 
 type ObjectIdLocation = 'params' | 'query' | 'body';
 
-type ObjectIdParsingState = {
-  objectIds?: Record<string, ObjectId | null>;
-};
+type ObjectIdParsingState = ObjectIdsState & ValidatedBodyState<unknown>;
 
-type ObjectIdParsingContext = Context & {
-  state: Context['state'] & ObjectIdParsingState;
-};
+function objectBody(body: unknown): Record<string, unknown> | null {
+  return body && typeof body === 'object' && !Array.isArray(body)
+    ? body as Record<string, unknown>
+    : null;
+}
 
-function readObjectIdSource(ctx: ObjectIdParsingContext, location: ObjectIdLocation, field: string): unknown {
+function readObjectIdSource<TState extends ObjectIdParsingState>(
+  ctx: RouteContext<TState>,
+  location: ObjectIdLocation,
+  field: string
+): unknown {
   if (location === 'params') {
     return ctx.params?.[field];
   }
@@ -54,19 +63,19 @@ function readObjectIdSource(ctx: ObjectIdParsingContext, location: ObjectIdLocat
     return ctx.query?.[field];
   }
 
-  return ctx.state.validatedBody?.[field];
+  return objectBody(ctx.state.validatedBody)?.[field];
 }
 
 function parsedStateKey(location: ObjectIdLocation, field: string, stateKey?: string): string {
   return stateKey || (location === 'params' && field === 'id' ? 'id' : field);
 }
 
-export function parseObjectId(
+export function parseObjectId<TState extends ObjectIdParsingState = ObjectIdParsingState>(
   location: ObjectIdLocation,
   field: string,
   { optional = false, stateKey }: { optional?: boolean; stateKey?: string } = {}
-): any {
-  return async (ctx: ObjectIdParsingContext, next: Next): Promise<void> => {
+): RouteMiddleware<TState> {
+  return async (ctx: RouteContext<TState>, next): Promise<void> => {
     const source = `${location}.${field}`;
     const value = readObjectIdSource(ctx, location, field);
     const parsed = optional ? optionalObjectId(value, source) : toObjectId(value, source);
@@ -78,14 +87,23 @@ export function parseObjectId(
   };
 }
 
-export function parseParamObjectId(field: string, options?: { optional?: boolean; stateKey?: string }): any {
-  return parseObjectId('params', field, options);
+export function parseParamObjectId<TState extends ObjectIdParsingState = ObjectIdParsingState>(
+  field: string,
+  options?: { optional?: boolean; stateKey?: string }
+): RouteMiddleware<TState> {
+  return parseObjectId<TState>('params', field, options);
 }
 
-export function parseQueryObjectId(field: string, options?: { optional?: boolean; stateKey?: string }): any {
-  return parseObjectId('query', field, options);
+export function parseQueryObjectId<TState extends ObjectIdParsingState = ObjectIdParsingState>(
+  field: string,
+  options?: { optional?: boolean; stateKey?: string }
+): RouteMiddleware<TState> {
+  return parseObjectId<TState>('query', field, options);
 }
 
-export function parseBodyObjectId(field: string, options?: { optional?: boolean; stateKey?: string }): any {
-  return parseObjectId('body', field, options);
+export function parseBodyObjectId<TState extends ObjectIdParsingState = ObjectIdParsingState>(
+  field: string,
+  options?: { optional?: boolean; stateKey?: string }
+): RouteMiddleware<TState> {
+  return parseObjectId<TState>('body', field, options);
 }

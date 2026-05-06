@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Backend ESM Cutover`
+- Sprint: `Route Middleware Typing Cleanup`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/backend-esm-cutover.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/route-middleware-typing-cleanup.md`
 
 ## Next Use
 

@@ -66,7 +66,7 @@ If boundary questions or competing implementation directions appear, return to t
 The mechanical activation write can be applied with:
 
 ```bash
-node docs/pmo/tools/pmo.mjs activate --micro-fix "<name>" --goal "<goal>"
+node docs/pmo/tools/pmo.mjs activate --micro-fix "<name>" --goal "<goal>" --date "YYYY-MM-DD"
 ```
 
 ## Planning Rule
@@ -171,7 +171,7 @@ After PMO reads a detailed execution report, archive that report into `../histor
 The mechanical closeout write can be applied with:
 
 ```bash
-node docs/pmo/tools/pmo.mjs closeout --sprint "<name>" --delivery-status "<status>" --doc-sync "<outcome>" --commit-state "<state>"
+node docs/pmo/tools/pmo.mjs closeout --sprint "<name>" --delivery-status "<status>" --doc-sync "<outcome>" --commit-state "<state>" --date "YYYY-MM-DD"
 ```
 
 Operational closeout pass:

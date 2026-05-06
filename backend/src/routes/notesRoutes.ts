@@ -1,33 +1,17 @@
-import Router, { type RouterMiddleware } from '@koa/router';
+import Router from '@koa/router';
 
 import type {
   NoteCreateDto,
   NoteUpdateDto
 } from './schemas/mutations.js';
 import { type ObjectId } from '../middleware/objectIdParsing.js';
+import type {
+  AuthenticatedRouteState,
+  RouteHandler
+} from './routeTypes.js';
 
-type CurrentUserState = {
-  user?: {
-    _id?: unknown;
-    role?: string;
-    email?: string;
-  };
-  userId: ObjectId;
-};
-
-type NotesState = CurrentUserState & {
-  objectIds?: Record<string, ObjectId | null>;
-  validatedBody?: unknown;
-};
-
-type NotesMiddleware = RouterMiddleware<NotesState>;
-type NotesHandler = RouterMiddleware<NotesState>;
-
-type RequestBodySchema<TBody> = {
-  safeParse(body: unknown): { success: true; data: TBody } | { success: false; error: unknown };
-};
-
-type ValidateBody = <TBody>(schema: RequestBodySchema<TBody>) => NotesMiddleware;
+type NotesState = AuthenticatedRouteState;
+type NotesHandler = RouteHandler<NotesState>;
 
 import notesService from '../services/notesService.js';
 import {
@@ -132,12 +116,12 @@ const restoreNoteHandler: NotesHandler = async (ctx) => {
 };
 
 router.get('/notes', requireCurrentUser, listNotesHandler);
-router.post('/notes', requireCurrentUser, validateBody(noteCreateSchema), createNoteHandler);
-router.put('/notes/:id', requireCurrentUser, parseParamObjectId('id'), validateBody(noteUpdateSchema), updateNoteHandler);
-router.delete('/notes/:id', requireCurrentUser, parseParamObjectId('id'), deleteNoteHandler);
-router.put('/notes/:id/pin', requireCurrentUser, parseParamObjectId('id'), pinNoteHandler);
-router.put('/notes/:id/unpin', requireCurrentUser, parseParamObjectId('id'), unpinNoteHandler);
-router.put('/notes/:id/archive', requireCurrentUser, parseParamObjectId('id'), archiveNoteHandler);
-router.put('/notes/:id/restore', requireCurrentUser, parseParamObjectId('id'), restoreNoteHandler);
+router.post('/notes', requireCurrentUser, validateBody<NoteCreateDto, NotesState>(noteCreateSchema), createNoteHandler);
+router.put('/notes/:id', requireCurrentUser, parseParamObjectId<NotesState>('id'), validateBody<NoteUpdateDto, NotesState>(noteUpdateSchema), updateNoteHandler);
+router.delete('/notes/:id', requireCurrentUser, parseParamObjectId<NotesState>('id'), deleteNoteHandler);
+router.put('/notes/:id/pin', requireCurrentUser, parseParamObjectId<NotesState>('id'), pinNoteHandler);
+router.put('/notes/:id/unpin', requireCurrentUser, parseParamObjectId<NotesState>('id'), unpinNoteHandler);
+router.put('/notes/:id/archive', requireCurrentUser, parseParamObjectId<NotesState>('id'), archiveNoteHandler);
+router.put('/notes/:id/restore', requireCurrentUser, parseParamObjectId<NotesState>('id'), restoreNoteHandler);
 
 export default router;

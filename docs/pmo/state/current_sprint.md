@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Backend ESM Cutover`
+- Sprint: `Route Middleware Typing Cleanup`
 - Closeout date: `2026-05-07`
 - Delivery status: `completed and validated`
-- Commit state: `pending commit after closeout`
-- Documentation sync outcome: `reviewed, no additional baseline update needed`
-- Residual note: `Route/middleware helper typing still has pragmatic any boundaries exposed by the ESM cutover; private_core remains CommonJS through the backend bridge and can be migrated in a separate future thread.`
-- Report surface: `docs/pmo/history/reports/backend-esm-cutover.md`
+- Commit state: `not committed in this closeout`
+- Documentation sync outcome: `reviewed, no update needed`
+- Residual note: `none`
+- Report surface: `docs/pmo/history/reports/route-middleware-typing-cleanup.md`
 
 ## Next PMO Action
 

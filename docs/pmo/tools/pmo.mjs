@@ -12,10 +12,10 @@ function usage() {
 
 Usage:
   node docs/pmo/tools/pmo.mjs --help
-  node docs/pmo/tools/pmo.mjs activate --sprint "<name>" --selected-by "Human|Codex" [--date YYYY-MM-DD] [--dry-run]
-  node docs/pmo/tools/pmo.mjs activate --micro-fix "<name>" --goal "<goal>" [--date YYYY-MM-DD] [--dry-run]
-  node docs/pmo/tools/pmo.mjs closeout --sprint "<name>" --delivery-status "<status>" --doc-sync "<outcome>" --commit-state "<state>" [--residual-note "..."] [--date YYYY-MM-DD] [--dry-run]
-  node docs/pmo/tools/pmo.mjs idle-reset --last-sprint "<name>" --delivery-status "<status>" --report-surface "<path>" [--date YYYY-MM-DD] [--dry-run]
+  node docs/pmo/tools/pmo.mjs activate --sprint "<name>" --selected-by "Human|Codex" --date YYYY-MM-DD [--dry-run]
+  node docs/pmo/tools/pmo.mjs activate --micro-fix "<name>" --goal "<goal>" --date YYYY-MM-DD [--dry-run]
+  node docs/pmo/tools/pmo.mjs closeout --sprint "<name>" --delivery-status "<status>" --doc-sync "<outcome>" --commit-state "<state>" --date YYYY-MM-DD [--residual-note "..."] [--dry-run]
+  node docs/pmo/tools/pmo.mjs idle-reset --last-sprint "<name>" --delivery-status "<status>" --report-surface "<path>" --date YYYY-MM-DD [--dry-run]
 
 Options:
   --dry-run              Print planned writes without changing files.
@@ -50,10 +50,6 @@ function parseArgs(argv) {
   return args;
 }
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function fail(message) {
   console.error(`PMO helper error: ${message}`);
   process.exit(1);
@@ -65,6 +61,14 @@ function requireArg(args, key) {
     fail(`Missing required --${key}`);
   }
   return value;
+}
+
+function requireDate(args) {
+  const date = requireArg(args, 'date');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    fail('--date must use YYYY-MM-DD format');
+  }
+  return date;
 }
 
 function pathFor(root, path) {
@@ -604,7 +608,7 @@ The execution worker should replace this placeholder with a structured report th
 }
 
 function activate(args, root) {
-  const date = args.date || todayIso();
+  const date = requireDate(args);
   const selectedBy = args['selected-by'] || 'Human';
   const writes = [];
 
@@ -660,7 +664,7 @@ function closeout(args, root) {
   const docSync = requireArg(args, 'doc-sync');
   const commitState = requireArg(args, 'commit-state');
   const residualNote = args['residual-note'] || '';
-  const date = args.date || todayIso();
+  const date = requireDate(args);
   const report = read(root, 'state/execution_report.md');
 
   if (/Status:\s+`idle`/.test(report)) {
@@ -710,7 +714,7 @@ function idleReset(args, root) {
   const sprint = requireArg(args, 'last-sprint');
   const deliveryStatus = requireArg(args, 'delivery-status');
   const reportSurface = requireArg(args, 'report-surface');
-  const date = args.date || todayIso();
+  const date = requireDate(args);
   const commitState = args['commit-state'] || 'not recorded';
   const docSync = args['doc-sync'] || 'reviewed, no update needed';
   const residualNote = args['residual-note'] || 'none';

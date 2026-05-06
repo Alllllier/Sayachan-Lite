@@ -24,6 +24,15 @@
 
 ## Recorded Decisions
 
+### `App middleware and route middleware are separate backend concepts`
+
+- Date: `2026-05-07`
+- Type: `transition-rule`
+- Scope: `backend middleware typing, route state composition, future middleware folder split`
+- Decision: `Backend middleware should distinguish app-level Koa middleware from route-level middleware helpers. App-level middleware such as errorBoundary, bodyParser/CORS integration, and authMiddleware should stay typed around Koa Context/Next. Route-level helpers such as requireCurrentUser, validateBody, and objectId parsing should share a route-state type surface with route files. Do not force all middleware into one giant route state type.`
+- Reason: `The backend ESM cutover exposed Koa router generic complexity and pragmatic any boundaries. The human identified that app middleware and route middleware are not the same kind of abstraction. Separating the concepts in type design prevents duplicate state types while avoiding over-coupling global app middleware to route-specific ctx.state composition.`
+- Follow-up: `First run Route Middleware Typing Cleanup to establish shared route state types without moving files. Later promote Middleware Folder Split to physically separate app-level and route-level middleware folders.`
+
 ### `Backend ESM cutover excludes private_core`
 
 - Date: `2026-05-07`

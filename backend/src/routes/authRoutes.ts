@@ -1,4 +1,4 @@
-import Router, { type RouterMiddleware } from '@koa/router';
+import Router from '@koa/router';
 
 import type {
   AuthCredentialsDto,
@@ -11,39 +11,36 @@ import {
   registerTesterSchema
 } from './schemas/auth.js';
 import { validateBody } from '../middleware/requestBodyValidation.js';
+import type {
+  RouteHandler,
+  RouteState
+} from './routeTypes.js';
 
 type OwnerUser = Parameters<typeof authService.createInvite>[0];
 
-type AuthState = {
+type AuthState = RouteState & {
   user?: OwnerUser;
-  validatedBody?: unknown;
 };
 
-type RequestBodySchema<TBody> = {
-  safeParse(body: unknown): { success: true; data: TBody } | { success: false; error: unknown };
-};
+type AuthHandler = RouteHandler<AuthState>;
 
-type AuthHandler = RouterMiddleware<AuthState>;
-type AuthMiddleware = RouterMiddleware<AuthState>;
-type ValidateBody = <TBody>(schema: RequestBodySchema<TBody>) => AuthMiddleware;
-
-const router = new Router();
+const router = new Router<AuthState>();
 
 function validatedBody<TBody>(ctx: Parameters<AuthHandler>[0]): TBody {
   return ctx.state.validatedBody as TBody;
 }
 
-router.post('/auth/bootstrap-owner', validateBody(authCredentialsSchema), (async (ctx) => {
+router.post('/auth/bootstrap-owner', validateBody<AuthCredentialsDto, AuthState>(authCredentialsSchema), (async (ctx) => {
   ctx.status = 201;
   ctx.body = await authService.bootstrapOwner(validatedBody<AuthCredentialsDto>(ctx));
 }) as AuthHandler);
 
-router.post('/auth/register', validateBody(registerTesterSchema), (async (ctx) => {
+router.post('/auth/register', validateBody<RegisterTesterDto, AuthState>(registerTesterSchema), (async (ctx) => {
   ctx.status = 201;
   ctx.body = await authService.registerTester(validatedBody<RegisterTesterDto>(ctx));
 }) as AuthHandler);
 
-router.post('/auth/login', validateBody(authCredentialsSchema), (async (ctx) => {
+router.post('/auth/login', validateBody<AuthCredentialsDto, AuthState>(authCredentialsSchema), (async (ctx) => {
   const result = await authService.login(validatedBody<AuthCredentialsDto>(ctx));
   setSessionCookie(ctx, result.sessionToken);
   ctx.body = result;

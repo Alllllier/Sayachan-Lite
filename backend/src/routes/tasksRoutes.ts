@@ -1,4 +1,4 @@
-import Router, { type RouterMiddleware } from '@koa/router';
+import Router from '@koa/router';
 
 import type {
   TaskCreateDto,
@@ -6,29 +6,13 @@ import type {
   TaskUpdateDto
 } from './schemas/mutations.js';
 import { type ObjectId } from '../middleware/objectIdParsing.js';
+import type {
+  AuthenticatedRouteState,
+  RouteHandler
+} from './routeTypes.js';
 
-type CurrentUserState = {
-  user?: {
-    _id?: unknown;
-    role?: string;
-    email?: string;
-  };
-  userId: ObjectId;
-};
-
-type TasksState = CurrentUserState & {
-  objectIds?: Record<string, ObjectId | null>;
-  validatedBody?: unknown;
-};
-
-type TasksMiddleware = RouterMiddleware<TasksState>;
-type TasksHandler = RouterMiddleware<TasksState>;
-
-type RequestBodySchema<TBody> = {
-  safeParse(body: unknown): { success: true; data: TBody } | { success: false; error: unknown };
-};
-
-type ValidateBody = <TBody>(schema: RequestBodySchema<TBody>) => TasksMiddleware;
+type TasksState = AuthenticatedRouteState;
+type TasksHandler = RouteHandler<TasksState>;
 
 import tasksService from '../services/tasksService.js';
 import { requireCurrentUser } from '../middleware/currentUser.js';
@@ -73,7 +57,7 @@ function parsedTaskCreateBody(ctx: Parameters<TasksHandler>[0]): TaskCreateServi
 }
 
 // GET /tasks
-router.get('/tasks', requireCurrentUser, parseQueryObjectId('projectId', { optional: true }), async (ctx) => {
+router.get('/tasks', requireCurrentUser, parseQueryObjectId<TasksState>('projectId', { optional: true }), async (ctx) => {
   const { archived } = ctx.query;
   ctx.body = await tasksService.listTasks({
     projectId: ctx.state.objectIds?.projectId,
@@ -83,14 +67,14 @@ router.get('/tasks', requireCurrentUser, parseQueryObjectId('projectId', { optio
 });
 
 // POST /tasks
-router.post('/tasks', requireCurrentUser, validateBody(taskCreateSchema), parseBodyObjectId('originId', { optional: true }), async (ctx) => {
+router.post('/tasks', requireCurrentUser, validateBody<TaskCreateDto, TasksState>(taskCreateSchema), parseBodyObjectId<TasksState>('originId', { optional: true }), async (ctx) => {
   const body = parsedTaskCreateBody(ctx);
   ctx.status = 201;
   ctx.body = await tasksService.createTask(body, { userId: ctx.state.userId });
 });
 
 // PUT /tasks/:id
-router.put('/tasks/:id', requireCurrentUser, parseParamObjectId('id'), validateBody(taskUpdateSchema), async (ctx) => {
+router.put('/tasks/:id', requireCurrentUser, parseParamObjectId<TasksState>('id'), validateBody<TaskUpdateDto, TasksState>(taskUpdateSchema), async (ctx) => {
   const id = taskId(ctx);
   const body = validatedBody<TaskUpdateDto>(ctx);
   const task = await tasksService.updateTask(id, body, { userId: ctx.state.userId });
@@ -103,7 +87,7 @@ router.put('/tasks/:id', requireCurrentUser, parseParamObjectId('id'), validateB
 });
 
 // DELETE /tasks/:id
-router.delete('/tasks/:id', requireCurrentUser, parseParamObjectId('id'), async (ctx) => {
+router.delete('/tasks/:id', requireCurrentUser, parseParamObjectId<TasksState>('id'), async (ctx) => {
   const id = taskId(ctx);
   const deleted = await tasksService.deleteTask(id, { userId: ctx.state.userId });
   if (!deleted) {

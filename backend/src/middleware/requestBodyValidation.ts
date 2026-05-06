@@ -1,27 +1,11 @@
 import { BadRequestError } from '../errors/httpErrors.js';
-
-type ValidationIssue = {
-  code: string;
-  path: PropertyKey[];
-  message: string;
-};
-
-type SafeParseResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: { issues: ValidationIssue[] } };
-
-type RequestBodySchema<T> = {
-  safeParse(body: unknown): SafeParseResult<T>;
-};
-
-type ValidationContext = {
-  request: {
-    body: unknown;
-  };
-  state: Record<string, unknown>;
-};
-
-type Next = () => Promise<void>;
+import type {
+  RequestBodySchema,
+  RouteContext,
+  RouteMiddleware,
+  ValidationIssue,
+  ValidatedBodyState
+} from '../routes/routeTypes.js';
 
 export function assertZodSchema<T>(
   schema: RequestBodySchema<T>,
@@ -44,8 +28,11 @@ export function assertZodSchema<T>(
   return result.data;
 }
 
-export function validateBody<T>(schema: RequestBodySchema<T>): any {
-  return async (ctx: ValidationContext, next: Next): Promise<void> => {
+export function validateBody<
+  TBody,
+  TState extends ValidatedBodyState<unknown> = ValidatedBodyState<unknown>
+>(schema: RequestBodySchema<TBody>): RouteMiddleware<TState> {
+  return async (ctx: RouteContext<TState>, next): Promise<void> => {
     ctx.state.validatedBody = assertZodSchema(schema, ctx.request.body);
     await next();
   };
