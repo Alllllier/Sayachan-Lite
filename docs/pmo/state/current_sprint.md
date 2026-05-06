@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `AI RuntimeControls Schema Normalization`
+- Sprint: `Backend ESM Cutover Prep`
 - Closeout date: `2026-05-07`
 - Delivery status: `completed and validated`
-- Commit state: `committed as 3ff591c chore(backend): normalize ai runtime controls schema`
-- Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `Future runtimeControls fields now require explicit schema additions; current placeholder null fields remain behavior-preserving until product semantics are decided.`
-- Report surface: `docs/pmo/history/reports/ai-runtimecontrols-schema-normalization.md`
+- Commit state: `pending commit after closeout`
+- Documentation sync outcome: `updated active PMO/runtime planning references only`
+- Residual note: `Actual backend ESM cutover still needs NodeNext source import conversion and backend test ESM loading strategy; private_core remains CommonJS through the bridge boundary.`
+- Report surface: `docs/pmo/history/reports/backend-esm-cutover-prep.md`
 
 ## Next PMO Action
 

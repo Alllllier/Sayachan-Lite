@@ -1,0 +1,41 @@
+# Backend ESM Cutover Prep
+
+- Archived date: `2026-05-07`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Backend ESM Cutover Prep`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Converted backend operational scripts from package-type-sensitive `.js` files to package-type-stable `.cjs` files:
+    - `backend/scripts/cleanBackendDist.cjs`
+    - `backend/scripts/checkBackendDistBuild.cjs`
+    - `backend/scripts/smokeBackendDistRuntime.cjs`
+    - `backend/scripts/normalizeLegacyArchivedTasks.cjs`
+  - Updated `backend/package.json` scripts to call the renamed `.cjs` helpers while preserving build-then-node dist runtime semantics.
+  - Updated ESLint config so backend `.cjs` scripts remain linted as CommonJS.
+  - Changed the backend dist smoke script to load dist artifacts through dynamic `import()` from `.cjs`, so the smoke harness works with today's CommonJS dist and is prepared for a future ESM dist.
+  - Changed the legacy archived-task normalization script to dynamically import the compiled Task model, preserving current behavior while avoiding a future CJS `require()` blocker for ESM dist.
+  - Relaxed `checkBackendDistBuild.cjs` where it encoded CommonJS as the permanent backend end state:
+    - backend package type may be either explicit `commonjs` or future explicit `module`
+    - dist artifact boundary checks accept package/import specifier references instead of only `require(...)` text
+    - script guardrails now require `.cjs` helpers for backend operational scripts
+  - Synced the active backend dist runtime cutover plan references from `.js` script names to `.cjs`.
+- Validation summary:
+  - `npm --prefix backend run check:backend-dist-runtime`
+  - `npm --prefix backend run test`
+  - `npm run check`
+- Project-specific review summary:
+  - Required: no
+  - Performed: no
+  - Reason: this was backend runtime tooling and guardrail prep only; no UI or product behavior changed.
+- Unverified areas:
+  - The actual backend ESM cutover was not performed.
+  - No temporary package-level `"type": "module"` experiment was left in the worktree.
+  - The future ESM test loading strategy remains to be implemented in the cutover sprint.
+- Residual risks or escalations:
+  - Backend source imports still need NodeNext-compatible ESM conversion, including `.js` relative specifiers, during the cutover sprint.
+  - Backend tests still use CommonJS `require('../dist/...')`; this remains an expected cutover task once dist emits ESM.
+  - `private_core/sayachan-ai-core` remains CommonJS and must continue to be consumed through the backend AI bridge when backend ESM cutover happens.
+- Documentation-sync outcome: `updated active PMO/runtime planning references only`
+- Follow-up routing:
+  - No blocking escalation for this prep sprint.
+  - Future cutover should stop for human review if it appears to require converting private_core, adding a runtime TypeScript loader, or changing backend start/dev away from build-then-node dist.

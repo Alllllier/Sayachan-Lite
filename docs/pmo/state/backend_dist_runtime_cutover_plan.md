@@ -18,7 +18,7 @@ This document is a plan only. It does not approve a runtime cutover, ESM migrati
 | Area | Current evidence | Cutover implication |
 | --- | --- | --- |
 | Backend runtime | `backend/package.json` uses `"type": "commonjs"`, `start` and `dev` run `node src/server.js`. | Runtime still loads source files. Dist is dry-run only. |
-| Unified dry-run build | `backend/tsconfig.json` emits JS from `src` to `dist` with `allowJs: true`, `checkJs: false`, `noResolve: true`; `npm --prefix backend run check:backend-build` runs `tsc` plus `scripts/checkBackendDistBuild.js`. | Dist generation exists but is not authoritative runtime. `noResolve` is a boundary marker, not final architecture. |
+| Unified dry-run build | `backend/tsconfig.json` emits JS from `src` to `dist`; `npm --prefix backend run check:backend-build` runs `tsc` plus `scripts/checkBackendDistBuild.cjs`. | Dist generation exists but is not authoritative runtime. |
 | Schema module | Source: `backend/src/routes/schemas/mutations.ts`; emitted artifact: `backend/dist/routes/schemas/mutations.js`. | Schema facade/generated scaffolding has been retired. |
 | Notes route | Source: `backend/src/routes/notesRoutes.ts`; emitted artifact: `backend/dist/routes/notesRoutes.js`. | Notes island facade/generated scaffolding has been retired. |
 | DTO pilot | Retired after product routes, schema module, and request-body validation middleware moved to TS. | No active DTO pilot tsconfig remains. |
@@ -88,7 +88,7 @@ Likely work:
 - Confirm exactly which `backend/src/**` files should emit to `backend/dist`.
 - Decide whether `noResolve: true` remains a temporary guard or is replaced by explicit excludes/ambient declarations.
 - Keep `backend/private_core/**` outside the build unless the human opens that gate.
-- Expand `scripts/checkBackendDistBuild.js` only enough to prove expected dist entrypoints are emitted and current runtime scripts still point to source.
+- Expand `scripts/checkBackendDistBuild.cjs` only enough to prove expected dist entrypoints are emitted and current runtime scripts still point to the approved runtime entrypoint.
 
 Automation fit:
 

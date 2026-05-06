@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `AI RuntimeControls Schema Normalization`
+- Sprint: `Backend ESM Cutover Prep`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/ai-runtimecontrols-schema-normalization.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/backend-esm-cutover-prep.md`
 
 ## Next Use
 

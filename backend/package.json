@@ -8,12 +8,12 @@
     "dev": "npm run build:backend && node dist/server.js",
     "lint": "npm --prefix .. run lint:backend",
     "test": "npm run build:backend && node --test",
-    "build:backend": "node scripts/cleanBackendDist.js && tsc -p tsconfig.json",
-    "smoke:backend-dist": "npm run build:backend && node scripts/smokeBackendDistRuntime.js",
-    "check:backend-dist-runtime": "npm run build:backend && node scripts/checkBackendDistBuild.js && node scripts/smokeBackendDistRuntime.js",
-    "check:backend-build": "npm run build:backend && node scripts/checkBackendDistBuild.js && node scripts/smokeBackendDistRuntime.js",
+    "build:backend": "node scripts/cleanBackendDist.cjs && tsc -p tsconfig.json",
+    "smoke:backend-dist": "npm run build:backend && node scripts/smokeBackendDistRuntime.cjs",
+    "check:backend-dist-runtime": "npm run build:backend && node scripts/checkBackendDistBuild.cjs && node scripts/smokeBackendDistRuntime.cjs",
+    "check:backend-build": "npm run build:backend && node scripts/checkBackendDistBuild.cjs && node scripts/smokeBackendDistRuntime.cjs",
     "bootstrap:owner": "node scripts/bootstrapOwner.mjs",
-    "normalize:legacy-archived-tasks": "npm run build:backend && node scripts/normalizeLegacyArchivedTasks.js"
+    "normalize:legacy-archived-tasks": "npm run build:backend && node scripts/normalizeLegacyArchivedTasks.cjs"
   },
   "keywords": [],
   "author": "",

@@ -1,11 +1,18 @@
 const dotenv = require('dotenv');
 dotenv.config();
 
+const path = require('path');
+const { pathToFileURL } = require('url');
 const mongoose = require('mongoose');
-const Task = require('../dist/models/Task');
+
+async function importDistDefault(relativePath) {
+  const moduleNamespace = await import(pathToFileURL(path.resolve(__dirname, '..', 'dist', relativePath)).href);
+  return moduleNamespace.default || moduleNamespace;
+}
 
 async function main() {
   const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/personal-os-lite';
+  const Task = await importDistDefault('models/Task.js');
 
   await mongoose.connect(mongoUri);
 

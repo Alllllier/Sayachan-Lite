@@ -24,6 +24,15 @@
 
 ## Recorded Decisions
 
+### `Backend ESM cutover excludes private_core`
+
+- Date: `2026-05-07`
+- Type: `transition-rule`
+- Scope: `backend module-system migration, private_core package boundary, TypeScript/ESM sequencing`
+- Decision: `Backend ESM work should proceed as a backend-only migration. The private_core package at @allier/sayachan-ai-core remains CommonJS during the backend ESM cutover and should be consumed through an explicit backend bridge/interop boundary. private_core TypeScript and ESM migration is deferred to a separate future thread/sprint.`
+- Reason: `Backend now has a dist-first TypeScript runtime path, while private_core is an independent CommonJS package with its own AI-core architecture surface. Keeping private_core out of the backend ESM cutover reduces blast radius and lets backend scripts/tests/import style be solved without simultaneously redesigning the AI core package.`
+- Follow-up: `Shape backend ESM work in two steps: Backend ESM Cutover Prep first, then Backend ESM Cutover. Escalate before changing private_core module type or moving private_core into the backend build boundary.`
+
 ### `Backend TypeScript migration can automate repeated execution after human architecture gates`
 
 - Date: `2026-05-06`

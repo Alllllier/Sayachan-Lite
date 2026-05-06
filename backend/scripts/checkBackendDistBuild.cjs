@@ -20,6 +20,20 @@ function toPortablePath(filePath) {
   return filePath.split(path.sep).join('/');
 }
 
+function moduleSpecifiers(specifier) {
+  const specifiers = [specifier];
+  if ((specifier.startsWith('./') || specifier.startsWith('../')) && !path.extname(specifier)) {
+    specifiers.push(`${specifier}.js`);
+  }
+  return specifiers;
+}
+
+function sourceReferencesModule(source, specifier) {
+  return moduleSpecifiers(specifier).some(candidate => (
+    source.includes(`"${candidate}"`) || source.includes(`'${candidate}'`)
+  ));
+}
+
 function walkFiles(root) {
   if (!fs.existsSync(root)) {
     return [];
@@ -87,7 +101,14 @@ function assertPackageRuntimeBoundary() {
   ];
   const runtimeLoaderScriptPattern = /\b(?:tsx|ts-node|ts-node-dev|babel-node|esbuild-register)\b|@swc-node\/register|@babel\/register|--loader\b/;
 
-  assert(backendPackage.type === 'commonjs', 'backend/package.json must remain "type": "commonjs".');
+  assert(
+    backendPackage.type === 'commonjs' || backendPackage.type === 'module',
+    'backend/package.json type must be an explicit supported Node module type.'
+  );
+  assert(
+    backendScripts['build:backend'] === 'node scripts/cleanBackendDist.cjs && tsc -p tsconfig.json',
+    'backend build script must clean dist through the package-type-stable .cjs helper before tsc.'
+  );
   assert(
     backendScripts.start === 'npm run build:backend && node dist/server.js',
     'backend start script must build and run "node dist/server.js".'
@@ -105,7 +126,19 @@ function assertPackageRuntimeBoundary() {
     'backend must depend on @allier/sayachan-ai-core through the local private_core package boundary.'
   );
   assert(
-    backendScripts['normalize:legacy-archived-tasks'] === 'npm run build:backend && node scripts/normalizeLegacyArchivedTasks.js',
+    backendScripts['smoke:backend-dist'] === 'npm run build:backend && node scripts/smokeBackendDistRuntime.cjs',
+    'backend dist smoke script must use the package-type-stable .cjs helper.'
+  );
+  assert(
+    backendScripts['check:backend-dist-runtime'] === 'npm run build:backend && node scripts/checkBackendDistBuild.cjs && node scripts/smokeBackendDistRuntime.cjs',
+    'backend dist runtime check must use package-type-stable .cjs helpers.'
+  );
+  assert(
+    backendScripts['check:backend-build'] === 'npm run build:backend && node scripts/checkBackendDistBuild.cjs && node scripts/smokeBackendDistRuntime.cjs',
+    'backend dist build check must use package-type-stable .cjs helpers.'
+  );
+  assert(
+    backendScripts['normalize:legacy-archived-tasks'] === 'npm run build:backend && node scripts/normalizeLegacyArchivedTasks.cjs',
     'legacy archived-task normalization must build backend dist before loading compiled models.'
   );
 
@@ -145,7 +178,7 @@ function assertPrivateCorePackageBoundary() {
   const bridgeSource = fs.readFileSync(path.join(srcRoot, 'ai', 'bridge.ts'), 'utf8');
 
   assert(
-    bridgeSource.includes("require('@allier/sayachan-ai-core')"),
+    bridgeSource.includes('@allier/sayachan-ai-core'),
     'backend AI bridge must import @allier/sayachan-ai-core by package name.'
   );
   assert(
@@ -158,7 +191,7 @@ function assertAiBridgeDistArtifactFromTypeScriptSource() {
   const bridgeDistSource = fs.readFileSync(path.join(distRoot, 'ai', 'bridge.js'), 'utf8');
 
   assert(
-    bridgeDistSource.includes("require('@allier/sayachan-ai-core')") || bridgeDistSource.includes('require("@allier/sayachan-ai-core")'),
+    bridgeDistSource.includes('@allier/sayachan-ai-core'),
     'dist AI bridge artifact must import @allier/sayachan-ai-core by package name.'
   );
   assert(
@@ -183,11 +216,11 @@ function assertAiRoutesDistArtifactFromTypeScriptSource() {
     'dist AI route artifact must preserve route-local test helpers.'
   );
   assert(
-    aiRoutesDistSource.includes("require('./schemas/ai')") || aiRoutesDistSource.includes('require("./schemas/ai")'),
+    sourceReferencesModule(aiRoutesDistSource, './schemas/ai'),
     'dist AI route artifact must use the AI request schema boundary.'
   );
   assert(
-    aiRoutesDistSource.includes("require('../services/aiService')") || aiRoutesDistSource.includes('require("../services/aiService")'),
+    sourceReferencesModule(aiRoutesDistSource, '../services/aiService'),
     'dist AI route artifact must use the AI service boundary.'
   );
 }
@@ -196,7 +229,7 @@ function assertSchemaDistArtifactFromTypeScriptSource() {
   const schemaDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'schemas', 'mutations.js'), 'utf8');
 
   assert(
-    schemaDistSource.includes('require("zod")'),
+    sourceReferencesModule(schemaDistSource, 'zod'),
     'dist schema mutation artifact must be emitted from mutations.ts and import zod directly.'
   );
   assert(
@@ -217,7 +250,7 @@ function assertAuthSchemaDistArtifactFromTypeScriptSource() {
     'dist auth schema artifact must preserve registerTesterSchema.'
   );
   assert(
-    authSchemaDistSource.includes('require("zod")'),
+    sourceReferencesModule(authSchemaDistSource, 'zod'),
     'dist auth schema artifact must import zod directly.'
   );
 }
@@ -234,7 +267,7 @@ function assertAiSchemaDistArtifactFromTypeScriptSource() {
     'dist AI schema artifact must preserve aiChatSchema.'
   );
   assert(
-    aiSchemaDistSource.includes('require("zod")'),
+    sourceReferencesModule(aiSchemaDistSource, 'zod'),
     'dist AI schema artifact must import zod directly.'
   );
 }
@@ -247,7 +280,7 @@ function assertNotesDistArtifactFromTypeScriptSource() {
     'dist Notes route artifact must not be the source-runtime facade over __generated__.'
   );
   assert(
-    notesDistSource.includes("require('./schemas/mutations')") || notesDistSource.includes('require("./schemas/mutations")'),
+    sourceReferencesModule(notesDistSource, './schemas/mutations'),
     'dist Notes route artifact must be emitted from notesRoutes.ts and import the normal schema route path.'
   );
 }
@@ -256,7 +289,7 @@ function assertProjectsDistArtifactFromTypeScriptSource() {
   const projectsDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'projectsRoutes.js'), 'utf8');
 
   assert(
-    projectsDistSource.includes("require('./schemas/mutations')") || projectsDistSource.includes('require("./schemas/mutations")'),
+    sourceReferencesModule(projectsDistSource, './schemas/mutations'),
     'dist Projects route artifact must be emitted from projectsRoutes.ts and import the normal schema route path.'
   );
   assert(
@@ -269,7 +302,7 @@ function assertTasksDistArtifactFromTypeScriptSource() {
   const tasksDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'tasksRoutes.js'), 'utf8');
 
   assert(
-    tasksDistSource.includes("require('./schemas/mutations')") || tasksDistSource.includes('require("./schemas/mutations")'),
+    sourceReferencesModule(tasksDistSource, './schemas/mutations'),
     'dist Tasks route artifact must be emitted from tasksRoutes.ts and import the normal schema route path.'
   );
   assert(
@@ -304,7 +337,7 @@ function assertRouteIndexDistArtifactFromTypeScriptSource() {
 
   for (const routeModule of ['./authRoutes', './healthRoutes', './notesRoutes', './projectsRoutes', './tasksRoutes']) {
     assert(
-      routeIndexDistSource.includes(`require("${routeModule}")`) || routeIndexDistSource.includes(`require('${routeModule}')`),
+      sourceReferencesModule(routeIndexDistSource, routeModule),
       `dist route index artifact must register ${routeModule}.`
     );
   }
@@ -339,11 +372,11 @@ function assertAuthRoutesDistArtifactFromTypeScriptSource() {
     'dist authRoutes artifact must preserve owner invite revoke route.'
   );
   assert(
-    authRoutesDistSource.includes("require('../middleware/auth')") || authRoutesDistSource.includes('require("../middleware/auth")'),
+    sourceReferencesModule(authRoutesDistSource, '../middleware/auth'),
     'dist authRoutes artifact must use the compiled auth middleware boundary.'
   );
   assert(
-    authRoutesDistSource.includes("require('./schemas/auth')") || authRoutesDistSource.includes('require("./schemas/auth")'),
+    sourceReferencesModule(authRoutesDistSource, './schemas/auth'),
     'dist authRoutes artifact must use the auth request schema boundary.'
   );
 }
@@ -365,7 +398,7 @@ function assertServerDistArtifactFromTypeScriptSource() {
   const serverDistSource = fs.readFileSync(path.join(distRoot, 'server.js'), 'utf8');
 
   assert(
-    serverDistSource.includes('require("./database")'),
+    sourceReferencesModule(serverDistSource, './database'),
     'dist server artifact must import the compiled database module.'
   );
   assert(
@@ -535,7 +568,7 @@ function assertTasksServiceDistArtifactFromTypeScriptSource() {
     'dist tasksService artifact must preserve focus clearing behavior.'
   );
   assert(
-    tasksServiceDistSource.includes('require("../domain/ownership")') || tasksServiceDistSource.includes("require('../domain/ownership')"),
+    sourceReferencesModule(tasksServiceDistSource, '../domain/ownership'),
     'dist tasksService artifact must use the domain ownership boundary.'
   );
 }
@@ -607,7 +640,7 @@ function assertAiServiceDistArtifactFromTypeScriptSource() {
     'dist aiService artifact must preserve chat orchestration.'
   );
   assert(
-    aiServiceDistSource.includes("require('../ai/bridge')") || aiServiceDistSource.includes('require("../ai/bridge")'),
+    sourceReferencesModule(aiServiceDistSource, '../ai/bridge'),
     'dist aiService artifact must use the public AI bridge boundary.'
   );
 }

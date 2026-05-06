@@ -69,7 +69,7 @@ export default [
     }
   },
   {
-    files: ['backend/**/*.js'],
+    files: ['backend/**/*.js', 'backend/**/*.cjs'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'commonjs',
