@@ -1,12 +1,12 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const Note = require('../src/models/Note');
-const Project = require('../src/models/Project');
-const Task = require('../src/models/Task');
-const aiRoutes = require('../src/routes/ai');
-const { errorBoundary } = require('../src/middleware/errorBoundary');
-const routes = require('../src/routes/index.js');
+const Note = require('../dist/models/Note');
+const Project = require('../dist/models/Project');
+const Task = require('../dist/models/Task');
+const aiRoutes = require('../dist/routes/ai');
+const { errorBoundary } = require('../dist/middleware/errorBoundary');
+const routes = require('../dist/routes/index.js');
 
 function getRouteHandler(router, method, path) {
   const layer = router.stack.find((entry) => entry.path === path && entry.methods.includes(method));

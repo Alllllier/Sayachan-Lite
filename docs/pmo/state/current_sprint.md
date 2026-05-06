@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Backend Dev Dist Runtime Cutover V1`
+- Sprint: `Backend Dist Validation Alignment V1`
 - Closeout date: `2026-05-06`
 - Delivery status: `completed and validated`
 - Commit state: `not committed in this closeout`
 - Documentation sync outcome: `updated`
 - Residual note: `none`
-- Report surface: `docs/pmo/history/reports/backend-dev-dist-runtime-cutover-v1.md`
+- Report surface: `docs/pmo/history/reports/backend-dist-validation-alignment-v1.md`
 
 ## Next PMO Action
 

@@ -1,8 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const Task = require('../src/models/Task');
-const routes = require('../src/routes/index.js');
+const Task = require('../dist/models/Task');
+const routes = require('../dist/routes/index.js');
 
 test('restoreTasks keeps canonical project scope when reading archived tasks', async () => {
   const originalFind = Task.find;

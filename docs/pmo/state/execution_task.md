@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Backend Dev Dist Runtime Cutover V1`
+- Sprint: `Backend Dist Validation Alignment V1`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/backend-dev-dist-runtime-cutover-v1.md`
+- Report surface: `docs/pmo/history/reports/backend-dist-validation-alignment-v1.md`
 
 ## Next Activation Rule
 

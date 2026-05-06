@@ -24,21 +24,21 @@ Current transitional type-island truth:
 
 - `npm --prefix backend run build:backend` can emit the current backend CommonJS runtime graph into ignored `backend/dist` build output as a dry-run
 - `npm --prefix backend run check:backend-build` rebuilds and smoke-loads the emitted dist route/server dependency graph without changing the active runtime startup path
-- `npm --prefix backend run check:backend-dist-runtime` rebuilds backend dist, runs the dist boundary guard, smoke-loads the current source runtime graph, and smoke-loads the compiled dist runtime graph under MongoDB/Koa listen mocks; root `npm run check` includes this gate
+- `npm --prefix backend run check:backend-dist-runtime` rebuilds backend dist, runs the dist boundary guard, and smoke-loads the compiled dist runtime graph under MongoDB/Koa listen mocks; root `npm run check` includes this gate
 - backend `start` and `dev` both build and run `node dist/server.js`
 - `backend/dist` is now the default backend runtime output for both start and development commands
 - product mutation schemas and DTO types are authored in `backend/src/routes/schemas/mutations.ts`
 - `npm --prefix backend run build:schema-island` emits checked-in CommonJS artifacts under `backend/src/routes/schemas/__generated__/`
 - `npm --prefix backend run check:schema-island` compares freshly compiled schema-island output with the checked-in generated artifacts and is included in root `npm run check`
 - the unified backend `tsc` dry-run now includes `backend/src/routes/schemas/mutations.ts`, so `backend/dist/routes/schemas/mutations.js` is emitted from the TS schema source rather than from the source-runtime facade
-- the source runtime smoke path still consumes `backend/src/routes/schemas/mutations.js`, so checked-in generated schema artifacts and the facade remain active transitional scaffolding until a separate cleanup slice removes that source-runtime compatibility layer
+- the default validation path no longer smoke-loads the source runtime, so checked-in generated schema artifacts and the facade are now cleanup candidates rather than default runtime requirements
 - Notes route orchestration is authored in `backend/src/routes/__route_sources__/notesRoutes.ts`
 - `npm --prefix backend run build:notes-route-island` emits checked-in CommonJS artifacts under `backend/src/routes/__generated__/`
 - `npm --prefix backend run check:notes-route-island` compares freshly compiled Notes route output with the checked-in generated artifacts and is included in root `npm run check`
-- `backend/src/routes/notesRoutes.js` remains the stable CommonJS facade consumed by the source runtime smoke path
-- existing source Notes, Projects, and Tasks route modules still consume `backend/src/routes/schemas/mutations.js`
-- `backend/src/routes/schemas/mutations.js` is a stable facade over the generated artifact so source route import paths do not churn during migration
-- generated schema-island files are migration scaffolding and should be regenerated with `npm --prefix backend run build:schema-island` after edits to `mutations.ts`
+- `backend/src/routes/notesRoutes.js` remains a source compatibility facade over checked-in generated Notes route output until the Notes route TS source moves to its normal route path
+- existing source Notes, Projects, and Tasks route modules still consume `backend/src/routes/schemas/mutations.js`, but backend `start`, `dev`, and tests now exercise the compiled dist runtime path
+- `backend/src/routes/schemas/mutations.js` is a source compatibility facade over the generated artifact until schema scaffold cleanup removes the source facade layer
+- generated schema-island files are migration scaffolding and should be regenerated with `npm --prefix backend run build:schema-island` after edits to `mutations.ts` until the cleanup slice retires that guardrail
 - the long-term cleanup target is to remove this facade/generated-source pattern once the backend has an approved whole-TypeScript build/runtime path
 
 ## Auth And Account Runtime

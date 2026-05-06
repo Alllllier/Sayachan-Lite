@@ -1,22 +1,22 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const Note = require('../src/models/Note');
-const Project = require('../src/models/Project');
-const Task = require('../src/models/Task');
-const notesService = require('../src/services/notesService');
-const projectsService = require('../src/services/projectsService');
-const tasksService = require('../src/services/tasksService');
-const { errorBoundary } = require('../src/middleware/errorBoundary');
-const routes = require('../src/routes/index.js');
+const Note = require('../dist/models/Note');
+const Project = require('../dist/models/Project');
+const Task = require('../dist/models/Task');
+const notesService = require('../dist/services/notesService');
+const projectsService = require('../dist/services/projectsService');
+const tasksService = require('../dist/services/tasksService');
+const { errorBoundary } = require('../dist/middleware/errorBoundary');
+const routes = require('../dist/routes/index.js');
 const {
   BadRequestError,
   assertZodSchema
-} = require('../src/middleware/requestBodyValidation');
+} = require('../dist/middleware/requestBodyValidation');
 const {
   taskCreateSchema,
   taskUpdateSchema
-} = require('../src/routes/schemas/mutations');
+} = require('../dist/routes/schemas/mutations');
 
 function getRouteHandler(method, path) {
   const layer = routes.stack.find((entry) => entry.path === path && entry.methods.includes(method));

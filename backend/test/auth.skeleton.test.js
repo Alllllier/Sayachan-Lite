@@ -1,13 +1,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const User = require('../src/models/User');
-const Invite = require('../src/models/Invite');
-const Session = require('../src/models/Session');
-const authService = require('../src/services/authService');
-const { authMiddleware } = require('../src/middleware/auth');
-const { errorBoundary } = require('../src/middleware/errorBoundary');
-const routes = require('../src/routes/index.js');
+const User = require('../dist/models/User');
+const Invite = require('../dist/models/Invite');
+const Session = require('../dist/models/Session');
+const authService = require('../dist/services/authService');
+const { authMiddleware } = require('../dist/middleware/auth');
+const { errorBoundary } = require('../dist/middleware/errorBoundary');
+const routes = require('../dist/routes/index.js');
 
 function createDoc(data) {
   return {

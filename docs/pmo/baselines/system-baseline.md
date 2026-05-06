@@ -47,9 +47,9 @@ Current frontend code shape:
 Current repo-native validation shape:
 
 - root `npm run check` is the ordinary quality gate for worker validation
-- root `check` aggregates low-noise lint, frontend unit tests, backend tests, and frontend build
+- root `check` aggregates low-noise lint, backend dist runtime readiness, frontend unit tests, backend tests, and frontend build
 - root exposes focused typecheck scripts for current type-adoption pilots, including frontend task typing and backend DTO typing, but these are not yet part of the default `check` aggregate
-- root exposes `npm run build:backend` and `npm run check:backend-build` as named backend unified `tsc` dry-run commands; these are not yet part of the default `check` aggregate
+- root exposes `npm run build:backend`, `npm run check:backend-build`, and `npm run check:backend-dist-runtime` as named backend dist commands; backend dist runtime readiness is part of the default `check` aggregate
 - feature and service behavior tests live alongside frontend feature/service modules
 - browser/UI review baselines live under `frontend/tests/ui-review/<surface>/`
 - current UI review surfaces are Notes, Projects, Dashboard, and Chat
@@ -62,6 +62,7 @@ Current backend type-adoption shape:
 - backend runtime remains plain Node/CommonJS, with backend `start` and `dev` both building and running `node dist/server.js`
 - `npm --prefix backend run build:backend` is the unified CommonJS `tsc` build that emits the current backend CommonJS runtime graph into ignored build output under `backend/dist`
 - `npm --prefix backend run check:backend-build` runs that build and loads the emitted dist route/server dependency graph under a smoke harness
+- `npm --prefix backend test` builds backend dist before running backend tests, and backend tests import runtime modules from `backend/dist`
 - `backend/src/routes/schemas/mutations.ts` is the first focused TypeScript schema/DTO island for product mutation validation
 - `npm --prefix backend run build:schema-island` compiles that island into checked-in CommonJS artifacts under `backend/src/routes/schemas/__generated__/`
 - `npm --prefix backend run check:schema-island` verifies those checked-in generated artifacts are in sync with `mutations.ts`; the root `npm run check` quality gate includes this guardrail
