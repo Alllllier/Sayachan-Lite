@@ -6,10 +6,10 @@ Last updated: 2026-05-06
 ## Current Runtime Truth
 
 - backend `start` builds and runs `node dist/server.js`
-- backend `dev` still runs `node src/server.js`
-- schema and Notes generated/facade scaffolding still exists
-- root `npm run check` still includes schema and Notes island guardrails
-- root `npm run check` does not include `check:backend-dist-runtime`
+- backend `dev` builds and runs `node dist/server.js`
+- schema generated/facade scaffolding still exists
+- Notes route generated/facade scaffolding has been retired
+- root `npm run check` includes schema island guardrail and backend dist runtime readiness
 
 ## Cleanup Readiness
 
@@ -24,7 +24,7 @@ Current source runtime still needs:
 Reason:
 
 - Projects and Tasks source routes still require `./schemas/mutations`
-- backend `dev` runs source runtime
+- backend `dev` runs dist runtime, but Projects and Tasks source files still keep the source schema facade in place until schema cleanup
 - Node cannot require `mutations.ts` directly without introducing a runtime TS loader
 
 Current dist runtime already uses:
@@ -33,77 +33,51 @@ Current dist runtime already uses:
 
 Decision:
 
-- schema scaffold deletion is not ready while `dev` remains source-based
+- schema scaffold deletion is now a cleanup candidate, but should happen in its own focused slice
 
 ### Notes Route Island
 
-Current source runtime still needs:
+Notes route source-runtime scaffold has been retired:
 
-- `backend/src/routes/notesRoutes.js`
-- `backend/src/routes/__generated__/notesRoutes.js`
-- `backend/src/routes/__generated__/notesRoutes.d.ts`
-- `backend/src/routes/__route_sources__/notesRoutes.ts`
+- `backend/src/routes/notesRoutes.ts` now lives at the normal route path
+- unified backend build emits `backend/dist/routes/notesRoutes.js`
+- `backend/src/routes/notesRoutes.js`, `backend/src/routes/__generated__/notesRoutes.js`, `backend/src/routes/__generated__/notesRoutes.d.ts`, and `backend/src/routes/__route_sources__/notesRoutes.ts` are no longer active
 
 Reason:
 
-- `backend/src/routes/index.js` requires `./notesRoutes`
-- backend `dev` runs source runtime
-- moving the TS route to the normal source path broke generated artifact relative imports during the previous probe
+- backend default runtime and backend tests now run from dist
+- `backend/dist/routes/index.js` requires compiled `./notesRoutes`
 
 Decision:
 
-- Notes scaffold deletion is not ready while `dev` remains source-based
+- Notes scaffold deletion is complete
 
 ## Safe Follow-Up Options
 
-### Option A: Keep Dev Source-Based And Keep Scaffolding
+### Option A: Retire Schema Scaffold
 
 Pros:
 
-- lowest risk
-- preserves current developer workflow
-- no runtime loader needed
+- removes the remaining generated/facade source compatibility layer
+- lets schema TS source become the direct build/runtime source of truth
 
 Cons:
 
-- schema/Notes generated scaffolding stays longer
-- source and dist runtime paths remain different
+- requires updating Projects and Tasks source route imports or moving them toward TS/dist-only assumptions
 
-### Option B: Switch Dev To Build-Backed Dist Runtime
+### Option B: Continue Route TS Migration
 
 Pros:
 
-- source runtime no longer needs generated/facade scaffolding
-- cleanup becomes much simpler
-- start and dev align around dist runtime
+- expands the proven Notes route pattern to Projects or Tasks
+- reduces the number of JS route modules that depend on the schema source facade
 
 Cons:
 
-- changes developer workflow
-- may need watch/restart ergonomics later
-
-### Option C: Add A Runtime TS Loader For Dev
-
-Pros:
-
-- could let source dev require TS directly
-
-Cons:
-
-- explicitly outside the current migration direction
-- adds runtime complexity
-- was previously human-gated
+- broader route migration can touch more behavior at once
 
 ## Recommendation
 
-Do not delete schema or Notes scaffolding yet.
+Notes scaffold cleanup is complete. Recommended next step:
 
-Recommended next decision:
-
-- decide whether backend `dev` should remain source-based for now or switch to a build-backed dist workflow
-
-Recommended operational hardening:
-
-- consider adding `npm --prefix backend run check:backend-dist-runtime` to root `npm run check` now that backend `start` uses dist
-
-Both are human-visible decisions because they affect developer workflow or root check cost.
+- retire the remaining schema generated/facade scaffold in a focused slice, or first migrate Projects/Tasks routes to reduce dependency on the source schema facade

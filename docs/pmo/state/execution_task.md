@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Backend Dist Validation Alignment V1`
+- Sprint: `Notes Route Scaffold Retirement V1`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/backend-dist-validation-alignment-v1.md`
+- Report surface: `docs/pmo/history/reports/notes-route-scaffold-retirement-v1.md`
 
 ## Next Activation Rule
 

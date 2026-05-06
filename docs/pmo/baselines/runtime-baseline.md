@@ -32,10 +32,8 @@ Current transitional type-island truth:
 - `npm --prefix backend run check:schema-island` compares freshly compiled schema-island output with the checked-in generated artifacts and is included in root `npm run check`
 - the unified backend `tsc` dry-run now includes `backend/src/routes/schemas/mutations.ts`, so `backend/dist/routes/schemas/mutations.js` is emitted from the TS schema source rather than from the source-runtime facade
 - the default validation path no longer smoke-loads the source runtime, so checked-in generated schema artifacts and the facade are now cleanup candidates rather than default runtime requirements
-- Notes route orchestration is authored in `backend/src/routes/__route_sources__/notesRoutes.ts`
-- `npm --prefix backend run build:notes-route-island` emits checked-in CommonJS artifacts under `backend/src/routes/__generated__/`
-- `npm --prefix backend run check:notes-route-island` compares freshly compiled Notes route output with the checked-in generated artifacts and is included in root `npm run check`
-- `backend/src/routes/notesRoutes.js` remains a source compatibility facade over checked-in generated Notes route output until the Notes route TS source moves to its normal route path
+- Notes route orchestration is authored in `backend/src/routes/notesRoutes.ts` and emitted directly by the unified backend build
+- the Notes route island facade/generated path has been retired; root `npm run check` no longer includes `check:notes-route-island`
 - existing source Notes, Projects, and Tasks route modules still consume `backend/src/routes/schemas/mutations.js`, but backend `start`, `dev`, and tests now exercise the compiled dist runtime path
 - `backend/src/routes/schemas/mutations.js` is a source compatibility facade over the generated artifact until schema scaffold cleanup removes the source facade layer
 - generated schema-island files are migration scaffolding and should be regenerated with `npm --prefix backend run build:schema-island` after edits to `mutations.ts` until the cleanup slice retires that guardrail

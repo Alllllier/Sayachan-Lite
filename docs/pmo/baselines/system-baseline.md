@@ -66,11 +66,9 @@ Current backend type-adoption shape:
 - `backend/src/routes/schemas/mutations.ts` is the first focused TypeScript schema/DTO island for product mutation validation
 - `npm --prefix backend run build:schema-island` compiles that island into checked-in CommonJS artifacts under `backend/src/routes/schemas/__generated__/`
 - `npm --prefix backend run check:schema-island` verifies those checked-in generated artifacts are in sync with `mutations.ts`; the root `npm run check` quality gate includes this guardrail
-- the unified backend `tsc` dry-run also includes `backend/src/routes/schemas/mutations.ts` and emits `backend/dist/routes/schemas/mutations.js` from the TS source, while excluding the source-runtime facade from that dist artifact to avoid output collision
-- `backend/src/routes/__route_sources__/notesRoutes.ts` is the first focused TypeScript route island for product route orchestration; `npm --prefix backend run build:notes-route-island` compiles it into checked-in CommonJS artifacts under `backend/src/routes/__generated__/`
-- `npm --prefix backend run check:notes-route-island` verifies the checked-in Notes route generated artifacts are in sync with the typed route source; the root `npm run check` quality gate includes this guardrail
+- the unified backend `tsc` build also includes `backend/src/routes/schemas/mutations.ts` and emits `backend/dist/routes/schemas/mutations.js` from the TS source, while excluding the source-runtime facade from that dist artifact to avoid output collision
+- `backend/src/routes/notesRoutes.ts` is the first product route whose TypeScript source now lives at the normal route path and emits directly to `backend/dist/routes/notesRoutes.js`
 - `backend/src/routes/schemas/mutations.js` remains the stable CommonJS facade consumed by existing route modules
-- `backend/src/routes/notesRoutes.js` remains the stable CommonJS facade consumed by `backend/src/routes/index.js`
 - checked-in generated schema-island artifacts are transitional migration scaffolding for source-runtime compatibility checks; regenerate them with `npm --prefix backend run build:schema-island` after editing `mutations.ts`, and remove or replace the pattern in a separate cleanup slice after the dist runtime path is authoritative enough to drop the source facade layer
 
 ## Public Runtime Surfaces
@@ -138,9 +136,7 @@ Backend routes currently split into:
 - `backend/src/routes/index.js`
 - `backend/src/routes/authRoutes.js`
 - `backend/src/routes/healthRoutes.js`
-- `backend/src/routes/notesRoutes.js`
-- `backend/src/routes/__route_sources__/notesRoutes.ts`
-- `backend/src/routes/__generated__/notesRoutes.js`
+- `backend/src/routes/notesRoutes.ts`
 - `backend/src/routes/projectsRoutes.js`
 - `backend/src/routes/tasksRoutes.js`
 - `backend/src/routes/schemas/mutations.js`

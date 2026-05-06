@@ -20,12 +20,12 @@ This document is a plan only. It does not approve a runtime cutover, ESM migrati
 | Backend runtime | `backend/package.json` uses `"type": "commonjs"`, `start` and `dev` run `node src/server.js`. | Runtime still loads source files. Dist is dry-run only. |
 | Unified dry-run build | `backend/tsconfig.json` emits JS from `src` to `dist` with `allowJs: true`, `checkJs: false`, `noResolve: true`; `npm --prefix backend run check:backend-build` runs `tsc` plus `scripts/checkBackendDistBuild.js`. | Dist generation exists but is not authoritative runtime. `noResolve` is a boundary marker, not final architecture. |
 | Schema typed island | Source: `backend/src/routes/schemas/mutations.ts`; facade: `backend/src/routes/schemas/mutations.js`; generated: `backend/src/routes/schemas/__generated__/mutations.js` and `.d.ts`; guardrail: `check:schema-island`. | Keep until normal dist runtime can load compiled TS output without source facades. |
-| Notes route island | Source: `backend/src/routes/__route_sources__/notesRoutes.ts`; facade: `backend/src/routes/notesRoutes.js`; generated: `backend/src/routes/__generated__/notesRoutes.js` and `.d.ts`; guardrail: `check:notes-route-island`. | Keep until Notes can live at its runtime path and be emitted by unified backend build. |
+| Notes route | Source: `backend/src/routes/notesRoutes.ts`; emitted artifact: `backend/dist/routes/notesRoutes.js`. | Notes island facade/generated scaffolding has been retired. |
 | DTO pilot | `backend/tsconfig.dto-pilot.json` type-checks JS routes and DTO/schema coupling. | Retire only after real route TS migration and unified build cover the same constraints. |
-| Product routes | `backend/src/routes/notesRoutes.js`, `projectsRoutes.js`, `tasksRoutes.js` remain public runtime entrypoints; Notes currently facade-backed. | Projects/Tasks are future batches. Notes is the first island retirement candidate. |
+| Product routes | `backend/src/routes/notesRoutes.ts`, `projectsRoutes.js`, `tasksRoutes.js` remain public runtime entrypoints through compiled dist output. | Projects/Tasks are future route TS batches. Notes has retired its island facade. |
 | Services/models/middleware | Plain CommonJS JS under `backend/src/services`, `backend/src/models`, `backend/src/middleware`. | They can remain JS during early dist runtime if emitted unchanged; type migration is separable. |
 | Private core | `backend/src/ai/bridge.js` crosses into `backend/private_core/sayachan-ai-core`. | Inclusion in backend build is a human architecture gate. Do not absorb implicitly. |
-| Root check | Root `npm run check` includes lint, schema island check, notes route island check, tests, frontend build. | Heavy dist validation should only be added to root check after human approval. |
+| Root check | Root `npm run check` includes lint, schema island check, backend dist runtime readiness, tests, frontend build. | Dist validation has been added after human approval. |
 | Baselines | `docs/pmo/baselines/backend-api.md`, `runtime-baseline.md`, `system-baseline.md`. | Use as public behavior guards before and after cutover. |
 
 ## Target Architecture Recommendation
@@ -69,12 +69,11 @@ The following require explicit human/architecture approval before implementation
 
 ### Phase 0: Current Checkpoint
 
-Keep the current source runtime and all island guardrails intact.
+Current checkpoint after dist runtime cutover keeps the remaining schema island guardrail intact.
 
 Expected validation:
 
 - `npm --prefix backend run check:schema-island`
-- `npm --prefix backend run check:notes-route-island`
 - `npm --prefix backend run typecheck:dto-pilot`
 - `npm --prefix backend run check:backend-build`
 - `npm --prefix backend test`
@@ -136,17 +135,17 @@ Do not yet delete:
 
 Exit condition: PMO has an approved retirement batch for schema generated artifacts after dist runtime is authoritative.
 
-### Phase 4: Notes Route Island Retirement Prep
+### Phase 4: Notes Route Island Retirement
 
-Goal: prepare Notes route source to live at the real route path once unified build owns runtime output.
+Goal: retire the Notes route source-runtime facade and generated artifacts after unified build owns runtime output.
 
 Likely work:
 
-- Move only after approval: `backend/src/routes/__route_sources__/notesRoutes.ts` toward `backend/src/routes/notesRoutes.ts`.
-- Confirm `backend/src/routes/index.js` can continue requiring `./notesRoutes` in source runtime until cutover strategy is selected.
+- Notes route source now lives at `backend/src/routes/notesRoutes.ts`.
+- Confirm `backend/dist/routes/index.js` continues requiring compiled `./notesRoutes` in the dist runtime.
 - Confirm the dist build emits `dist/routes/notesRoutes.js` from the real TS source.
 
-Do not yet delete:
+Retired:
 
 - `backend/src/routes/notesRoutes.js` facade
 - `backend/src/routes/__generated__/notesRoutes.js`
@@ -228,10 +227,8 @@ Goal: remove temporary scaffolding only after dist runtime is stable.
 Cleanup candidates:
 
 - Schema generated artifacts and facade.
-- Notes generated artifacts and facade.
 - Per-island build/check scripts.
 - `backend/tsconfig.schema-island.json`
-- `backend/tsconfig.notes-route-island.json`
 - `backend/tsconfig.dto-pilot.json`, once route TS coverage replaces it.
 - PMO references that describe islands as active runtime requirements.
 
@@ -268,10 +265,10 @@ Human-owned:
 
 | Phase | Required validation |
 | --- | --- |
-| Current checkpoint | `npm --prefix backend run check:schema-island`; `npm --prefix backend run check:notes-route-island`; `npm --prefix backend run typecheck:dto-pilot`; `npm --prefix backend run check:backend-build`; `npm --prefix backend test`; `npm run check` |
+| Current checkpoint | `npm --prefix backend run check:schema-island`; `npm --prefix backend run typecheck:dto-pilot`; `npm --prefix backend run check:backend-build`; `npm --prefix backend test`; `npm run check` |
 | Dist build hardening | `npm --prefix backend run build:backend`; `npm --prefix backend run check:backend-build`; targeted script tests if added |
-| Dist smoke prep | new dist smoke/check command; source backend tests; contract baseline |
-| Schema/Notes retirement prep | island checks still green before retirement; unified build emits expected dist modules |
+| Dist smoke prep | dist smoke/check command; dist backend tests; contract baseline |
+| Schema/Notes retirement prep | remaining island checks still green before retirement; unified build emits expected dist modules |
 | Product route batches | unified build; route contract baseline; full backend tests for any route behavior change |
 | Runtime cutover | build; dist smoke; dist contract baseline; source-to-dist API comparison where practical; `npm run check` after approved root changes |
 | Post-cutover cleanup | unified build; no references to retired facades/generated artifacts; backend tests; root check |
@@ -281,7 +278,7 @@ Human-owned:
 - Keep each phase in a separate PMO sprint or clearly separable commit.
 - Do not combine runtime cutover with broad cleanup.
 - Do not delete generated artifacts/facades before the corresponding dist runtime path is green and approved.
-- Keep `node src/server.js` as the known rollback path until Phase 8 succeeds.
+- Keep validated commits as rollback checkpoints during the migration window.
 - For cutover rollback, restore `backend/package.json` runtime scripts to source, keep dist build commands available, and leave generated artifacts in place unless a later cleanup already has a separate rollback plan.
 - Treat baseline documents as checkpoints: update them only after validation proves behavior did not change or after a human accepts the behavior change.
 - If `private_core` resolution, ESM interop, or runtime loader pressure appears, stop the migration batch and return to PMO for an architecture decision.
@@ -292,7 +289,7 @@ Name: `Backend Dist Build Boundary Hardening V1`
 
 Scope:
 
-- Keep source runtime unchanged.
+- Keep dist runtime unchanged.
 - Strengthen the existing unified backend build dry-run boundary.
 - Make private core exclusion explicit or document why the current `noResolve` guard remains temporary.
 - Extend backend dist build smoke checks only for artifact/layout verification.
@@ -310,7 +307,5 @@ Suggested validation:
 
 - `npm --prefix backend run check:backend-build`
 - `npm --prefix backend run check:schema-island`
-- `npm --prefix backend run check:notes-route-island`
 - `npm --prefix backend test`
 - `npm run check`
-

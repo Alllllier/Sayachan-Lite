@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Backend Dist Validation Alignment V1`
+- Sprint: `Notes Route Scaffold Retirement V1`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/backend-dist-validation-alignment-v1.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/notes-route-scaffold-retirement-v1.md`
 
 ## Next Use
 

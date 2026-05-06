@@ -146,6 +146,19 @@ function assertSchemaDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertNotesDistArtifactFromTypeScriptSource() {
+  const notesDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'notesRoutes.js'), 'utf8');
+
+  assert(
+    !notesDistSource.includes('./__generated__/notesRoutes'),
+    'dist Notes route artifact must not be the source-runtime facade over __generated__.'
+  );
+  assert(
+    notesDistSource.includes("require('./schemas/mutations')") || notesDistSource.includes('require("./schemas/mutations")'),
+    'dist Notes route artifact must be emitted from notesRoutes.ts and import the normal schema route path.'
+  );
+}
+
 function assertCurrentSourceArtifactsWereEmitted() {
   const sourceFiles = walkFiles(srcRoot)
     .filter(filePath => path.extname(filePath) === '.js')
@@ -163,7 +176,6 @@ const requiredRuntimeEntrypoints = [
   path.join('routes', 'index.js'),
   path.join('routes', 'ai.js'),
   path.join('routes', 'notesRoutes.js'),
-  path.join('routes', '__generated__', 'notesRoutes.js'),
   path.join('routes', 'schemas', 'mutations.js'),
   path.join('routes', 'schemas', '__generated__', 'mutations.js')
 ];
@@ -177,8 +189,11 @@ for (const artifact of requiredRuntimeEntrypoints) {
 }
 
 assertNotExists(path.join('dist', 'private_core'));
+assertNotExists(path.join('dist', 'routes', '__generated__', 'notesRoutes.js'));
+assertNotExists(path.join('dist', 'routes', '__generated__', 'notesRoutes.d.ts'));
 assertNoPathSegment(distRoot, 'private_core');
 assertNoPathSegment(distRoot, '__route_sources__');
 assertSchemaDistArtifactFromTypeScriptSource();
+assertNotesDistArtifactFromTypeScriptSource();
 
 console.log('Backend dist build boundary check passed.');

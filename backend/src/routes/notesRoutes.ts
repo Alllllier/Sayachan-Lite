@@ -3,7 +3,7 @@ import Router, { type RouterMiddleware } from '@koa/router';
 import type {
   NoteCreateDto,
   NoteUpdateDto
-} from '../schemas/__generated__/mutations';
+} from './schemas/mutations';
 
 type CurrentUserState = {
   user?: {
@@ -46,18 +46,18 @@ type NotesService = {
   restoreNote(id: string, options: NotesServiceOptions): Promise<unknown>;
 };
 
-const notesService = require('../../services/notesService') as NotesService;
+const notesService = require('../services/notesService') as NotesService;
 const {
   noteCreateSchema,
   noteUpdateSchema
-} = require('../schemas/mutations') as {
+} = require('./schemas/mutations') as {
   noteCreateSchema: RequestBodySchema<NoteCreateDto>;
   noteUpdateSchema: RequestBodySchema<NoteUpdateDto>;
 };
-const { requireCurrentUser } = require('../../middleware/currentUser') as {
+const { requireCurrentUser } = require('../middleware/currentUser') as {
   requireCurrentUser: NotesMiddleware;
 };
-const { validateBody } = require('../../middleware/requestBodyValidation') as {
+const { validateBody } = require('../middleware/requestBodyValidation') as {
   validateBody: ValidateBody;
 };
 

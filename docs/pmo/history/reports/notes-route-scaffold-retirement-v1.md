@@ -1,0 +1,45 @@
+# Notes Route Scaffold Retirement V1
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Notes Route Scaffold Retirement V1`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Moved Notes route TypeScript source from `backend/src/routes/__route_sources__/notesRoutes.ts` to `backend/src/routes/notesRoutes.ts`.
+  - Removed the Notes route source facade and generated artifacts:
+    - `backend/src/routes/notesRoutes.js`
+    - `backend/src/routes/__generated__/notesRoutes.js`
+    - `backend/src/routes/__generated__/notesRoutes.d.ts`
+  - Removed Notes route island build/check config and script:
+    - `backend/tsconfig.notes-route-island.json`
+    - `backend/scripts/checkNotesRouteIslandGenerated.js`
+    - `build:notes-route-island`
+    - `check:notes-route-island`
+    - root `check:notes-route-island`
+  - Updated unified backend build config so `backend/src/routes/notesRoutes.ts` emits directly to `backend/dist/routes/notesRoutes.js`.
+  - Added a backend dist clean script so stale deleted artifacts cannot survive between builds.
+  - Hardened the dist boundary guard so Notes dist output must not be a facade over `__generated__`.
+  - Updated PMO baselines and migration references to record the retired Notes route scaffold.
+  - Did not retire schema generated/facade scaffolding in this slice.
+- Validation summary:
+  - `npm --prefix backend run check:backend-dist-runtime` passed.
+  - `npm --prefix backend run typecheck:dto-pilot` passed after excluding Notes from the JS DTO pilot; Notes is now covered by the main backend build.
+  - `npm run check` passed.
+    - Included lint, schema island guard, backend dist runtime readiness, frontend tests, backend tests, and frontend build.
+    - Frontend build retained the existing Vite chunk-size warning only.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If skipped, why skipping was acceptable:
+    - This sprint changed backend build/runtime wiring for Notes and did not change UI/browser behavior.
+    - Backend route contract and behavior tests passed against the dist runtime.
+- Unverified areas:
+  - No live manual browser review was run.
+  - Source runtime is no longer preserved as a supported execution path for Notes during the migration window.
+- Residual risks or escalations:
+  - Schema generated/facade scaffolding remains active and should be retired separately.
+  - Projects and Tasks routes remain JS and still consume the source schema facade.
+- Documentation-sync outcome: `updated`
+- Follow-up routing:
+  - No immediate human decision is required.
+  - Next PMO move can choose between schema scaffold retirement and the next product route TS migration batch.

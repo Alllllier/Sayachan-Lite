@@ -26,7 +26,7 @@ It is a truth baseline, not a protocol and not a policy file.
 - Notes, Projects, and Tasks mutation schemas are authored in `backend/src/routes/schemas/mutations.ts`
 - existing route modules consume those schemas through the stable CommonJS facade at `backend/src/routes/schemas/mutations.js`
 - schema-island build output lives under `backend/src/routes/schemas/__generated__/` and is checked in as transitional migration scaffolding
-- Notes route orchestration is authored in `backend/src/routes/__route_sources__/notesRoutes.ts` and consumed through the stable CommonJS facade at `backend/src/routes/notesRoutes.js`
+- Notes route orchestration is authored in `backend/src/routes/notesRoutes.ts` and consumed from compiled backend dist output
 - this type boundary does not change route URLs, request bodies, parsed DTO behavior, or public error payloads
 
 ## Current Models
