@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
+    "start": "npm run build:backend && node dist/server.js",
     "dev": "node src/server.js",
     "lint": "npm --prefix .. run lint:backend",
     "test": "node --test",

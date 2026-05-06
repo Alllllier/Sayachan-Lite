@@ -25,7 +25,8 @@ Current transitional type-island truth:
 - `npm --prefix backend run build:backend` can emit the current backend CommonJS runtime graph into ignored `backend/dist` build output as a dry-run
 - `npm --prefix backend run check:backend-build` rebuilds and smoke-loads the emitted dist route/server dependency graph without changing the active runtime startup path
 - `npm --prefix backend run check:backend-dist-runtime` rebuilds backend dist, runs the dist boundary guard, smoke-loads the current source runtime graph, and smoke-loads the compiled dist runtime graph under MongoDB/Koa listen mocks
-- backend `start` and `dev` still run `node src/server.js`; `backend/dist` is proof output only, not the production runtime
+- backend `start` builds and runs `node dist/server.js`; backend `dev` still runs `node src/server.js`
+- `backend/dist` is now the default backend start runtime output, while source runtime remains the development path
 - product mutation schemas and DTO types are authored in `backend/src/routes/schemas/mutations.ts`
 - `npm --prefix backend run build:schema-island` emits checked-in CommonJS artifacts under `backend/src/routes/schemas/__generated__/`
 - `npm --prefix backend run check:schema-island` compares freshly compiled schema-island output with the checked-in generated artifacts and is included in root `npm run check`

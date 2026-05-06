@@ -87,7 +87,10 @@ function assertPackageRuntimeBoundary() {
   const runtimeLoaderScriptPattern = /\b(?:tsx|ts-node|ts-node-dev|babel-node|esbuild-register)\b|@swc-node\/register|@babel\/register|--loader\b/;
 
   assert(backendPackage.type === 'commonjs', 'backend/package.json must remain "type": "commonjs".');
-  assert(backendScripts.start === 'node src/server.js', 'backend start script must remain "node src/server.js".');
+  assert(
+    backendScripts.start === 'npm run build:backend && node dist/server.js',
+    'backend start script must build and run "node dist/server.js".'
+  );
   assert(backendScripts.dev === 'node src/server.js', 'backend dev script must remain "node src/server.js".');
   assert(
     backendPackage.dependencies?.['@allier/sayachan-ai-core'] === 'file:private_core/sayachan-ai-core',
