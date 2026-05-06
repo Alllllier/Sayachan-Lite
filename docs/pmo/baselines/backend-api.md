@@ -292,7 +292,7 @@ Current behavior truth:
 ## Current Contract Notes That Matter
 
 - `/ai/chat` is the public API entrypoint into private-core chat execution
-- task-project coupling now lives mainly in first-pass backend service modules under `backend/src/services/`, while `backend/src/routes/index.js` acts as the non-AI route aggregator for health, notes, projects, and tasks route modules
+- task-project coupling now lives mainly in first-pass backend service modules under `backend/src/services/`, while `backend/src/routes/index.ts` acts as the non-AI route aggregator for health, notes, projects, and tasks route modules
 - changing archive semantics, focus-clearing behavior, or bridge usage should be treated as architecture-sensitive work
 - semantic task provenance fields are the canonical read and write path
 

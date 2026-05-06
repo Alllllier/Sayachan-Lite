@@ -36,9 +36,13 @@
     "src/routes/notesRoutes.ts",
     "src/routes/projectsRoutes.ts",
     "src/routes/tasksRoutes.ts",
+    "src/routes/healthRoutes.ts",
+    "src/routes/index.ts",
     "src/routes/schemas/mutations.ts"
   ],
   "exclude": [
+    "src/routes/healthRoutes.js",
+    "src/routes/index.js",
     "src/routes/notesRoutes.js",
     "src/routes/projectsRoutes.js",
     "src/routes/tasksRoutes.js",

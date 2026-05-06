@@ -189,6 +189,34 @@ function assertTasksDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertHealthRoutesDistArtifactFromTypeScriptSource() {
+  const healthDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'healthRoutes.js'), 'utf8');
+
+  assert(
+    healthDistSource.includes('/health'),
+    'dist Health route artifact must preserve the /health route.'
+  );
+  assert(
+    healthDistSource.includes('service: "backend"') || healthDistSource.includes("service: 'backend'"),
+    'dist Health route artifact must preserve the backend service payload.'
+  );
+  assert(
+    healthDistSource.includes('readyState === 1'),
+    'dist Health route artifact must preserve the mongoose connection health check.'
+  );
+}
+
+function assertRouteIndexDistArtifactFromTypeScriptSource() {
+  const routeIndexDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'index.js'), 'utf8');
+
+  for (const routeModule of ['./authRoutes', './healthRoutes', './notesRoutes', './projectsRoutes', './tasksRoutes']) {
+    assert(
+      routeIndexDistSource.includes(`require("${routeModule}")`) || routeIndexDistSource.includes(`require('${routeModule}')`),
+      `dist route index artifact must register ${routeModule}.`
+    );
+  }
+}
+
 function assertRequestBodyValidationDistArtifactFromTypeScriptSource() {
   const validationDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'requestBodyValidation.js'), 'utf8');
 
@@ -421,6 +449,7 @@ const requiredRuntimeEntrypoints = [
   path.join('services', 'taskRuntimeHelpers.js'),
   path.join('routes', 'index.js'),
   path.join('routes', 'ai.js'),
+  path.join('routes', 'healthRoutes.js'),
   path.join('routes', 'notesRoutes.js'),
   path.join('routes', 'projectsRoutes.js'),
   path.join('routes', 'tasksRoutes.js'),
@@ -446,6 +475,8 @@ assertSchemaDistArtifactFromTypeScriptSource();
 assertNotesDistArtifactFromTypeScriptSource();
 assertProjectsDistArtifactFromTypeScriptSource();
 assertTasksDistArtifactFromTypeScriptSource();
+assertHealthRoutesDistArtifactFromTypeScriptSource();
+assertRouteIndexDistArtifactFromTypeScriptSource();
 assertObjectIdDistArtifactFromTypeScriptSource();
 assertCurrentUserDistArtifactFromTypeScriptSource();
 assertErrorBoundaryDistArtifactFromTypeScriptSource();
