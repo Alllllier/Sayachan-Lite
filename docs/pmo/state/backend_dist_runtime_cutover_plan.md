@@ -21,7 +21,7 @@ This document is a plan only. It does not approve a runtime cutover, ESM migrati
 | Unified dry-run build | `backend/tsconfig.json` emits JS from `src` to `dist` with `allowJs: true`, `checkJs: false`, `noResolve: true`; `npm --prefix backend run check:backend-build` runs `tsc` plus `scripts/checkBackendDistBuild.js`. | Dist generation exists but is not authoritative runtime. `noResolve` is a boundary marker, not final architecture. |
 | Schema module | Source: `backend/src/routes/schemas/mutations.ts`; emitted artifact: `backend/dist/routes/schemas/mutations.js`. | Schema facade/generated scaffolding has been retired. |
 | Notes route | Source: `backend/src/routes/notesRoutes.ts`; emitted artifact: `backend/dist/routes/notesRoutes.js`. | Notes island facade/generated scaffolding has been retired. |
-| DTO pilot | `backend/tsconfig.dto-pilot.json` remains as a narrow middleware/schema bridge check after product routes moved to TS. | Retire when the remaining middleware/schema bridge is either covered by route TS types or no longer adds signal. |
+| DTO pilot | Retired after product routes, schema module, and request-body validation middleware moved to TS. | No active DTO pilot tsconfig remains. |
 | Product routes | `backend/src/routes/notesRoutes.ts`, `projectsRoutes.ts`, `tasksRoutes.ts` remain public runtime entrypoints through compiled dist output. | Notes, Projects, and Tasks now compile from normal TS route paths. |
 | Services/models/middleware | Plain CommonJS JS under `backend/src/services`, `backend/src/models`, `backend/src/middleware`. | They can remain JS during early dist runtime if emitted unchanged; type migration is separable. |
 | Private core | `backend/src/ai/bridge.js` crosses into `backend/private_core/sayachan-ai-core`. | Inclusion in backend build is a human architecture gate. Do not absorb implicitly. |
@@ -73,7 +73,6 @@ Current checkpoint after dist runtime cutover has retired the schema and Notes i
 
 Expected validation:
 
-- `npm --prefix backend run typecheck:dto-pilot`
 - `npm --prefix backend run check:backend-build`
 - `npm --prefix backend test`
 - `npm run check`
@@ -226,7 +225,6 @@ Goal: remove temporary scaffolding only after dist runtime is stable.
 Cleanup candidates:
 
 - Per-island build/check scripts.
-- `backend/tsconfig.dto-pilot.json`, once route TS coverage replaces it.
 - PMO references that describe islands as active runtime requirements.
 
 Exit condition: unified backend build is the source of runtime JS, and obsolete guardrails are removed without reducing behavior coverage.
@@ -262,7 +260,7 @@ Human-owned:
 
 | Phase | Required validation |
 | --- | --- |
-| Current checkpoint | `npm --prefix backend run typecheck:dto-pilot`; `npm --prefix backend run check:backend-build`; `npm --prefix backend test`; `npm run check` |
+| Current checkpoint | `npm --prefix backend run check:backend-build`; `npm --prefix backend test`; `npm run check` |
 | Dist build hardening | `npm --prefix backend run build:backend`; `npm --prefix backend run check:backend-build`; targeted script tests if added |
 | Dist smoke prep | dist smoke/check command; dist backend tests; contract baseline |
 | Schema/Notes retirement prep | remaining island checks still green before retirement; unified build emits expected dist modules |

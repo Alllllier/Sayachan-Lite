@@ -189,6 +189,23 @@ function assertTasksDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertRequestBodyValidationDistArtifactFromTypeScriptSource() {
+  const validationDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'requestBodyValidation.js'), 'utf8');
+
+  assert(
+    validationDistSource.includes('class BadRequestError'),
+    'dist requestBodyValidation artifact must preserve BadRequestError.'
+  );
+  assert(
+    validationDistSource.includes('function assertZodSchema'),
+    'dist requestBodyValidation artifact must preserve assertZodSchema.'
+  );
+  assert(
+    !validationDistSource.includes('@template'),
+    'dist requestBodyValidation artifact must not be emitted from the old JSDoc JS source.'
+  );
+}
+
 function assertCurrentSourceArtifactsWereEmitted() {
   const sourceFiles = walkFiles(srcRoot)
     .filter(filePath => path.extname(filePath) === '.js')
@@ -203,6 +220,7 @@ function assertCurrentSourceArtifactsWereEmitted() {
 
 const requiredRuntimeEntrypoints = [
   'server.js',
+  path.join('middleware', 'requestBodyValidation.js'),
   path.join('routes', 'index.js'),
   path.join('routes', 'ai.js'),
   path.join('routes', 'notesRoutes.js'),
@@ -230,5 +248,6 @@ assertSchemaDistArtifactFromTypeScriptSource();
 assertNotesDistArtifactFromTypeScriptSource();
 assertProjectsDistArtifactFromTypeScriptSource();
 assertTasksDistArtifactFromTypeScriptSource();
+assertRequestBodyValidationDistArtifactFromTypeScriptSource();
 
 console.log('Backend dist build boundary check passed.');
