@@ -6,9 +6,9 @@ const Note = require('../models/Note');
 const Project = require('../models/Project');
 const Task = require('../models/Task');
 
-const User = UserModel as any;
-const Invite = InviteModel as any;
-const Session = SessionModel as any;
+const User = UserModel;
+const Invite = InviteModel;
+const Session = SessionModel;
 
 const SESSION_COOKIE_NAME = 'sayachan_session';
 const PASSWORD_ITERATIONS = 210000;
@@ -291,7 +291,7 @@ async function setTesterDisabled(userId: unknown, disabled: unknown) {
   }
 
   if (disabled) {
-    await Session.deleteMany({ userId });
+    await Session.deleteMany({ userId: user._id });
   }
 
   return publicUser(user);

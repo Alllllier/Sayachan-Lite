@@ -36,4 +36,9 @@ const inviteSchema = new mongoose.Schema({
   timestamps: true
 });
 
-export = mongoose.model('Invite', inviteSchema);
+type InviteAttrs = mongoose.InferSchemaType<typeof inviteSchema>;
+type InviteDocument = mongoose.HydratedDocument<InviteAttrs>;
+
+const Invite = mongoose.model<InviteAttrs, mongoose.Model<InviteAttrs>>('Invite', inviteSchema);
+
+export = Invite;

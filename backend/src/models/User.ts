@@ -37,4 +37,9 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-export = mongoose.model('User', userSchema);
+type UserAttrs = mongoose.InferSchemaType<typeof userSchema>;
+type UserDocument = mongoose.HydratedDocument<UserAttrs>;
+
+const User = mongoose.model<UserAttrs, mongoose.Model<UserAttrs>>('User', userSchema);
+
+export = User;
