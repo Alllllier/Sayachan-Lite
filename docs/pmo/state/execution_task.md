@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Backend Dist Build Boundary Hardening V1`
+- Sprint: `Backend Dist Runtime Smoke Harness V1`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/backend-dist-build-boundary-hardening-v1.md`
+- Report surface: `docs/pmo/history/reports/backend-dist-runtime-smoke-harness-v1.md`
 
 ## Next Activation Rule
 

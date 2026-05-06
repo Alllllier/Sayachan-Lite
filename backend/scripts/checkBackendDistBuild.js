@@ -143,23 +143,4 @@ assertNotExists(path.join('dist', 'private_core'));
 assertNoPathSegment(distRoot, 'private_core');
 assertNoPathSegment(distRoot, '__route_sources__');
 
-const mongoose = require('mongoose');
-mongoose.connect = async () => mongoose;
-
-const Koa = require('koa');
-Koa.prototype.listen = function listen(_port, callback) {
-  if (typeof callback === 'function') {
-    callback();
-  }
-  return {
-    close() {}
-  };
-};
-
-require(path.join(distRoot, 'routes'));
-require(path.join(distRoot, 'routes', 'ai'));
-require(path.join(distRoot, 'server'));
-
-setImmediate(() => {
-  console.log('Backend dist build smoke passed.');
-});
+console.log('Backend dist build boundary check passed.');
