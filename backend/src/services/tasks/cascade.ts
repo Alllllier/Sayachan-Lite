@@ -8,7 +8,7 @@ import {
   type ProjectRuntimeRecord,
   type RuntimeDocument,
   type TaskRuntimeRecord
-} from './dto';
+} from '../dtos/productDtos';
 
 type FindableModel = {
   find(filter: unknown): Promise<TaskRuntimeRecord[]>;

@@ -13,7 +13,7 @@ import {
   clearFocusForTask,
   isProjectOwnedTask
 } from './tasks/cascade';
-import { toTaskDto } from './tasks/dto';
+import { toTaskDto } from './dtos/productDtos';
 import {
   ownedFilter,
   ownerFilter,

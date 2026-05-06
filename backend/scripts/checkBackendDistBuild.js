@@ -396,12 +396,20 @@ function assertErrorBoundaryDistArtifactFromTypeScriptSource() {
   );
 }
 
-function assertTaskDtoDistArtifactFromTypeScriptSource() {
-  const dtoDistSource = fs.readFileSync(path.join(distRoot, 'services', 'tasks', 'dto.js'), 'utf8');
+function assertProductDtosDistArtifactFromTypeScriptSource() {
+  const dtoDistSource = fs.readFileSync(path.join(distRoot, 'services', 'dtos', 'productDtos.js'), 'utf8');
 
   assert(
     dtoDistSource.includes('function toTaskDto'),
-    'dist task dto artifact must preserve toTaskDto.'
+    'dist productDtos artifact must preserve toTaskDto.'
+  );
+  assert(
+    dtoDistSource.includes('function toProjectDto'),
+    'dist productDtos artifact must preserve toProjectDto.'
+  );
+  assert(
+    dtoDistSource.includes('function toNoteDto'),
+    'dist productDtos artifact must preserve toNoteDto.'
   );
 }
 
@@ -581,7 +589,7 @@ const requiredRuntimeEntrypoints = [
   path.join('services', 'projectsService.js'),
   path.join('services', 'tasksService.js'),
   path.join('services', 'tasks', 'cascade.js'),
-  path.join('services', 'tasks', 'dto.js'),
+  path.join('services', 'dtos', 'productDtos.js'),
   path.join('services', 'tasks', 'queryFilters.js'),
   path.join('routes', 'index.js'),
   path.join('routes', 'ai.js'),
@@ -631,7 +639,7 @@ assertNotesServiceDistArtifactFromTypeScriptSource();
 assertOwnershipDistArtifactFromTypeScriptSource();
 assertProjectsServiceDistArtifactFromTypeScriptSource();
 assertTasksServiceDistArtifactFromTypeScriptSource();
-assertTaskDtoDistArtifactFromTypeScriptSource();
+assertProductDtosDistArtifactFromTypeScriptSource();
 assertTaskCascadeDistArtifactFromTypeScriptSource();
 assertTaskQueryFiltersDistArtifactFromTypeScriptSource();
 

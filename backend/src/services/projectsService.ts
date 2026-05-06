@@ -15,7 +15,7 @@ import {
 import {
   deriveProjectLifecycleStatus,
   toProjectDto
-} from './tasks/dto';
+} from './dtos/productDtos';
 import {
   ownedFilter,
   ownerFilter,

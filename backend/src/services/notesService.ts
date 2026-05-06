@@ -11,7 +11,7 @@ import {
   archiveTasks,
   restoreTasks
 } from './tasks/cascade';
-import { toNoteDto } from './tasks/dto';
+import { toNoteDto } from './dtos/productDtos';
 import {
   ownedFilter,
   ownerFilter,
