@@ -396,20 +396,34 @@ function assertErrorBoundaryDistArtifactFromTypeScriptSource() {
   );
 }
 
-function assertTaskRuntimeHelpersDistArtifactFromTypeScriptSource() {
-  const helpersDistSource = fs.readFileSync(path.join(distRoot, 'services', 'taskRuntimeHelpers.js'), 'utf8');
+function assertTaskDtoDistArtifactFromTypeScriptSource() {
+  const dtoDistSource = fs.readFileSync(path.join(distRoot, 'services', 'tasks', 'dto.js'), 'utf8');
 
   assert(
-    helpersDistSource.includes('function toTaskDto'),
-    'dist taskRuntimeHelpers artifact must preserve toTaskDto.'
+    dtoDistSource.includes('function toTaskDto'),
+    'dist task dto artifact must preserve toTaskDto.'
+  );
+}
+
+function assertTaskCascadeDistArtifactFromTypeScriptSource() {
+  const cascadeDistSource = fs.readFileSync(path.join(distRoot, 'services', 'tasks', 'cascade.js'), 'utf8');
+
+  assert(
+    cascadeDistSource.includes('function clearFocusForTask'),
+    'dist task cascade artifact must preserve clearFocusForTask.'
+  );
+}
+
+function assertTaskQueryFiltersDistArtifactFromTypeScriptSource() {
+  const queryFiltersDistSource = fs.readFileSync(path.join(distRoot, 'services', 'tasks', 'queryFilters.js'), 'utf8');
+
+  assert(
+    queryFiltersDistSource.includes('function buildArchiveFilter'),
+    'dist task query filters artifact must preserve buildArchiveFilter.'
   );
   assert(
-    helpersDistSource.includes('function clearFocusForTask'),
-    'dist taskRuntimeHelpers artifact must preserve clearFocusForTask.'
-  );
-  assert(
-    helpersDistSource.includes('function isObjectFilter'),
-    'dist taskRuntimeHelpers artifact must be emitted from taskRuntimeHelpers.ts with the typed filter guard.'
+    queryFiltersDistSource.includes('function isObjectFilter'),
+    'dist task query filters artifact must preserve the typed filter guard.'
   );
 }
 
@@ -566,7 +580,9 @@ const requiredRuntimeEntrypoints = [
   path.join('services', 'ownership.js'),
   path.join('services', 'projectsService.js'),
   path.join('services', 'tasksService.js'),
-  path.join('services', 'taskRuntimeHelpers.js'),
+  path.join('services', 'tasks', 'cascade.js'),
+  path.join('services', 'tasks', 'dto.js'),
+  path.join('services', 'tasks', 'queryFilters.js'),
   path.join('routes', 'index.js'),
   path.join('routes', 'ai.js'),
   path.join('routes', 'authRoutes.js'),
@@ -615,6 +631,8 @@ assertNotesServiceDistArtifactFromTypeScriptSource();
 assertOwnershipDistArtifactFromTypeScriptSource();
 assertProjectsServiceDistArtifactFromTypeScriptSource();
 assertTasksServiceDistArtifactFromTypeScriptSource();
-assertTaskRuntimeHelpersDistArtifactFromTypeScriptSource();
+assertTaskDtoDistArtifactFromTypeScriptSource();
+assertTaskCascadeDistArtifactFromTypeScriptSource();
+assertTaskQueryFiltersDistArtifactFromTypeScriptSource();
 
 console.log('Backend dist build boundary check passed.');

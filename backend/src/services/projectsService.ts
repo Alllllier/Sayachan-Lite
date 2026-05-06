@@ -4,14 +4,18 @@ import type {
 } from '../routes/schemas/mutations';
 import type { ObjectId } from '../middleware/objectIdParsing';
 import {
-  archiveTasks,
   buildArchiveFilter,
   combineFilters,
+  projectTaskCascadeFilter
+} from './tasks/queryFilters';
+import {
+  archiveTasks,
+  restoreTasks
+} from './tasks/cascade';
+import {
   deriveProjectLifecycleStatus,
-  projectTaskCascadeFilter,
-  restoreTasks,
   toProjectDto
-} from './taskRuntimeHelpers';
+} from './tasks/dto';
 import {
   ownedFilter,
   ownerFilter,

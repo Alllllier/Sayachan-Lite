@@ -4,12 +4,14 @@ import type {
 } from '../routes/schemas/mutations';
 import type { ObjectId } from '../middleware/objectIdParsing';
 import {
-  archiveTasks,
   buildArchiveFilter,
-  combineFilters,
-  restoreTasks,
-  toNoteDto
-} from './taskRuntimeHelpers';
+  combineFilters
+} from './tasks/queryFilters';
+import {
+  archiveTasks,
+  restoreTasks
+} from './tasks/cascade';
+import { toNoteDto } from './tasks/dto';
 import {
   ownedFilter,
   ownerFilter,

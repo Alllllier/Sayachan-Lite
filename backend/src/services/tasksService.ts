@@ -6,12 +6,14 @@ import type {
 import type { ObjectId } from '../middleware/objectIdParsing';
 import {
   buildArchiveFilter,
-  clearFocusForTask,
   combineFilters,
-  isProjectOwnedTask,
   projectTaskReadFilter,
-  toTaskDto
-} from './taskRuntimeHelpers';
+} from './tasks/queryFilters';
+import {
+  clearFocusForTask,
+  isProjectOwnedTask
+} from './tasks/cascade';
+import { toTaskDto } from './tasks/dto';
 import {
   ownedFilter,
   ownerFilter,
