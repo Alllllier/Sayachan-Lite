@@ -385,3 +385,40 @@ test('AI project next-action resolves focus tasks by task id and current user', 
     process.env.GLM_API_KEY = originalKey;
   }
 });
+
+test('AI routes validate request bodies before downstream AI or model work', async () => {
+  const noteAiHandler = getRouteHandler(aiRoutes, 'POST', '/ai/notes/tasks');
+  const projectAiHandler = getRouteHandler(aiRoutes, 'POST', '/ai/projects/next-action');
+  const chatAiHandler = getRouteHandler(aiRoutes, 'POST', '/ai/chat');
+
+  const forbiddenRead = async () => {
+    throw new Error('AI validation should stop before model reads');
+  };
+
+  await withPatchedMethods([
+    { target: Note, key: 'findOne', value: forbiddenRead },
+    { target: Project, key: 'findOne', value: forbiddenRead },
+    { target: Task, key: 'findOne', value: forbiddenRead }
+  ], async () => {
+    const cases = [
+      [noteAiHandler, createCtx({ body: null })],
+      [noteAiHandler, createCtx({ body: [] })],
+      [noteAiHandler, createCtx({ body: { _id: 42, title: 'Note' } })],
+      [noteAiHandler, createCtx({ body: { title: 42 } })],
+      [projectAiHandler, createCtx({ body: null })],
+      [projectAiHandler, createCtx({ body: [] })],
+      [projectAiHandler, createCtx({ body: { id: 42, name: 'Project' } })],
+      [projectAiHandler, createCtx({ body: { name: 42 } })],
+      [chatAiHandler, createCtx({ body: null })],
+      [chatAiHandler, createCtx({ body: [] })],
+      [chatAiHandler, createCtx({ body: { messages: 'hello' } })],
+      [chatAiHandler, createCtx({ body: { context: 'dashboard' } })]
+    ];
+
+    for (const [handler, ctx] of cases) {
+      await handler(ctx, async () => {});
+      assert.equal(ctx.status, 400);
+      assert.deepEqual(ctx.body, { error: 'Invalid request body' });
+    }
+  });
+});

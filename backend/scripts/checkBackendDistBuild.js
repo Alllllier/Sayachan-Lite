@@ -186,6 +186,10 @@ function assertAiRoutesDistArtifactFromTypeScriptSource() {
     aiRoutesDistSource.includes("require('../ai/bridge')") || aiRoutesDistSource.includes('require("../ai/bridge")'),
     'dist AI route artifact must use the public AI bridge boundary.'
   );
+  assert(
+    aiRoutesDistSource.includes("require('./schemas/ai')") || aiRoutesDistSource.includes('require("./schemas/ai")'),
+    'dist AI route artifact must use the AI request schema boundary.'
+  );
 }
 
 function assertSchemaDistArtifactFromTypeScriptSource() {
@@ -215,6 +219,23 @@ function assertAuthSchemaDistArtifactFromTypeScriptSource() {
   assert(
     authSchemaDistSource.includes('require("zod")'),
     'dist auth schema artifact must import zod directly.'
+  );
+}
+
+function assertAiSchemaDistArtifactFromTypeScriptSource() {
+  const aiSchemaDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'schemas', 'ai.js'), 'utf8');
+
+  assert(
+    aiSchemaDistSource.includes('aiResourcePayloadSchema'),
+    'dist AI schema artifact must preserve aiResourcePayloadSchema.'
+  );
+  assert(
+    aiSchemaDistSource.includes('aiChatSchema'),
+    'dist AI schema artifact must preserve aiChatSchema.'
+  );
+  assert(
+    aiSchemaDistSource.includes('require("zod")'),
+    'dist AI schema artifact must import zod directly.'
   );
 }
 
@@ -650,6 +671,7 @@ const requiredRuntimeEntrypoints = [
   path.join('routes', 'notesRoutes.js'),
   path.join('routes', 'projectsRoutes.js'),
   path.join('routes', 'tasksRoutes.js'),
+  path.join('routes', 'schemas', 'ai.js'),
   path.join('routes', 'schemas', 'auth.js'),
   path.join('routes', 'schemas', 'mutations.js')
 ];
@@ -671,6 +693,7 @@ assertNoPathSegment(distRoot, 'private_core');
 assertNoPathSegment(distRoot, '__route_sources__');
 assertSchemaDistArtifactFromTypeScriptSource();
 assertAuthSchemaDistArtifactFromTypeScriptSource();
+assertAiSchemaDistArtifactFromTypeScriptSource();
 assertAiBridgeDistArtifactFromTypeScriptSource();
 assertAiRoutesDistArtifactFromTypeScriptSource();
 assertNotesDistArtifactFromTypeScriptSource();

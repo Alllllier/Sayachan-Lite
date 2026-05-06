@@ -1,6 +1,10 @@
 import Router, { type RouterMiddleware } from '@koa/router';
 
 import { type ObjectId } from '../middleware/objectIdParsing';
+import type {
+  AiChatDto,
+  AiResourcePayloadDto
+} from './schemas/ai';
 
 const { chat: runChat } = require('../ai/bridge') as typeof import('../ai/bridge');
 const Note = require('../models/Note') as typeof import('../models/Note');
@@ -8,12 +12,30 @@ const Project = require('../models/Project') as typeof import('../models/Project
 const Task = require('../models/Task') as typeof import('../models/Task');
 const { requireCurrentUser } = require('../middleware/currentUser') as typeof import('../middleware/currentUser');
 const { optionalObjectId } = require('../middleware/objectIdParsing') as typeof import('../middleware/objectIdParsing');
+const { validateBody } = require('../middleware/requestBodyValidation') as {
+  validateBody: ValidateBody;
+};
+const {
+  aiChatSchema,
+  aiResourcePayloadSchema
+} = require('./schemas/ai') as {
+  aiChatSchema: RequestBodySchema<AiChatDto>;
+  aiResourcePayloadSchema: RequestBodySchema<AiResourcePayloadDto>;
+};
 
 type AiState = {
   userId: ObjectId;
+  validatedBody?: unknown;
 };
 
 type AiHandler = RouterMiddleware<AiState>;
+type AiMiddleware = RouterMiddleware<AiState>;
+
+type RequestBodySchema<TBody> = {
+  safeParse(body: unknown): { success: true; data: TBody } | { success: false; error: unknown };
+};
+
+type ValidateBody = <TBody>(schema: RequestBodySchema<TBody>) => AiMiddleware;
 
 type AiPayload = {
   _id?: unknown;
@@ -25,12 +47,6 @@ type AiPayload = {
   status?: string;
   currentFocusTaskId?: unknown;
   toObject?: () => AiPayload;
-};
-
-type AiChatRequest = {
-  messages?: unknown;
-  context?: Record<string, unknown> | null;
-  runtimeControls?: unknown;
 };
 
 type AiMessageContent = string | Array<{ type?: unknown; text?: unknown }>;
@@ -46,8 +62,8 @@ type AiCompletionResponse = {
 const router = new Router();
 const requireAiCurrentUser = requireCurrentUser as AiHandler;
 
-function requestBody<TBody>(ctx: Parameters<AiHandler>[0]): TBody {
-  return ((ctx.request as typeof ctx.request & { body?: unknown }).body || {}) as TBody;
+function validatedBody<TBody>(ctx: Parameters<AiHandler>[0]): TBody {
+  return ctx.state.validatedBody as TBody;
 }
 
 function errorMessage(error: unknown): string {
@@ -145,8 +161,8 @@ async function resolveOwnedProjectPayload(payload: AiPayload | null | undefined,
 }
 
 // POST /ai/notes/tasks - Generate tasks from a note
-router.post('/ai/notes/tasks', requireAiCurrentUser, (async (ctx) => {
-  const note = await resolveOwnedNotePayload(requestBody<AiPayload>(ctx), ctx.state.userId);
+router.post('/ai/notes/tasks', requireAiCurrentUser, validateBody(aiResourcePayloadSchema), (async (ctx) => {
+  const note = await resolveOwnedNotePayload(validatedBody<AiResourcePayloadDto>(ctx), ctx.state.userId);
   if (!note) {
     ctx.status = 404;
     ctx.body = { error: 'Note not found' };
@@ -229,9 +245,9 @@ router.post('/ai/notes/tasks', requireAiCurrentUser, (async (ctx) => {
 }) as AiHandler);
 
 // POST /ai/projects/next-action - Suggest next action for a project
-router.post('/ai/projects/next-action', requireAiCurrentUser, (async (ctx) => {
+router.post('/ai/projects/next-action', requireAiCurrentUser, validateBody(aiResourcePayloadSchema), (async (ctx) => {
   const userId = ctx.state.userId;
-  const project = await resolveOwnedProjectPayload(requestBody<AiPayload>(ctx), userId);
+  const project = await resolveOwnedProjectPayload(validatedBody<AiResourcePayloadDto>(ctx), userId);
   if (!project) {
     ctx.status = 404;
     ctx.body = { error: 'Project not found' };
@@ -321,8 +337,8 @@ router.post('/ai/projects/next-action', requireAiCurrentUser, (async (ctx) => {
 }) as AiHandler);
 
 // POST /ai/chat - Orchestrated chat entry for AI substrate v0.1
-router.post('/ai/chat', (async (ctx) => {
-  const { messages, context, runtimeControls } = requestBody<AiChatRequest>(ctx);
+router.post('/ai/chat', validateBody(aiChatSchema), (async (ctx) => {
+  const { messages, context, runtimeControls } = validatedBody<AiChatDto>(ctx);
 
   const KIMI_KEY = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
   if (!KIMI_KEY) {
