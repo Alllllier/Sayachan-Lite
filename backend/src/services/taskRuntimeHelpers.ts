@@ -19,7 +19,7 @@ type ProjectModel = {
   findOneAndUpdate(filter: unknown, update: unknown): Promise<unknown>;
 };
 
-function buildArchiveFilter(archived: unknown): QueryFilter {
+export function buildArchiveFilter(archived: unknown): QueryFilter {
   if (archived === 'true') {
     return { archived: true };
   }
@@ -31,7 +31,7 @@ function isObjectFilter(filter: unknown): filter is QueryFilter {
   return Boolean(filter) && typeof filter === 'object' && !Array.isArray(filter);
 }
 
-function combineFilters(...filters: unknown[]): QueryFilter {
+export function combineFilters(...filters: unknown[]): QueryFilter {
   const clauses = filters.filter((filter): filter is QueryFilter => (
     isObjectFilter(filter) && Object.keys(filter).length > 0
   ));
@@ -49,26 +49,26 @@ function combineFilters(...filters: unknown[]): QueryFilter {
   };
 }
 
-function projectTaskRelationFilter(projectId: unknown): QueryFilter {
+export function projectTaskRelationFilter(projectId: unknown): QueryFilter {
   return {
     originModule: 'project',
     originId: projectId
   };
 }
 
-function projectTaskReadFilter(projectId: unknown): QueryFilter {
+export function projectTaskReadFilter(projectId: unknown): QueryFilter {
   return projectTaskRelationFilter(projectId);
 }
 
-function projectTaskCascadeFilter(projectId: unknown): QueryFilter {
+export function projectTaskCascadeFilter(projectId: unknown): QueryFilter {
   return projectTaskRelationFilter(projectId);
 }
 
-function isArchivedEntity(entity: DocumentLike | null | undefined): boolean {
+export function isArchivedEntity(entity: DocumentLike | null | undefined): boolean {
   return entity?.archived === true;
 }
 
-function deriveTaskLifecycleStatus(task: DocumentLike | null | undefined): string {
+export function deriveTaskLifecycleStatus(task: DocumentLike | null | undefined): string {
   if (task?.status) {
     return task.status;
   }
@@ -76,7 +76,7 @@ function deriveTaskLifecycleStatus(task: DocumentLike | null | undefined): strin
   return task?.completed ? 'completed' : 'active';
 }
 
-function deriveProjectLifecycleStatus(project: DocumentLike | null | undefined): string {
+export function deriveProjectLifecycleStatus(project: DocumentLike | null | undefined): string {
   if (project?.status && project.status !== 'archived') {
     return project.status;
   }
@@ -84,7 +84,7 @@ function deriveProjectLifecycleStatus(project: DocumentLike | null | undefined):
   return 'pending';
 }
 
-function normalizeTask<TTask extends DocumentLike | null | undefined>(task: TTask) {
+export function normalizeTask<TTask extends DocumentLike | null | undefined>(task: TTask) {
   if (!task) {
     return task;
   }
@@ -100,7 +100,7 @@ function normalizeTask<TTask extends DocumentLike | null | undefined>(task: TTas
   };
 }
 
-function normalizeProject<TProject extends DocumentLike | null | undefined>(project: TProject) {
+export function normalizeProject<TProject extends DocumentLike | null | undefined>(project: TProject) {
   if (!project) {
     return project;
   }
@@ -114,7 +114,7 @@ function normalizeProject<TProject extends DocumentLike | null | undefined>(proj
   };
 }
 
-function normalizeNote<TNote extends DocumentLike | null | undefined>(note: TNote) {
+export function normalizeNote<TNote extends DocumentLike | null | undefined>(note: TNote) {
   if (!note) {
     return note;
   }
@@ -126,11 +126,11 @@ function normalizeNote<TNote extends DocumentLike | null | undefined>(note: TNot
   };
 }
 
-function isProjectOwnedTask(task: DocumentLike | null | undefined): boolean {
+export function isProjectOwnedTask(task: DocumentLike | null | undefined): boolean {
   return task?.originModule === 'project' && task?.originId;
 }
 
-async function clearFocusForTask(Project: ProjectModel, taskId: unknown, reason: string, userId: unknown): Promise<boolean> {
+export async function clearFocusForTask(Project: ProjectModel, taskId: unknown, reason: string, userId: unknown): Promise<boolean> {
   if (!taskId || !userId) {
     return false;
   }
@@ -150,7 +150,7 @@ async function clearFocusForTask(Project: ProjectModel, taskId: unknown, reason:
   return true;
 }
 
-async function archiveTasks(Task: TaskModel, taskFilter: unknown): Promise<number> {
+export async function archiveTasks(Task: TaskModel, taskFilter: unknown): Promise<number> {
   const tasks = await Task.find(combineFilters(taskFilter, buildArchiveFilter('false')));
 
   if (tasks.length === 0) {
@@ -173,7 +173,7 @@ async function archiveTasks(Task: TaskModel, taskFilter: unknown): Promise<numbe
   return result.modifiedCount || 0;
 }
 
-async function restoreTasks(Task: TaskModel, taskFilter: unknown): Promise<number> {
+export async function restoreTasks(Task: TaskModel, taskFilter: unknown): Promise<number> {
   const tasks = await Task.find(combineFilters(taskFilter, buildArchiveFilter('true')));
 
   if (tasks.length === 0) {
@@ -199,21 +199,3 @@ async function restoreTasks(Task: TaskModel, taskFilter: unknown): Promise<numbe
 
   return result.modifiedCount || 0;
 }
-
-module.exports = {
-  archiveTasks,
-  buildArchiveFilter,
-  clearFocusForTask,
-  combineFilters,
-  deriveProjectLifecycleStatus,
-  deriveTaskLifecycleStatus,
-  isArchivedEntity,
-  isProjectOwnedTask,
-  normalizeNote,
-  normalizeProject,
-  normalizeTask,
-  projectTaskCascadeFilter,
-  projectTaskReadFilter,
-  projectTaskRelationFilter,
-  restoreTasks
-};

@@ -2,10 +2,7 @@ import type {
   ProjectCreateDto,
   ProjectUpdateDto
 } from '../routes/schemas/mutations';
-
-const Project = require('../models/Project');
-const Task = require('../models/Task');
-const {
+import {
   archiveTasks,
   buildArchiveFilter,
   combineFilters,
@@ -13,8 +10,15 @@ const {
   normalizeProject,
   projectTaskCascadeFilter,
   restoreTasks
-} = require('./taskRuntimeHelpers');
-const { ownedFilter, ownerFilter, requireUserId } = require('./ownership');
+} from './taskRuntimeHelpers';
+import {
+  ownedFilter,
+  ownerFilter,
+  requireUserId
+} from './ownership';
+
+const Project = require('../models/Project');
+const Task = require('../models/Task');
 
 type ServiceOptions = {
   userId?: unknown;
