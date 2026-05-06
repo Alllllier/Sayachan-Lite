@@ -16,7 +16,7 @@ const taskSchema = new mongoose.Schema({
     default: ''
   },
   originId: {
-    type: mongoose.Schema.Types.Mixed,
+    type: mongoose.Schema.Types.ObjectId,
     default: null
   },
   status: {

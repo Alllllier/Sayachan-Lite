@@ -823,9 +823,9 @@ test('parsed body rollout stores parsed DTOs and mutation routes consume them wi
     const taskCreateBody = { title: 'Task', unknownField: 'kept' };
     const taskCreateCtx = createCtx({ body: taskCreateBody });
     await createTaskHandler(taskCreateCtx, async () => {});
-    assert.strictEqual(calls.taskCreate, taskCreateCtx.state.validatedBody);
     assert.notStrictEqual(calls.taskCreate, taskCreateBody);
     assert.deepEqual(calls.taskCreate, taskCreateBody);
+    assert.notStrictEqual(calls.taskCreate, taskCreateCtx.state.validatedBody);
     assert.strictEqual(taskCreateCtx.request.body, taskCreateBody);
     assert.deepEqual(taskCreateCtx.request.body, taskCreateBody);
 
@@ -1034,6 +1034,11 @@ test('task mutation validation covers Zod pilot create and update body contracts
       assert.equal(ctx.status, 400);
       assert.deepEqual(ctx.body, { error: 'Invalid request body' });
     }
+
+    const invalidOriginIdCtx = createCtx({ body: { title: 'Ship it', originId: 'project-1' } });
+    await createTaskHandler(invalidOriginIdCtx, async () => {});
+    assert.equal(invalidOriginIdCtx.status, 400);
+    assert.deepEqual(invalidOriginIdCtx.body, { error: 'Invalid object id' });
   });
 });
 
@@ -1115,7 +1120,8 @@ test('task mutation validation preserves valid payload and unknown-field behavio
       body: {
         title: 'Ship it',
         creationMode: 'ai',
-        originModule: 'dashboard',
+        originModule: 'project',
+        originId: '000000000000000000000201',
         unknownField: 'preserved by route contract'
       }
     });
@@ -1133,7 +1139,8 @@ test('task mutation validation preserves valid payload and unknown-field behavio
 
   assert.equal(taskCreates[0].title, 'Ship it');
   assert.equal(taskCreates[0].creationMode, 'ai');
-  assert.equal(taskCreates[0].originModule, 'dashboard');
+  assert.equal(taskCreates[0].originModule, 'project');
+  assert.equal(taskCreates[0].originId.toHexString(), '000000000000000000000201');
   assert.equal(taskUpdates[0].update.status, 'completed');
   assert.equal(taskUpdates[0].update.archived, false);
 });

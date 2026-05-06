@@ -31,6 +31,10 @@ type ListTasksOptions = ServiceOptions & {
   archived?: unknown;
 };
 
+type TaskCreateInput = Omit<TaskCreateDto, 'originId'> & {
+  originId?: ObjectId | null;
+};
+
 type TaskUpdate = {
   status?: TaskUpdateDto['status'];
   archived?: boolean;
@@ -51,7 +55,7 @@ async function listTasks({ projectId, archived, userId }: ListTasksOptions) {
   return tasks.map(normalizeTask);
 }
 
-async function createTask(body: TaskCreateDto, { userId }: ServiceOptions) {
+async function createTask(body: TaskCreateInput, { userId }: ServiceOptions) {
   const taskData = {
     title: body.title,
     creationMode: body.creationMode || 'manual',

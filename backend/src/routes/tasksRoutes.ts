@@ -37,9 +37,11 @@ const { validateBody } = require('../middleware/requestBodyValidation') as {
   validateBody: ValidateBody;
 };
 const {
+  parseBodyObjectId,
   parseParamObjectId,
   parseQueryObjectId
 } = require('../middleware/objectIdParsing') as {
+  parseBodyObjectId: (field: string, options?: { optional?: boolean }) => TasksMiddleware;
   parseParamObjectId: (field: string) => TasksMiddleware;
   parseQueryObjectId: (field: string, options?: { optional?: boolean }) => TasksMiddleware;
 };
@@ -53,12 +55,28 @@ const {
 
 const router = new Router<TasksState>();
 
+type TaskCreateServiceBody = Omit<TaskCreateDto, 'originId'> & {
+  originId?: ObjectId | null;
+};
+
 function validatedBody<TBody>(ctx: Parameters<TasksHandler>[0]): TBody {
   return ctx.state.validatedBody as TBody;
 }
 
 function taskId(ctx: Parameters<TasksHandler>[0]): ObjectId {
   return ctx.state.objectIds?.id as ObjectId;
+}
+
+function parsedTaskCreateBody(ctx: Parameters<TasksHandler>[0]): TaskCreateServiceBody {
+  const body = validatedBody<TaskCreateDto>(ctx);
+  const { originId: _originId, ...rest } = body;
+  if (body.originId !== undefined) {
+    return {
+      ...rest,
+      originId: ctx.state.objectIds?.originId ?? null
+    };
+  }
+  return rest;
 }
 
 // GET /tasks
@@ -72,8 +90,8 @@ router.get('/tasks', requireCurrentUser, parseQueryObjectId('projectId', { optio
 });
 
 // POST /tasks
-router.post('/tasks', requireCurrentUser, validateBody(taskCreateSchema), async (ctx) => {
-  const body = validatedBody<TaskCreateDto>(ctx);
+router.post('/tasks', requireCurrentUser, validateBody(taskCreateSchema), parseBodyObjectId('originId', { optional: true }), async (ctx) => {
+  const body = parsedTaskCreateBody(ctx);
   ctx.status = 201;
   ctx.body = await tasksService.createTask(body, { userId: ctx.state.userId });
 });

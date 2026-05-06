@@ -50,7 +50,8 @@ export type ProjectUpdateDto = z.infer<typeof projectUpdateSchema>;
 export const taskCreateSchema = z.object({
   title: nonEmptyStringSchema,
   creationMode: z.enum(TASK_CREATION_MODES).optional(),
-  originModule: z.string().optional()
+  originModule: z.string().optional(),
+  originId: z.union([z.string(), z.null()]).optional()
 }).passthrough();
 
 export type TaskCreateDto = z.infer<typeof taskCreateSchema>;
