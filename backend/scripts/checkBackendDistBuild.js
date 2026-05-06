@@ -91,7 +91,10 @@ function assertPackageRuntimeBoundary() {
     backendScripts.start === 'npm run build:backend && node dist/server.js',
     'backend start script must build and run "node dist/server.js".'
   );
-  assert(backendScripts.dev === 'node src/server.js', 'backend dev script must remain "node src/server.js".');
+  assert(
+    backendScripts.dev === 'npm run build:backend && node dist/server.js',
+    'backend dev script must build and run "node dist/server.js".'
+  );
   assert(
     backendPackage.dependencies?.['@allier/sayachan-ai-core'] === 'file:private_core/sayachan-ai-core',
     'backend must depend on @allier/sayachan-ai-core through the local private_core package boundary.'

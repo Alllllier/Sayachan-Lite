@@ -1,0 +1,31 @@
+# Backend Dev Dist Runtime Cutover V1
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Backend Dev Dist Runtime Cutover V1`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Switched backend `dev` from `node src/server.js` to `npm run build:backend && node dist/server.js`.
+  - Updated the backend dist boundary guard so `dev` and `start` are both expected to build and run `dist/server.js`.
+  - Updated PMO system/runtime baselines so backend dist is the default runtime path for both start and development commands.
+  - Did not introduce watch tooling, runtime TypeScript loaders, ESM changes, private_core changes, API behavior changes, or scaffold deletion.
+- Validation summary:
+  - `npm run check` passed.
+    - Included lint, schema island guard, Notes route island guard, backend dist runtime readiness, frontend tests, backend tests, and frontend build.
+    - Backend dist runtime readiness rebuilt dist, ran the boundary guard, smoke-loaded source runtime, and smoke-loaded dist runtime.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If skipped, why skipping was acceptable:
+    - This sprint changed backend package scripts, runtime guard expectations, and PMO baseline docs only.
+    - No UI/browser surface or public API behavior changed.
+- Unverified areas:
+  - `npm --prefix backend run dev` was not left running as an interactive server command; the equivalent build-plus-dist runtime path was covered by `check:backend-dist-runtime`.
+- Residual risks or escalations:
+  - `dev` no longer provides direct source execution or hot reload.
+  - Startup through `dev` now pays the backend build cost.
+  - Source-runtime scaffolding is still retained until a separate cleanup slice removes the source facade/generated compatibility layer.
+- Documentation-sync outcome: `updated`
+- Follow-up routing:
+  - No immediate human decision is required.
+  - Next PMO move can plan scaffold retirement for schema/Notes source facades and generated source artifacts.

@@ -59,9 +59,9 @@ Current repo-native validation shape:
 
 Current backend type-adoption shape:
 
-- backend runtime remains plain Node/CommonJS through `node src/server.js`; there is no whole-backend `dist` runtime yet
-- `npm --prefix backend run build:backend` is a unified CommonJS `tsc` dry-run that emits the current backend CommonJS runtime graph into ignored build output under `backend/dist`
-- `npm --prefix backend run check:backend-build` runs that dry-run build and loads the emitted dist route/server dependency graph under a smoke harness, but backend `start` and `dev` still run from `src`
+- backend runtime remains plain Node/CommonJS, with backend `start` and `dev` both building and running `node dist/server.js`
+- `npm --prefix backend run build:backend` is the unified CommonJS `tsc` build that emits the current backend CommonJS runtime graph into ignored build output under `backend/dist`
+- `npm --prefix backend run check:backend-build` runs that build and loads the emitted dist route/server dependency graph under a smoke harness
 - `backend/src/routes/schemas/mutations.ts` is the first focused TypeScript schema/DTO island for product mutation validation
 - `npm --prefix backend run build:schema-island` compiles that island into checked-in CommonJS artifacts under `backend/src/routes/schemas/__generated__/`
 - `npm --prefix backend run check:schema-island` verifies those checked-in generated artifacts are in sync with `mutations.ts`; the root `npm run check` quality gate includes this guardrail
@@ -70,7 +70,7 @@ Current backend type-adoption shape:
 - `npm --prefix backend run check:notes-route-island` verifies the checked-in Notes route generated artifacts are in sync with the typed route source; the root `npm run check` quality gate includes this guardrail
 - `backend/src/routes/schemas/mutations.js` remains the stable CommonJS facade consumed by existing route modules
 - `backend/src/routes/notesRoutes.js` remains the stable CommonJS facade consumed by `backend/src/routes/index.js`
-- checked-in generated schema-island artifacts are transitional migration scaffolding; regenerate them with `npm --prefix backend run build:schema-island` after editing `mutations.ts`, and remove or replace the pattern when a whole-backend TypeScript build/runtime is approved
+- checked-in generated schema-island artifacts are transitional migration scaffolding for source-runtime compatibility checks; regenerate them with `npm --prefix backend run build:schema-island` after editing `mutations.ts`, and remove or replace the pattern in a separate cleanup slice after the dist runtime path is authoritative enough to drop the source facade layer
 
 ## Public Runtime Surfaces
 

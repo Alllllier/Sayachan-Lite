@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Root Check Dist Runtime Gate V1`
+- Sprint: `Backend Dev Dist Runtime Cutover V1`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/root-check-dist-runtime-gate-v1.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/backend-dev-dist-runtime-cutover-v1.md`
 
 ## Next Use
 
