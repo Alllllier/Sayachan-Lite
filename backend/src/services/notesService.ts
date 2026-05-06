@@ -2,7 +2,7 @@ import type {
   NoteCreateDto,
   NoteUpdateDto
 } from '../routes/schemas/mutations';
-import type { ObjectId } from '../ids/objectId';
+import type { ObjectId } from '../middleware/objectIdParsing';
 import {
   archiveTasks,
   buildArchiveFilter,

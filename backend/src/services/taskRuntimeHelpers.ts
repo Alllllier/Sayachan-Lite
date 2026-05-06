@@ -1,4 +1,4 @@
-import type { ObjectId } from '../ids/objectId';
+import type { ObjectId } from '../middleware/objectIdParsing';
 
 type QueryFilter = Record<string, unknown>;
 

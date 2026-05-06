@@ -2,7 +2,7 @@ import type {
   TaskCreateDto,
   TaskUpdateDto
 } from '../routes/schemas/mutations';
-import type { ObjectId } from '../ids/objectId';
+import type { ObjectId } from '../middleware/objectIdParsing';
 import {
   buildArchiveFilter,
   clearFocusForTask,

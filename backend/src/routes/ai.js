@@ -4,7 +4,7 @@ const Note = require('../models/Note');
 const Project = require('../models/Project');
 const Task = require('../models/Task');
 const { requireCurrentUser } = require('../middleware/currentUser');
-const { optionalObjectId } = require('../ids/objectId');
+const { optionalObjectId } = require('../middleware/objectIdParsing');
 
 const router = new Router();
 

@@ -201,7 +201,7 @@ These should not be collapsed into deletion candidates merely because TypeScript
 - `backend/src/ai/bridge.js` and the public/private AI responsibility split.
 - Account/session/ownership boundaries: `frontend/src/stores/auth.js`, `frontend/src/services/resourceCache.js`, `backend/src/middleware/auth.js`, `backend/src/middleware/currentUser.ts`, `backend/src/services/ownership.ts`, `backend/src/services/authService.ts`, auth models/routes.
 - Focus/task workflow semantics: project `currentFocusTaskId`, task provenance, active/completed/archived lifecycle, and focus clearing.
-- Backend ObjectId parsing boundary: `backend/src/ids/objectId.ts`, product route params/query/body focus ids, and `currentUser` state user id.
+- Backend ObjectId parsing boundary: `backend/src/middleware/objectIdParsing.ts`, product route params/query/body focus ids, and `currentUser` state user id.
 - Archive/restore cascades in note/project/task services and backend task runtime helpers.
 - Dashboard-to-chat cockpit context: `frontend/src/services/cockpitContextService.js`, `frontend/src/stores/cockpitSignals.js`, chat context hydration rules.
 - Public AI routes and fallback behavior for note tasks, project next action, and chat.

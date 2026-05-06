@@ -1,5 +1,5 @@
 import type { Context, Next } from 'koa';
-import { toObjectId, type ObjectId } from '../ids/objectId';
+import { toObjectId, type ObjectId } from './objectIdParsing';
 
 export function resolveCurrentUserId(ctx: Context): ObjectId | null {
   const userId = ctx.state?.user?._id;
