@@ -52,7 +52,6 @@ function validateBody<T>(schema: RequestBodySchema<T>) {
 }
 
 export = {
-  BadRequestError,
   assertZodSchema,
   validateBody
 };

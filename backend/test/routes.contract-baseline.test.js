@@ -10,10 +10,8 @@ const projectsService = require('../dist/services/projectsService');
 const tasksService = require('../dist/services/tasksService');
 const { errorBoundary } = require('../dist/middleware/errorBoundary');
 const routes = require('../dist/routes/index.js');
-const {
-  BadRequestError,
-  assertZodSchema
-} = require('../dist/middleware/requestBodyValidation');
+const { BadRequestError } = require('../dist/errors/httpErrors');
+const { assertZodSchema } = require('../dist/middleware/requestBodyValidation');
 const {
   taskCreateSchema,
   taskUpdateSchema

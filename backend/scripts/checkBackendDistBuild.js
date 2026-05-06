@@ -340,12 +340,12 @@ function assertRequestBodyValidationDistArtifactFromTypeScriptSource() {
   const validationDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'requestBodyValidation.js'), 'utf8');
 
   assert(
-    validationDistSource.includes('BadRequestError'),
-    'dist requestBodyValidation artifact must preserve BadRequestError re-export/use.'
+    validationDistSource.includes('assertZodSchema'),
+    'dist requestBodyValidation artifact must preserve assertZodSchema.'
   );
   assert(
-    validationDistSource.includes('function assertZodSchema'),
-    'dist requestBodyValidation artifact must preserve assertZodSchema.'
+    !validationDistSource.includes('BadRequestError:'),
+    'dist requestBodyValidation artifact must not re-export BadRequestError.'
   );
   assert(
     !validationDistSource.includes('@template'),
