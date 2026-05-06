@@ -1,0 +1,29 @@
+# Root Check Dist Runtime Gate V1
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Root Check Dist Runtime Gate V1`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Added root script `check:backend-dist-runtime`.
+  - Added `npm run check:backend-dist-runtime` to root `npm run check`.
+  - Updated `docs/pmo/baselines/runtime-baseline.md` so it records that root check includes the backend dist runtime readiness gate.
+  - Did not change backend `start` or `dev`.
+  - Did not delete schema/Notes scaffolding.
+- Validation summary:
+  - `npm run check` passed.
+    - The root check now runs lint, schema island guard, Notes route island guard, backend dist runtime readiness, frontend/backend tests, and frontend build.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If skipped, why skipping was acceptable:
+    - This sprint changed package-script quality gates only.
+    - No UI/browser surface or public API behavior changed.
+- Unverified areas:
+  - No separate browser/UI review was run.
+- Residual risks or escalations:
+  - Root `npm run check` is slightly heavier because it now builds and smoke-loads backend source/dist runtime graphs before tests.
+  - Backend `dev` remains source-based, so schema/Notes scaffolding remains necessary.
+- Documentation-sync outcome: `updated`
+- Follow-up routing:
+  - Next human decision remains whether to switch backend `dev` to a build-backed dist workflow or keep source dev and retain scaffolding.

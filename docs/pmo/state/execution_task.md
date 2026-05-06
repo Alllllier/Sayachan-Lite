@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Post-Cutover Scaffold Cleanup Readiness V1`
+- Sprint: `Root Check Dist Runtime Gate V1`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/post-cutover-scaffold-cleanup-readiness-v1.md`
+- Report surface: `docs/pmo/history/reports/root-check-dist-runtime-gate-v1.md`
 
 ## Next Activation Rule
 

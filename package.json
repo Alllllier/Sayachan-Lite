@@ -10,6 +10,7 @@
     "test:frontend": "npm --prefix frontend run test",
     "build:backend": "npm --prefix backend run build:backend",
     "check:backend-build": "npm --prefix backend run check:backend-build",
+    "check:backend-dist-runtime": "npm --prefix backend run check:backend-dist-runtime",
     "typecheck:tasks": "npm --prefix frontend run typecheck:tasks",
     "typecheck:backend-dto": "npm --prefix backend run typecheck:dto-pilot",
     "check:schema-island": "npm --prefix backend run check:schema-island",
@@ -18,7 +19,7 @@
     "test": "npm run test:frontend && npm run test:backend",
     "build:frontend": "npm --prefix frontend run build",
     "build": "npm run build:frontend",
-    "check": "npm run lint && npm run check:schema-island && npm run check:notes-route-island && npm run test && npm run build"
+    "check": "npm run lint && npm run check:schema-island && npm run check:notes-route-island && npm run check:backend-dist-runtime && npm run test && npm run build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
