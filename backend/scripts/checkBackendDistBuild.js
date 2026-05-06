@@ -70,6 +70,7 @@ function assertNoPathSegment(root, segment) {
 function assertPackageRuntimeBoundary() {
   const backendPackage = readJson(path.join(backendRoot, 'package.json'));
   const rootPackage = readJson(path.join(repoRoot, 'package.json'));
+  const backendTsconfig = readJson(path.join(backendRoot, 'tsconfig.json'));
   const backendScripts = backendPackage.scripts || {};
   const rootScripts = rootPackage.scripts || {};
   const backendDependencies = {
@@ -125,6 +126,14 @@ function assertPackageRuntimeBoundary() {
   assert(
     rootScripts['lint:backend'] === 'eslint backend/test backend/scripts',
     'root lint:backend must lint remaining backend JS test/script surfaces; backend TS source is checked by tsc.'
+  );
+  assert(
+    backendTsconfig.compilerOptions?.allowJs !== true,
+    'backend tsconfig must not compile source JS after the backend source TS cutover.'
+  );
+  assert(
+    Array.isArray(backendTsconfig.include) && backendTsconfig.include.length === 1 && backendTsconfig.include[0] === 'src/**/*.ts',
+    'backend tsconfig include must target backend TS source files only.'
   );
 }
 
