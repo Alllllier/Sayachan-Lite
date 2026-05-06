@@ -1,3 +1,5 @@
+import type { ObjectId } from '../ids/objectId';
+
 type QueryFilter = Record<string, unknown>;
 
 type DocumentLike = Record<string, any> & {
@@ -49,18 +51,18 @@ export function combineFilters(...filters: unknown[]): QueryFilter {
   };
 }
 
-export function projectTaskRelationFilter(projectId: unknown): QueryFilter {
+export function projectTaskRelationFilter(projectId: ObjectId): QueryFilter {
   return {
     originModule: 'project',
     originId: projectId
   };
 }
 
-export function projectTaskReadFilter(projectId: unknown): QueryFilter {
+export function projectTaskReadFilter(projectId: ObjectId): QueryFilter {
   return projectTaskRelationFilter(projectId);
 }
 
-export function projectTaskCascadeFilter(projectId: unknown): QueryFilter {
+export function projectTaskCascadeFilter(projectId: ObjectId): QueryFilter {
   return projectTaskRelationFilter(projectId);
 }
 
@@ -130,7 +132,7 @@ export function isProjectOwnedTask(task: DocumentLike | null | undefined): boole
   return task?.originModule === 'project' && task?.originId;
 }
 
-export async function clearFocusForTask(Project: ProjectModel, taskId: unknown, reason: string, userId: unknown): Promise<boolean> {
+export async function clearFocusForTask(Project: ProjectModel, taskId: ObjectId, reason: string, userId: ObjectId): Promise<boolean> {
   if (!taskId || !userId) {
     return false;
   }

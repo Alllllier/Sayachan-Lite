@@ -18,6 +18,8 @@ It is a truth baseline, not a protocol and not a policy file.
 - normal non-health product/API routes require a valid `sayachan_session` cookie or `Authorization: Bearer <sessionToken>` unless listed as public auth routes
 - Note, Project, Task, and persisted AI note/project product route pipelines attach current-user middleware before service/model access; they are personal-account scoped routes, not anonymous content routes
 - Note, Project, and Task product services require `userId` and do not support unowned single-user content reads or writes
+- product route id boundaries parse valid external id strings into Mongo `ObjectId` values before service/model access; invalid `:id`, `projectId`, `currentFocusTaskId`, or current-user ids fail with a stable 400 invalid object id response instead of reaching Mongoose
+- `Task.originId` remains a provenance field and is not yet globally cast to `ObjectId`; note/project provenance tightening is a separate contract decision
 - owner bootstrap may be invoked by API or by `npm run bootstrap:owner` from the backend workspace, which calls the same API against a configured backend URL
 
 ## Backend Type Boundary

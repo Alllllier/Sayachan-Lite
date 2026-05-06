@@ -219,6 +219,19 @@ function assertCurrentUserDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertObjectIdDistArtifactFromTypeScriptSource() {
+  const objectIdDistSource = fs.readFileSync(path.join(distRoot, 'ids', 'objectId.js'), 'utf8');
+
+  assert(
+    objectIdDistSource.includes('function toObjectId'),
+    'dist objectId artifact must preserve toObjectId.'
+  );
+  assert(
+    objectIdDistSource.includes('INVALID_OBJECT_ID'),
+    'dist objectId artifact must preserve stable invalid object id error code.'
+  );
+}
+
 function assertErrorBoundaryDistArtifactFromTypeScriptSource() {
   const errorBoundaryDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'errorBoundary.js'), 'utf8');
 
@@ -386,6 +399,7 @@ function assertCurrentSourceArtifactsWereEmitted() {
 
 const requiredRuntimeEntrypoints = [
   'server.js',
+  path.join('ids', 'objectId.js'),
   path.join('middleware', 'currentUser.js'),
   path.join('middleware', 'errorBoundary.js'),
   path.join('middleware', 'requestBodyValidation.js'),
@@ -428,6 +442,7 @@ assertSchemaDistArtifactFromTypeScriptSource();
 assertNotesDistArtifactFromTypeScriptSource();
 assertProjectsDistArtifactFromTypeScriptSource();
 assertTasksDistArtifactFromTypeScriptSource();
+assertObjectIdDistArtifactFromTypeScriptSource();
 assertCurrentUserDistArtifactFromTypeScriptSource();
 assertErrorBoundaryDistArtifactFromTypeScriptSource();
 assertRequestBodyValidationDistArtifactFromTypeScriptSource();

@@ -23,28 +23,28 @@ test('buildArchiveFilter treats non-true values as active-list semantics', () =>
 });
 
 test('projectTaskReadFilter uses canonical project provenance only', () => {
-  const filter = projectTaskReadFilter('project-7');
+  const filter = projectTaskReadFilter('000000000000000000000207');
 
   assert.deepEqual(filter, {
     originModule: 'project',
-    originId: 'project-7'
+    originId: '000000000000000000000207'
   });
   assert.equal('linkedProjectId' in filter, false);
 });
 
 test('projectTaskCascadeFilter uses canonical project provenance only', () => {
-  const filter = projectTaskCascadeFilter('project-9');
+  const filter = projectTaskCascadeFilter('000000000000000000000209');
 
   assert.deepEqual(filter, {
     originModule: 'project',
-    originId: 'project-9'
+    originId: '000000000000000000000209'
   });
   assert.equal('linkedProjectId' in filter, false);
 });
 
 test('project task read and cascade filters stay aligned on canonical provenance semantics', () => {
   assert.deepEqual(
-    projectTaskReadFilter('project-11'),
-    projectTaskCascadeFilter('project-11')
+    projectTaskReadFilter('0000000000000000000002011'),
+    projectTaskCascadeFilter('0000000000000000000002011')
   );
 });

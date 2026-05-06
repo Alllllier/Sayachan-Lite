@@ -29,7 +29,7 @@ function getRouteHandler(router, method, path) {
   });
 }
 
-function createCtx({ query = {}, params = {}, body = {}, userId = 'user-owner' } = {}) {
+function createCtx({ query = {}, params = {}, body = {}, userId = '000000000000000000000001' } = {}) {
   return {
     query,
     params,
@@ -49,12 +49,28 @@ function createDoc(data) {
   };
 }
 
+function normalizeIds(value) {
+  if (value && typeof value.toHexString === 'function') {
+    return value.toHexString();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(normalizeIds);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, normalizeIds(entry)]));
+  }
+
+  return value;
+}
+
 function hasClause(query, predicate) {
   if (!query || typeof query !== 'object') {
     return false;
   }
 
-  if (predicate(query)) {
+  if (predicate(normalizeIds(query))) {
     return true;
   }
 
@@ -121,14 +137,14 @@ test('note list and direct-id mutations are scoped to the current user', async (
       return [];
     } }
   ], async () => {
-    await listHandler(createCtx({ userId: 'tester-1' }), async () => {});
-    await updateHandler(createCtx({ params: { id: 'note-1' }, body: { title: 'T', content: 'C' }, userId: 'tester-1' }), async () => {});
-    await deleteHandler(createCtx({ params: { id: 'note-1' }, userId: 'tester-1' }), async () => {});
-    await pinHandler(createCtx({ params: { id: 'note-1' }, userId: 'tester-1' }), async () => {});
-    await archiveHandler(createCtx({ params: { id: 'note-1' }, userId: 'tester-1' }), async () => {});
+    await listHandler(createCtx({ userId: '000000000000000000000011' }), async () => {});
+    await updateHandler(createCtx({ params: { id: '000000000000000000000101' }, body: { title: 'T', content: 'C' }, userId: '000000000000000000000011' }), async () => {});
+    await deleteHandler(createCtx({ params: { id: '000000000000000000000101' }, userId: '000000000000000000000011' }), async () => {});
+    await pinHandler(createCtx({ params: { id: '000000000000000000000101' }, userId: '000000000000000000000011' }), async () => {});
+    await archiveHandler(createCtx({ params: { id: '000000000000000000000101' }, userId: '000000000000000000000011' }), async () => {});
   });
 
-  assert.equal(seen.every((entry) => hasClause(entry.query, (clause) => clause.userId === 'tester-1')), true);
+  assert.equal(seen.every((entry) => hasClause(entry.query, (clause) => clause.userId === '000000000000000000000011')), true);
 });
 
 test('project archive cascade and focus clearing stay inside the current account', async () => {
@@ -147,7 +163,7 @@ test('project archive cascade and focus clearing stay inside the current account
           name: 'Owned project',
           status: 'in_progress',
           archived: update.archived === true,
-          currentFocusTaskId: 'task-focus'
+          currentFocusTaskId: '0000000000000000000003f0'
         });
       }
     },
@@ -160,12 +176,12 @@ test('project archive cascade and focus clearing stay inside the current account
       }
     }
   ], async () => {
-    await archiveHandler(createCtx({ params: { id: 'project-1' }, userId: 'tester-2' }), async () => {});
+    await archiveHandler(createCtx({ params: { id: '000000000000000000000201' }, userId: '000000000000000000000012' }), async () => {});
   });
 
-  assert.equal(seen.every((entry) => hasClause(entry.query, (clause) => clause.userId === 'tester-2')), true);
+  assert.equal(seen.every((entry) => hasClause(entry.query, (clause) => clause.userId === '000000000000000000000012')), true);
   assert.equal(hasClause(seen.find((entry) => entry.op === 'taskFind').query, (clause) => (
-    clause.originModule === 'project' && clause.originId === 'project-1'
+    clause.originModule === 'project' && clause.originId === '000000000000000000000201'
   )), true);
 });
 
@@ -197,7 +213,7 @@ test('task list, direct-id mutation, and focus clearing are scoped to the curren
           archived: false,
           completed: false,
           originModule: 'project',
-          originId: 'project-1'
+          originId: '000000000000000000000201'
         });
       }
     },
@@ -214,7 +230,7 @@ test('task list, direct-id mutation, and focus clearing are scoped to the curren
           archived: false,
           completed: true,
           originModule: 'project',
-          originId: 'project-1'
+          originId: '000000000000000000000201'
         });
       }
     },
@@ -231,7 +247,7 @@ test('task list, direct-id mutation, and focus clearing are scoped to the curren
       key: 'findOne',
       value: async (query) => {
         seen.push({ op: 'projectFocusFind', query });
-        return createDoc({ _id: 'project-1', name: 'Owned project', currentFocusTaskId: query.currentFocusTaskId });
+        return createDoc({ _id: '000000000000000000000201', name: 'Owned project', currentFocusTaskId: query.currentFocusTaskId });
       }
     },
     {
@@ -242,12 +258,12 @@ test('task list, direct-id mutation, and focus clearing are scoped to the curren
       }
     }
   ], async () => {
-    await listHandler(createCtx({ query: { projectId: 'project-1' }, userId: 'tester-3' }), async () => {});
-    await updateHandler(createCtx({ params: { id: 'task-1' }, body: { completed: true }, userId: 'tester-3' }), async () => {});
-    await deleteHandler(createCtx({ params: { id: 'task-1' }, userId: 'tester-3' }), async () => {});
+    await listHandler(createCtx({ query: { projectId: '000000000000000000000201' }, userId: '000000000000000000000013' }), async () => {});
+    await updateHandler(createCtx({ params: { id: '000000000000000000000301' }, body: { completed: true }, userId: '000000000000000000000013' }), async () => {});
+    await deleteHandler(createCtx({ params: { id: '000000000000000000000301' }, userId: '000000000000000000000013' }), async () => {});
   });
 
-  assert.equal(seen.every((entry) => hasClause(entry.query, (clause) => clause.userId === 'tester-3')), true);
+  assert.equal(seen.every((entry) => hasClause(entry.query, (clause) => clause.userId === '000000000000000000000013')), true);
 });
 
 test('direct-id mutations for another account behave as not found', async () => {
@@ -262,9 +278,9 @@ test('direct-id mutations for another account behave as not found', async () => 
     { target: Project, key: 'findOne', value: async () => null },
     { target: Task, key: 'findOne', value: async () => null }
   ], async () => {
-    const noteCtx = createCtx({ params: { id: 'owner-note' }, body: { title: 'Nope', content: 'Nope' }, userId: 'tester-4' });
-    const projectCtx = createCtx({ params: { id: 'owner-project' }, body: { name: 'Nope', summary: 'Nope' }, userId: 'tester-4' });
-    const taskCtx = createCtx({ params: { id: 'owner-task' }, body: { completed: true }, userId: 'tester-4' });
+    const noteCtx = createCtx({ params: { id: '00000000000000000000010f' }, body: { title: 'Nope', content: 'Nope' }, userId: '000000000000000000000014' });
+    const projectCtx = createCtx({ params: { id: '00000000000000000000020f' }, body: { name: 'Nope', summary: 'Nope' }, userId: '000000000000000000000014' });
+    const taskCtx = createCtx({ params: { id: '00000000000000000000030f' }, body: { completed: true }, userId: '000000000000000000000014' });
 
     await updateNoteHandler(noteCtx, async () => {});
     await updateProjectHandler(projectCtx, async () => {});
@@ -286,14 +302,14 @@ test('AI note task generation reloads persisted notes through current-user owner
       target: Note,
       key: 'findOne',
       value: async (query) => {
-        assert.deepEqual(query, { _id: 'note-1', userId: 'tester-5' });
-        return createDoc({ _id: 'note-1', userId: 'tester-5', title: 'Owned title', content: 'Owned content' });
+        assert.deepEqual(normalizeIds(query), { _id: '000000000000000000000101', userId: '000000000000000000000015' });
+        return createDoc({ _id: '000000000000000000000101', userId: '000000000000000000000015', title: 'Owned title', content: 'Owned content' });
       }
     }
   ], async () => {
     const ctx = createCtx({
-      body: { _id: 'note-1', title: 'Tampered title', content: 'Tampered content' },
-      userId: 'tester-5'
+      body: { _id: '000000000000000000000101', title: 'Tampered title', content: 'Tampered content' },
+      userId: '000000000000000000000015'
     });
     await noteAiHandler(ctx, async () => {});
 
@@ -320,14 +336,14 @@ test('AI project next-action resolves focus tasks by task id and current user', 
       target: Project,
       key: 'findOne',
       value: async (query) => {
-        assert.deepEqual(query, { _id: 'project-1', userId: 'tester-6' });
+        assert.deepEqual(normalizeIds(query), { _id: '000000000000000000000201', userId: '000000000000000000000016' });
         return createDoc({
-          _id: 'project-1',
-          userId: 'tester-6',
+          _id: '000000000000000000000201',
+          userId: '000000000000000000000016',
           name: 'Owned project',
           summary: 'Owned summary',
           status: 'in_progress',
-          currentFocusTaskId: 'task-focus'
+          currentFocusTaskId: '0000000000000000000003f0'
         });
       }
     },
@@ -351,12 +367,12 @@ test('AI project next-action resolves focus tasks by task id and current user', 
     };
 
     const ctx = createCtx({
-      body: { _id: 'project-1', currentFocusTaskId: 'owner-task', name: 'Tampered project' },
-      userId: 'tester-6'
+      body: { _id: '000000000000000000000201', currentFocusTaskId: '00000000000000000000030f', name: 'Tampered project' },
+      userId: '000000000000000000000016'
     });
     await projectAiHandler(ctx, async () => {});
 
-    assert.deepEqual(capturedTaskQuery, { _id: 'task-focus', userId: 'tester-6' });
+    assert.deepEqual(normalizeIds(capturedTaskQuery), { _id: '0000000000000000000003f0', userId: '000000000000000000000016' });
     assert.equal(capturedPrompt.includes('Tampered project'), false);
     assert.equal(capturedPrompt.includes('当前下一步：(无)'), true);
     assert.deepEqual(ctx.body, { suggestions: ['推进一项安全任务'] });

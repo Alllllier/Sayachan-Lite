@@ -62,12 +62,28 @@ function createDoc(data) {
   };
 }
 
+function normalizeIds(value) {
+  if (value && typeof value.toHexString === 'function') {
+    return value.toHexString();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(normalizeIds);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, normalizeIds(entry)]));
+  }
+
+  return value;
+}
+
 function hasClause(query, predicate) {
   if (!query || typeof query !== 'object') {
     return false;
   }
 
-  if (predicate(query)) {
+  if (predicate(normalizeIds(query))) {
     return true;
   }
 
@@ -114,10 +130,10 @@ test('list and filter reads preserve canonical backend semantics for tasks, proj
         return {
           sort: async () => [
             createDoc({
-              _id: `task-${taskQueries.length}`,
+              _id: `00000000000000000000030${taskQueries.length}`,
               title: `Task ${taskQueries.length}`,
               originModule: taskQueries.length >= 3 ? 'project' : '',
-              originId: taskQueries.length >= 3 ? 'project-7' : null,
+              originId: taskQueries.length >= 3 ? '000000000000000000000207' : null,
               status: taskQueries.length === 2 || taskQueries.length === 4 ? 'completed' : 'active',
               archived: taskQueries.length === 2 || taskQueries.length === 4,
               completed: taskQueries.length === 2 || taskQueries.length === 4
@@ -134,7 +150,7 @@ test('list and filter reads preserve canonical backend semantics for tasks, proj
         return {
           sort: async () => [
             createDoc({
-              _id: `project-${projectQueries.length}`,
+              _id: `00000000000000000000020${projectQueries.length}`,
               name: `Project ${projectQueries.length}`,
               summary: 'Summary',
               status: projectQueries.length === 2 ? 'completed' : 'pending',
@@ -152,7 +168,7 @@ test('list and filter reads preserve canonical backend semantics for tasks, proj
         return {
           sort: async () => [
             createDoc({
-              _id: `note-${noteQueries.length}`,
+              _id: `00000000000000000000010${noteQueries.length}`,
               title: `Note ${noteQueries.length}`,
               content: 'Content',
               archived: noteQueries.length === 2
@@ -168,7 +184,7 @@ test('list and filter reads preserve canonical backend semantics for tasks, proj
     assert.equal(hasClause(taskQueries[0], (clause) => clause.userId === '000000000000000000000001'), true);
     assert.equal(taskDefaultCtx.status, 200);
     assert.deepEqual(taskDefaultCtx.body[0], {
-      _id: 'task-1',
+      _id: '000000000000000000000301',
       title: 'Task 1',
       originModule: '',
       originId: null,
@@ -183,26 +199,26 @@ test('list and filter reads preserve canonical backend semantics for tasks, proj
     assert.equal(hasClause(taskQueries[1], (clause) => clause.userId === '000000000000000000000001'), true);
     assert.equal(taskArchivedCtx.status, 200);
 
-    const taskProjectCtx = createCtx({ query: { projectId: 'project-7' } });
+    const taskProjectCtx = createCtx({ query: { projectId: '000000000000000000000207' } });
     await taskListHandler(taskProjectCtx, async () => {});
     assert.equal(
       hasClause(taskQueries[2], (clause) => clause.archived && clause.archived.$ne === true),
       true
     );
     assert.equal(
-      hasClause(taskQueries[2], (clause) => clause.originModule === 'project' && clause.originId === 'project-7'),
+      hasClause(taskQueries[2], (clause) => clause.originModule === 'project' && clause.originId === '000000000000000000000207'),
       true
     );
     assert.equal(taskProjectCtx.status, 200);
 
-    const taskProjectArchivedCtx = createCtx({ query: { projectId: 'project-7', archived: 'true' } });
+    const taskProjectArchivedCtx = createCtx({ query: { projectId: '000000000000000000000207', archived: 'true' } });
     await taskListHandler(taskProjectArchivedCtx, async () => {});
     assert.equal(
       hasClause(taskQueries[3], (clause) => clause.archived === true),
       true
     );
     assert.equal(
-      hasClause(taskQueries[3], (clause) => clause.originModule === 'project' && clause.originId === 'project-7'),
+      hasClause(taskQueries[3], (clause) => clause.originModule === 'project' && clause.originId === '000000000000000000000207'),
       true
     );
     assert.equal(taskProjectArchivedCtx.status, 200);
@@ -213,7 +229,7 @@ test('list and filter reads preserve canonical backend semantics for tasks, proj
     assert.equal(hasClause(projectQueries[0], (clause) => clause.userId === '000000000000000000000001'), true);
     assert.equal(projectDefaultCtx.status, 200);
     assert.deepEqual(projectDefaultCtx.body[0], {
-      _id: 'project-1',
+      _id: '000000000000000000000201',
       name: 'Project 1',
       summary: 'Summary',
       status: 'pending',
@@ -232,7 +248,7 @@ test('list and filter reads preserve canonical backend semantics for tasks, proj
     assert.equal(hasClause(noteQueries[0], (clause) => clause.userId === '000000000000000000000001'), true);
     assert.equal(noteDefaultCtx.status, 200);
     assert.deepEqual(noteDefaultCtx.body[0], {
-      _id: 'note-1',
+      _id: '000000000000000000000101',
       title: 'Note 1',
       content: 'Content',
       archived: false
@@ -262,7 +278,7 @@ test('create, update, and delete routes keep first-pass status code and response
       target: Task,
       key: 'create',
       value: async () => createDoc({
-        _id: 'task-new',
+        _id: '0000000000000000000003e1',
         title: 'Ship sprint',
         creationMode: 'manual',
         originModule: '',
@@ -276,7 +292,7 @@ test('create, update, and delete routes keep first-pass status code and response
       target: Task,
       key: 'findOne',
       value: async () => createDoc({
-        _id: 'task-new',
+        _id: '0000000000000000000003e1',
         title: 'Ship sprint',
         status: 'active',
         archived: false,
@@ -287,7 +303,7 @@ test('create, update, and delete routes keep first-pass status code and response
       target: Task,
       key: 'findOneAndUpdate',
       value: async () => createDoc({
-        _id: 'task-new',
+        _id: '0000000000000000000003e1',
         title: 'Ship sprint',
         status: 'completed',
         archived: false,
@@ -298,7 +314,7 @@ test('create, update, and delete routes keep first-pass status code and response
       target: Task,
       key: 'findOneAndDelete',
       value: async () => createDoc({
-        _id: 'task-new',
+        _id: '0000000000000000000003e1',
         title: 'Ship sprint',
         originModule: '',
         originId: null
@@ -308,7 +324,7 @@ test('create, update, and delete routes keep first-pass status code and response
       target: Project,
       key: 'create',
       value: async () => createDoc({
-        _id: 'project-new',
+        _id: '0000000000000000000002e1',
         name: 'Project X',
         summary: 'Summary',
         status: 'pending',
@@ -319,7 +335,7 @@ test('create, update, and delete routes keep first-pass status code and response
       target: Project,
       key: 'findOneAndUpdate',
       value: async () => createDoc({
-        _id: 'project-new',
+        _id: '0000000000000000000002e1',
         name: 'Project X',
         summary: 'Updated summary',
         status: 'in_progress',
@@ -331,7 +347,7 @@ test('create, update, and delete routes keep first-pass status code and response
       target: Project,
       key: 'findOneAndDelete',
       value: async () => createDoc({
-        _id: 'project-new',
+        _id: '0000000000000000000002e1',
         name: 'Project X'
       })
     },
@@ -344,7 +360,7 @@ test('create, update, and delete routes keep first-pass status code and response
       target: Note,
       key: 'create',
       value: async () => createDoc({
-        _id: 'note-new',
+        _id: '0000000000000000000001e1',
         title: 'Scratchpad',
         content: 'Initial content',
         archived: false
@@ -354,7 +370,7 @@ test('create, update, and delete routes keep first-pass status code and response
       target: Note,
       key: 'findOneAndUpdate',
       value: async () => createDoc({
-        _id: 'note-new',
+        _id: '0000000000000000000001e1',
         title: 'Scratchpad',
         content: 'Updated content',
         archived: false
@@ -364,7 +380,7 @@ test('create, update, and delete routes keep first-pass status code and response
       target: Note,
       key: 'findOneAndDelete',
       value: async () => createDoc({
-        _id: 'note-new',
+        _id: '0000000000000000000001e1',
         title: 'Scratchpad'
       })
     }
@@ -373,7 +389,7 @@ test('create, update, and delete routes keep first-pass status code and response
     await createTaskHandler(createTaskCtx, async () => {});
     assert.equal(createTaskCtx.status, 201);
     assert.deepEqual(createTaskCtx.body, {
-      _id: 'task-new',
+      _id: '0000000000000000000003e1',
       title: 'Ship sprint',
       creationMode: 'manual',
       originModule: '',
@@ -383,18 +399,18 @@ test('create, update, and delete routes keep first-pass status code and response
       completed: false
     });
 
-    const updateTaskCtx = createCtx({ params: { id: 'task-new' }, body: { completed: true } });
+    const updateTaskCtx = createCtx({ params: { id: '0000000000000000000003e1' }, body: { completed: true } });
     await updateTaskHandler(updateTaskCtx, async () => {});
     assert.equal(updateTaskCtx.status, 200);
     assert.deepEqual(updateTaskCtx.body, {
-      _id: 'task-new',
+      _id: '0000000000000000000003e1',
       title: 'Ship sprint',
       status: 'completed',
       archived: false,
       completed: true
     });
 
-    const deleteTaskCtx = createCtx({ params: { id: 'task-new' } });
+    const deleteTaskCtx = createCtx({ params: { id: '0000000000000000000003e1' } });
     await deleteTaskHandler(deleteTaskCtx, async () => {});
     assert.equal(deleteTaskCtx.status, 204);
     assert.equal(deleteTaskCtx.body, null);
@@ -403,7 +419,7 @@ test('create, update, and delete routes keep first-pass status code and response
     await createProjectHandler(createProjectCtx, async () => {});
     assert.equal(createProjectCtx.status, 201);
     assert.deepEqual(createProjectCtx.body, {
-      _id: 'project-new',
+      _id: '0000000000000000000002e1',
       name: 'Project X',
       summary: 'Summary',
       status: 'pending',
@@ -411,13 +427,13 @@ test('create, update, and delete routes keep first-pass status code and response
     });
 
     const updateProjectCtx = createCtx({
-      params: { id: 'project-new' },
+      params: { id: '0000000000000000000002e1' },
       body: { name: 'Project X', summary: 'Updated summary', status: 'in_progress' }
     });
     await updateProjectHandler(updateProjectCtx, async () => {});
     assert.equal(updateProjectCtx.status, 200);
     assert.deepEqual(updateProjectCtx.body, {
-      _id: 'project-new',
+      _id: '0000000000000000000002e1',
       name: 'Project X',
       summary: 'Updated summary',
       status: 'in_progress',
@@ -425,7 +441,7 @@ test('create, update, and delete routes keep first-pass status code and response
       currentFocusTaskId: null
     });
 
-    const deleteProjectCtx = createCtx({ params: { id: 'project-new' } });
+    const deleteProjectCtx = createCtx({ params: { id: '0000000000000000000002e1' } });
     await deleteProjectHandler(deleteProjectCtx, async () => {});
     assert.equal(deleteProjectCtx.status, 204);
     assert.equal(deleteProjectCtx.body, null);
@@ -434,26 +450,26 @@ test('create, update, and delete routes keep first-pass status code and response
     await createNoteHandler(createNoteCtx, async () => {});
     assert.equal(createNoteCtx.status, 201);
     assert.deepEqual(createNoteCtx.body, {
-      _id: 'note-new',
+      _id: '0000000000000000000001e1',
       title: 'Scratchpad',
       content: 'Initial content',
       archived: false
     });
 
     const updateNoteCtx = createCtx({
-      params: { id: 'note-new' },
+      params: { id: '0000000000000000000001e1' },
       body: { title: 'Scratchpad', content: 'Updated content' }
     });
     await updateNoteHandler(updateNoteCtx, async () => {});
     assert.equal(updateNoteCtx.status, 200);
     assert.deepEqual(updateNoteCtx.body, {
-      _id: 'note-new',
+      _id: '0000000000000000000001e1',
       title: 'Scratchpad',
       content: 'Updated content',
       archived: false
     });
 
-    const deleteNoteCtx = createCtx({ params: { id: 'note-new' } });
+    const deleteNoteCtx = createCtx({ params: { id: '0000000000000000000001e1' } });
     await deleteNoteHandler(deleteNoteCtx, async () => {});
     assert.equal(deleteNoteCtx.status, 204);
     assert.equal(deleteNoteCtx.body, null);
@@ -510,38 +526,38 @@ test('missing task, project, and note id routes return canonical 404 errors', as
       value: async () => null
     }
   ], async () => {
-    const updateTaskCtx = createCtx({ params: { id: 'missing-task' }, body: { archived: true } });
+    const updateTaskCtx = createCtx({ params: { id: '0000000000000000000003ff' }, body: { archived: true } });
     await updateTaskHandler(updateTaskCtx, async () => {});
     assert.equal(updateTaskCtx.status, 404);
     assert.deepEqual(updateTaskCtx.body, { error: 'Task not found' });
 
-    const deleteTaskCtx = createCtx({ params: { id: 'missing-task' } });
+    const deleteTaskCtx = createCtx({ params: { id: '0000000000000000000003ff' } });
     await deleteTaskHandler(deleteTaskCtx, async () => {});
     assert.equal(deleteTaskCtx.status, 404);
     assert.deepEqual(deleteTaskCtx.body, { error: 'Task not found' });
 
     const updateProjectCtx = createCtx({
-      params: { id: 'missing-project' },
+      params: { id: '0000000000000000000002ff' },
       body: { name: 'Missing', summary: 'Missing', status: 'pending' }
     });
     await updateProjectHandler(updateProjectCtx, async () => {});
     assert.equal(updateProjectCtx.status, 404);
     assert.deepEqual(updateProjectCtx.body, { error: 'Project not found' });
 
-    const deleteProjectCtx = createCtx({ params: { id: 'missing-project' } });
+    const deleteProjectCtx = createCtx({ params: { id: '0000000000000000000002ff' } });
     await deleteProjectHandler(deleteProjectCtx, async () => {});
     assert.equal(deleteProjectCtx.status, 404);
     assert.deepEqual(deleteProjectCtx.body, { error: 'Project not found' });
 
     const updateNoteCtx = createCtx({
-      params: { id: 'missing-note' },
+      params: { id: '0000000000000000000001ff' },
       body: { title: 'Missing', content: 'Missing' }
     });
     await updateNoteHandler(updateNoteCtx, async () => {});
     assert.equal(updateNoteCtx.status, 404);
     assert.deepEqual(updateNoteCtx.body, { error: 'Note not found' });
 
-    const deleteNoteCtx = createCtx({ params: { id: 'missing-note' } });
+    const deleteNoteCtx = createCtx({ params: { id: '0000000000000000000001ff' } });
     await deleteNoteHandler(deleteNoteCtx, async () => {});
     assert.equal(deleteNoteCtx.status, 404);
     assert.deepEqual(deleteNoteCtx.body, { error: 'Note not found' });
@@ -569,7 +585,7 @@ test('no-op note and project updates keep existing updatedAt ordering state', as
       value: async (query) => {
         reads.push({ model: 'project', query });
         return createDoc({
-          _id: 'project-1',
+          _id: '000000000000000000000201',
           name: 'Same',
           summary: 'Same summary',
           status: 'pending',
@@ -593,7 +609,7 @@ test('no-op note and project updates keep existing updatedAt ordering state', as
       value: async (query) => {
         reads.push({ model: 'note', query });
         return createDoc({
-          _id: 'note-1',
+          _id: '000000000000000000000101',
           title: 'Same',
           content: 'Same content',
           archived: false,
@@ -603,13 +619,13 @@ test('no-op note and project updates keep existing updatedAt ordering state', as
     }
   ], async () => {
     const updateProjectCtx = createCtx({
-      params: { id: 'project-1' },
+      params: { id: '000000000000000000000201' },
       body: { name: 'Same', summary: 'Same summary', status: 'pending' }
     });
     await updateProjectHandler(updateProjectCtx, async () => {});
 
     const updateNoteCtx = createCtx({
-      params: { id: 'note-1' },
+      params: { id: '000000000000000000000101' },
       body: { title: 'Same', content: 'Same content' }
     });
     await updateNoteHandler(updateNoteCtx, async () => {});
@@ -647,11 +663,11 @@ test('bad create and update request bodies return stable 400 errors before servi
   ], async () => {
     const cases = [
       [createTaskHandler, createCtx({ body: { title: '' } })],
-      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: { completed: 'yes' } })],
+      [updateTaskHandler, createCtx({ params: { id: '000000000000000000000301' }, body: { completed: 'yes' } })],
       [createProjectHandler, createCtx({ body: { name: 'Project X' } })],
-      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: { status: 'archived' } })],
+      [updateProjectHandler, createCtx({ params: { id: '000000000000000000000201' }, body: { status: 'archived' } })],
       [createNoteHandler, createCtx({ body: null })],
-      [updateNoteHandler, createCtx({ params: { id: 'note-1' }, body: { title: 42 } })]
+      [updateNoteHandler, createCtx({ params: { id: '000000000000000000000101' }, body: { title: 42 } })]
     ];
 
     for (const [handler, ctx] of cases) {
@@ -677,7 +693,7 @@ test('parsed body rollout stores parsed DTOs and mutation routes consume them wi
       key: 'createNote',
       value: async (body) => {
         calls.noteCreate = body;
-        return { _id: 'note-new', ...body, archived: false };
+        return { _id: '0000000000000000000001e1', ...body, archived: false };
       }
     },
     {
@@ -693,7 +709,7 @@ test('parsed body rollout stores parsed DTOs and mutation routes consume them wi
       key: 'createProject',
       value: async (body) => {
         calls.projectCreate = body;
-        return { _id: 'project-new', ...body };
+        return { _id: '0000000000000000000002e1', ...body };
       }
     },
     {
@@ -709,7 +725,7 @@ test('parsed body rollout stores parsed DTOs and mutation routes consume them wi
       key: 'createTask',
       value: async (body) => {
         calls.taskCreate = body;
-        return { _id: 'task-new', ...body };
+        return { _id: '0000000000000000000003e1', ...body };
       }
     },
     {
@@ -731,7 +747,7 @@ test('parsed body rollout stores parsed DTOs and mutation routes consume them wi
     assert.deepEqual(noteCreateCtx.request.body, noteCreateBody);
 
     const noteUpdateBody = { content: 'Updated', unknownField: 'kept' };
-    const noteUpdateCtx = createCtx({ params: { id: 'note-1' }, body: noteUpdateBody });
+    const noteUpdateCtx = createCtx({ params: { id: '000000000000000000000101' }, body: noteUpdateBody });
     await updateNoteHandler(noteUpdateCtx, async () => {});
     assert.strictEqual(calls.noteUpdate, noteUpdateCtx.state.validatedBody);
     assert.notStrictEqual(calls.noteUpdate, noteUpdateBody);
@@ -753,7 +769,7 @@ test('parsed body rollout stores parsed DTOs and mutation routes consume them wi
     assert.deepEqual(projectCreateCtx.request.body, projectCreateBody);
 
     const projectUpdateBody = { status: 'in_progress', unknownField: 'kept' };
-    const projectUpdateCtx = createCtx({ params: { id: 'project-1' }, body: projectUpdateBody });
+    const projectUpdateCtx = createCtx({ params: { id: '000000000000000000000201' }, body: projectUpdateBody });
     await updateProjectHandler(projectUpdateCtx, async () => {});
     assert.strictEqual(calls.projectUpdate, projectUpdateCtx.state.validatedBody);
     assert.notStrictEqual(calls.projectUpdate, projectUpdateBody);
@@ -771,7 +787,7 @@ test('parsed body rollout stores parsed DTOs and mutation routes consume them wi
     assert.deepEqual(taskCreateCtx.request.body, taskCreateBody);
 
     const taskUpdateBody = { status: 'completed', unknownField: 'kept' };
-    const taskUpdateCtx = createCtx({ params: { id: 'task-1' }, body: taskUpdateBody });
+    const taskUpdateCtx = createCtx({ params: { id: '000000000000000000000301' }, body: taskUpdateBody });
     await updateTaskHandler(taskUpdateCtx, async () => {});
     assert.strictEqual(calls.taskUpdate, taskUpdateCtx.state.validatedBody);
     assert.notStrictEqual(calls.taskUpdate, taskUpdateBody);
@@ -804,12 +820,12 @@ test('notes and projects mutation validation covers Zod create and update body c
       [createNoteHandler, createCtx({ body: { title: '' } })],
       [createNoteHandler, createCtx({ body: { title: '   ' } })],
       [createNoteHandler, createCtx({ body: { title: 'Note', content: 42 } })],
-      [updateNoteHandler, createCtx({ params: { id: 'note-1' }, body: null })],
-      [updateNoteHandler, createCtx({ params: { id: 'note-1' }, body: [] })],
-      [updateNoteHandler, createCtx({ params: { id: 'note-1' }, body: {} })],
-      [updateNoteHandler, createCtx({ params: { id: 'note-1' }, body: { extra: true } })],
-      [updateNoteHandler, createCtx({ params: { id: 'note-1' }, body: { title: '' } })],
-      [updateNoteHandler, createCtx({ params: { id: 'note-1' }, body: { content: 42 } })],
+      [updateNoteHandler, createCtx({ params: { id: '000000000000000000000101' }, body: null })],
+      [updateNoteHandler, createCtx({ params: { id: '000000000000000000000101' }, body: [] })],
+      [updateNoteHandler, createCtx({ params: { id: '000000000000000000000101' }, body: {} })],
+      [updateNoteHandler, createCtx({ params: { id: '000000000000000000000101' }, body: { extra: true } })],
+      [updateNoteHandler, createCtx({ params: { id: '000000000000000000000101' }, body: { title: '' } })],
+      [updateNoteHandler, createCtx({ params: { id: '000000000000000000000101' }, body: { content: 42 } })],
       [createProjectHandler, createCtx({ body: null })],
       [createProjectHandler, createCtx({ body: [] })],
       [createProjectHandler, createCtx({ body: {} })],
@@ -817,14 +833,14 @@ test('notes and projects mutation validation covers Zod create and update body c
       [createProjectHandler, createCtx({ body: { name: '', summary: 'Summary' } })],
       [createProjectHandler, createCtx({ body: { name: 'Project X', summary: '   ' } })],
       [createProjectHandler, createCtx({ body: { name: 'Project X', summary: 'Summary', status: 'archived' } })],
-      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: null })],
-      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: [] })],
-      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: {} })],
-      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: { extra: true } })],
-      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: { name: '' } })],
-      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: { summary: '   ' } })],
-      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: { status: 'archived' } })],
-      [updateProjectHandler, createCtx({ params: { id: 'project-1' }, body: { currentFocusTaskId: 42 } })]
+      [updateProjectHandler, createCtx({ params: { id: '000000000000000000000201' }, body: null })],
+      [updateProjectHandler, createCtx({ params: { id: '000000000000000000000201' }, body: [] })],
+      [updateProjectHandler, createCtx({ params: { id: '000000000000000000000201' }, body: {} })],
+      [updateProjectHandler, createCtx({ params: { id: '000000000000000000000201' }, body: { extra: true } })],
+      [updateProjectHandler, createCtx({ params: { id: '000000000000000000000201' }, body: { name: '' } })],
+      [updateProjectHandler, createCtx({ params: { id: '000000000000000000000201' }, body: { summary: '   ' } })],
+      [updateProjectHandler, createCtx({ params: { id: '000000000000000000000201' }, body: { status: 'archived' } })],
+      [updateProjectHandler, createCtx({ params: { id: '000000000000000000000201' }, body: { currentFocusTaskId: 42 } })]
     ];
 
     for (const [handler, ctx] of cases) {
@@ -860,7 +876,7 @@ test('notes and projects mutation validation preserves valid payload and unknown
       value: async (query, update) => {
         projectUpdates.push({ query, update });
         return createDoc({
-          _id: 'project-1',
+          _id: '000000000000000000000201',
           name: 'Project X',
           summary: update.summary || 'Summary',
           status: update.status || 'pending',
@@ -882,7 +898,7 @@ test('notes and projects mutation validation preserves valid payload and unknown
       value: async (query, update) => {
         noteUpdates.push({ query, update });
         return createDoc({
-          _id: 'note-1',
+          _id: '000000000000000000000101',
           title: update.title || 'Note',
           content: update.content || 'Content'
         });
@@ -900,7 +916,7 @@ test('notes and projects mutation validation preserves valid payload and unknown
     await createProjectHandler(createProjectCtxWithUnknown, async () => {});
 
     const updateProjectCtxWithUnknown = createCtx({
-      params: { id: 'project-1' },
+      params: { id: '000000000000000000000201' },
       body: {
         currentFocusTaskId: null,
         unknownField: 'accepted by validation'
@@ -918,7 +934,7 @@ test('notes and projects mutation validation preserves valid payload and unknown
     await createNoteHandler(createNoteCtxWithUnknown, async () => {});
 
     const updateNoteCtxWithUnknown = createCtx({
-      params: { id: 'note-1' },
+      params: { id: '000000000000000000000101' },
       body: {
         content: 'Updated content',
         unknownField: 'accepted by validation'
@@ -961,13 +977,13 @@ test('task mutation validation covers Zod pilot create and update body contracts
       [createTaskHandler, createCtx({ body: { title: '   ' } })],
       [createTaskHandler, createCtx({ body: { title: 'Ship it', creationMode: 'robot' } })],
       [createTaskHandler, createCtx({ body: { title: 'Ship it', originModule: 42 } })],
-      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: null })],
-      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: [] })],
-      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: {} })],
-      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: { extra: true } })],
-      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: { status: 'done' } })],
-      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: { archived: 'false' } })],
-      [updateTaskHandler, createCtx({ params: { id: 'task-1' }, body: { completed: 1 } })]
+      [updateTaskHandler, createCtx({ params: { id: '000000000000000000000301' }, body: null })],
+      [updateTaskHandler, createCtx({ params: { id: '000000000000000000000301' }, body: [] })],
+      [updateTaskHandler, createCtx({ params: { id: '000000000000000000000301' }, body: {} })],
+      [updateTaskHandler, createCtx({ params: { id: '000000000000000000000301' }, body: { extra: true } })],
+      [updateTaskHandler, createCtx({ params: { id: '000000000000000000000301' }, body: { status: 'done' } })],
+      [updateTaskHandler, createCtx({ params: { id: '000000000000000000000301' }, body: { archived: 'false' } })],
+      [updateTaskHandler, createCtx({ params: { id: '000000000000000000000301' }, body: { completed: 1 } })]
     ];
 
     for (const [handler, ctx] of cases) {
@@ -1030,7 +1046,7 @@ test('task mutation validation preserves valid payload and unknown-field behavio
       target: Task,
       key: 'findOne',
       value: async () => createDoc({
-        _id: 'task-1',
+        _id: '000000000000000000000301',
         title: 'Ship it',
         status: 'active',
         archived: false,
@@ -1043,7 +1059,7 @@ test('task mutation validation preserves valid payload and unknown-field behavio
       value: async (query, update) => {
         taskUpdates.push({ query, update });
         return createDoc({
-          _id: 'task-1',
+          _id: '000000000000000000000301',
           title: 'Ship it',
           status: update.status,
           archived: update.archived,
@@ -1063,7 +1079,7 @@ test('task mutation validation preserves valid payload and unknown-field behavio
     await createTaskHandler(createCtxWithUnknown, async () => {});
 
     const updateCtxWithUnknown = createCtx({
-      params: { id: 'task-1' },
+      params: { id: '000000000000000000000301' },
       body: { status: 'completed', unknownField: 'preserved by route contract' }
     });
     await updateTaskHandler(updateCtxWithUnknown, async () => {});

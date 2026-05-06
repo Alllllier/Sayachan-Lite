@@ -4,6 +4,7 @@ const Note = require('../models/Note');
 const Project = require('../models/Project');
 const Task = require('../models/Task');
 const { requireCurrentUser } = require('../middleware/currentUser');
+const { optionalObjectId } = require('../ids/objectId');
 
 const router = new Router();
 
@@ -59,7 +60,7 @@ function normalizeDoc(doc) {
 }
 
 async function resolveOwnedNotePayload(payload, userId) {
-  const noteId = getPayloadId(payload);
+  const noteId = optionalObjectId(getPayloadId(payload), 'request.body._id');
   if (!noteId) {
     return payload || {};
   }
@@ -70,7 +71,7 @@ async function resolveOwnedNotePayload(payload, userId) {
 }
 
 async function resolveOwnedProjectPayload(payload, userId) {
-  const projectId = getPayloadId(payload);
+  const projectId = optionalObjectId(getPayloadId(payload), 'request.body._id');
   if (!projectId) {
     return payload || {};
   }

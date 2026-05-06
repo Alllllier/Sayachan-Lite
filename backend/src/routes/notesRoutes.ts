@@ -4,6 +4,7 @@ import type {
   NoteCreateDto,
   NoteUpdateDto
 } from './schemas/mutations';
+import { toObjectId, type ObjectId } from '../ids/objectId';
 
 type CurrentUserState = {
   user?: {
@@ -11,7 +12,7 @@ type CurrentUserState = {
     role?: string;
     email?: string;
   };
-  userId: unknown;
+  userId: ObjectId;
 };
 
 type NotesState = CurrentUserState & {
@@ -28,7 +29,7 @@ type RequestBodySchema<TBody> = {
 type ValidateBody = <TBody>(schema: RequestBodySchema<TBody>) => NotesMiddleware;
 
 type NotesServiceOptions = {
-  userId: unknown;
+  userId: ObjectId;
 };
 
 type ListNotesOptions = NotesServiceOptions & {
@@ -38,12 +39,12 @@ type ListNotesOptions = NotesServiceOptions & {
 type NotesService = {
   listNotes(options: ListNotesOptions): Promise<unknown>;
   createNote(body: NoteCreateDto, options: NotesServiceOptions): Promise<unknown>;
-  updateNote(id: string, body: NoteUpdateDto, options: NotesServiceOptions): Promise<unknown>;
-  deleteNote(id: string, options: NotesServiceOptions): Promise<boolean>;
-  pinNote(id: string, options: NotesServiceOptions): Promise<unknown>;
-  unpinNote(id: string, options: NotesServiceOptions): Promise<unknown>;
-  archiveNote(id: string, options: NotesServiceOptions): Promise<unknown>;
-  restoreNote(id: string, options: NotesServiceOptions): Promise<unknown>;
+  updateNote(id: ObjectId, body: NoteUpdateDto, options: NotesServiceOptions): Promise<unknown>;
+  deleteNote(id: ObjectId, options: NotesServiceOptions): Promise<boolean>;
+  pinNote(id: ObjectId, options: NotesServiceOptions): Promise<unknown>;
+  unpinNote(id: ObjectId, options: NotesServiceOptions): Promise<unknown>;
+  archiveNote(id: ObjectId, options: NotesServiceOptions): Promise<unknown>;
+  restoreNote(id: ObjectId, options: NotesServiceOptions): Promise<unknown>;
 };
 
 const notesService = require('../services/notesService') as NotesService;
@@ -67,6 +68,10 @@ function validatedBody<TBody>(ctx: Parameters<NotesHandler>[0]): TBody {
   return ctx.state.validatedBody as TBody;
 }
 
+function noteId(ctx: Parameters<NotesHandler>[0]): ObjectId {
+  return toObjectId(ctx.params.id, 'params.id');
+}
+
 const listNotesHandler: NotesHandler = async (ctx) => {
   const { archived } = ctx.query;
   ctx.body = await notesService.listNotes({ archived, userId: ctx.state.userId });
@@ -79,7 +84,7 @@ const createNoteHandler: NotesHandler = async (ctx) => {
 };
 
 const updateNoteHandler: NotesHandler = async (ctx) => {
-  const id = ctx.params.id;
+  const id = noteId(ctx);
   const body = validatedBody<NoteUpdateDto>(ctx);
   const note = await notesService.updateNote(id, body, { userId: ctx.state.userId });
   if (!note) {
@@ -91,7 +96,7 @@ const updateNoteHandler: NotesHandler = async (ctx) => {
 };
 
 const deleteNoteHandler: NotesHandler = async (ctx) => {
-  const id = ctx.params.id;
+  const id = noteId(ctx);
   const deleted = await notesService.deleteNote(id, { userId: ctx.state.userId });
   if (!deleted) {
     ctx.status = 404;
@@ -103,7 +108,7 @@ const deleteNoteHandler: NotesHandler = async (ctx) => {
 };
 
 const pinNoteHandler: NotesHandler = async (ctx) => {
-  const id = ctx.params.id;
+  const id = noteId(ctx);
   const note = await notesService.pinNote(id, { userId: ctx.state.userId });
   if (!note) {
     ctx.status = 404;
@@ -114,7 +119,7 @@ const pinNoteHandler: NotesHandler = async (ctx) => {
 };
 
 const unpinNoteHandler: NotesHandler = async (ctx) => {
-  const id = ctx.params.id;
+  const id = noteId(ctx);
   const note = await notesService.unpinNote(id, { userId: ctx.state.userId });
   if (!note) {
     ctx.status = 404;
@@ -125,7 +130,7 @@ const unpinNoteHandler: NotesHandler = async (ctx) => {
 };
 
 const archiveNoteHandler: NotesHandler = async (ctx) => {
-  const id = ctx.params.id;
+  const id = noteId(ctx);
   const note = await notesService.archiveNote(id, { userId: ctx.state.userId });
 
   if (!note) {
@@ -138,7 +143,7 @@ const archiveNoteHandler: NotesHandler = async (ctx) => {
 };
 
 const restoreNoteHandler: NotesHandler = async (ctx) => {
-  const id = ctx.params.id;
+  const id = noteId(ctx);
   const note = await notesService.restoreNote(id, { userId: ctx.state.userId });
 
   if (!note) {

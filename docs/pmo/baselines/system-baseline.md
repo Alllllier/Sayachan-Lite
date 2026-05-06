@@ -159,6 +159,8 @@ Current route behavior truth:
 - backend owner bootstrap can be run through `backend/scripts/bootstrapOwner.mjs` or `npm run bootstrap:owner` from the backend workspace
 - Notes, Projects, and Tasks normal route/service reads and writes are scoped by current authenticated user
 - Note, Project, and Task routes attach `requireCurrentUser` from `backend/src/middleware/currentUser.ts` before product handlers, so product handlers consume `ctx.state.userId` rather than resolving ownership themselves
+- Product route id boundaries cast valid external id strings into Mongo `ObjectId` values before service/model access; invalid direct ids, `projectId`, `currentFocusTaskId`, or current-user ids fail as stable 400 invalid object id responses
+- `Task.originId` remains provenance-specific and is not yet globally cast to `ObjectId`; note/project provenance tightening is a separate contract decision
 - Note, Project, and Task create/update routes validate product mutation bodies through `backend/src/middleware/requestBodyValidation.ts` and route-owned Zod schemas, then pass `ctx.state.validatedBody` to services while preserving raw `ctx.request.body`
 - Note, Project, and Task services use `backend/src/services/ownership.ts` for required owner filters and do not retain unowned single-user content fallback branches
 - public AI note/project routes reload persisted note/project context by current user ownership before constructing fallback/provider prompts

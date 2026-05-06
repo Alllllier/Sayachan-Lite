@@ -4,6 +4,7 @@ import type {
   ProjectCreateDto,
   ProjectUpdateDto
 } from './schemas/mutations';
+import { optionalObjectId, toObjectId, type ObjectId } from '../ids/objectId';
 
 type CurrentUserState = {
   user?: {
@@ -11,7 +12,7 @@ type CurrentUserState = {
     role?: string;
     email?: string;
   };
-  userId: unknown;
+  userId: ObjectId;
 };
 
 type ProjectsState = CurrentUserState & {
@@ -28,22 +29,26 @@ type RequestBodySchema<TBody> = {
 type ValidateBody = <TBody>(schema: RequestBodySchema<TBody>) => ProjectsMiddleware;
 
 type ProjectsServiceOptions = {
-  userId: unknown;
+  userId: ObjectId;
 };
 
 type ListProjectsOptions = ProjectsServiceOptions & {
   archived?: unknown;
 };
 
+type ProjectUpdateServiceBody = Omit<ProjectUpdateDto, 'currentFocusTaskId'> & {
+  currentFocusTaskId?: ObjectId | null;
+};
+
 type ProjectsService = {
   listProjects(options: ListProjectsOptions): Promise<unknown>;
   createProject(body: ProjectCreateDto, options: ProjectsServiceOptions): Promise<unknown>;
-  updateProject(id: string, body: ProjectUpdateDto, options: ProjectsServiceOptions): Promise<unknown>;
-  deleteProject(id: string, options: ProjectsServiceOptions): Promise<boolean>;
-  pinProject(id: string, options: ProjectsServiceOptions): Promise<unknown>;
-  unpinProject(id: string, options: ProjectsServiceOptions): Promise<unknown>;
-  archiveProject(id: string, options: ProjectsServiceOptions): Promise<unknown>;
-  restoreProject(id: string, options: ProjectsServiceOptions): Promise<unknown>;
+  updateProject(id: ObjectId, body: ProjectUpdateServiceBody, options: ProjectsServiceOptions): Promise<unknown>;
+  deleteProject(id: ObjectId, options: ProjectsServiceOptions): Promise<boolean>;
+  pinProject(id: ObjectId, options: ProjectsServiceOptions): Promise<unknown>;
+  unpinProject(id: ObjectId, options: ProjectsServiceOptions): Promise<unknown>;
+  archiveProject(id: ObjectId, options: ProjectsServiceOptions): Promise<unknown>;
+  restoreProject(id: ObjectId, options: ProjectsServiceOptions): Promise<unknown>;
 };
 
 const projectsService = require('../services/projectsService') as ProjectsService;
@@ -67,6 +72,21 @@ function validatedBody<TBody>(ctx: Parameters<ProjectsHandler>[0]): TBody {
   return ctx.state.validatedBody as TBody;
 }
 
+function projectId(ctx: Parameters<ProjectsHandler>[0]): ObjectId {
+  return toObjectId(ctx.params.id, 'params.id');
+}
+
+function parsedProjectUpdateBody(ctx: Parameters<ProjectsHandler>[0]): ProjectUpdateServiceBody {
+  const body = validatedBody<ProjectUpdateDto>(ctx);
+  if (body.currentFocusTaskId !== undefined) {
+    const { currentFocusTaskId: _currentFocusTaskId, ...rest } = body;
+    const parsedBody: ProjectUpdateServiceBody = { ...rest };
+    parsedBody.currentFocusTaskId = optionalObjectId(body.currentFocusTaskId, 'request.body.currentFocusTaskId');
+    return parsedBody;
+  }
+  return body as ProjectUpdateServiceBody;
+}
+
 // GET /projects
 router.get('/projects', requireCurrentUser, async (ctx) => {
   const { archived } = ctx.query;
@@ -82,8 +102,8 @@ router.post('/projects', requireCurrentUser, validateBody(projectCreateSchema), 
 
 // PUT /projects/:id
 router.put('/projects/:id', requireCurrentUser, validateBody(projectUpdateSchema), async (ctx) => {
-  const id = ctx.params.id;
-  const body = validatedBody<ProjectUpdateDto>(ctx);
+  const id = projectId(ctx);
+  const body = parsedProjectUpdateBody(ctx);
   const project = await projectsService.updateProject(id, body, { userId: ctx.state.userId });
   if (!project) {
     ctx.status = 404;
@@ -95,7 +115,7 @@ router.put('/projects/:id', requireCurrentUser, validateBody(projectUpdateSchema
 
 // DELETE /projects/:id
 router.delete('/projects/:id', requireCurrentUser, async (ctx) => {
-  const id = ctx.params.id;
+  const id = projectId(ctx);
   const deleted = await projectsService.deleteProject(id, { userId: ctx.state.userId });
   if (!deleted) {
     ctx.status = 404;
@@ -108,7 +128,7 @@ router.delete('/projects/:id', requireCurrentUser, async (ctx) => {
 
 // PUT /projects/:id/pin - Pin project (does not update content timestamp)
 router.put('/projects/:id/pin', requireCurrentUser, async (ctx) => {
-  const id = ctx.params.id;
+  const id = projectId(ctx);
   const project = await projectsService.pinProject(id, { userId: ctx.state.userId });
   if (!project) {
     ctx.status = 404;
@@ -120,7 +140,7 @@ router.put('/projects/:id/pin', requireCurrentUser, async (ctx) => {
 
 // PUT /projects/:id/unpin - Unpin project (does not update content timestamp)
 router.put('/projects/:id/unpin', requireCurrentUser, async (ctx) => {
-  const id = ctx.params.id;
+  const id = projectId(ctx);
   const project = await projectsService.unpinProject(id, { userId: ctx.state.userId });
   if (!project) {
     ctx.status = 404;
@@ -132,7 +152,7 @@ router.put('/projects/:id/unpin', requireCurrentUser, async (ctx) => {
 
 // PUT /projects/:id/archive - Archive project and cascade to tasks
 router.put('/projects/:id/archive', requireCurrentUser, async (ctx) => {
-  const id = ctx.params.id;
+  const id = projectId(ctx);
   const project = await projectsService.archiveProject(id, { userId: ctx.state.userId });
 
   if (!project) {
@@ -146,7 +166,7 @@ router.put('/projects/:id/archive', requireCurrentUser, async (ctx) => {
 
 // PUT /projects/:id/restore - Restore project and cascade to tasks
 router.put('/projects/:id/restore', requireCurrentUser, async (ctx) => {
-  const id = ctx.params.id;
+  const id = projectId(ctx);
   const project = await projectsService.restoreProject(id, { userId: ctx.state.userId });
 
   if (!project) {

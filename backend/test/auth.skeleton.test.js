@@ -76,7 +76,7 @@ test('tester registration requires a valid single-use invite code', async () => 
       target: User,
       key: 'create',
       value: async (payload) => {
-        createdUser = createDoc({ _id: 'tester-1', createdAt: new Date(), ...payload });
+        createdUser = createDoc({ _id: '000000000000000000000011', createdAt: new Date(), ...payload });
         return createdUser;
       }
     },
@@ -92,7 +92,7 @@ test('tester registration requires a valid single-use invite code', async () => 
     assert.equal(user.role, 'tester');
     assert.equal(createdUser.role, 'tester');
     assert.equal(Boolean(invite.usedAt), true);
-    assert.equal(invite.usedBy, 'tester-1');
+    assert.equal(invite.usedBy, '000000000000000000000011');
   });
 });
 
@@ -130,7 +130,7 @@ test('revoked, used, and expired invites are rejected before user creation', asy
 test('login creates a cookie-backed session and logout deletes it', async () => {
   const password = authService.__test__.hashPassword('long-enough');
   const user = createDoc({
-    _id: 'tester-1',
+    _id: '000000000000000000000011',
     email: 'tester@example.com',
     role: 'tester',
     disabled: false,
@@ -146,7 +146,7 @@ test('login creates a cookie-backed session and logout deletes it', async () => 
       target: Session,
       key: 'create',
       value: async (payload) => {
-        sessionCreated = Boolean(payload.tokenHash && payload.userId === 'tester-1');
+        sessionCreated = Boolean(payload.tokenHash && payload.userId === '000000000000000000000011');
         return createDoc(payload);
       }
     },
@@ -180,7 +180,7 @@ test('disabled accounts are rejected on the next authenticated session load', as
       key: 'findOne',
       value: async () => createDoc({
         _id: 'session-1',
-        userId: 'tester-1',
+        userId: '000000000000000000000011',
         expiresAt: new Date(Date.now() + 100000)
       })
     },
@@ -195,7 +195,7 @@ test('disabled accounts are rejected on the next authenticated session load', as
       target: User,
       key: 'findById',
       value: async () => createDoc({
-        _id: 'tester-1',
+        _id: '000000000000000000000011',
         email: 'tester@example.com',
         role: 'tester',
         disabled: true
@@ -246,7 +246,7 @@ test('owner-only invite routes reject tester users', async () => {
   const handler = getRouteHandler('POST', '/owner/invites');
   const ctx = {
     state: {
-      user: { _id: 'tester-1', role: 'tester', email: 'tester@example.com' }
+      user: { _id: '000000000000000000000011', role: 'tester', email: 'tester@example.com' }
     },
     status: 200,
     body: undefined

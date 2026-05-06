@@ -18,6 +18,7 @@
   },
   "include": [
     "src/**/*.js",
+    "src/ids/objectId.ts",
     "src/middleware/currentUser.ts",
     "src/middleware/errorBoundary.ts",
     "src/middleware/requestBodyValidation.ts",
@@ -42,6 +43,7 @@
     "src/routes/notesRoutes.js",
     "src/routes/projectsRoutes.js",
     "src/routes/tasksRoutes.js",
+    "src/ids/objectId.js",
     "src/middleware/currentUser.js",
     "src/middleware/errorBoundary.js",
     "src/middleware/requestBodyValidation.js",

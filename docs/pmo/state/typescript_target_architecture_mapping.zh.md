@@ -201,6 +201,7 @@
 - `backend/src/ai/bridge.js` 与 public/private AI responsibility split。
 - account/session/ownership boundaries：`frontend/src/stores/auth.js`、`frontend/src/services/resourceCache.js`、`backend/src/middleware/auth.js`、`backend/src/middleware/currentUser.ts`、`backend/src/services/ownership.ts`、`backend/src/services/authService.ts`、auth models/routes。
 - focus/task workflow semantics：project `currentFocusTaskId`、task provenance、active/completed/archived lifecycle、focus clearing。
+- Backend ObjectId parsing boundary：`backend/src/ids/objectId.ts`、product route params/query/body focus ids、以及 `currentUser` state user id。
 - note/project/task services 与 backend task runtime helpers 中的 archive/restore cascades。
 - dashboard-to-chat cockpit context：`frontend/src/services/cockpitContextService.js`、`frontend/src/stores/cockpitSignals.js`、chat context hydration rules。
 - note tasks、project next action、chat 的 public AI routes 与 fallback behavior。

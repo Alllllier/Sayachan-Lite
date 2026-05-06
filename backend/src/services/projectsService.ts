@@ -2,6 +2,7 @@ import type {
   ProjectCreateDto,
   ProjectUpdateDto
 } from '../routes/schemas/mutations';
+import type { ObjectId } from '../ids/objectId';
 import {
   archiveTasks,
   buildArchiveFilter,
@@ -23,7 +24,7 @@ const Project = ProjectModel as any;
 const Task = TaskModel as any;
 
 type ServiceOptions = {
-  userId?: unknown;
+  userId: ObjectId;
 };
 
 type ListProjectsOptions = ServiceOptions & {
@@ -34,18 +35,22 @@ type ProjectUpdate = {
   name?: string;
   summary?: string;
   status?: ProjectUpdateDto['status'];
-  currentFocusTaskId?: unknown;
+  currentFocusTaskId?: ObjectId | null;
+};
+
+type ProjectUpdateInput = Omit<ProjectUpdateDto, 'currentFocusTaskId'> & {
+  currentFocusTaskId?: ObjectId | null;
 };
 
 type QueryFilter = Record<string, unknown>;
 
-async function listProjects({ archived, userId }: ListProjectsOptions = {}) {
+async function listProjects({ archived, userId }: ListProjectsOptions) {
   const projects = await Project.find(combineFilters(buildArchiveFilter(archived), ownerFilter(userId)))
     .sort({ isPinned: -1, pinnedAt: -1, updatedAt: -1 });
   return projects.map(normalizeProject);
 }
 
-async function createProject(body: ProjectCreateDto, { userId }: ServiceOptions = {}) {
+async function createProject(body: ProjectCreateDto, { userId }: ServiceOptions) {
   const project = await Project.create({
     name: body.name,
     summary: body.summary,
@@ -57,15 +62,15 @@ async function createProject(body: ProjectCreateDto, { userId }: ServiceOptions 
   return normalizeProject(project);
 }
 
-function buildProjectUpdate(body: ProjectUpdateDto): ProjectUpdate {
+function buildProjectUpdate(body: ProjectUpdateInput): ProjectUpdate {
   const update: ProjectUpdate = {};
-  if (body.name !== undefined) {
+  if (typeof body.name === 'string') {
     update.name = body.name;
   }
-  if (body.summary !== undefined) {
+  if (typeof body.summary === 'string') {
     update.summary = body.summary;
   }
-  if (body.status !== undefined) {
+  if (body.status === 'pending' || body.status === 'in_progress' || body.status === 'completed' || body.status === 'on_hold') {
     update.status = body.status;
   }
   if (body.currentFocusTaskId !== undefined) {
@@ -81,7 +86,7 @@ function changedOnlyFilter(filter: QueryFilter, update: ProjectUpdate): QueryFil
   };
 }
 
-async function updateProject(id: unknown, body: ProjectUpdateDto, { userId }: ServiceOptions = {}) {
+async function updateProject(id: ObjectId, body: ProjectUpdateInput, { userId }: ServiceOptions) {
   const filter = ownedFilter(id, userId);
   const update = buildProjectUpdate(body);
 
@@ -90,12 +95,12 @@ async function updateProject(id: unknown, body: ProjectUpdateDto, { userId }: Se
   return normalizeProject(project || await Project.findOne(filter));
 }
 
-async function deleteProject(id: unknown, { userId }: ServiceOptions = {}) {
+async function deleteProject(id: ObjectId, { userId }: ServiceOptions) {
   const project = await Project.findOneAndDelete(ownedFilter(id, userId));
   return Boolean(project);
 }
 
-async function pinProject(id: unknown, { userId }: ServiceOptions = {}) {
+async function pinProject(id: ObjectId, { userId }: ServiceOptions) {
   const project = await Project.findOneAndUpdate(ownedFilter(id, userId), { isPinned: true, pinnedAt: new Date() }, { new: true, runValidators: true, timestamps: false });
 
   if (project) {
@@ -105,7 +110,7 @@ async function pinProject(id: unknown, { userId }: ServiceOptions = {}) {
   return normalizeProject(project);
 }
 
-async function unpinProject(id: unknown, { userId }: ServiceOptions = {}) {
+async function unpinProject(id: ObjectId, { userId }: ServiceOptions) {
   const project = await Project.findOneAndUpdate(ownedFilter(id, userId), { isPinned: false, pinnedAt: null }, { new: true, runValidators: true, timestamps: false });
 
   if (project) {
@@ -115,7 +120,7 @@ async function unpinProject(id: unknown, { userId }: ServiceOptions = {}) {
   return normalizeProject(project);
 }
 
-async function archiveProject(id: unknown, { userId }: ServiceOptions = {}) {
+async function archiveProject(id: ObjectId, { userId }: ServiceOptions) {
   const project = await Project.findOneAndUpdate(ownedFilter(id, userId), { archived: true }, { new: true, runValidators: true });
 
   if (!project) {
@@ -138,7 +143,7 @@ async function archiveProject(id: unknown, { userId }: ServiceOptions = {}) {
   return normalizeProject(project);
 }
 
-async function restoreProject(id: unknown, { userId }: ServiceOptions = {}) {
+async function restoreProject(id: ObjectId, { userId }: ServiceOptions) {
   const existingProject = await Project.findOne(ownedFilter(id, userId));
 
   const project = await Project.findOneAndUpdate(ownedFilter(id, userId), { archived: false, status: deriveProjectLifecycleStatus(existingProject) }, { new: true, runValidators: true });

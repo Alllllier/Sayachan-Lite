@@ -1,11 +1,12 @@
 import type { Context, Next } from 'koa';
+import { toObjectId, type ObjectId } from '../ids/objectId';
 
-export function resolveCurrentUserId(ctx: Context): unknown | null {
+export function resolveCurrentUserId(ctx: Context): ObjectId | null {
   const userId = ctx.state?.user?._id;
   if (!userId) {
     return null;
   }
-  return userId;
+  return toObjectId(userId, 'state.user._id');
 }
 
 export async function requireCurrentUser(ctx: Context, next: Next): Promise<void> {

@@ -16,7 +16,7 @@ test('restoreTasks keeps canonical project scope when reading archived tasks', a
   try {
     const modifiedCount = await restoreTasks(Task, {
       originModule: 'project',
-      originId: 'project-1'
+      originId: '000000000000000000000201'
     });
 
     assert.equal(modifiedCount, 0);
@@ -24,7 +24,7 @@ test('restoreTasks keeps canonical project scope when reading archived tasks', a
       $and: [
         {
           originModule: 'project',
-          originId: 'project-1'
+          originId: '000000000000000000000201'
         },
         {
           archived: true
