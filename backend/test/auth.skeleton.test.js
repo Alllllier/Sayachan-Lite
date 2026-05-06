@@ -59,6 +59,24 @@ function getRouteHandler(method, path) {
   });
 }
 
+function createAuthRouteCtx(body = {}) {
+  const cookies = {
+    writes: [],
+    get: () => null,
+    set(name, value, options) {
+      this.writes.push({ name, value, options });
+    }
+  };
+
+  return {
+    request: { body },
+    state: {},
+    cookies,
+    status: 200,
+    body: undefined
+  };
+}
+
 test('tester registration requires a valid single-use invite code', async () => {
   const invite = createDoc({
     _id: 'invite-1',
@@ -256,4 +274,107 @@ test('owner-only invite routes reject tester users', async () => {
 
   assert.equal(ctx.status, 403);
   assert.deepEqual(ctx.body, { error: 'Owner access required' });
+});
+
+test('auth mutation routes validate request bodies before service writes', async () => {
+  const bootstrapOwnerHandler = getRouteHandler('POST', '/auth/bootstrap-owner');
+  const registerHandler = getRouteHandler('POST', '/auth/register');
+  const loginHandler = getRouteHandler('POST', '/auth/login');
+
+  const forbiddenWrite = async () => {
+    throw new Error('auth validation should stop before service writes');
+  };
+
+  await withPatchedMethods([
+    { target: authService, key: 'bootstrapOwner', value: forbiddenWrite },
+    { target: authService, key: 'registerTester', value: forbiddenWrite },
+    { target: authService, key: 'login', value: forbiddenWrite }
+  ], async () => {
+    const cases = [
+      [bootstrapOwnerHandler, createAuthRouteCtx(null)],
+      [bootstrapOwnerHandler, createAuthRouteCtx({})],
+      [bootstrapOwnerHandler, createAuthRouteCtx({ email: '', password: 'long-enough' })],
+      [bootstrapOwnerHandler, createAuthRouteCtx({ email: 'owner@example.com', password: 'short' })],
+      [registerHandler, createAuthRouteCtx([])],
+      [registerHandler, createAuthRouteCtx({ email: 'tester@example.com', password: 'long-enough' })],
+      [registerHandler, createAuthRouteCtx({ email: 'tester@example.com', password: 'long-enough', inviteCode: '   ' })],
+      [loginHandler, createAuthRouteCtx({ email: 'tester@example.com', password: 42 })]
+    ];
+
+    for (const [handler, ctx] of cases) {
+      await handler(ctx, async () => {});
+      assert.equal(ctx.status, 400);
+      assert.deepEqual(ctx.body, { error: 'Invalid request body' });
+    }
+  });
+});
+
+test('auth mutation validation strips unknown fields from service DTOs', async () => {
+  const bootstrapOwnerHandler = getRouteHandler('POST', '/auth/bootstrap-owner');
+  const registerHandler = getRouteHandler('POST', '/auth/register');
+  const loginHandler = getRouteHandler('POST', '/auth/login');
+  const calls = {};
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'bootstrapOwner',
+      value: async (body) => {
+        calls.bootstrapOwner = body;
+        return { _id: 'owner-1', email: body.email, role: 'owner' };
+      }
+    },
+    {
+      target: authService,
+      key: 'registerTester',
+      value: async (body) => {
+        calls.registerTester = body;
+        return { _id: 'tester-1', email: body.email, role: 'tester' };
+      }
+    },
+    {
+      target: authService,
+      key: 'login',
+      value: async (body) => {
+        calls.login = body;
+        return {
+          sessionToken: 'session-token',
+          user: { _id: 'tester-1', email: body.email, role: 'tester' }
+        };
+      }
+    }
+  ], async () => {
+    const bootstrapBody = { email: 'owner@example.com', password: 'long-enough', unknownField: 'kept raw' };
+    const bootstrapCtx = createAuthRouteCtx(bootstrapBody);
+    await bootstrapOwnerHandler(bootstrapCtx, async () => {});
+
+    const registerBody = {
+      email: 'tester@example.com',
+      password: 'long-enough',
+      inviteCode: 'OPEN-DOOR',
+      unknownField: 'kept raw'
+    };
+    const registerCtx = createAuthRouteCtx(registerBody);
+    await registerHandler(registerCtx, async () => {});
+
+    const loginBody = { email: 'tester@example.com', password: 'long-enough', unknownField: 'kept raw' };
+    const loginCtx = createAuthRouteCtx(loginBody);
+    await loginHandler(loginCtx, async () => {});
+
+    assert.equal(bootstrapCtx.status, 201);
+    assert.equal(registerCtx.status, 201);
+    assert.equal(loginCtx.status, 200);
+    assert.equal(bootstrapCtx.request.body.unknownField, 'kept raw');
+    assert.equal(registerCtx.request.body.unknownField, 'kept raw');
+    assert.equal(loginCtx.request.body.unknownField, 'kept raw');
+    assert.equal(loginCtx.cookies.writes.length, 1);
+  });
+
+  assert.deepEqual(calls.bootstrapOwner, { email: 'owner@example.com', password: 'long-enough' });
+  assert.deepEqual(calls.registerTester, {
+    email: 'tester@example.com',
+    password: 'long-enough',
+    inviteCode: 'OPEN-DOOR'
+  });
+  assert.deepEqual(calls.login, { email: 'tester@example.com', password: 'long-enough' });
 });

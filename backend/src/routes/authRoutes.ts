@@ -1,36 +1,56 @@
 import Router, { type RouterMiddleware } from '@koa/router';
 
+import type {
+  AuthCredentialsDto,
+  RegisterTesterDto
+} from './schemas/auth';
+
 const authService = require('../services/authService') as typeof import('../services/authService');
 const { clearSessionCookie, requireOwner, setSessionCookie } = require('../middleware/auth') as typeof import('../middleware/auth');
+const {
+  authCredentialsSchema,
+  registerTesterSchema
+} = require('./schemas/auth') as {
+  authCredentialsSchema: RequestBodySchema<AuthCredentialsDto>;
+  registerTesterSchema: RequestBodySchema<RegisterTesterDto>;
+};
+const { validateBody } = require('../middleware/requestBodyValidation') as {
+  validateBody: ValidateBody;
+};
 
 type OwnerUser = Parameters<typeof authService.createInvite>[0];
-type AuthCredentials = Parameters<typeof authService.login>[0];
-type RegisterTesterInput = Parameters<typeof authService.registerTester>[0];
 
 type AuthState = {
   user?: OwnerUser;
+  validatedBody?: unknown;
+};
+
+type RequestBodySchema<TBody> = {
+  safeParse(body: unknown): { success: true; data: TBody } | { success: false; error: unknown };
 };
 
 type AuthHandler = RouterMiddleware<AuthState>;
+type AuthMiddleware = RouterMiddleware<AuthState>;
+type ValidateBody = <TBody>(schema: RequestBodySchema<TBody>) => AuthMiddleware;
 
 const router = new Router();
 
-function requestBody<TBody>(ctx: Parameters<AuthHandler>[0]): TBody {
-  return ((ctx.request as typeof ctx.request & { body?: unknown }).body || {}) as TBody;
+function validatedBody<TBody>(ctx: Parameters<AuthHandler>[0]): TBody {
+  return ctx.state.validatedBody as TBody;
 }
 
-router.post('/auth/bootstrap-owner', (async (ctx) => {
+router.post('/auth/bootstrap-owner', validateBody(authCredentialsSchema), (async (ctx) => {
   ctx.status = 201;
-  ctx.body = await authService.bootstrapOwner(requestBody<AuthCredentials>(ctx));
+  ctx.body = await authService.bootstrapOwner(validatedBody<AuthCredentialsDto>(ctx));
 }) as AuthHandler);
 
-router.post('/auth/register', (async (ctx) => {
+router.post('/auth/register', validateBody(registerTesterSchema), (async (ctx) => {
   ctx.status = 201;
-  ctx.body = await authService.registerTester(requestBody<RegisterTesterInput>(ctx));
+  ctx.body = await authService.registerTester(validatedBody<RegisterTesterDto>(ctx));
 }) as AuthHandler);
 
-router.post('/auth/login', (async (ctx) => {
-  const result = await authService.login(requestBody<AuthCredentials>(ctx));
+router.post('/auth/login', validateBody(authCredentialsSchema), (async (ctx) => {
+  const result = await authService.login(validatedBody<AuthCredentialsDto>(ctx));
   setSessionCookie(ctx, result.sessionToken);
   ctx.body = result;
 }) as AuthHandler);

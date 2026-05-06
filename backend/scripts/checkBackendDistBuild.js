@@ -201,6 +201,23 @@ function assertSchemaDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertAuthSchemaDistArtifactFromTypeScriptSource() {
+  const authSchemaDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'schemas', 'auth.js'), 'utf8');
+
+  assert(
+    authSchemaDistSource.includes('authCredentialsSchema'),
+    'dist auth schema artifact must preserve authCredentialsSchema.'
+  );
+  assert(
+    authSchemaDistSource.includes('registerTesterSchema'),
+    'dist auth schema artifact must preserve registerTesterSchema.'
+  );
+  assert(
+    authSchemaDistSource.includes('require("zod")'),
+    'dist auth schema artifact must import zod directly.'
+  );
+}
+
 function assertNotesDistArtifactFromTypeScriptSource() {
   const notesDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'notesRoutes.js'), 'utf8');
 
@@ -303,6 +320,10 @@ function assertAuthRoutesDistArtifactFromTypeScriptSource() {
   assert(
     authRoutesDistSource.includes("require('../middleware/auth')") || authRoutesDistSource.includes('require("../middleware/auth")'),
     'dist authRoutes artifact must use the compiled auth middleware boundary.'
+  );
+  assert(
+    authRoutesDistSource.includes("require('./schemas/auth')") || authRoutesDistSource.includes('require("./schemas/auth")'),
+    'dist authRoutes artifact must use the auth request schema boundary.'
   );
 }
 
@@ -629,6 +650,7 @@ const requiredRuntimeEntrypoints = [
   path.join('routes', 'notesRoutes.js'),
   path.join('routes', 'projectsRoutes.js'),
   path.join('routes', 'tasksRoutes.js'),
+  path.join('routes', 'schemas', 'auth.js'),
   path.join('routes', 'schemas', 'mutations.js')
 ];
 
@@ -648,6 +670,7 @@ assertNotExists(path.join('dist', 'routes', 'schemas', '__generated__', 'mutatio
 assertNoPathSegment(distRoot, 'private_core');
 assertNoPathSegment(distRoot, '__route_sources__');
 assertSchemaDistArtifactFromTypeScriptSource();
+assertAuthSchemaDistArtifactFromTypeScriptSource();
 assertAiBridgeDistArtifactFromTypeScriptSource();
 assertAiRoutesDistArtifactFromTypeScriptSource();
 assertNotesDistArtifactFromTypeScriptSource();
