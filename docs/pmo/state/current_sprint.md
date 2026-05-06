@@ -1,8 +1,7 @@
 # Current Sprint
 
-- Sprint: `AI RuntimeControls Schema Normalization`
-- Status: `active`
-- Phase: `handed-off`
+- Sprint: `idle`
+- Status: `idle`
 - PMO owner: `Codex`
 - Architecture owner: `Human`
 - Execution owner: `execution worker`
@@ -10,26 +9,21 @@
 
 ## Current State
 
-- Type: `candidate-selected`
-- Goal: `/ai/chat` validates `runtimeControls` through an explicit Zod schema that matches current frontend payloads, strips unknown fields where safe, and preserves current private-core behavior.`
-- Source: `sprint_candidates.md`
-- Active handoff: `docs/pmo/state/execution_task.md`
-- Execution report target: `docs/pmo/state/execution_report.md`
+- Type: `idle`
+- Goal: `No active sprint.`
+- Active handoff: `none`
 
-## Activation Snapshot
+## Last Closed Sprint
 
-- Selected by: `Human`
-- Selection date: `2026-05-07`
-- Candidate source: `AI Route Service Split closeout follow-up`
-- Related discussion, backlog, or decision entries: `AI Route Service Split closeout follow-up`
-
-## PMO Boundary
-
-- Detailed worker scope lives in `execution_task.md`
-- Candidate comparison details remain in `sprint_candidates.md` when applicable
-- This file should stay a lightweight runtime card, not a second execution brief
+- Sprint: `AI RuntimeControls Schema Normalization`
+- Closeout date: `2026-05-07`
+- Delivery status: `completed and validated`
+- Commit state: `committed as 3ff591c chore(backend): normalize ai runtime controls schema`
+- Documentation sync outcome: `reviewed, no update needed`
+- Residual note: `Future runtimeControls fields now require explicit schema additions; current placeholder null fields remain behavior-preserving until product semantics are decided.`
+- Report surface: `docs/pmo/history/reports/ai-runtimecontrols-schema-normalization.md`
 
 ## Next PMO Action
 
-- wait for execution return in `execution_report.md`
-- close out, route follow-up, and reset runtime state when execution is accepted
+- keep `execution_task.md` in explicit idle state until a new sprint or micro-fix is activated
+- decide whether the next PMO move is a new discussion, a candidate activation, a micro-fix, or archive cleanup

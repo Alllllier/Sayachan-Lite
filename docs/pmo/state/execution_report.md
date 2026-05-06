@@ -1,55 +1,27 @@
 # Execution Report
 
-- Status: `reported`
-- Sprint: `AI RuntimeControls Schema Normalization`
+- Status: `idle`
+- Sprint: `idle`
 - Last updated: `2026-05-07`
 
-## Delivered
+## Current State
 
-- Audited the current frontend chat payload and private-core runtime control reads before changing the backend contract.
-- Replaced `runtimeControls: z.unknown()` in `backend/src/routes/schemas/ai.ts` with an explicit Zod schema for `personalityBaseline`, `lastUserMessage`, and current `futureSlots` fields.
-- Kept the schema aligned with today's frontend store/API payload while stripping unknown runtime control fields at the root and nested `futureSlots` levels.
-- Added backend route contract coverage for invalid runtimeControls values returning 400 before downstream AI/service work.
-- Extended the AI chat handoff test to prove known runtimeControls fields are preserved and unknown fields are stripped before `aiService.chat`.
+There is no active execution report waiting for PMO review right now.
 
-## Human Review Adjustments
+## Last Closed Report Summary
 
-- None during implementation.
+- Sprint: `AI RuntimeControls Schema Normalization`
+- Report outcome: `completed and validated`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/ai-runtimecontrols-schema-normalization.md`
 
-## Validation Layers Performed
+## Next Use
 
-- `npm --prefix backend run test`
-- `npm run check`
+The execution worker should replace this placeholder with a structured report that states:
 
-## Project-Specific Review
-
-- Required: no
-- Performed: no
-- Reason: this was a backend request-schema and route-contract test change only; no UI or product behavior changed.
-
-## Unverified Areas
-
-- No live external AI provider call was performed. The route handoff contract is covered with a patched service boundary, which is enough for this slice.
-
-## Residual Risks
-
-- RuntimeControls now only accepts fields that are known today. Future controls need explicit schema additions.
-- `reflectionDepth`, `thinking`, and `debugContext` are preserved only as current null placeholders; adding semantics later should be a separate product/runtime decision.
-
-## Escalations Or Decisions Needed
-
-- No blocking escalation.
-- Possible future candidate: document the runtimeControls contract between frontend, backend, and private-core if this surface starts changing more often.
-
-## Out-Of-Scope Confirmation
-
-- RuntimeControls product semantics were not redesigned.
-- Frontend UI/store behavior was not changed.
-- Private-core, bridge, provider payload, fallback behavior, and chat response shape were not changed.
-- `aiService.ts` was not split further.
-
-## Documentation Sync Review
-
-- Outcome: `reviewed, no update needed`
-- Reviewed docs: `docs/pmo/state/execution_task.md`
-- Follow-up required: PMO closeout/archive after review.
+- what was delivered
+- what validation was performed
+- whether project-specific review was actually needed for this sprint
+- what project-specific review was performed or intentionally skipped
+- what remains unverified
+- what risks or escalations still matter
+- what documentation-sync outcome PMO should record during closeout
