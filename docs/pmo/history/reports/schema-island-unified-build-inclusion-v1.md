@@ -1,0 +1,41 @@
+# Schema Island Unified Build Inclusion V1
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Schema Island Unified Build Inclusion V1`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Updated `backend/tsconfig.json` so the unified backend `tsc` dry-run includes `backend/src/routes/schemas/mutations.ts`.
+  - Removed the temporary `noResolve` boundary from the unified backend tsconfig now that private core is consumed through the `@allier/sayachan-ai-core` package boundary.
+  - Excluded `backend/src/routes/schemas/mutations.js` from the unified build to avoid the known output collision with `mutations.ts`.
+  - Preserved the source-runtime schema facade and checked-in generated schema artifacts.
+  - Hardened `backend/scripts/checkBackendDistBuild.js` so it verifies `backend/dist/routes/schemas/mutations.js` is emitted from the TS source and is not the facade over `__generated__`.
+  - Updated PMO baselines to record the new backend type-adoption truth.
+- Validation summary:
+  - `npm --prefix backend run check:schema-island` passed.
+  - `npm --prefix backend run check:backend-build` passed.
+    - The guard confirmed the dist schema artifact imports `zod` directly and does not require `./__generated__/mutations`.
+  - `npm run lint:backend` passed.
+  - `npm --prefix backend test` passed.
+    - 40 backend tests passed.
+  - `npm run check` passed.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If skipped, why skipping was acceptable:
+    - This sprint changed backend build ownership for a dist artifact and did not change source runtime imports, UI, browser surfaces, route behavior, API contracts, or Zod behavior.
+- Unverified areas:
+  - No live dist HTTP server was run.
+  - No generated schema artifacts were retired in this sprint.
+- Residual risks or escalations:
+  - Source runtime still uses `backend/src/routes/schemas/mutations.js`, so the schema facade and generated artifacts remain active transitional scaffolding.
+  - The unified build now owns the dist schema artifact, but runtime cutover and scaffold deletion remain separate human-gated steps.
+  - Notes route TS inclusion still needs its own prep because it has a different route-source/facade shape.
+- Documentation-sync outcome: `updated`
+- Follow-up routing:
+  - No new human decision is required for this slice.
+  - Future human gates remain:
+    - deleting schema facade/generated artifacts
+    - switching backend runtime to `node dist/server.js`
+    - expanding root `npm run check` with backend dist validation
+    - ESM/runtime loader decisions

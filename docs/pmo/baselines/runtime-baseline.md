@@ -28,6 +28,8 @@ Current transitional type-island truth:
 - product mutation schemas and DTO types are authored in `backend/src/routes/schemas/mutations.ts`
 - `npm --prefix backend run build:schema-island` emits checked-in CommonJS artifacts under `backend/src/routes/schemas/__generated__/`
 - `npm --prefix backend run check:schema-island` compares freshly compiled schema-island output with the checked-in generated artifacts and is included in root `npm run check`
+- the unified backend `tsc` dry-run now includes `backend/src/routes/schemas/mutations.ts`, so `backend/dist/routes/schemas/mutations.js` is emitted from the TS schema source rather than from the source-runtime facade
+- the source runtime still consumes `backend/src/routes/schemas/mutations.js`, so checked-in generated schema artifacts and the facade remain active transitional scaffolding
 - Notes route orchestration is authored in `backend/src/routes/__route_sources__/notesRoutes.ts`
 - `npm --prefix backend run build:notes-route-island` emits checked-in CommonJS artifacts under `backend/src/routes/__generated__/`
 - `npm --prefix backend run check:notes-route-island` compares freshly compiled Notes route output with the checked-in generated artifacts and is included in root `npm run check`

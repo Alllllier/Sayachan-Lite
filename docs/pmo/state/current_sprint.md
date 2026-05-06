@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Private Core Package Import Boundary V1`
+- Sprint: `Schema Island Unified Build Inclusion V1`
 - Closeout date: `2026-05-06`
 - Delivery status: `completed and validated`
 - Commit state: `not committed in this closeout`
 - Documentation sync outcome: `updated`
 - Residual note: `none`
-- Report surface: `docs/pmo/history/reports/private-core-package-import-boundary-v1.md`
+- Report surface: `docs/pmo/history/reports/schema-island-unified-build-inclusion-v1.md`
 
 ## Next PMO Action
 

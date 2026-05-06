@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Private Core Package Import Boundary V1`
+- Sprint: `Schema Island Unified Build Inclusion V1`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/private-core-package-import-boundary-v1.md`
+- Report surface: `docs/pmo/history/reports/schema-island-unified-build-inclusion-v1.md`
 
 ## Next Activation Rule
 

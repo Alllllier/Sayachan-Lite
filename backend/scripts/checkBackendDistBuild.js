@@ -127,6 +127,19 @@ function assertPrivateCorePackageBoundary() {
   );
 }
 
+function assertSchemaDistArtifactFromTypeScriptSource() {
+  const schemaDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'schemas', 'mutations.js'), 'utf8');
+
+  assert(
+    schemaDistSource.includes('require("zod")'),
+    'dist schema mutation artifact must be emitted from mutations.ts and import zod directly.'
+  );
+  assert(
+    !schemaDistSource.includes('./__generated__/mutations'),
+    'dist schema mutation artifact must not be the source-runtime facade over __generated__.'
+  );
+}
+
 function assertCurrentSourceArtifactsWereEmitted() {
   const sourceFiles = walkFiles(srcRoot)
     .filter(filePath => path.extname(filePath) === '.js')
@@ -160,5 +173,6 @@ for (const artifact of requiredRuntimeEntrypoints) {
 assertNotExists(path.join('dist', 'private_core'));
 assertNoPathSegment(distRoot, 'private_core');
 assertNoPathSegment(distRoot, '__route_sources__');
+assertSchemaDistArtifactFromTypeScriptSource();
 
 console.log('Backend dist build boundary check passed.');

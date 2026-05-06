@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Private Core Package Import Boundary V1`
+- Sprint: `Schema Island Unified Build Inclusion V1`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/private-core-package-import-boundary-v1.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/schema-island-unified-build-inclusion-v1.md`
 
 ## Next Use
 
