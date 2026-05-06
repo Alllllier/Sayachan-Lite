@@ -6,7 +6,7 @@ import type { ObjectId } from '../middleware/objectIdParsing';
 import {
   buildArchiveFilter,
   combineFilters,
-  projectTaskCascadeFilter
+  projectTaskRelationFilter
 } from './tasks/queryFilters';
 import {
   archiveTasks,
@@ -138,7 +138,7 @@ async function archiveProject(id: ObjectId, { userId }: ServiceOptions) {
   }
 
   const modifiedCount = await archiveTasks(Task, {
-    ...projectTaskCascadeFilter(id),
+    ...projectTaskRelationFilter(id),
     ...ownerFilter(userId)
   });
 
@@ -157,7 +157,7 @@ async function restoreProject(id: ObjectId, { userId }: ServiceOptions) {
   }
 
   const modifiedCount = await restoreTasks(Task, {
-    ...projectTaskCascadeFilter(id),
+    ...projectTaskRelationFilter(id),
     ...ownerFilter(userId)
   });
 

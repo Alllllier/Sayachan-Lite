@@ -38,11 +38,3 @@ export function projectTaskRelationFilter(projectId: ObjectId): QueryFilter {
     originId: projectId
   };
 }
-
-export function projectTaskReadFilter(projectId: ObjectId): QueryFilter {
-  return projectTaskRelationFilter(projectId);
-}
-
-export function projectTaskCascadeFilter(projectId: ObjectId): QueryFilter {
-  return projectTaskRelationFilter(projectId);
-}

@@ -7,7 +7,7 @@ import type { ObjectId } from '../middleware/objectIdParsing';
 import {
   buildArchiveFilter,
   combineFilters,
-  projectTaskReadFilter,
+  projectTaskRelationFilter,
 } from './tasks/queryFilters';
 import {
   clearFocusForTask,
@@ -55,7 +55,7 @@ type NormalizedTask = {
 
 async function listTasks({ projectId, archived, userId }: ListTasksOptions) {
   const filter = projectId
-    ? combineFilters(buildArchiveFilter(archived), projectTaskReadFilter(projectId), ownerFilter(userId))
+    ? combineFilters(buildArchiveFilter(archived), projectTaskRelationFilter(projectId), ownerFilter(userId))
     : combineFilters(buildArchiveFilter(archived), ownerFilter(userId));
   const tasks = await Task.find(filter).sort({ createdAt: -1 });
   return tasks.map(toTaskDto);

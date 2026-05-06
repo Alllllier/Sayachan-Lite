@@ -3,8 +3,7 @@ const assert = require('node:assert/strict');
 
 const {
   buildArchiveFilter,
-  projectTaskCascadeFilter,
-  projectTaskReadFilter
+  projectTaskRelationFilter
 } = require('../dist/services/tasks/queryFilters');
 
 test('buildArchiveFilter reads archived=true as archived-only semantics', () => {
@@ -22,29 +21,12 @@ test('buildArchiveFilter treats non-true values as active-list semantics', () =>
   assert.equal('status' in filter, false);
 });
 
-test('projectTaskReadFilter uses canonical project provenance only', () => {
-  const filter = projectTaskReadFilter('000000000000000000000207');
+test('projectTaskRelationFilter uses canonical project provenance only', () => {
+  const filter = projectTaskRelationFilter('000000000000000000000207');
 
   assert.deepEqual(filter, {
     originModule: 'project',
     originId: '000000000000000000000207'
   });
   assert.equal('linkedProjectId' in filter, false);
-});
-
-test('projectTaskCascadeFilter uses canonical project provenance only', () => {
-  const filter = projectTaskCascadeFilter('000000000000000000000209');
-
-  assert.deepEqual(filter, {
-    originModule: 'project',
-    originId: '000000000000000000000209'
-  });
-  assert.equal('linkedProjectId' in filter, false);
-});
-
-test('project task read and cascade filters stay aligned on canonical provenance semantics', () => {
-  assert.deepEqual(
-    projectTaskReadFilter('0000000000000000000002011'),
-    projectTaskCascadeFilter('0000000000000000000002011')
-  );
 });
