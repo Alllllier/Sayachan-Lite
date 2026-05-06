@@ -1,0 +1,40 @@
+# Backend TS Build Boundary Decision Prep V1
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Backend TS Build Boundary Decision Prep V1`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Created `docs/pmo/state/backend_ts_build_boundary_decision_prep.md`.
+  - Captured why unified backend TS-source inclusion is blocked by the current `noResolve/private_core` boundary.
+  - Listed viable options without choosing an architecture change.
+  - Recorded PMO's recommendation to keep `backend/private_core/**` outside backend dist by default and prepare a future package-boundary/monorepo discussion before broad unified TS-source inclusion.
+- Validation summary:
+  - Docs/source review only.
+  - Reviewed:
+    - `docs/pmo/history/reports/schema-island-unified-build-inclusion-prep-v1.md`
+    - `backend/tsconfig.json`
+    - `backend/src/ai/bridge.js`
+    - `backend/private_core/sayachan-ai-core/**` import shape
+    - `docs/pmo/state/backend_dist_runtime_cutover_plan.md`
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If skipped, why skipping was acceptable:
+    - This was a decision-prep documentation slice.
+    - No backend runtime, build config, package script, API behavior, or UI behavior changed.
+- Unverified areas:
+  - No runtime commands were run for this decision-prep slice.
+  - The prior schema prep slice already validated the current schema island and backend build checks.
+- Residual risks or escalations:
+  - Broad unified backend TS-source inclusion remains blocked until the private-core build boundary is decided.
+  - Continuing with island-style TS work may add temporary scaffolding if used too broadly.
+  - A future package-boundary/monorepo slice may be needed before backend TS migration can become clean and low-friction.
+- Documentation-sync outcome: `updated`
+- Follow-up routing:
+  - Human decision needed:
+    - Should `backend/private_core/sayachan-ai-core` remain outside backend dist as a separate package/boundary, or should it become part of the backend build?
+  - PMO recommendation:
+    - keep private core outside backend dist
+    - prepare a future package-boundary/monorepo slice
+    - continue backend TS migration only where it does not require changing that boundary

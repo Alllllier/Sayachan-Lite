@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Schema Island Unified Build Inclusion Prep V1`
+- Sprint: `Backend TS Build Boundary Decision Prep V1`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/schema-island-unified-build-inclusion-prep-v1.md`
+- Report surface: `docs/pmo/history/reports/backend-ts-build-boundary-decision-prep-v1.md`
 
 ## Next Activation Rule
 

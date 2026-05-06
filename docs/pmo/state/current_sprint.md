@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Schema Island Unified Build Inclusion Prep V1`
+- Sprint: `Backend TS Build Boundary Decision Prep V1`
 - Closeout date: `2026-05-06`
 - Delivery status: `completed and validated`
 - Commit state: `not committed in this closeout`
-- Documentation sync outcome: `reviewed, no update needed`
+- Documentation sync outcome: `updated`
 - Residual note: `none`
-- Report surface: `docs/pmo/history/reports/schema-island-unified-build-inclusion-prep-v1.md`
+- Report surface: `docs/pmo/history/reports/backend-ts-build-boundary-decision-prep-v1.md`
 
 ## Next PMO Action
 
