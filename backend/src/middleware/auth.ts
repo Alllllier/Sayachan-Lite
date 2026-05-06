@@ -1,4 +1,5 @@
 import type { Context, Next } from 'koa';
+import { ForbiddenError, UnauthorizedError } from '../errors/httpErrors';
 
 const authService = require('../services/authService') as typeof import('../services/authService');
 
@@ -75,11 +76,11 @@ async function authMiddleware(ctx: Context, next: Next): Promise<void> {
 
 function requireOwner(ctx: Context): void {
   if (!ctx.state.user) {
-    throw Object.assign(new Error('Authentication required'), { status: 401 });
+    throw new UnauthorizedError();
   }
 
   if (ctx.state.user.role !== 'owner') {
-    throw Object.assign(new Error('Owner access required'), { status: 403 });
+    throw new ForbiddenError('Owner access required');
   }
 }
 

@@ -1,12 +1,9 @@
 import type { ObjectId } from '../middleware/objectIdParsing';
-
-type OwnershipError = Error & {
-  status: number;
-};
+import { UnauthorizedError } from '../errors/httpErrors';
 
 export function requireUserId(userId: ObjectId | null | undefined): ObjectId {
   if (!userId) {
-    throw Object.assign(new Error('Authentication required'), { status: 401 }) as OwnershipError;
+    throw new UnauthorizedError();
   }
   return userId;
 }

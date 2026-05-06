@@ -340,8 +340,8 @@ function assertRequestBodyValidationDistArtifactFromTypeScriptSource() {
   const validationDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'requestBodyValidation.js'), 'utf8');
 
   assert(
-    validationDistSource.includes('class BadRequestError'),
-    'dist requestBodyValidation artifact must preserve BadRequestError.'
+    validationDistSource.includes('BadRequestError'),
+    'dist requestBodyValidation artifact must preserve BadRequestError re-export/use.'
   );
   assert(
     validationDistSource.includes('function assertZodSchema'),
@@ -350,6 +350,22 @@ function assertRequestBodyValidationDistArtifactFromTypeScriptSource() {
   assert(
     !validationDistSource.includes('@template'),
     'dist requestBodyValidation artifact must not be emitted from the old JSDoc JS source.'
+  );
+}
+
+function assertHttpErrorsDistArtifactFromTypeScriptSource() {
+  const httpErrorsDistSource = fs.readFileSync(path.join(distRoot, 'errors', 'httpErrors.js'), 'utf8');
+
+  for (const errorName of ['HttpError', 'BadRequestError', 'UnauthorizedError', 'ForbiddenError', 'NotFoundError', 'ConflictError']) {
+    assert(
+      httpErrorsDistSource.includes(errorName),
+      `dist HTTP errors artifact must preserve ${errorName}.`
+    );
+  }
+
+  assert(
+    httpErrorsDistSource.includes('function isHttpError'),
+    'dist HTTP errors artifact must preserve isHttpError.'
   );
 }
 
@@ -460,8 +476,8 @@ function assertOwnershipDistArtifactFromTypeScriptSource() {
     'dist ownership artifact must preserve ownedFilter.'
   );
   assert(
-    ownershipDistSource.includes('Authentication required'),
-    'dist ownership artifact must preserve authentication error behavior.'
+    ownershipDistSource.includes('UnauthorizedError'),
+    'dist ownership artifact must preserve authentication error behavior through the HTTP error boundary.'
   );
 }
 
@@ -584,6 +600,7 @@ function assertCurrentSourceArtifactsWereEmitted() {
 const requiredRuntimeEntrypoints = [
   'database.js',
   'server.js',
+  path.join('errors', 'httpErrors.js'),
   path.join('ai', 'bridge.js'),
   path.join('middleware', 'auth.js'),
   path.join('middleware', 'currentUser.js'),
@@ -642,6 +659,7 @@ assertAuthMiddlewareDistArtifactFromTypeScriptSource();
 assertAuthRoutesDistArtifactFromTypeScriptSource();
 assertDatabaseDistArtifactFromTypeScriptSource();
 assertServerDistArtifactFromTypeScriptSource();
+assertHttpErrorsDistArtifactFromTypeScriptSource();
 assertObjectIdDistArtifactFromTypeScriptSource();
 assertCurrentUserDistArtifactFromTypeScriptSource();
 assertErrorBoundaryDistArtifactFromTypeScriptSource();

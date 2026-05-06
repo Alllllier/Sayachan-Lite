@@ -1,13 +1,9 @@
+import { BadRequestError } from '../errors/httpErrors';
+
 type ValidationIssue = {
   code: string;
   path: PropertyKey[];
   message: string;
-};
-
-type BadRequestErrorOptions = {
-  code?: string;
-  source?: string;
-  details?: ValidationIssue[];
 };
 
 type SafeParseResult<T> =
@@ -26,31 +22,6 @@ type ValidationContext = {
 };
 
 type Next = () => Promise<void>;
-
-class BadRequestError extends Error {
-  status: number;
-  code?: string;
-  source?: string;
-  details?: ValidationIssue[];
-
-  constructor(message = 'Invalid request body', { code, source, details }: BadRequestErrorOptions = {}) {
-    super(message);
-    this.name = 'BadRequestError';
-    this.status = 400;
-
-    if (code !== undefined) {
-      this.code = code;
-    }
-
-    if (source !== undefined) {
-      this.source = source;
-    }
-
-    if (details !== undefined) {
-      this.details = details;
-    }
-  }
-}
 
 function assertZodSchema<T>(
   schema: RequestBodySchema<T>,

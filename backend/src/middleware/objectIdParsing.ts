@@ -1,12 +1,6 @@
 import mongoose = require('mongoose');
 import type { Context, Next } from 'koa';
-
-const { BadRequestError } = require('./requestBodyValidation') as {
-  BadRequestError: new (
-    message?: string,
-    options?: { code?: string; source?: string }
-  ) => Error;
-};
+import { BadRequestError } from '../errors/httpErrors';
 
 export type ObjectId = mongoose.Types.ObjectId;
 

@@ -7,6 +7,13 @@ import {
   toPublicUserDto,
   type UserAuthRecord
 } from '../domain/dtos/authDtos';
+import {
+  BadRequestError,
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  UnauthorizedError
+} from '../errors/httpErrors';
 const Note = require('../models/Note');
 const Project = require('../models/Project');
 const Task = require('../models/Task');
@@ -22,10 +29,6 @@ const PASSWORD_DIGEST = 'sha256';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14;
 const INVITE_TTL_MS = 1000 * 60 * 60 * 24 * 31;
 
-type StatusError = Error & {
-  status: number;
-};
-
 type AuthCredentials = {
   email: unknown;
   password: string;
@@ -35,19 +38,13 @@ type RegisterTesterInput = AuthCredentials & {
   inviteCode: unknown;
 };
 
-function statusError(status: number, message: string): StatusError {
-  const error = new Error(message) as StatusError;
-  error.status = status;
-  return error;
-}
-
 function normalizeEmail(email: unknown): string {
   return String(email || '').trim().toLowerCase();
 }
 
 function validateEmailPassword(email: unknown, password: unknown): void {
   if (!normalizeEmail(email) || typeof password !== 'string' || password.length < 8) {
-    throw statusError(400, 'Email and password are required');
+    throw new BadRequestError('Email and password are required');
   }
 }
 
@@ -109,12 +106,12 @@ async function bootstrapOwner({ email, password }: AuthCredentials) {
 
   const existingOwner = await User.findOne({ role: 'owner' });
   if (existingOwner) {
-    throw statusError(409, 'Owner already exists');
+    throw new ConflictError('Owner already exists');
   }
 
   const existingEmail = await User.findOne({ email: normalizeEmail(email) });
   if (existingEmail) {
-    throw statusError(409, 'Email already registered');
+    throw new ConflictError('Email already registered');
   }
 
   const passwordRecord = hashPassword(password);
@@ -158,7 +155,7 @@ async function revokeInvite(inviteId: unknown) {
   );
 
   if (!invite) {
-    throw statusError(404, 'Invite not found');
+    throw new NotFoundError('Invite not found');
   }
 
   return toPublicInviteDto(invite);
@@ -169,17 +166,17 @@ async function registerTester({ email, password, inviteCode }: RegisterTesterInp
 
   const normalizedInviteCode = String(inviteCode || '').trim();
   if (!normalizedInviteCode) {
-    throw statusError(400, 'Invite code is required');
+    throw new BadRequestError('Invite code is required');
   }
 
   const existingUser = await User.findOne({ email: normalizeEmail(email) });
   if (existingUser) {
-    throw statusError(409, 'Email already registered');
+    throw new ConflictError('Email already registered');
   }
 
   const invite = await Invite.findOne({ codeHash: hashInviteCode(normalizedInviteCode) });
   if (!invite || invite.revokedAt || invite.usedAt || invite.expiresAt <= new Date()) {
-    throw statusError(400, 'Invite code is invalid');
+    throw new BadRequestError('Invite code is invalid');
   }
 
   const passwordRecord = hashPassword(password);
@@ -212,11 +209,11 @@ async function login({ email, password }: AuthCredentials) {
 
   const user = await User.findOne({ email: normalizeEmail(email) });
   if (!user || !verifyPassword(password, user)) {
-    throw statusError(401, 'Invalid email or password');
+    throw new UnauthorizedError('Invalid email or password');
   }
 
   if (user.disabled) {
-    throw statusError(403, 'Account is disabled');
+    throw new ForbiddenError('Account is disabled');
   }
 
   user.lastLoginAt = new Date();
@@ -273,7 +270,7 @@ async function setTesterDisabled(userId: unknown, disabled: unknown) {
   );
 
   if (!user) {
-    throw statusError(404, 'Tester not found');
+    throw new NotFoundError('Tester not found');
   }
 
   if (disabled) {

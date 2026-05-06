@@ -1,18 +1,11 @@
 import type { Context, Next } from 'koa';
-
-type RouteError = Error & {
-  status?: number;
-};
-
-function isRouteError(error: unknown): error is RouteError {
-  return error instanceof Error;
-}
+import { isHttpError } from '../errors/httpErrors';
 
 export async function errorBoundary(ctx: Context, next: Next): Promise<void> {
   try {
     await next();
   } catch (error) {
-    if (isRouteError(error) && error.status && error.status >= 400 && error.status < 500) {
+    if (isHttpError(error)) {
       ctx.status = error.status;
       ctx.body = { error: error.message || 'Invalid request body' };
       return;
