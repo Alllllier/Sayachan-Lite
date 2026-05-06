@@ -221,6 +221,40 @@ function assertRouteIndexDistArtifactFromTypeScriptSource() {
   }
 }
 
+function assertAuthMiddlewareDistArtifactFromTypeScriptSource() {
+  const authMiddlewareDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'auth.js'), 'utf8');
+
+  assert(
+    authMiddlewareDistSource.includes('function authMiddleware'),
+    'dist auth middleware artifact must preserve authMiddleware.'
+  );
+  assert(
+    authMiddlewareDistSource.includes('/auth/login'),
+    'dist auth middleware artifact must preserve public auth route gating.'
+  );
+  assert(
+    authMiddlewareDistSource.includes('Owner access required'),
+    'dist auth middleware artifact must preserve owner access errors.'
+  );
+}
+
+function assertAuthRoutesDistArtifactFromTypeScriptSource() {
+  const authRoutesDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'authRoutes.js'), 'utf8');
+
+  assert(
+    authRoutesDistSource.includes('/auth/bootstrap-owner'),
+    'dist authRoutes artifact must preserve owner bootstrap route.'
+  );
+  assert(
+    authRoutesDistSource.includes('/owner/invites/:id/revoke'),
+    'dist authRoutes artifact must preserve owner invite revoke route.'
+  );
+  assert(
+    authRoutesDistSource.includes("require('../middleware/auth')") || authRoutesDistSource.includes('require("../middleware/auth")'),
+    'dist authRoutes artifact must use the compiled auth middleware boundary.'
+  );
+}
+
 function assertDatabaseDistArtifactFromTypeScriptSource() {
   const databaseDistSource = fs.readFileSync(path.join(distRoot, 'database.js'), 'utf8');
 
@@ -466,6 +500,7 @@ function assertCurrentSourceArtifactsWereEmitted() {
 const requiredRuntimeEntrypoints = [
   'database.js',
   'server.js',
+  path.join('middleware', 'auth.js'),
   path.join('middleware', 'currentUser.js'),
   path.join('middleware', 'errorBoundary.js'),
   path.join('middleware', 'objectIdParsing.js'),
@@ -484,6 +519,7 @@ const requiredRuntimeEntrypoints = [
   path.join('services', 'taskRuntimeHelpers.js'),
   path.join('routes', 'index.js'),
   path.join('routes', 'ai.js'),
+  path.join('routes', 'authRoutes.js'),
   path.join('routes', 'healthRoutes.js'),
   path.join('routes', 'notesRoutes.js'),
   path.join('routes', 'projectsRoutes.js'),
@@ -512,6 +548,8 @@ assertProjectsDistArtifactFromTypeScriptSource();
 assertTasksDistArtifactFromTypeScriptSource();
 assertHealthRoutesDistArtifactFromTypeScriptSource();
 assertRouteIndexDistArtifactFromTypeScriptSource();
+assertAuthMiddlewareDistArtifactFromTypeScriptSource();
+assertAuthRoutesDistArtifactFromTypeScriptSource();
 assertDatabaseDistArtifactFromTypeScriptSource();
 assertServerDistArtifactFromTypeScriptSource();
 assertObjectIdDistArtifactFromTypeScriptSource();

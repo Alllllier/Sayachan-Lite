@@ -203,7 +203,7 @@ Do not kill unrelated long-running services just because they happen to use thes
 |---|---|
 | backend entry | `backend/src/server.ts` |
 | non-AI route aggregator | `backend/src/routes/index.ts` |
-| non-AI route modules | `backend/src/routes/healthRoutes.ts`, `backend/src/routes/notesRoutes.ts`, `backend/src/routes/projectsRoutes.ts`, `backend/src/routes/tasksRoutes.ts` |
+| non-AI route modules | `backend/src/routes/authRoutes.ts`, `backend/src/routes/healthRoutes.ts`, `backend/src/routes/notesRoutes.ts`, `backend/src/routes/projectsRoutes.ts`, `backend/src/routes/tasksRoutes.ts` |
 | backend services | `backend/src/services/` |
 | AI routes | `backend/src/routes/ai.js` |
 | notes model | `backend/src/models/Note.ts` |

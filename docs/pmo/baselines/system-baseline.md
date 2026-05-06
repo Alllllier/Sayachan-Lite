@@ -132,7 +132,7 @@ Current Chat behavior includes:
 Backend routes currently split into:
 
 - `backend/src/routes/index.ts`
-- `backend/src/routes/authRoutes.js`
+- `backend/src/routes/authRoutes.ts`
 - `backend/src/routes/healthRoutes.ts`
 - `backend/src/routes/notesRoutes.ts`
 - `backend/src/routes/projectsRoutes.ts`
@@ -151,7 +151,7 @@ Current AI route surface:
 
 Current route behavior truth:
 
-- `backend/src/middleware/auth.js` loads the current user from the `sayachan_session` cookie and gates normal non-health product/API routes
+- `backend/src/middleware/auth.ts` loads the current user from the `sayachan_session` cookie and gates normal non-health product/API routes
 - `backend/src/middleware/errorBoundary.ts` is registered before body parsing, auth, and routers so downstream parser/auth/route failures return stable JSON error payloads
 - auth, owner, health, note, project, and task routes are registered through `backend/src/routes/index.ts` as the main route aggregator
 - non-AI note/project/task route orchestration is split through first-pass service modules under `backend/src/services/`
