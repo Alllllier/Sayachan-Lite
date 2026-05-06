@@ -46,35 +46,4 @@ Do not use this file to store:
 
 ## Current Candidates
 
-### `AI Route Request Validation Cleanup`
-
-- Status: `active`
-- Source reference: `post Backend TS Migration Aftercare / Runtime Boundary Cleanup follow-up`
-- Why now: Product mutation routes and auth mutation routes now use Zod-backed `validateBody`; `backend/src/routes/ai.ts` is the remaining backend route surface still using route-local request body casts for externally supplied payloads.
-- Expected outcome: AI route request bodies are validated through explicit route schemas before route logic runs, while AI core/private-core behavior and public response contracts stay stable.
-- In scope:
-  - add AI route request schemas under `backend/src/routes/schemas/`
-  - wire `/ai/notes/tasks`, `/ai/projects/next-action`, and `/ai/chat` through the existing `validateBody` middleware
-  - replace route-local request body casts with validated DTO reads where practical
-  - add or adjust backend route tests for invalid AI bodies stopping before AI/service work
-  - update backend dist boundary checks for the new AI schema artifact
-- Out of scope:
-  - do not change AI bridge or private-core package boundaries
-  - do not redesign prompt/runtimeControls behavior
-  - do not change chat response shape or AI fallback semantics
-  - do not begin ESM/import-style modernization
-- Dependencies: `validateBody`, public HTTP error boundary, backend dist runtime check
-- Risk level: `medium`
-- Readiness: `ready`
-- Start condition: Human selected this candidate for immediate activation.
-- Validation expectation:
-  - `npm --prefix backend run test`
-  - `npm run check`
-  - targeted contract assertions that invalid AI request bodies return stable 400s before downstream AI/model work
-- Escalation triggers:
-  - schema design would require changing public AI request semantics
-  - runtimeControls payload needs a larger product decision
-  - validation would force private-core or AI bridge changes
-- Follow-up parking:
-  - deeper AI runtimeControls schema normalization
-  - future AI route/service boundary split if route logic remains too dense
+No current candidate is ready for human selection.
