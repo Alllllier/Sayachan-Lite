@@ -132,7 +132,7 @@
 
 迁移姿态：
 
-- `backend/src/ai/bridge.js` 仍是进入 private core 的预期公开桥接点，未来应在 architecture-sensitive slice 中把它类型化为窄契约。
+- `backend/src/ai/bridge.ts` 仍是进入 private core 的预期公开桥接点，并承载 private-core chat execution 之上的窄公开契约。
 - 不要从 public repo mapping 中重新设计 private-core internals。
 
 ### 10. Validation、Tests 与 PMO Documentation
@@ -183,8 +183,8 @@
 | Backend Projects route/service/model | `backend/src/routes/projectsRoutes.ts`、`backend/src/services/projectsService.ts`、`backend/src/models/Project.ts` | `keep` | scoped project CRUD、status、focus task id、pinning、archive/restore、project-task cascades 的持久分离。 | focus/archive behavior 是 architecture-sensitive。 |
 | Backend Tasks route/service/model | `backend/src/routes/tasksRoutes.ts`、`backend/src/services/tasksService.ts`、`backend/src/models/Task.ts` | `keep` | scoped task reads/writes、provenance、lifecycle status、archive visibility、focus clearing 的持久分离。 | model/API response separation 很重要；task status/completed/archived typing 应显式。 |
 | Backend task runtime helpers | `backend/src/services/taskRuntimeHelpers.ts` | `split` | 负责 reusable archive filters、project-task relation filters、normalization、lifecycle derivation、focus clearing、archive/restore task cascades。 | 部分 normalizer 未来可 merge 到 DTO adapters，但 focus/cascade helpers 是行为承载且持久。 |
-| Backend AI routes | `backend/src/routes/ai.js` | `split` | 当前负责 note/project AI routes、provider/fallback prompt construction、persisted ownership reloads、project focus context、chat route bridge invocation 和 route-local test exports。 | 只有在未来 AI/API boundary slice 中才拆分 route-local DTO/runtime validation 与 provider/fallback helpers；必须保留 fallbacks 和 ownership checks。 |
-| Public/private AI bridge | `backend/src/ai/bridge.js`、`backend/private_core/sayachan-ai-core/**` boundary docs | `keep` | public bridge 是进入 private-core chat execution 的预期窄契约。 | architecture-sensitive；public mapping 可定义 contract shape，但不能定义 private-core implementation。 |
+| Backend AI routes | `backend/src/routes/ai.ts` | `split` | 当前负责 note/project AI routes、provider/fallback prompt construction、persisted ownership reloads、project focus context、chat route bridge invocation 和 route-local test exports。 | 只有在未来 AI/API boundary slice 中才拆分 route-local DTO/runtime validation 与 provider/fallback helpers；必须保留 fallbacks 和 ownership checks。 |
+| Public/private AI bridge | `backend/src/ai/bridge.ts`、`backend/private_core/sayachan-ai-core/**` boundary docs | `keep` | public bridge 是进入 private-core chat execution 的预期窄契约。 | architecture-sensitive；public mapping 可定义 contract shape，但不能定义 private-core implementation。 |
 | Behavior-lock tests | `frontend/src/**/*.test.js`、`frontend/tests/ui-review/**/review.spec.js` | `keep` | 现有测试锁定 API boundaries、rules、stores、services、orchestration、markdown rendering 和 UI review surfaces。 | typecheck 应新增一道 gate，而不是替代这些 tests。 |
 | PMO truth/runtime docs | `AGENT.md`、`docs/pmo/baselines/*.md`、`docs/pmo/state/execution_task.md`、`docs/pmo/state/execution_report.md`、discussion batch 018 | `keep` | PMO docs 承载 execution boundaries、current runtime truth 和 modernization rationale。 | 生成的 sprint artifacts 可由 PMO closeout 后归档。 |
 | 本地重复 parseJsonResponse helpers | `frontend/src/features/auth/auth.api.js`、`notes.api.js`、`projects.api.js` | `merge` | 类似 response parsing 分散在多个 feature APIs 中，未来可能成为 shared typed API result helper。 | 只有在 error behavior 保持一致、tests 覆盖 endpoint-specific messages 时才合并。 |
@@ -198,7 +198,7 @@
 
 这些不应仅因为 TypeScript 能描述输入，就被折叠为 deletion candidates：
 
-- `backend/src/ai/bridge.js` 与 public/private AI responsibility split。
+- `backend/src/ai/bridge.ts` 与 public/private AI responsibility split。
 - account/session/ownership boundaries：`frontend/src/stores/auth.js`、`frontend/src/services/resourceCache.js`、`backend/src/middleware/auth.ts`、`backend/src/middleware/currentUser.ts`、`backend/src/services/ownership.ts`、`backend/src/services/authService.ts`、auth models/routes。
 - focus/task workflow semantics：project `currentFocusTaskId`、task provenance、active/completed/archived lifecycle、focus clearing。
 - Backend ObjectId parsing boundary：`backend/src/middleware/objectIdParsing.ts`、product route params/query/body focus ids、以及 `currentUser` state user id。

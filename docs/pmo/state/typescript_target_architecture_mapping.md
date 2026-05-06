@@ -132,7 +132,7 @@ Target responsibility:
 
 Migration posture:
 
-- `backend/src/ai/bridge.js` remains the intended public bridge and should be typed as a narrow contract in a future architecture-sensitive slice.
+- `backend/src/ai/bridge.ts` remains the intended public bridge and owns a narrow public contract over private-core chat execution.
 - Do not redesign private-core internals from the public repo mapping.
 
 ### 10. Validation, Tests, And PMO Documentation
@@ -183,8 +183,8 @@ Migration posture:
 | Backend Projects route/service/model | `backend/src/routes/projectsRoutes.ts`, `backend/src/services/projectsService.ts`, `backend/src/models/Project.ts` | `keep` | Durable separation for scoped project CRUD, status, focus task id, pinning, archive/restore, project-task cascades. | Focus/archive behavior is architecture-sensitive. |
 | Backend Tasks route/service/model | `backend/src/routes/tasksRoutes.ts`, `backend/src/services/tasksService.ts`, `backend/src/models/Task.ts` | `keep` | Durable separation for scoped task reads/writes, provenance, lifecycle status, archive visibility, focus clearing. | Model/API response separation matters; task status/completed/archived typing should be explicit. |
 | Backend task runtime helpers | `backend/src/services/taskRuntimeHelpers.ts` | `split` | Owns reusable archive filters, project-task relation filters, normalization, lifecycle derivation, focus clearing, archive/restore task cascades. | Some normalizers may merge into DTO adapters later, but focus/cascade helpers are behavior-bearing and durable. |
-| Backend AI routes | `backend/src/routes/ai.js` | `split` | Currently owns note/project AI routes, provider/fallback prompt construction, persisted ownership reloads, project focus context, chat route bridge invocation, and route-local test exports. | Split route-local DTO/runtime validation and provider/fallback helpers only in a future AI/API boundary slice; preserve fallbacks and ownership checks. |
-| Public/private AI bridge | `backend/src/ai/bridge.js`, `backend/private_core/sayachan-ai-core/**` boundary docs | `keep` | Public bridge is the intended narrow contract into private-core chat execution. | Architecture-sensitive; public mapping may define contract shape but not private-core implementation. |
+| Backend AI routes | `backend/src/routes/ai.ts` | `split` | Currently owns note/project AI routes, provider/fallback prompt construction, persisted ownership reloads, project focus context, chat route bridge invocation, and route-local test exports. | Split route-local DTO/runtime validation and provider/fallback helpers only in a future AI/API boundary slice; preserve fallbacks and ownership checks. |
+| Public/private AI bridge | `backend/src/ai/bridge.ts`, `backend/private_core/sayachan-ai-core/**` boundary docs | `keep` | Public bridge is the intended narrow contract into private-core chat execution. | Architecture-sensitive; public mapping may define contract shape but not private-core implementation. |
 | Behavior-lock tests | `frontend/src/**/*.test.js`, `frontend/tests/ui-review/**/review.spec.js` | `keep` | Existing tests lock API boundaries, rules, stores, services, orchestration, markdown rendering, and UI review surfaces. | Typecheck should add a gate, not replace these tests. |
 | PMO truth/runtime docs | `AGENT.md`, `docs/pmo/baselines/*.md`, `docs/pmo/state/execution_task.md`, `docs/pmo/state/execution_report.md`, discussion batch 018 | `keep` | PMO docs carry execution boundaries, current runtime truth, and modernization rationale. | Generated sprint artifacts can be archived later by PMO closeout. |
 | Local duplicated parseJsonResponse helpers | `frontend/src/features/auth/auth.api.js`, `notes.api.js`, `projects.api.js` | `merge` | Similar response parsing exists across feature APIs and may become a shared typed API result helper. | Merge only if error behavior stays consistent and tests cover endpoint-specific messages. |
@@ -198,7 +198,7 @@ Migration posture:
 
 These should not be collapsed into deletion candidates merely because TypeScript can describe their inputs:
 
-- `backend/src/ai/bridge.js` and the public/private AI responsibility split.
+- `backend/src/ai/bridge.ts` and the public/private AI responsibility split.
 - Account/session/ownership boundaries: `frontend/src/stores/auth.js`, `frontend/src/services/resourceCache.js`, `backend/src/middleware/auth.ts`, `backend/src/middleware/currentUser.ts`, `backend/src/services/ownership.ts`, `backend/src/services/authService.ts`, auth models/routes.
 - Focus/task workflow semantics: project `currentFocusTaskId`, task provenance, active/completed/archived lifecycle, and focus clearing.
 - Backend ObjectId parsing boundary: `backend/src/middleware/objectIdParsing.ts`, product route params/query/body focus ids, and `currentUser` state user id.

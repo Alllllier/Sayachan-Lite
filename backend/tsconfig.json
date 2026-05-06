@@ -18,6 +18,7 @@
   },
   "include": [
     "src/**/*.js",
+    "src/ai/bridge.ts",
     "src/database.ts",
     "src/server.ts",
     "src/middleware/auth.ts",
@@ -36,6 +37,7 @@
     "src/services/projectsService.ts",
     "src/services/tasksService.ts",
     "src/services/taskRuntimeHelpers.ts",
+    "src/routes/ai.ts",
     "src/routes/authRoutes.ts",
     "src/routes/notesRoutes.ts",
     "src/routes/projectsRoutes.ts",
@@ -45,9 +47,11 @@
     "src/routes/schemas/mutations.ts"
   ],
   "exclude": [
+    "src/ai/bridge.js",
     "src/database.js",
     "src/server.js",
     "src/middleware/auth.js",
+    "src/routes/ai.js",
     "src/routes/authRoutes.js",
     "src/routes/healthRoutes.js",
     "src/routes/index.js",

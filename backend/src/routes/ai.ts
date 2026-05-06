@@ -1,30 +1,93 @@
-const Router = require('@koa/router');
-const { chat: runChat } = require('../ai/bridge');
-const Note = require('../models/Note');
-const Project = require('../models/Project');
-const Task = require('../models/Task');
-const { requireCurrentUser } = require('../middleware/currentUser');
-const { optionalObjectId } = require('../middleware/objectIdParsing');
+import Router, { type RouterMiddleware } from '@koa/router';
+
+import { type ObjectId } from '../middleware/objectIdParsing';
+
+const { chat: runChat } = require('../ai/bridge') as typeof import('../ai/bridge');
+const Note = require('../models/Note') as typeof import('../models/Note');
+const Project = require('../models/Project') as typeof import('../models/Project');
+const Task = require('../models/Task') as typeof import('../models/Task');
+const { requireCurrentUser } = require('../middleware/currentUser') as typeof import('../middleware/currentUser');
+const { optionalObjectId } = require('../middleware/objectIdParsing') as typeof import('../middleware/objectIdParsing');
+
+type AiState = {
+  userId: ObjectId;
+};
+
+type AiHandler = RouterMiddleware<AiState>;
+
+type AiPayload = {
+  _id?: unknown;
+  id?: unknown;
+  title?: string;
+  content?: string;
+  name?: string;
+  summary?: string;
+  status?: string;
+  currentFocusTaskId?: unknown;
+  toObject?: () => AiPayload;
+};
+
+type AiChatRequest = {
+  messages?: unknown;
+  context?: Record<string, unknown> | null;
+  runtimeControls?: unknown;
+};
+
+type AiMessageContent = string | Array<{ type?: unknown; text?: unknown }>;
+
+type AiCompletionResponse = {
+  choices?: Array<{
+    message?: {
+      content?: AiMessageContent;
+    };
+  }>;
+};
 
 const router = new Router();
+const requireAiCurrentUser = requireCurrentUser as AiHandler;
+
+function requestBody<TBody>(ctx: Parameters<AiHandler>[0]): TBody {
+  return ((ctx.request as typeof ctx.request & { body?: unknown }).body || {}) as TBody;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function errorStack(error: unknown): string | undefined {
+  return error instanceof Error ? error.stack : undefined;
+}
+
+function textFromMessageContent(messageContent: AiMessageContent | undefined): string {
+  if (typeof messageContent === 'string') {
+    return messageContent.trim();
+  }
+
+  if (Array.isArray(messageContent)) {
+    const textItem = messageContent.find(item => item?.type === 'text');
+    return typeof textItem?.text === 'string' ? textItem.text.trim() : '';
+  }
+
+  return '';
+}
 
 // Phase 3: task-based focus only
-async function getProjectFocusContext(project, userId) {
+async function getProjectFocusContext(project: AiPayload | null | undefined, userId: ObjectId): Promise<string> {
   if (project?.currentFocusTaskId && userId) {
     try {
       const focusTask = await Task.findOne({ _id: project.currentFocusTaskId, userId });
       if (focusTask?.title?.trim()) {
         return focusTask.title.trim();
       }
-    } catch (e) {
-      console.error('[AI Route] Failed to resolve focus task:', e.message);
+    } catch (error: unknown) {
+      console.error('[AI Route] Failed to resolve focus task:', errorMessage(error));
     }
   }
   return '';
 }
 
 // Fallback response when API key is missing or request fails
-function fallback(note, project, type) {
+function fallback(note: AiPayload | null, project: AiPayload | null, type: 'note' | 'project') {
   if (type === 'note') {
     const title = note?.title || '(无标题)';
     return {
@@ -44,22 +107,22 @@ function fallback(note, project, type) {
       on_hold: ['重新评估依赖和时间线', '确定是否需要重启项目']
     };
     return {
-      suggestions: statusMap[status] || ['明确里程碑并设定截止日期']
+      suggestions: statusMap[status as keyof typeof statusMap] || ['明确里程碑并设定截止日期']
     };
   }
 
   return {};
 }
 
-function getPayloadId(payload) {
+function getPayloadId(payload: AiPayload | null | undefined): unknown {
   return payload?._id || payload?.id || null;
 }
 
-function normalizeDoc(doc) {
+function normalizeDoc(doc: AiPayload | null): AiPayload | null {
   return doc?.toObject ? doc.toObject() : doc;
 }
 
-async function resolveOwnedNotePayload(payload, userId) {
+async function resolveOwnedNotePayload(payload: AiPayload | null | undefined, userId: ObjectId): Promise<AiPayload | null> {
   const noteId = optionalObjectId(getPayloadId(payload), 'request.body._id');
   if (!noteId) {
     return payload || {};
@@ -70,7 +133,7 @@ async function resolveOwnedNotePayload(payload, userId) {
   return normalizeDoc(note);
 }
 
-async function resolveOwnedProjectPayload(payload, userId) {
+async function resolveOwnedProjectPayload(payload: AiPayload | null | undefined, userId: ObjectId): Promise<AiPayload | null> {
   const projectId = optionalObjectId(getPayloadId(payload), 'request.body._id');
   if (!projectId) {
     return payload || {};
@@ -82,8 +145,8 @@ async function resolveOwnedProjectPayload(payload, userId) {
 }
 
 // POST /ai/notes/tasks - Generate tasks from a note
-router.post('/ai/notes/tasks', requireCurrentUser, async (ctx) => {
-  const note = await resolveOwnedNotePayload(ctx.request.body, ctx.state.userId);
+router.post('/ai/notes/tasks', requireAiCurrentUser, (async (ctx) => {
+  const note = await resolveOwnedNotePayload(requestBody<AiPayload>(ctx), ctx.state.userId);
   if (!note) {
     ctx.status = 404;
     ctx.body = { error: 'Note not found' };
@@ -141,16 +204,9 @@ router.post('/ai/notes/tasks', requireCurrentUser, async (ctx) => {
       return;
     }
 
-    const data = await response.json();
+    const data = await response.json() as AiCompletionResponse;
     let tasksText = '';
-    const messageContent = data?.choices?.[0]?.message?.content;
-
-    if (typeof messageContent === 'string') {
-      tasksText = messageContent.trim();
-    } else if (Array.isArray(messageContent)) {
-      const textItem = messageContent.find(item => item?.type === 'text');
-      tasksText = textItem?.text?.trim() || '';
-    }
+    tasksText = textFromMessageContent(data?.choices?.[0]?.message?.content);
 
     if (!tasksText) {
       console.error('[AI Route] Note Tasks invalid API response');
@@ -167,15 +223,15 @@ router.post('/ai/notes/tasks', requireCurrentUser, async (ctx) => {
     ctx.body = { drafts: tasks };
 
   } catch (error) {
-    console.error('[AI Route] Note Tasks API call error:', error.message);
+    console.error('[AI Route] Note Tasks API call error:', errorMessage(error));
     ctx.body = fallback(note, null, 'note');
   }
-});
+}) as AiHandler);
 
 // POST /ai/projects/next-action - Suggest next action for a project
-router.post('/ai/projects/next-action', requireCurrentUser, async (ctx) => {
+router.post('/ai/projects/next-action', requireAiCurrentUser, (async (ctx) => {
   const userId = ctx.state.userId;
-  const project = await resolveOwnedProjectPayload(ctx.request.body, userId);
+  const project = await resolveOwnedProjectPayload(requestBody<AiPayload>(ctx), userId);
   if (!project) {
     ctx.status = 404;
     ctx.body = { error: 'Project not found' };
@@ -238,16 +294,9 @@ router.post('/ai/projects/next-action', requireCurrentUser, async (ctx) => {
       return;
     }
 
-    const data = await response.json();
+    const data = await response.json() as AiCompletionResponse;
     let suggestionsText = '';
-    const messageContent = data?.choices?.[0]?.message?.content;
-
-    if (typeof messageContent === 'string') {
-      suggestionsText = messageContent.trim();
-    } else if (Array.isArray(messageContent)) {
-      const textItem = messageContent.find(item => item?.type === 'text');
-      suggestionsText = textItem?.text?.trim() || '';
-    }
+    suggestionsText = textFromMessageContent(data?.choices?.[0]?.message?.content);
 
     if (!suggestionsText) {
       console.error('[AI Route] Next Action invalid API response');
@@ -266,14 +315,14 @@ router.post('/ai/projects/next-action', requireCurrentUser, async (ctx) => {
     ctx.body = { suggestions };
 
   } catch (error) {
-    console.error('[AI Route] Next Action API call error:', error.message);
+    console.error('[AI Route] Next Action API call error:', errorMessage(error));
     ctx.body = fallback(null, project, 'project');
   }
-});
+}) as AiHandler);
 
 // POST /ai/chat - Orchestrated chat entry for AI substrate v0.1
-router.post('/ai/chat', async (ctx) => {
-  const { messages, context, runtimeControls } = ctx.request.body;
+router.post('/ai/chat', (async (ctx) => {
+  const { messages, context, runtimeControls } = requestBody<AiChatRequest>(ctx);
 
   const KIMI_KEY = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
   if (!KIMI_KEY) {
@@ -288,15 +337,18 @@ router.post('/ai/chat', async (ctx) => {
     console.log('[AI Route] Kimi chat reply generated, length:', reply?.length);
     ctx.body = { reply };
   } catch (error) {
-    console.error('[AI Route] Chat service error:', error.message || error);
-    console.error('[AI Route] Stack:', error.stack || 'no stack');
+    console.error('[AI Route] Chat service error:', errorMessage(error));
+    console.error('[AI Route] Stack:', errorStack(error) || 'no stack');
     ctx.body = { reply: '我在这，我们先把当前最重要的一步理清楚。' };
+  }
+}) as AiHandler);
+
+const exportedRouter = Object.assign(router, {
+  __test__: {
+    getProjectFocusContext,
+    resolveOwnedNotePayload,
+    resolveOwnedProjectPayload
   }
 });
 
-module.exports = router;
-module.exports.__test__ = {
-  getProjectFocusContext,
-  resolveOwnedNotePayload,
-  resolveOwnedProjectPayload
-};
+export = exportedRouter;

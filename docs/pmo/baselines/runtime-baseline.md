@@ -271,7 +271,7 @@ Current fallback truth:
 - note task generation and project next-action use GLM when `GLM_API_KEY` exists and return route-local fallback drafts or suggestions otherwise
 - persisted note/project AI payloads are ownership-checked against the current authenticated user before fallback/provider prompt construction
 - project next-action resolves the current focus task title on the backend with current-user ownership before prompting
-- chat uses the public `/ai/chat` route and `backend/src/ai/bridge.js` to call the private AI core package `@allier/sayachan-ai-core` when `KIMI_API_KEY` or `MOONSHOT_API_KEY` exists
+- chat uses the public `/ai/chat` route and `backend/src/ai/bridge.ts` to call the private AI core package `@allier/sayachan-ai-core` when `KIMI_API_KEY` or `MOONSHOT_API_KEY` exists
 - chat returns a route-local fallback reply when the key is missing or the bridge call fails
 
 ### Removed Frontend Fallback

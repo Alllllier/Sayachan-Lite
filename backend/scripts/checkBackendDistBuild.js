@@ -122,10 +122,14 @@ function assertPackageRuntimeBoundary() {
     !/\bcheck:backend-build\b|\bbuild:backend\b/.test(rootScripts.check || ''),
     'root npm run check must not include the backend dist dry-run without a human gate.'
   );
+  assert(
+    rootScripts['lint:backend'] === 'eslint backend/test backend/scripts',
+    'root lint:backend must lint remaining backend JS test/script surfaces; backend TS source is checked by tsc.'
+  );
 }
 
 function assertPrivateCorePackageBoundary() {
-  const bridgeSource = fs.readFileSync(path.join(srcRoot, 'ai', 'bridge.js'), 'utf8');
+  const bridgeSource = fs.readFileSync(path.join(srcRoot, 'ai', 'bridge.ts'), 'utf8');
 
   assert(
     bridgeSource.includes("require('@allier/sayachan-ai-core')"),
@@ -134,6 +138,40 @@ function assertPrivateCorePackageBoundary() {
   assert(
     !bridgeSource.includes('private_core/sayachan-ai-core'),
     'backend AI bridge must not import private_core by relative source path.'
+  );
+}
+
+function assertAiBridgeDistArtifactFromTypeScriptSource() {
+  const bridgeDistSource = fs.readFileSync(path.join(distRoot, 'ai', 'bridge.js'), 'utf8');
+
+  assert(
+    bridgeDistSource.includes("require('@allier/sayachan-ai-core')") || bridgeDistSource.includes('require("@allier/sayachan-ai-core")'),
+    'dist AI bridge artifact must import @allier/sayachan-ai-core by package name.'
+  );
+  assert(
+    !bridgeDistSource.includes('private_core/sayachan-ai-core'),
+    'dist AI bridge artifact must not import private_core by relative source path.'
+  );
+}
+
+function assertAiRoutesDistArtifactFromTypeScriptSource() {
+  const aiRoutesDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'ai.js'), 'utf8');
+
+  assert(
+    aiRoutesDistSource.includes('/ai/chat'),
+    'dist AI route artifact must preserve the public chat route.'
+  );
+  assert(
+    aiRoutesDistSource.includes('/ai/notes/tasks'),
+    'dist AI route artifact must preserve note task generation route.'
+  );
+  assert(
+    aiRoutesDistSource.includes('__test__'),
+    'dist AI route artifact must preserve route-local test helpers.'
+  );
+  assert(
+    aiRoutesDistSource.includes("require('../ai/bridge')") || aiRoutesDistSource.includes('require("../ai/bridge")'),
+    'dist AI route artifact must use the public AI bridge boundary.'
   );
 }
 
@@ -490,8 +528,6 @@ function assertCurrentSourceArtifactsWereEmitted() {
     .filter(filePath => path.extname(filePath) === '.js')
     .map(filePath => path.relative(srcRoot, filePath));
 
-  assert(sourceFiles.length > 0, 'No backend source JS files were found to verify.');
-
   for (const sourceFile of sourceFiles) {
     assertFile(sourceFile);
   }
@@ -500,6 +536,7 @@ function assertCurrentSourceArtifactsWereEmitted() {
 const requiredRuntimeEntrypoints = [
   'database.js',
   'server.js',
+  path.join('ai', 'bridge.js'),
   path.join('middleware', 'auth.js'),
   path.join('middleware', 'currentUser.js'),
   path.join('middleware', 'errorBoundary.js'),
@@ -543,6 +580,8 @@ assertNotExists(path.join('dist', 'routes', 'schemas', '__generated__', 'mutatio
 assertNoPathSegment(distRoot, 'private_core');
 assertNoPathSegment(distRoot, '__route_sources__');
 assertSchemaDistArtifactFromTypeScriptSource();
+assertAiBridgeDistArtifactFromTypeScriptSource();
+assertAiRoutesDistArtifactFromTypeScriptSource();
 assertNotesDistArtifactFromTypeScriptSource();
 assertProjectsDistArtifactFromTypeScriptSource();
 assertTasksDistArtifactFromTypeScriptSource();

@@ -113,7 +113,7 @@ Ownership model:
 
 Do not silently cross these sensitive boundaries:
 
-- `backend/src/ai/bridge.js`
+- `backend/src/ai/bridge.ts`
 - `backend/private_core/sayachan-ai-core/**`
 - focus/task workflow semantics
 - dashboard-to-chat context contracts
@@ -205,7 +205,7 @@ Do not kill unrelated long-running services just because they happen to use thes
 | non-AI route aggregator | `backend/src/routes/index.ts` |
 | non-AI route modules | `backend/src/routes/authRoutes.ts`, `backend/src/routes/healthRoutes.ts`, `backend/src/routes/notesRoutes.ts`, `backend/src/routes/projectsRoutes.ts`, `backend/src/routes/tasksRoutes.ts` |
 | backend services | `backend/src/services/` |
-| AI routes | `backend/src/routes/ai.js` |
+| AI routes | `backend/src/routes/ai.ts`, `backend/src/ai/bridge.ts` |
 | notes model | `backend/src/models/Note.ts` |
 | projects model | `backend/src/models/Project.ts` |
 | tasks model | `backend/src/models/Task.ts` |

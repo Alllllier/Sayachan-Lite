@@ -15,11 +15,11 @@ It is not a general workflow file and not a Git/submodule mechanism note.
 
 ## Current Shape
 
-- public bridge: `backend/src/ai/bridge.js`
+- public bridge: `backend/src/ai/bridge.ts`
 - private core package: `@allier/sayachan-ai-core`
 - private core submodule location: `backend/private_core/sayachan-ai-core`
 - backend dependency: `@allier/sayachan-ai-core` via `file:private_core/sayachan-ai-core`
-- public chat route: `backend/src/routes/ai.js`
+- public chat route: `backend/src/routes/ai.ts`
 
 ## Public Repo Responsibilities
 
@@ -42,7 +42,7 @@ The private core currently owns:
 
 ## Boundary Rule
 
-Treat `backend/src/ai/bridge.js` as the only intended public bridge into the private core.
+Treat `backend/src/ai/bridge.ts` as the only intended public bridge into the private core.
 
 The bridge should consume the private core by package name:
 

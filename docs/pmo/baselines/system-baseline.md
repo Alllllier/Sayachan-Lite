@@ -26,7 +26,7 @@ Current stack at a glance:
 - backend: `Node.js + Koa + Mongoose`
 - database: `MongoDB`
 - public AI surfaces: backend `/ai/*` routes
-- private AI core bridge: `backend/src/ai/bridge.js`
+- private AI core bridge: `backend/src/ai/bridge.ts`
 - private AI core package: `@allier/sayachan-ai-core`
 - private core submodule location: `backend/private_core/sayachan-ai-core`
 
@@ -139,7 +139,7 @@ Backend routes currently split into:
 - `backend/src/routes/tasksRoutes.ts`
 - `backend/src/routes/schemas/mutations.ts`
 - `backend/src/routes/schemas/mutations.ts`
-- `backend/src/routes/ai.js`
+- `backend/src/routes/ai.ts`
 - `backend/src/middleware/requestBodyValidation.ts`
 - `backend/src/middleware/errorBoundary.ts`
 
@@ -166,7 +166,7 @@ Current route behavior truth:
 - public AI note/project routes reload persisted note/project context by current user ownership before constructing fallback/provider prompts
 - project next-action focus task resolution is scoped by both task id and current user ownership
 - note and project AI routes call GLM through backend route logic
-- chat goes through `backend/src/ai/bridge.js` into the private core
+- chat goes through `backend/src/ai/bridge.ts` into the private core
 - fallback responses still exist for all current AI routes
 
 ## Data Model Truth
@@ -262,7 +262,7 @@ Observed current split:
 
 - public repo owns product UI, stores, services, route surfaces, and the public chat route
 - public frontend feature modules own module API/rules/orchestration boundaries
-- `backend/src/ai/bridge.js` is the public bridge into the private core
+- `backend/src/ai/bridge.ts` is the public bridge into the private core
 - backend consumes the private core through the package dependency `@allier/sayachan-ai-core`, backed by the local submodule path `backend/private_core/sayachan-ai-core`
 - the private core owns chat orchestration, prompt kernel, provider integration used by chat runtime, and deeper context assembly policies
 
