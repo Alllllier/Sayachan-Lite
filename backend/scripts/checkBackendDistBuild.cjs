@@ -170,8 +170,8 @@ function assertPackageRuntimeBoundary() {
     'root npm run check must not include the backend dist dry-run without a human gate.'
   );
   assert(
-    rootScripts['lint:backend'] === 'eslint backend/test backend/scripts',
-    'root lint:backend must lint remaining backend JS test/script surfaces; backend TS source is checked by tsc.'
+    rootScripts['lint:backend'] === 'eslint backend/src backend/test backend/scripts',
+    'root lint:backend must lint backend TS source plus remaining backend JS test/script surfaces.'
   );
   assert(
     backendTsconfig.compilerOptions?.allowJs !== true,
@@ -694,8 +694,8 @@ function assertAuthModelDistArtifactsFromTypeScriptSource() {
 
 function assertCurrentSourceArtifactsWereEmitted() {
   const sourceFiles = walkFiles(srcRoot)
-    .filter(filePath => path.extname(filePath) === '.js')
-    .map(filePath => path.relative(srcRoot, filePath));
+    .filter(filePath => filePath.endsWith('.ts') && !filePath.endsWith('.d.ts'))
+    .map(filePath => path.relative(srcRoot, filePath).replace(/\.ts$/, '.js'));
 
   for (const sourceFile of sourceFiles) {
     assertFile(sourceFile);

@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 import vue from 'eslint-plugin-vue';
 import vueParser from 'vue-eslint-parser';
 
@@ -66,6 +67,30 @@ export default [
       ...vue.configs['flat/essential'].at(-1).rules,
       ...lowNoiseRules,
       'vue/multi-word-component-names': 'off'
+    }
+  },
+  {
+    files: ['backend/src/**/*.ts'],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module'
+      },
+      globals: {
+        ...globals.node,
+        ...globals.es2024
+      }
+    },
+    plugins: {
+      '@typescript-eslint': tseslint.plugin
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      ...tseslint.configs.recommended.at(-1).rules,
+      ...lowNoiseRules,
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': 'off'
     }
   },
   {

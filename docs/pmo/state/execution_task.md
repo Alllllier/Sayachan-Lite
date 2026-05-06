@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Route Middleware Typing Cleanup`
+- Sprint: `Backend TS Quality Gate Cleanup`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/route-middleware-typing-cleanup.md`
+- Report surface: `docs/pmo/history/reports/backend-ts-quality-gate-cleanup.md`
 
 ## Next Activation Rule
 

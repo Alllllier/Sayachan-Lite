@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "lint:frontend": "eslint frontend/src",
-    "lint:backend": "eslint backend/test backend/scripts",
+    "lint:backend": "eslint backend/src backend/test backend/scripts",
     "lint": "npm run lint:frontend && npm run lint:backend",
     "test:frontend": "npm --prefix frontend run test",
     "build:backend": "npm --prefix backend run build:backend",
@@ -23,6 +23,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-vue": "^10.6.0",
     "globals": "^16.5.0",
+    "typescript-eslint": "^8.59.2",
     "vue-eslint-parser": "^10.2.0"
   }
 }
