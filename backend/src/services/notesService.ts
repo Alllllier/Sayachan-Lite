@@ -14,9 +14,11 @@ import {
   ownerFilter,
   requireUserId
 } from './ownership';
+import NoteModel = require('../models/Note');
+import TaskModel = require('../models/Task');
 
-const Note = require('../models/Note');
-const Task = require('../models/Task');
+const Note = NoteModel as any;
+const Task = TaskModel as any;
 
 type ServiceOptions = {
   userId?: unknown;

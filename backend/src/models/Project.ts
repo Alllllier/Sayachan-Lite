@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose = require('mongoose');
 
 const projectSchema = new mongoose.Schema({
   name: {
@@ -43,4 +43,4 @@ const projectSchema = new mongoose.Schema({
 
 projectSchema.index({ userId: 1, archived: 1, isPinned: -1, pinnedAt: -1, updatedAt: -1 });
 
-module.exports = mongoose.model('Project', projectSchema);
+export = mongoose.model('Project', projectSchema);

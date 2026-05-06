@@ -15,9 +15,11 @@ import {
   ownerFilter,
   requireUserId
 } from './ownership';
+import ProjectModel = require('../models/Project');
+import TaskModel = require('../models/Task');
 
-const Project = require('../models/Project');
-const Task = require('../models/Task');
+const Project = ProjectModel as any;
+const Task = TaskModel as any;
 
 type ServiceOptions = {
   userId?: unknown;

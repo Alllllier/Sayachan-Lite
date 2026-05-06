@@ -308,6 +308,25 @@ function assertAuthServiceDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertProductModelDistArtifactsFromTypeScriptSource() {
+  const noteModelDistSource = fs.readFileSync(path.join(distRoot, 'models', 'Note.js'), 'utf8');
+  const projectModelDistSource = fs.readFileSync(path.join(distRoot, 'models', 'Project.js'), 'utf8');
+  const taskModelDistSource = fs.readFileSync(path.join(distRoot, 'models', 'Task.js'), 'utf8');
+
+  assert(
+    noteModelDistSource.includes("mongoose.model('Note'") || noteModelDistSource.includes('mongoose.model("Note"'),
+    'dist Note model artifact must preserve the Note model name.'
+  );
+  assert(
+    projectModelDistSource.includes("mongoose.model('Project'") || projectModelDistSource.includes('mongoose.model("Project"'),
+    'dist Project model artifact must preserve the Project model name.'
+  );
+  assert(
+    taskModelDistSource.includes("mongoose.model('Task'") || taskModelDistSource.includes('mongoose.model("Task"'),
+    'dist Task model artifact must preserve the Task model name.'
+  );
+}
+
 function assertCurrentSourceArtifactsWereEmitted() {
   const sourceFiles = walkFiles(srcRoot)
     .filter(filePath => path.extname(filePath) === '.js')
@@ -323,6 +342,9 @@ function assertCurrentSourceArtifactsWereEmitted() {
 const requiredRuntimeEntrypoints = [
   'server.js',
   path.join('middleware', 'requestBodyValidation.js'),
+  path.join('models', 'Note.js'),
+  path.join('models', 'Project.js'),
+  path.join('models', 'Task.js'),
   path.join('services', 'authService.js'),
   path.join('services', 'notesService.js'),
   path.join('services', 'ownership.js'),
@@ -358,6 +380,7 @@ assertProjectsDistArtifactFromTypeScriptSource();
 assertTasksDistArtifactFromTypeScriptSource();
 assertRequestBodyValidationDistArtifactFromTypeScriptSource();
 assertAuthServiceDistArtifactFromTypeScriptSource();
+assertProductModelDistArtifactsFromTypeScriptSource();
 assertNotesServiceDistArtifactFromTypeScriptSource();
 assertOwnershipDistArtifactFromTypeScriptSource();
 assertProjectsServiceDistArtifactFromTypeScriptSource();
