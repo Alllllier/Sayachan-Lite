@@ -1,0 +1,29 @@
+# AI Route Service Split
+
+- Archived date: `2026-05-07`
+- PMO closeout result: `completed and validated`
+- Source sprint: `AI Route Service Split`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Added a single-file AI service boundary at `backend/src/services/aiService.ts`.
+  - Moved AI route business logic into the service layer: note task draft generation, project next-action generation, chat orchestration, ownership reload helpers, provider response parsing, and fallback helpers.
+  - Slimmed `backend/src/routes/ai.ts` down to route registration, middleware, validated body reads, user id reads, not-found status mapping, and `ctx.body` assignment.
+  - Preserved route `__test__` compatibility by forwarding service helper exports through the route test surface.
+  - Updated backend dist boundary checks to require the compiled `services/aiService.js` artifact and to verify that AI routes use the service boundary while the service uses the public AI bridge.
+- Validation summary:
+  - `npm --prefix backend run test`
+  - `npm run check`
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states: `n/a`
+  - If skipped, why skipping was acceptable: backend-only service extraction with no UI rendering or frontend interaction change.
+- Unverified areas:
+  - No live external AI provider call was performed; existing backend tests and dist runtime smoke covered local behavior, fallback paths, route contracts, and build/runtime boundaries.
+- Residual risks or escalations:
+  - `aiService.ts` is intentionally a single service file for now. If provider, prompt, or runtimeControls logic grows independently, a later `services/ai/` decomposition may become useful.
+  - RuntimeControls semantics remain unchanged and still shallow-validated from the prior sprint.
+- Documentation-sync outcome: `reviewed, no update needed`
+- Follow-up routing:
+  - No blocking escalation.
+  - Future candidate to consider: deeper runtimeControls contract normalization or AI service submodule decomposition if the single service file grows too dense.
