@@ -183,12 +183,12 @@ function assertAiRoutesDistArtifactFromTypeScriptSource() {
     'dist AI route artifact must preserve route-local test helpers.'
   );
   assert(
-    aiRoutesDistSource.includes("require('../ai/bridge')") || aiRoutesDistSource.includes('require("../ai/bridge")'),
-    'dist AI route artifact must use the public AI bridge boundary.'
-  );
-  assert(
     aiRoutesDistSource.includes("require('./schemas/ai')") || aiRoutesDistSource.includes('require("./schemas/ai")'),
     'dist AI route artifact must use the AI request schema boundary.'
+  );
+  assert(
+    aiRoutesDistSource.includes("require('../services/aiService')") || aiRoutesDistSource.includes('require("../services/aiService")'),
+    'dist AI route artifact must use the AI service boundary.'
   );
 }
 
@@ -591,6 +591,27 @@ function assertAuthServiceDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertAiServiceDistArtifactFromTypeScriptSource() {
+  const aiServiceDistSource = fs.readFileSync(path.join(distRoot, 'services', 'aiService.js'), 'utf8');
+
+  assert(
+    aiServiceDistSource.includes('function generateNoteTaskDrafts'),
+    'dist aiService artifact must preserve note task draft generation.'
+  );
+  assert(
+    aiServiceDistSource.includes('function suggestProjectNextActions'),
+    'dist aiService artifact must preserve project next-action generation.'
+  );
+  assert(
+    aiServiceDistSource.includes('function chat'),
+    'dist aiService artifact must preserve chat orchestration.'
+  );
+  assert(
+    aiServiceDistSource.includes("require('../ai/bridge')") || aiServiceDistSource.includes('require("../ai/bridge")'),
+    'dist aiService artifact must use the public AI bridge boundary.'
+  );
+}
+
 function assertProductModelDistArtifactsFromTypeScriptSource() {
   const noteModelDistSource = fs.readFileSync(path.join(distRoot, 'models', 'Note.js'), 'utf8');
   const projectModelDistSource = fs.readFileSync(path.join(distRoot, 'models', 'Project.js'), 'utf8');
@@ -660,6 +681,7 @@ const requiredRuntimeEntrypoints = [
   path.join('models', 'Session.js'),
   path.join('models', 'Task.js'),
   path.join('models', 'User.js'),
+  path.join('services', 'aiService.js'),
   path.join('services', 'authService.js'),
   path.join('services', 'notesService.js'),
   path.join('services', 'projectsService.js'),
@@ -710,6 +732,7 @@ assertObjectIdDistArtifactFromTypeScriptSource();
 assertCurrentUserDistArtifactFromTypeScriptSource();
 assertErrorBoundaryDistArtifactFromTypeScriptSource();
 assertRequestBodyValidationDistArtifactFromTypeScriptSource();
+assertAiServiceDistArtifactFromTypeScriptSource();
 assertAuthServiceDistArtifactFromTypeScriptSource();
 assertAuthModelDistArtifactsFromTypeScriptSource();
 assertProductModelDistArtifactsFromTypeScriptSource();
