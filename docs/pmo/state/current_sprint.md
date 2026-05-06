@@ -18,7 +18,7 @@
 - Sprint: `Backend TS Quality Gate Cleanup`
 - Closeout date: `2026-05-07`
 - Delivery status: `completed and validated`
-- Commit state: `not committed in this closeout`
+- Commit state: `committed after closeout: 71cbba6 chore(backend): lint ts source and dist artifacts`
 - Documentation sync outcome: `reviewed, no update needed`
 - Residual note: `none`
 - Report surface: `docs/pmo/history/reports/backend-ts-quality-gate-cleanup.md`
