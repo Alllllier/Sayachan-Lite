@@ -400,8 +400,8 @@ function assertTaskRuntimeHelpersDistArtifactFromTypeScriptSource() {
   const helpersDistSource = fs.readFileSync(path.join(distRoot, 'services', 'taskRuntimeHelpers.js'), 'utf8');
 
   assert(
-    helpersDistSource.includes('function normalizeTask'),
-    'dist taskRuntimeHelpers artifact must preserve normalizeTask.'
+    helpersDistSource.includes('function toTaskDto'),
+    'dist taskRuntimeHelpers artifact must preserve toTaskDto.'
   );
   assert(
     helpersDistSource.includes('function clearFocusForTask'),

@@ -9,8 +9,8 @@ import {
   clearFocusForTask,
   combineFilters,
   isProjectOwnedTask,
-  normalizeTask,
-  projectTaskReadFilter
+  projectTaskReadFilter,
+  toTaskDto
 } from './taskRuntimeHelpers';
 import {
   ownedFilter,
@@ -56,7 +56,7 @@ async function listTasks({ projectId, archived, userId }: ListTasksOptions) {
     ? combineFilters(buildArchiveFilter(archived), projectTaskReadFilter(projectId), ownerFilter(userId))
     : combineFilters(buildArchiveFilter(archived), ownerFilter(userId));
   const tasks = await Task.find(filter).sort({ createdAt: -1 });
-  return tasks.map(normalizeTask);
+  return tasks.map(toTaskDto);
 }
 
 async function createTask(body: TaskCreateInput, { userId }: ServiceOptions) {
@@ -72,7 +72,7 @@ async function createTask(body: TaskCreateInput, { userId }: ServiceOptions) {
   };
 
   const task = await Task.create(taskData);
-  return normalizeTask(task);
+  return toTaskDto(task);
 }
 
 function buildTaskUpdate(body: TaskUpdateDto): TaskUpdate {
@@ -102,9 +102,9 @@ async function updateTask(id: ObjectId, body: TaskUpdateDto, { userId }: Service
     return null;
   }
 
-  const normalizedExistingTask = normalizeTask(existingTask) as NormalizedTask;
+  const normalizedExistingTask = toTaskDto(existingTask) as NormalizedTask;
   const task = await Task.findOneAndUpdate(ownedFilter(id, userId), buildTaskUpdate(body), { new: true, runValidators: true });
-  const normalizedTask = normalizeTask(task) as NormalizedTask;
+  const normalizedTask = toTaskDto(task) as NormalizedTask;
 
   const isBecomingCompleted = normalizedTask.status === 'completed' && normalizedExistingTask.status !== 'completed';
 

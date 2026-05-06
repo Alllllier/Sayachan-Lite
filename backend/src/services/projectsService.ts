@@ -8,9 +8,9 @@ import {
   buildArchiveFilter,
   combineFilters,
   deriveProjectLifecycleStatus,
-  normalizeProject,
   projectTaskCascadeFilter,
-  restoreTasks
+  restoreTasks,
+  toProjectDto
 } from './taskRuntimeHelpers';
 import {
   ownedFilter,
@@ -47,7 +47,7 @@ type QueryFilter = Record<string, unknown>;
 async function listProjects({ archived, userId }: ListProjectsOptions) {
   const projects = await Project.find(combineFilters(buildArchiveFilter(archived), ownerFilter(userId)))
     .sort({ isPinned: -1, pinnedAt: -1, updatedAt: -1 });
-  return projects.map(normalizeProject);
+  return projects.map(toProjectDto);
 }
 
 async function createProject(body: ProjectCreateDto, { userId }: ServiceOptions) {
@@ -59,7 +59,7 @@ async function createProject(body: ProjectCreateDto, { userId }: ServiceOptions)
     userId: requireUserId(userId)
   });
 
-  return normalizeProject(project);
+  return toProjectDto(project);
 }
 
 function buildProjectUpdate(body: ProjectUpdateInput): ProjectUpdate {
@@ -92,7 +92,7 @@ async function updateProject(id: ObjectId, body: ProjectUpdateInput, { userId }:
 
   const project = await Project.findOneAndUpdate(changedOnlyFilter(filter, update), update, { new: true, runValidators: true });
 
-  return normalizeProject(project || await Project.findOne(filter));
+  return toProjectDto(project || await Project.findOne(filter));
 }
 
 async function deleteProject(id: ObjectId, { userId }: ServiceOptions) {
@@ -107,7 +107,7 @@ async function pinProject(id: ObjectId, { userId }: ServiceOptions) {
     console.log(`[Project Pin] "${project.name}" pinned`);
   }
 
-  return normalizeProject(project);
+  return toProjectDto(project);
 }
 
 async function unpinProject(id: ObjectId, { userId }: ServiceOptions) {
@@ -117,7 +117,7 @@ async function unpinProject(id: ObjectId, { userId }: ServiceOptions) {
     console.log(`[Project Unpin] "${project.name}" unpinned`);
   }
 
-  return normalizeProject(project);
+  return toProjectDto(project);
 }
 
 async function archiveProject(id: ObjectId, { userId }: ServiceOptions) {
@@ -140,7 +140,7 @@ async function archiveProject(id: ObjectId, { userId }: ServiceOptions) {
 
   console.log(`[Project Archive] Project "${project.name}" archived, ${modifiedCount} tasks cascaded`);
 
-  return normalizeProject(project);
+  return toProjectDto(project);
 }
 
 async function restoreProject(id: ObjectId, { userId }: ServiceOptions) {
@@ -159,7 +159,7 @@ async function restoreProject(id: ObjectId, { userId }: ServiceOptions) {
 
   console.log(`[Project Restore] Project "${project.name}" restored, ${modifiedCount} tasks cascaded`);
 
-  return normalizeProject(project);
+  return toProjectDto(project);
 }
 
 export = {

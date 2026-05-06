@@ -7,8 +7,8 @@ import {
   archiveTasks,
   buildArchiveFilter,
   combineFilters,
-  normalizeNote,
-  restoreTasks
+  restoreTasks,
+  toNoteDto
 } from './taskRuntimeHelpers';
 import {
   ownedFilter,
@@ -39,7 +39,7 @@ type QueryFilter = Record<string, unknown>;
 async function listNotes({ archived, userId }: ListNotesOptions) {
   const notes = await Note.find(combineFilters(buildArchiveFilter(archived), ownerFilter(userId)))
     .sort({ isPinned: -1, pinnedAt: -1, updatedAt: -1 });
-  return notes.map(normalizeNote);
+  return notes.map(toNoteDto);
 }
 
 async function createNote(body: NoteCreateDto, { userId }: ServiceOptions) {
@@ -50,7 +50,7 @@ async function createNote(body: NoteCreateDto, { userId }: ServiceOptions) {
     userId: requireUserId(userId)
   });
 
-  return normalizeNote(note);
+  return toNoteDto(note);
 }
 
 function buildNoteUpdate(body: NoteUpdateDto): NoteUpdate {
@@ -80,7 +80,7 @@ async function updateNote(id: ObjectId, body: NoteUpdateDto, { userId }: Service
     { new: true, runValidators: true }
   );
 
-  return normalizeNote(note || await Note.findOne(filter));
+  return toNoteDto(note || await Note.findOne(filter));
 }
 
 async function deleteNote(id: ObjectId, { userId }: ServiceOptions) {
@@ -99,7 +99,7 @@ async function pinNote(id: ObjectId, { userId }: ServiceOptions) {
     console.log(`[Note Pin] "${note.title}" pinned`);
   }
 
-  return normalizeNote(note);
+  return toNoteDto(note);
 }
 
 async function unpinNote(id: ObjectId, { userId }: ServiceOptions) {
@@ -113,7 +113,7 @@ async function unpinNote(id: ObjectId, { userId }: ServiceOptions) {
     console.log(`[Note Unpin] "${note.title}" unpinned`);
   }
 
-  return normalizeNote(note);
+  return toNoteDto(note);
 }
 
 async function archiveNote(id: ObjectId, { userId }: ServiceOptions) {
@@ -135,7 +135,7 @@ async function archiveNote(id: ObjectId, { userId }: ServiceOptions) {
 
   console.log(`[Note Archive] Note "${note.title}" archived, ${modifiedCount} tasks cascaded`);
 
-  return normalizeNote(note);
+  return toNoteDto(note);
 }
 
 async function restoreNote(id: ObjectId, { userId }: ServiceOptions) {
@@ -157,7 +157,7 @@ async function restoreNote(id: ObjectId, { userId }: ServiceOptions) {
 
   console.log(`[Note Restore] Note "${note.title}" restored, ${modifiedCount} tasks cascaded`);
 
-  return normalizeNote(note);
+  return toNoteDto(note);
 }
 
 export = {

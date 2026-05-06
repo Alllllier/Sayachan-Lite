@@ -2,12 +2,42 @@ import type { ObjectId } from '../middleware/objectIdParsing';
 
 type QueryFilter = Record<string, unknown>;
 
-type DocumentLike = Record<string, any> & {
-  toObject?: () => Record<string, any>;
+type RuntimeDocument = object & {
+  toObject?: () => Record<string, unknown>;
+  archived?: unknown;
+  originId?: unknown;
+  originModule?: unknown;
+};
+
+type TaskRuntimeRecord = RuntimeDocument & {
+  _id?: unknown;
+  completed?: boolean;
+  status?: 'active' | 'completed';
+};
+
+type ProjectRuntimeRecord = RuntimeDocument & {
+  _id?: unknown;
+  name?: unknown;
+  status?: 'pending' | 'in_progress' | 'completed' | 'on_hold';
+};
+
+export type TaskDto = Record<string, unknown> & {
+  archived: boolean;
+  completed: boolean;
+  status: 'active' | 'completed';
+};
+
+export type ProjectDto = Record<string, unknown> & {
+  archived: boolean;
+  status: 'pending' | 'in_progress' | 'completed' | 'on_hold';
+};
+
+export type NoteDto = Record<string, unknown> & {
+  archived: boolean;
 };
 
 type FindableModel = {
-  find(filter: unknown): Promise<DocumentLike[]>;
+  find(filter: unknown): Promise<TaskRuntimeRecord[]>;
 };
 
 type BulkWritableModel = {
@@ -17,7 +47,7 @@ type BulkWritableModel = {
 type TaskModel = FindableModel & BulkWritableModel;
 
 type ProjectModel = {
-  findOne(filter: unknown): Promise<DocumentLike | null>;
+  findOne(filter: unknown): Promise<ProjectRuntimeRecord | null>;
   findOneAndUpdate(filter: unknown, update: unknown): Promise<unknown>;
 };
 
@@ -66,48 +96,57 @@ export function projectTaskCascadeFilter(projectId: ObjectId): QueryFilter {
   return projectTaskRelationFilter(projectId);
 }
 
-export function isArchivedEntity(entity: DocumentLike | null | undefined): boolean {
+function toPlainObject(entity: RuntimeDocument): Record<string, unknown> {
+  return entity.toObject ? entity.toObject() : { ...entity };
+}
+
+export function isArchivedEntity(entity: RuntimeDocument | null | undefined): boolean {
   return entity?.archived === true;
 }
 
-export function deriveTaskLifecycleStatus(task: DocumentLike | null | undefined): string {
-  if (task?.status) {
+export function deriveTaskLifecycleStatus(task: TaskRuntimeRecord | null | undefined): 'active' | 'completed' {
+  if (task?.status === 'completed') {
     return task.status;
   }
 
-  return task?.completed ? 'completed' : 'active';
+  return 'active';
 }
 
-export function deriveProjectLifecycleStatus(project: DocumentLike | null | undefined): string {
-  if (project?.status && project.status !== 'archived') {
+export function deriveProjectLifecycleStatus(project: ProjectRuntimeRecord | null | undefined): ProjectDto['status'] {
+  if (
+    project?.status === 'pending'
+    || project?.status === 'in_progress'
+    || project?.status === 'completed'
+    || project?.status === 'on_hold'
+  ) {
     return project.status;
   }
 
   return 'pending';
 }
 
-export function normalizeTask<TTask extends DocumentLike | null | undefined>(task: TTask) {
+export function toTaskDto(task: TaskRuntimeRecord | null | undefined): TaskDto | null | undefined {
   if (!task) {
     return task;
   }
 
-  const normalized = task.toObject ? task.toObject() : { ...task };
+  const normalized = toPlainObject(task);
   const status = deriveTaskLifecycleStatus(normalized);
 
   return {
     ...normalized,
     status,
     archived: isArchivedEntity(normalized),
-    completed: normalized.completed === undefined ? status === 'completed' : normalized.completed
+    completed: normalized.completed === true
   };
 }
 
-export function normalizeProject<TProject extends DocumentLike | null | undefined>(project: TProject) {
+export function toProjectDto(project: ProjectRuntimeRecord | null | undefined): ProjectDto | null | undefined {
   if (!project) {
     return project;
   }
 
-  const normalized = project.toObject ? project.toObject() : { ...project };
+  const normalized = toPlainObject(project);
 
   return {
     ...normalized,
@@ -116,20 +155,20 @@ export function normalizeProject<TProject extends DocumentLike | null | undefine
   };
 }
 
-export function normalizeNote<TNote extends DocumentLike | null | undefined>(note: TNote) {
+export function toNoteDto(note: RuntimeDocument | null | undefined): NoteDto | null | undefined {
   if (!note) {
     return note;
   }
 
-  const normalized = note.toObject ? note.toObject() : { ...note };
+  const normalized = toPlainObject(note);
   return {
     ...normalized,
     archived: isArchivedEntity(normalized)
   };
 }
 
-export function isProjectOwnedTask(task: DocumentLike | null | undefined): boolean {
-  return task?.originModule === 'project' && task?.originId;
+export function isProjectOwnedTask(task: RuntimeDocument | null | undefined): boolean {
+  return task?.originModule === 'project' && Boolean(task.originId);
 }
 
 export async function clearFocusForTask(Project: ProjectModel, taskId: ObjectId, reason: string, userId: ObjectId): Promise<boolean> {
