@@ -20,8 +20,8 @@ import {
 import ProjectModel = require('../models/Project');
 import TaskModel = require('../models/Task');
 
-const Project = ProjectModel as any;
-const Task = TaskModel as any;
+const Project = ProjectModel;
+const Task = TaskModel;
 
 type ServiceOptions = {
   userId: ObjectId;

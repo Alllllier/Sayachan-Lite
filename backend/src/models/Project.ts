@@ -43,4 +43,9 @@ const projectSchema = new mongoose.Schema({
 
 projectSchema.index({ userId: 1, archived: 1, isPinned: -1, pinnedAt: -1, updatedAt: -1 });
 
-export = mongoose.model('Project', projectSchema);
+type ProjectAttrs = mongoose.InferSchemaType<typeof projectSchema>;
+type ProjectDocument = mongoose.HydratedDocument<ProjectAttrs>;
+
+const Project = mongoose.model<ProjectAttrs, mongoose.Model<ProjectAttrs>>('Project', projectSchema);
+
+export = Project;

@@ -18,8 +18,8 @@ import {
 import NoteModel = require('../models/Note');
 import TaskModel = require('../models/Task');
 
-const Note = NoteModel as any;
-const Task = TaskModel as any;
+const Note = NoteModel;
+const Task = TaskModel;
 
 type ServiceOptions = {
   userId: ObjectId;
