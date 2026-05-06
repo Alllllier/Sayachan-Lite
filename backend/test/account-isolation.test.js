@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const Note = require('../dist/models/Note');
 const Project = require('../dist/models/Project');
 const Task = require('../dist/models/Task');
+const aiService = require('../dist/services/aiService');
 const aiRoutes = require('../dist/routes/ai');
 const { errorBoundary } = require('../dist/middleware/errorBoundary');
 const routes = require('../dist/routes/index.js');
@@ -420,5 +421,37 @@ test('AI routes validate request bodies before downstream AI or model work', asy
       assert.equal(ctx.status, 400);
       assert.deepEqual(ctx.body, { error: 'Invalid request body' });
     }
+  });
+});
+
+test('AI chat validation strips unknown message fields before bridge handoff', async () => {
+  const chatAiHandler = getRouteHandler(aiRoutes, 'POST', '/ai/chat');
+  let capturedBody = null;
+
+  await withPatchedMethods([
+    {
+      target: aiService,
+      key: 'chat',
+      value: async (body) => {
+        capturedBody = body;
+        return { reply: 'ok' };
+      }
+    }
+  ], async () => {
+    const requestBody = {
+      messages: [
+        { role: 'user', content: 'hello', unknownField: 'strip me' }
+      ],
+      context: { activeTask: 'task-1' },
+      runtimeControls: { lastUserMessage: 'hello' }
+    };
+    const ctx = createCtx({ body: requestBody });
+
+    await chatAiHandler(ctx, async () => {});
+
+    assert.equal(ctx.status, 200);
+    assert.deepEqual(ctx.body, { reply: 'ok' });
+    assert.equal(ctx.request.body.messages[0].unknownField, 'strip me');
+    assert.deepEqual(capturedBody.messages, [{ role: 'user', content: 'hello' }]);
   });
 });

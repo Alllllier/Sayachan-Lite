@@ -18,7 +18,7 @@ export type AiResourcePayloadDto = z.infer<typeof aiResourcePayloadSchema>;
 const aiChatMessageSchema = z.object({
   role: z.string().optional(),
   content: z.unknown().optional()
-}).passthrough();
+});
 
 export const aiChatSchema = z.object({
   messages: z.array(aiChatMessageSchema).optional(),
