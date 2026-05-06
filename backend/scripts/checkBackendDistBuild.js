@@ -274,6 +274,23 @@ function assertProjectsServiceDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertNotesServiceDistArtifactFromTypeScriptSource() {
+  const notesServiceDistSource = fs.readFileSync(path.join(distRoot, 'services', 'notesService.js'), 'utf8');
+
+  assert(
+    notesServiceDistSource.includes('function changedOnlyFilter'),
+    'dist notesService artifact must preserve changedOnlyFilter.'
+  );
+  assert(
+    notesServiceDistSource.includes('Note Archive'),
+    'dist notesService artifact must preserve archive cascade behavior.'
+  );
+  assert(
+    notesServiceDistSource.includes('originModule: "note"') || notesServiceDistSource.includes("originModule: 'note'"),
+    'dist notesService artifact must preserve note-origin cascade scope.'
+  );
+}
+
 function assertCurrentSourceArtifactsWereEmitted() {
   const sourceFiles = walkFiles(srcRoot)
     .filter(filePath => path.extname(filePath) === '.js')
@@ -289,6 +306,7 @@ function assertCurrentSourceArtifactsWereEmitted() {
 const requiredRuntimeEntrypoints = [
   'server.js',
   path.join('middleware', 'requestBodyValidation.js'),
+  path.join('services', 'notesService.js'),
   path.join('services', 'ownership.js'),
   path.join('services', 'projectsService.js'),
   path.join('services', 'tasksService.js'),
@@ -321,6 +339,7 @@ assertNotesDistArtifactFromTypeScriptSource();
 assertProjectsDistArtifactFromTypeScriptSource();
 assertTasksDistArtifactFromTypeScriptSource();
 assertRequestBodyValidationDistArtifactFromTypeScriptSource();
+assertNotesServiceDistArtifactFromTypeScriptSource();
 assertOwnershipDistArtifactFromTypeScriptSource();
 assertProjectsServiceDistArtifactFromTypeScriptSource();
 assertTasksServiceDistArtifactFromTypeScriptSource();

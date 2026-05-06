@@ -1,3 +1,8 @@
+import type {
+  NoteCreateDto,
+  NoteUpdateDto
+} from '../routes/schemas/mutations';
+
 const Note = require('../models/Note');
 const Task = require('../models/Task');
 const {
@@ -9,13 +14,28 @@ const {
 } = require('./taskRuntimeHelpers');
 const { ownedFilter, ownerFilter, requireUserId } = require('./ownership');
 
-async function listNotes({ archived, userId } = {}) {
+type ServiceOptions = {
+  userId?: unknown;
+};
+
+type ListNotesOptions = ServiceOptions & {
+  archived?: unknown;
+};
+
+type NoteUpdate = {
+  title?: string;
+  content?: string;
+};
+
+type QueryFilter = Record<string, unknown>;
+
+async function listNotes({ archived, userId }: ListNotesOptions = {}) {
   const notes = await Note.find(combineFilters(buildArchiveFilter(archived), ownerFilter(userId)))
     .sort({ isPinned: -1, pinnedAt: -1, updatedAt: -1 });
   return notes.map(normalizeNote);
 }
 
-async function createNote(body, { userId } = {}) {
+async function createNote(body: NoteCreateDto, { userId }: ServiceOptions = {}) {
   const note = await Note.create({
     title: body.title,
     content: body.content || '',
@@ -26,8 +46,8 @@ async function createNote(body, { userId } = {}) {
   return normalizeNote(note);
 }
 
-function buildNoteUpdate(body) {
-  const update = {};
+function buildNoteUpdate(body: NoteUpdateDto): NoteUpdate {
+  const update: NoteUpdate = {};
   if (body.title !== undefined) {
     update.title = body.title;
   }
@@ -37,14 +57,14 @@ function buildNoteUpdate(body) {
   return update;
 }
 
-function changedOnlyFilter(filter, update) {
+function changedOnlyFilter(filter: QueryFilter, update: NoteUpdate): QueryFilter {
   return {
     ...filter,
     $or: Object.entries(update).map(([field, value]) => ({ [field]: { $ne: value } }))
   };
 }
 
-async function updateNote(id, body, { userId } = {}) {
+async function updateNote(id: unknown, body: NoteUpdateDto, { userId }: ServiceOptions = {}) {
   const filter = ownedFilter(id, userId);
   const update = buildNoteUpdate(body);
   const note = await Note.findOneAndUpdate(
@@ -56,12 +76,12 @@ async function updateNote(id, body, { userId } = {}) {
   return normalizeNote(note || await Note.findOne(filter));
 }
 
-async function deleteNote(id, { userId } = {}) {
+async function deleteNote(id: unknown, { userId }: ServiceOptions = {}) {
   const note = await Note.findOneAndDelete(ownedFilter(id, userId));
   return Boolean(note);
 }
 
-async function pinNote(id, { userId } = {}) {
+async function pinNote(id: unknown, { userId }: ServiceOptions = {}) {
   const note = await Note.findOneAndUpdate(
     ownedFilter(id, userId),
     { isPinned: true, pinnedAt: new Date() },
@@ -75,7 +95,7 @@ async function pinNote(id, { userId } = {}) {
   return normalizeNote(note);
 }
 
-async function unpinNote(id, { userId } = {}) {
+async function unpinNote(id: unknown, { userId }: ServiceOptions = {}) {
   const note = await Note.findOneAndUpdate(
     ownedFilter(id, userId),
     { isPinned: false, pinnedAt: null },
@@ -89,7 +109,7 @@ async function unpinNote(id, { userId } = {}) {
   return normalizeNote(note);
 }
 
-async function archiveNote(id, { userId } = {}) {
+async function archiveNote(id: unknown, { userId }: ServiceOptions = {}) {
   const note = await Note.findOneAndUpdate(
     ownedFilter(id, userId),
     { archived: true },
@@ -111,7 +131,7 @@ async function archiveNote(id, { userId } = {}) {
   return normalizeNote(note);
 }
 
-async function restoreNote(id, { userId } = {}) {
+async function restoreNote(id: unknown, { userId }: ServiceOptions = {}) {
   const note = await Note.findOneAndUpdate(
     ownedFilter(id, userId),
     { archived: false },
@@ -133,7 +153,7 @@ async function restoreNote(id, { userId } = {}) {
   return normalizeNote(note);
 }
 
-module.exports = {
+export = {
   archiveNote,
   createNote,
   deleteNote,
