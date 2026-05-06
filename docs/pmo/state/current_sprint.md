@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Notes Route Unified Build Inclusion V1`
+- Sprint: `Backend Dist Runtime Readiness V1`
 - Closeout date: `2026-05-06`
 - Delivery status: `completed and validated`
 - Commit state: `not committed in this closeout`
-- Documentation sync outcome: `reviewed, no update needed`
+- Documentation sync outcome: `updated`
 - Residual note: `none`
-- Report surface: `docs/pmo/history/reports/notes-route-unified-build-inclusion-v1.md`
+- Report surface: `docs/pmo/history/reports/backend-dist-runtime-readiness-v1.md`
 
 ## Next PMO Action
 

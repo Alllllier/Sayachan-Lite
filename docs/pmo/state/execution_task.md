@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Notes Route Unified Build Inclusion V1`
+- Sprint: `Backend Dist Runtime Readiness V1`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/notes-route-unified-build-inclusion-v1.md`
+- Report surface: `docs/pmo/history/reports/backend-dist-runtime-readiness-v1.md`
 
 ## Next Activation Rule
 

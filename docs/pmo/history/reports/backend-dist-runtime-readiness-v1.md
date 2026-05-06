@@ -1,0 +1,50 @@
+# Backend Dist Runtime Readiness V1
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Backend Dist Runtime Readiness V1`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Added `backend/scripts/smokeBackendSourceRuntime.js`.
+    - It loads the current source runtime route/server graph under mocked `mongoose.connect` and mocked `Koa.listen`.
+  - Added backend package script `smoke:backend-source`.
+  - Added backend package script `check:backend-dist-runtime`.
+    - It runs backend build, dist boundary guard, source runtime smoke, and dist runtime smoke.
+  - Updated `docs/pmo/baselines/runtime-baseline.md` to record the new readiness command.
+  - Did not change `backend/package.json` `start` or `dev`.
+  - Did not delete schema/Notes generated artifacts or facades.
+  - Did not add backend dist readiness to root `npm run check`.
+- Validation summary:
+  - `npm --prefix backend run check:backend-dist-runtime` passed.
+    - Rebuilt backend dist.
+    - Ran the dist boundary guard.
+    - Smoke-loaded source runtime under mocks.
+    - Smoke-loaded dist runtime under mocks.
+  - `npm --prefix backend run check:backend-build` passed.
+  - `npm run lint:backend` passed.
+  - `npm --prefix backend test` passed.
+    - 40 backend tests passed.
+  - `npm run check` passed.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If skipped, why skipping was acceptable:
+    - This sprint changed backend validation infrastructure only.
+    - Full automated checks covered source/dist runtime graph load and existing API behavior tests.
+- Unverified areas:
+  - Production-style `node dist/server.js` has not been made the default runtime.
+  - `backend/package.json` `start` and `dev` still point at `node src/server.js`.
+  - No deployment documentation or environment startup command was changed.
+- Residual risks or escalations:
+  - Runtime cutover still requires a human decision because it changes operational behavior.
+  - If cutover is approved, PMO should decide whether `dev` stays source-based temporarily or becomes build/restart based.
+  - Scaffold deletion should remain separate from the initial runtime cutover unless explicitly approved.
+- Documentation-sync outcome: `updated`
+- Follow-up routing:
+  - Human decision now needed:
+    - approve or defer switching backend `start` from `node src/server.js` to a build-backed `node dist/server.js` runtime.
+  - Still human-gated:
+    - changing `dev`
+    - adding dist readiness to root `npm run check`
+    - deleting schema/Notes generated artifacts or facades
+    - ESM/runtime loader changes
