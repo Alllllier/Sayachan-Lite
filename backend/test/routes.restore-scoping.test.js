@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const Task = require('../dist/models/Task');
-const routes = require('../dist/routes/index.js');
+const { restoreTasks } = require('../dist/services/taskRuntimeHelpers');
 
 test('restoreTasks keeps canonical project scope when reading archived tasks', async () => {
   const originalFind = Task.find;
@@ -14,7 +14,7 @@ test('restoreTasks keeps canonical project scope when reading archived tasks', a
   };
 
   try {
-    const modifiedCount = await routes.__test__.restoreTasks({
+    const modifiedCount = await restoreTasks(Task, {
       originModule: 'project',
       originId: 'project-1'
     });

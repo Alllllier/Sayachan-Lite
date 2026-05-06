@@ -14,4 +14,3 @@ router.use(projectsRoutes.routes());
 router.use(tasksRoutes.routes());
 
 module.exports = router;
-module.exports.__test__ = tasksRoutes.__test__;

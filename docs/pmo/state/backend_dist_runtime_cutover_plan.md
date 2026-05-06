@@ -159,7 +159,7 @@ Goal: migrate remaining product routers after Notes proves the runtime path.
 Recommended sub-agent batches:
 
 - Projects route batch completed: `backend/src/routes/projectsRoutes.ts` compiles through the unified backend build with existing service/model imports preserved.
-- Tasks route batch completed: `backend/src/routes/tasksRoutes.ts` compiles through the unified backend build with existing validation behavior and route __test__ export preserved.
+- Tasks route batch completed: `backend/src/routes/tasksRoutes.ts` compiles through the unified backend build with existing validation behavior preserved.
 - Route index batch only if required by emitted dist layout; otherwise leave `backend/src/routes/index.js` CommonJS until a broader cleanup.
 
 Hard boundaries:

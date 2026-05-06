@@ -180,8 +180,8 @@ function assertTasksDistArtifactFromTypeScriptSource() {
     'dist Tasks route artifact must be emitted from tasksRoutes.ts and import the normal schema route path.'
   );
   assert(
-    tasksDistSource.includes('__test__'),
-    'dist Tasks route artifact must preserve the route __test__ helper export.'
+    !tasksDistSource.includes('__test__'),
+    'dist Tasks route artifact must not expose route __test__ helpers.'
   );
   assert(
     !tasksDistSource.includes('@ts-ignore dto-pilot'),

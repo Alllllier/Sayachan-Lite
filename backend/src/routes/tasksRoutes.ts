@@ -43,25 +43,6 @@ type TasksService = {
   deleteTask(id: string, options: TasksServiceOptions): Promise<boolean>;
 };
 
-type TaskRuntimeHelpers = {
-  archiveTasks(TaskModel: unknown, taskFilter: unknown): Promise<number>;
-  buildArchiveFilter(archived: unknown): unknown;
-  combineFilters(...filters: unknown[]): unknown;
-  restoreTasks(TaskModel: unknown, taskFilter: unknown): Promise<number>;
-};
-
-type TasksTestExports = {
-  archiveTasks(taskFilter: unknown): Promise<number>;
-  buildArchiveFilter: TaskRuntimeHelpers['buildArchiveFilter'];
-  combineFilters: TaskRuntimeHelpers['combineFilters'];
-  restoreTasks(taskFilter: unknown): Promise<number>;
-};
-
-type TasksRouter = typeof router & {
-  __test__: TasksTestExports;
-};
-
-const Task = require('../models/Task');
 const tasksService = require('../services/tasksService') as TasksService;
 const { requireCurrentUser } = require('../middleware/currentUser') as {
   requireCurrentUser: TasksMiddleware;
@@ -69,12 +50,6 @@ const { requireCurrentUser } = require('../middleware/currentUser') as {
 const { validateBody } = require('../middleware/requestBodyValidation') as {
   validateBody: ValidateBody;
 };
-const {
-  archiveTasks,
-  buildArchiveFilter,
-  combineFilters,
-  restoreTasks
-} = require('../services/taskRuntimeHelpers') as TaskRuntimeHelpers;
 const {
   taskCreateSchema,
   taskUpdateSchema
@@ -128,13 +103,4 @@ router.delete('/tasks/:id', requireCurrentUser, async (ctx) => {
   }
 });
 
-const taskRouter = router as TasksRouter;
-
-taskRouter.__test__ = {
-  archiveTasks: (taskFilter) => archiveTasks(Task, taskFilter),
-  buildArchiveFilter,
-  combineFilters,
-  restoreTasks: (taskFilter) => restoreTasks(Task, taskFilter)
-};
-
-export = taskRouter;
+export = router;
