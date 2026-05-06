@@ -1,10 +1,14 @@
 const crypto = require('crypto');
-const User = require('../models/User');
-const Invite = require('../models/Invite');
-const Session = require('../models/Session');
+import UserModel = require('../models/User');
+import InviteModel = require('../models/Invite');
+import SessionModel = require('../models/Session');
 const Note = require('../models/Note');
 const Project = require('../models/Project');
 const Task = require('../models/Task');
+
+const User = UserModel as any;
+const Invite = InviteModel as any;
+const Session = SessionModel as any;
 
 const SESSION_COOKIE_NAME = 'sayachan_session';
 const PASSWORD_ITERATIONS = 210000;

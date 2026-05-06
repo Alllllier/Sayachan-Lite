@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose = require('mongoose');
 
 const inviteSchema = new mongoose.Schema({
   codeHash: {
@@ -36,4 +36,4 @@ const inviteSchema = new mongoose.Schema({
   timestamps: true
 });
 
-module.exports = mongoose.model('Invite', inviteSchema);
+export = mongoose.model('Invite', inviteSchema);

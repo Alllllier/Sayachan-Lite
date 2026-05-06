@@ -327,6 +327,25 @@ function assertProductModelDistArtifactsFromTypeScriptSource() {
   );
 }
 
+function assertAuthModelDistArtifactsFromTypeScriptSource() {
+  const userModelDistSource = fs.readFileSync(path.join(distRoot, 'models', 'User.js'), 'utf8');
+  const inviteModelDistSource = fs.readFileSync(path.join(distRoot, 'models', 'Invite.js'), 'utf8');
+  const sessionModelDistSource = fs.readFileSync(path.join(distRoot, 'models', 'Session.js'), 'utf8');
+
+  assert(
+    userModelDistSource.includes("mongoose.model('User'") || userModelDistSource.includes('mongoose.model("User"'),
+    'dist User model artifact must preserve the User model name.'
+  );
+  assert(
+    inviteModelDistSource.includes("mongoose.model('Invite'") || inviteModelDistSource.includes('mongoose.model("Invite"'),
+    'dist Invite model artifact must preserve the Invite model name.'
+  );
+  assert(
+    sessionModelDistSource.includes("mongoose.model('Session'") || sessionModelDistSource.includes('mongoose.model("Session"'),
+    'dist Session model artifact must preserve the Session model name.'
+  );
+}
+
 function assertCurrentSourceArtifactsWereEmitted() {
   const sourceFiles = walkFiles(srcRoot)
     .filter(filePath => path.extname(filePath) === '.js')
@@ -342,9 +361,12 @@ function assertCurrentSourceArtifactsWereEmitted() {
 const requiredRuntimeEntrypoints = [
   'server.js',
   path.join('middleware', 'requestBodyValidation.js'),
+  path.join('models', 'Invite.js'),
   path.join('models', 'Note.js'),
   path.join('models', 'Project.js'),
+  path.join('models', 'Session.js'),
   path.join('models', 'Task.js'),
+  path.join('models', 'User.js'),
   path.join('services', 'authService.js'),
   path.join('services', 'notesService.js'),
   path.join('services', 'ownership.js'),
@@ -380,6 +402,7 @@ assertProjectsDistArtifactFromTypeScriptSource();
 assertTasksDistArtifactFromTypeScriptSource();
 assertRequestBodyValidationDistArtifactFromTypeScriptSource();
 assertAuthServiceDistArtifactFromTypeScriptSource();
+assertAuthModelDistArtifactsFromTypeScriptSource();
 assertProductModelDistArtifactsFromTypeScriptSource();
 assertNotesServiceDistArtifactFromTypeScriptSource();
 assertOwnershipDistArtifactFromTypeScriptSource();

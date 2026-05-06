@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose = require('mongoose');
 
 const sessionSchema = new mongoose.Schema({
   tokenHash: {
@@ -19,4 +19,4 @@ const sessionSchema = new mongoose.Schema({
   timestamps: true
 });
 
-module.exports = mongoose.model('Session', sessionSchema);
+export = mongoose.model('Session', sessionSchema);
