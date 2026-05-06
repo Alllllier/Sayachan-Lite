@@ -1,0 +1,41 @@
+# Schema Island Unified Build Inclusion Prep V1
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Schema Island Unified Build Inclusion Prep V1`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Inspected the schema typed island and unified backend build path.
+  - Determined that `backend/src/routes/schemas/mutations.ts` should not be added to the unified backend build in this sprint.
+  - Left backend code, package scripts, schema facade, generated artifacts, runtime imports, and public Zod/API behavior unchanged.
+  - Captured the exact blockers that make immediate unified-build inclusion unsafe.
+- Validation summary:
+  - `npm --prefix backend run check:schema-island` passed.
+    - Confirmed checked-in schema generated artifacts remain in sync with `mutations.ts`.
+  - `npm --prefix backend run check:backend-build` passed.
+    - Confirmed the current unified backend dry-run build, boundary guard, and dist runtime smoke remain green.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If skipped, why skipping was acceptable:
+    - This sprint produced a build-boundary finding and did not change runtime code, route behavior, UI, frontend behavior, API contracts, or Zod validation behavior.
+- Unverified areas:
+  - `npm run lint:backend` was not run.
+    - No backend script or source file was changed.
+  - `npm --prefix backend test` was not run.
+    - No runtime-facing backend behavior changed.
+  - `npm run check` was not run.
+    - The scoped schema and backend build checks were the relevant validation for this prep slice.
+- Residual risks or escalations:
+  - The schema island still depends on the temporary generated/facade shape until a later approved cutover path exists.
+  - `backend/tsconfig.json` still uses `noResolve: true` to keep the unified dry-run from pulling private core into the backend build.
+  - Future schema retirement will need to coordinate facade output, TS source output, private-core resolution, and dist runtime authority in one planned step.
+- Documentation-sync outcome: `reviewed, no update needed`
+- Follow-up routing:
+  - Human/PMO approval is still required before:
+    - deleting schema generated artifacts or facade
+    - switching runtime from `node src/server.js` to `node dist/server.js`
+    - including `backend/private_core/**` in backend build resolution
+    - replacing `noResolve: true` with a broader build architecture
+    - changing public API or Zod behavior
+    - expanding root `npm run check`

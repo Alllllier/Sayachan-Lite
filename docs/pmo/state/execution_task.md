@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Backend Dist Runtime Smoke Harness V1`
+- Sprint: `Schema Island Unified Build Inclusion Prep V1`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/backend-dist-runtime-smoke-harness-v1.md`
+- Report surface: `docs/pmo/history/reports/schema-island-unified-build-inclusion-prep-v1.md`
 
 ## Next Activation Rule
 
