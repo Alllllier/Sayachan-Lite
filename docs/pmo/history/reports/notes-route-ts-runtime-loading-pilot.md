@@ -1,0 +1,46 @@
+# Notes Route TS Runtime Loading Pilot
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Notes Route TS Runtime Loading Pilot`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Converted Notes route orchestration into a bounded TypeScript route island at `backend/src/routes/__route_sources__/notesRoutes.ts`.
+  - Kept `backend/src/routes/notesRoutes.js` as the stable CommonJS facade, so `backend/src/routes/index.js` continues to load Notes through the unchanged `require('./notesRoutes')` path.
+  - Added checked-in generated Notes route artifacts under `backend/src/routes/__generated__/`.
+  - Added `backend/tsconfig.notes-route-island.json`.
+  - Added backend scripts:
+    - `npm --prefix backend run build:notes-route-island`
+    - `npm --prefix backend run check:notes-route-island`
+  - Added root forwarding script `npm run check:notes-route-island` and included it in root `npm run check`.
+  - Added `backend/scripts/checkNotesRouteIslandGenerated.js`, which compiles the Notes route island into a temporary directory and compares fresh output with checked-in `notesRoutes.js` and `notesRoutes.d.ts` artifacts.
+  - Updated the DTO pilot config only as needed for the new Notes route facade/declaration path; the DTO pilot script remains present.
+  - Updated PMO baseline docs to record the new Notes route island runtime/build/check truth.
+  - Notes create/update route typing consumes `NoteCreateDto` and `NoteUpdateDto` from the existing mutation schema generated declarations; no DTO body shapes were manually duplicated.
+- Validation summary:
+  - `npm --prefix backend run build:notes-route-island`: `passed`
+  - `npm --prefix backend run check:notes-route-island`: `passed`
+  - Stale-artifact proof: temporarily changed `backend/src/routes/__generated__/notesRoutes.js`, then `npm --prefix backend run check:notes-route-island` failed as expected with `Notes route-island generated artifacts are stale` and named `src/routes/__generated__/notesRoutes.js`; `npm --prefix backend run build:notes-route-island` restored the generated artifact afterward.
+  - `npm --prefix backend run check:schema-island`: `passed`
+  - `npm --prefix backend run typecheck:dto-pilot`: `passed`
+  - `npm --prefix backend test -- test/routes.contract-baseline.test.js`: `passed`
+  - `npm --prefix backend test`: `passed`
+  - `npm run check`: `passed`
+    - Root check now includes both schema-island and Notes route-island generated-artifact guardrails.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states: `n/a`
+  - If skipped, why skipping was acceptable: the sprint changed backend route implementation/loading internals only; no frontend surface, browser behavior, UI rendering, or public API contract changed.
+- Unverified areas:
+  - No browser/UI review was performed because frontend work was out of scope.
+  - The route island validates the Notes route boundary, but service/model/middleware implementations remain JavaScript and are not deeply typed.
+- Residual risks or escalations:
+  - Pattern repeatability: feasible for another single route, but somewhat heavy. Each route island needs a source folder, tsconfig, generated artifacts, facade, guardrail, and DTO pilot coordination. Repeating this for Projects/Tasks one by one may create enough scaffolding that backend build/runtime planning becomes cleaner.
+  - The current route island uses small route-local type boundaries for JS services and middleware rather than large hand-written `.d.ts` surfaces. That kept scope controlled, but it means TypeScript constrains route orchestration and DTO handoff more than service internals.
+  - DTO pilot remains partially in place for Projects/Tasks and for narrow JS bridge coverage; forced retirement would be premature.
+  - Generated CommonJS route artifacts are transitional migration scaffolding until a broader backend TypeScript runtime/build direction is approved.
+- Documentation-sync outcome: `updated`
+- Follow-up routing:
+  - None blocking this sprint.
+  - PMO should decide before migrating Projects/Tasks whether to repeat this route-island pattern or promote a backend build/runtime planning sprint. My recommendation: do not mechanically repeat beyond one more route without evaluating the accumulated scaffolding cost.

@@ -11,6 +11,8 @@
     "typecheck:dto-pilot": "tsc -p tsconfig.dto-pilot.json",
     "build:schema-island": "tsc -p tsconfig.schema-island.json",
     "check:schema-island": "node scripts/checkSchemaIslandGenerated.js",
+    "build:notes-route-island": "tsc -p tsconfig.notes-route-island.json",
+    "check:notes-route-island": "node scripts/checkNotesRouteIslandGenerated.js",
     "bootstrap:owner": "node scripts/bootstrapOwner.mjs",
     "normalize:legacy-archived-tasks": "node scripts/normalizeLegacyArchivedTasks.js"
   },

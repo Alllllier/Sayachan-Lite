@@ -7,7 +7,7 @@
     "module": "CommonJS",
     "moduleResolution": "Node",
     "lib": ["ES2022"],
-    "types": ["node"],
+    "types": ["node", "koa"],
     "strict": false,
     "noResolve": true,
     "skipLibCheck": true
@@ -16,6 +16,7 @@
     "src/middleware/requestBodyValidation.js",
     "node_modules/zod/index.d.cts",
     "src/routes/schemas/mutations.ts",
+    "src/routes/__generated__/notesRoutes.d.ts",
     "src/routes/notesRoutes.js",
     "src/routes/projectsRoutes.js",
     "src/routes/tasksRoutes.js"

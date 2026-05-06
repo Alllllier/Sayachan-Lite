@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Backend Type-Island Guardrail V1`
+- Sprint: `Notes Route TS Runtime Loading Pilot`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/backend-type-island-guardrail-v1.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/notes-route-ts-runtime-loading-pilot.md`
 
 ## Next Use
 

@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "lib": ["ES2022"],
+    "types": ["node", "koa"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "sourceMap": false,
+    "declarationMap": false,
+    "rootDir": "src/routes/__route_sources__",
+    "outDir": "src/routes/__generated__",
+    "noEmitOnError": true
+  },
+  "include": [
+    "src/routes/__route_sources__/notesRoutes.ts"
+  ]
+}
