@@ -1,4 +1,25 @@
-function buildArchiveFilter(archived) {
+type QueryFilter = Record<string, unknown>;
+
+type DocumentLike = Record<string, any> & {
+  toObject?: () => Record<string, any>;
+};
+
+type FindableModel = {
+  find(filter: unknown): Promise<DocumentLike[]>;
+};
+
+type BulkWritableModel = {
+  bulkWrite(operations: unknown[]): Promise<{ modifiedCount?: number }>;
+};
+
+type TaskModel = FindableModel & BulkWritableModel;
+
+type ProjectModel = {
+  findOne(filter: unknown): Promise<DocumentLike | null>;
+  findOneAndUpdate(filter: unknown, update: unknown): Promise<unknown>;
+};
+
+function buildArchiveFilter(archived: unknown): QueryFilter {
   if (archived === 'true') {
     return { archived: true };
   }
@@ -6,8 +27,14 @@ function buildArchiveFilter(archived) {
   return { archived: { $ne: true } };
 }
 
-function combineFilters(...filters) {
-  const clauses = filters.filter((filter) => filter && Object.keys(filter).length > 0);
+function isObjectFilter(filter: unknown): filter is QueryFilter {
+  return Boolean(filter) && typeof filter === 'object' && !Array.isArray(filter);
+}
+
+function combineFilters(...filters: unknown[]): QueryFilter {
+  const clauses = filters.filter((filter): filter is QueryFilter => (
+    isObjectFilter(filter) && Object.keys(filter).length > 0
+  ));
 
   if (clauses.length === 0) {
     return {};
@@ -22,26 +49,26 @@ function combineFilters(...filters) {
   };
 }
 
-function projectTaskRelationFilter(projectId) {
+function projectTaskRelationFilter(projectId: unknown): QueryFilter {
   return {
     originModule: 'project',
     originId: projectId
   };
 }
 
-function projectTaskReadFilter(projectId) {
+function projectTaskReadFilter(projectId: unknown): QueryFilter {
   return projectTaskRelationFilter(projectId);
 }
 
-function projectTaskCascadeFilter(projectId) {
+function projectTaskCascadeFilter(projectId: unknown): QueryFilter {
   return projectTaskRelationFilter(projectId);
 }
 
-function isArchivedEntity(entity) {
+function isArchivedEntity(entity: DocumentLike | null | undefined): boolean {
   return entity?.archived === true;
 }
 
-function deriveTaskLifecycleStatus(task) {
+function deriveTaskLifecycleStatus(task: DocumentLike | null | undefined): string {
   if (task?.status) {
     return task.status;
   }
@@ -49,7 +76,7 @@ function deriveTaskLifecycleStatus(task) {
   return task?.completed ? 'completed' : 'active';
 }
 
-function deriveProjectLifecycleStatus(project) {
+function deriveProjectLifecycleStatus(project: DocumentLike | null | undefined): string {
   if (project?.status && project.status !== 'archived') {
     return project.status;
   }
@@ -57,7 +84,7 @@ function deriveProjectLifecycleStatus(project) {
   return 'pending';
 }
 
-function normalizeTask(task) {
+function normalizeTask<TTask extends DocumentLike | null | undefined>(task: TTask) {
   if (!task) {
     return task;
   }
@@ -73,7 +100,7 @@ function normalizeTask(task) {
   };
 }
 
-function normalizeProject(project) {
+function normalizeProject<TProject extends DocumentLike | null | undefined>(project: TProject) {
   if (!project) {
     return project;
   }
@@ -87,7 +114,7 @@ function normalizeProject(project) {
   };
 }
 
-function normalizeNote(note) {
+function normalizeNote<TNote extends DocumentLike | null | undefined>(note: TNote) {
   if (!note) {
     return note;
   }
@@ -99,11 +126,11 @@ function normalizeNote(note) {
   };
 }
 
-function isProjectOwnedTask(task) {
+function isProjectOwnedTask(task: DocumentLike | null | undefined): boolean {
   return task?.originModule === 'project' && task?.originId;
 }
 
-async function clearFocusForTask(Project, taskId, reason, userId) {
+async function clearFocusForTask(Project: ProjectModel, taskId: unknown, reason: string, userId: unknown): Promise<boolean> {
   if (!taskId || !userId) {
     return false;
   }
@@ -123,7 +150,7 @@ async function clearFocusForTask(Project, taskId, reason, userId) {
   return true;
 }
 
-async function archiveTasks(Task, taskFilter) {
+async function archiveTasks(Task: TaskModel, taskFilter: unknown): Promise<number> {
   const tasks = await Task.find(combineFilters(taskFilter, buildArchiveFilter('false')));
 
   if (tasks.length === 0) {
@@ -146,7 +173,7 @@ async function archiveTasks(Task, taskFilter) {
   return result.modifiedCount || 0;
 }
 
-async function restoreTasks(Task, taskFilter) {
+async function restoreTasks(Task: TaskModel, taskFilter: unknown): Promise<number> {
   const tasks = await Task.find(combineFilters(taskFilter, buildArchiveFilter('true')));
 
   if (tasks.length === 0) {

@@ -19,6 +19,7 @@
   "include": [
     "src/**/*.js",
     "src/middleware/requestBodyValidation.ts",
+    "src/services/taskRuntimeHelpers.ts",
     "src/routes/notesRoutes.ts",
     "src/routes/projectsRoutes.ts",
     "src/routes/tasksRoutes.ts",
@@ -28,6 +29,7 @@
     "src/routes/notesRoutes.js",
     "src/routes/projectsRoutes.js",
     "src/routes/tasksRoutes.js",
-    "src/middleware/requestBodyValidation.js"
+    "src/middleware/requestBodyValidation.js",
+    "src/services/taskRuntimeHelpers.js"
   ]
 }

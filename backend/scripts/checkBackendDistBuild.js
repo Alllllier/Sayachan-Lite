@@ -206,6 +206,23 @@ function assertRequestBodyValidationDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertTaskRuntimeHelpersDistArtifactFromTypeScriptSource() {
+  const helpersDistSource = fs.readFileSync(path.join(distRoot, 'services', 'taskRuntimeHelpers.js'), 'utf8');
+
+  assert(
+    helpersDistSource.includes('function normalizeTask'),
+    'dist taskRuntimeHelpers artifact must preserve normalizeTask.'
+  );
+  assert(
+    helpersDistSource.includes('function clearFocusForTask'),
+    'dist taskRuntimeHelpers artifact must preserve clearFocusForTask.'
+  );
+  assert(
+    helpersDistSource.includes('function isObjectFilter'),
+    'dist taskRuntimeHelpers artifact must be emitted from taskRuntimeHelpers.ts with the typed filter guard.'
+  );
+}
+
 function assertCurrentSourceArtifactsWereEmitted() {
   const sourceFiles = walkFiles(srcRoot)
     .filter(filePath => path.extname(filePath) === '.js')
@@ -221,6 +238,7 @@ function assertCurrentSourceArtifactsWereEmitted() {
 const requiredRuntimeEntrypoints = [
   'server.js',
   path.join('middleware', 'requestBodyValidation.js'),
+  path.join('services', 'taskRuntimeHelpers.js'),
   path.join('routes', 'index.js'),
   path.join('routes', 'ai.js'),
   path.join('routes', 'notesRoutes.js'),
@@ -249,5 +267,6 @@ assertNotesDistArtifactFromTypeScriptSource();
 assertProjectsDistArtifactFromTypeScriptSource();
 assertTasksDistArtifactFromTypeScriptSource();
 assertRequestBodyValidationDistArtifactFromTypeScriptSource();
+assertTaskRuntimeHelpersDistArtifactFromTypeScriptSource();
 
 console.log('Backend dist build boundary check passed.');
