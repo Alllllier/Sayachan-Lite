@@ -47,12 +47,21 @@ Current repo-native validation shape:
 
 - root `npm run check` is the ordinary quality gate for worker validation
 - root `check` aggregates low-noise lint, frontend unit tests, backend tests, and frontend build
+- root exposes focused typecheck scripts for current type-adoption pilots, including frontend task typing and backend DTO typing, but these are not yet part of the default `check` aggregate
 - feature and service behavior tests live alongside frontend feature/service modules
 - browser/UI review baselines live under `frontend/tests/ui-review/<surface>/`
 - current UI review surfaces are Notes, Projects, Dashboard, and Chat
 - UI review remains an explicit separate path through frontend Playwright scripts, not part of the default root gate
 - UI review API mocks include authenticated `/auth/me` responses so guarded app-shell routes render during review
 - UI review screenshots are retained as review artifacts, not golden visual assertions
+
+Current backend type-adoption shape:
+
+- backend runtime remains plain Node/CommonJS through `node src/server.js`; there is no whole-backend `dist` runtime yet
+- `backend/src/routes/schemas/mutations.ts` is the first focused TypeScript schema/DTO island for product mutation validation
+- `npm --prefix backend run build:schema-island` compiles that island into checked-in CommonJS artifacts under `backend/src/routes/schemas/__generated__/`
+- `backend/src/routes/schemas/mutations.js` remains the stable CommonJS facade consumed by existing route modules
+- checked-in generated schema-island artifacts are transitional migration scaffolding and should be removed or replaced when a whole-backend TypeScript build/runtime is approved
 
 ## Public Runtime Surfaces
 
@@ -123,6 +132,8 @@ Backend routes currently split into:
 - `backend/src/routes/projectsRoutes.js`
 - `backend/src/routes/tasksRoutes.js`
 - `backend/src/routes/schemas/mutations.js`
+- `backend/src/routes/schemas/mutations.ts`
+- `backend/src/routes/schemas/__generated__/mutations.js`
 - `backend/src/routes/ai.js`
 - `backend/src/middleware/requestBodyValidation.js`
 - `backend/src/middleware/errorBoundary.js`

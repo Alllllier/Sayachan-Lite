@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "strict": false,
+    "noResolve": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/middleware/requestBodyValidation.js",
+    "node_modules/zod/index.d.cts",
+    "src/routes/schemas/mutations.ts",
+    "src/routes/notesRoutes.js",
+    "src/routes/projectsRoutes.js",
+    "src/routes/tasksRoutes.js"
+  ]
+}

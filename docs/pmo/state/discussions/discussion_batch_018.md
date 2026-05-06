@@ -82,6 +82,9 @@
 - Promoted candidate: `docs/pmo/state/sprint_candidates.md#type-aware-js-pilot-shared-task-boundary`
 - Follow-up from execution: `The task-service pilot passed but used noResolve plus a local Vue ref shim to stay scoped. PMO routed the next step as Type-Aware JS Pilot Phase 2: Shared Frontend Support Boundary, focused on deciding whether apiClient and minimal shared Vue/support typing should become a reusable typed support layer before expanding more feature boundaries.`
 - Phase 2 readiness note: `Human accepted the candidate direction on 2026-05-05. PMO narrowed the ready boundary to apiClient plus minimal Vue/ref support typing only. If the import graph starts pulling in broader frontend modules, the worker should stop and report rather than expanding checkJs scope.`
+- Backend DTO pilot readback: `Type-Aware Backend DTO Pilot completed and validated. It proved that route-level DTO JSDoc/checkJs can express the ctx.state.validatedBody handoff, but it needed noResolve and narrow suppression because normal module resolution quickly pulled service/model/Koa surfaces beyond the safe touch zone. PMO judgment: do not expand backend checkJs from route handlers by default.`
+- Typed-island direction: `Next TypeScript work should move closer to a root/pure source file, starting with the product mutation schema/DTO module as a tiny .ts island. During migration, the .ts source can emit or maintain CommonJS-compatible .js for existing JavaScript routes; when enough backend code has migrated, the repo should retire per-island generated JS and switch to a coherent whole-backend dist runtime.`
+- Current typed-island candidate: `docs/pmo/state/sprint_candidates.md#backend-schema-typed-island-pilot`
 
 ### `slice-003`
 
@@ -123,10 +126,11 @@
 
 - Name: `Typed Islands Migration`
 - Why separate: `Actual .ts migration should be gradual and start with pure rules/helpers, API clients/contracts, Pinia stores, backend services, then route handlers and Vue SFCs only after the lower-risk layers are proven.`
-- Current maturity: `not-shaped`
-- Likely target: `idea_backlog`
+- Current maturity: `candidate-shaped`
+- Likely target: `sprint_candidates | idea_backlog`
 - Parking trigger: `Park until type-aware JS and contract guardrails show useful signal without excessive false positives.`
 - Reopen signal: `Stable typecheck baseline plus a bounded module where TS materially reduces risk or improves worker comprehension.`
+- First backend typed-island candidate: `Backend Schema Typed Island Pilot`
 
 ### `slice-006`
 
@@ -179,6 +183,8 @@
 - The best first modernization slice is likely `Engineering Quality Gate V1`: root validation commands, ESLint flat config, low-noise lint rules, and CI for existing frontend/backend test/build paths.
 - TypeScript should become a staged path rather than a permanent prohibition: first type-aware JavaScript, then typed islands where the risk/reward is obvious.
 - TypeScript should not be executed as a mechanical per-file rewrite. The target shape should be contract-led: introduce or sharpen typed boundaries first, then convert files inside those boundaries when doing so improves correctness, readability, or worker confidence.
+- Backend route files are poor first TS islands because normal module resolution pulls in services, models, Koa ctx, and runtime package typing quickly. Prefer pure schema/DTO/rules modules as the first .ts islands, then move outward only after interop is proven.
+- Backend typed islands may temporarily use generated or facade-backed CommonJS JavaScript so existing JS routes can keep running under plain Node while .ts source becomes the authority. Treat that artifact as migration scaffolding to delete when the backend eventually moves to an overall dist runtime.
 - TypeScript may let the repo delete some no-type scaffolding, but the deletion decision must be classification-driven: keep files that own behavior, side effects, product semantics, runtime validation, or public/private boundaries; simplify or remove files whose main job is duplicating shape assumptions that can become typed contracts.
 - A stronger planning route is to define the TypeScript-era target architecture first, then map the current JavaScript repo into it by responsibility. This makes migration a structured fill-in exercise and identifies delete/merge candidates without making every current file feel like a special case.
 - Package workspace tooling should be delayed until root command consolidation proves insufficient or a real shared package/contract need appears.
@@ -210,4 +216,8 @@
 - Follow-up candidate created from parsed-body pilot: `Parsed Body Rollout: Projects And Tasks`.
 - Parsed Body Rollout: Projects And Tasks executed, validated through focused backend tests, full backend tests, and root `npm run check`, and accepted for closeout.
 - Completed parsed-body rollout report: `docs/pmo/history/reports/parsed-body-rollout-projects-and-tasks.md`
+- Follow-up candidate created from parsed-body rollout and slice-002 direction: `Type-Aware Backend DTO Pilot`.
+- Type-Aware Backend DTO Pilot executed, validated through backend DTO typecheck, focused backend tests, full backend tests, and root `npm run check`, and accepted for closeout.
+- Completed backend DTO pilot report: `docs/pmo/history/reports/type-aware-backend-dto-pilot.md`
+- Follow-up candidate created from backend DTO pilot: `Backend Schema Typed Island Pilot`.
 - `slice-004` through `slice-007` remain discussion-shaped follow-ons until Quality Gate V1, target architecture mapping, or a concrete architecture pressure makes them execution-ready.

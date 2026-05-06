@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Parsed Body Rollout: Projects And Tasks`
+- Sprint: `Backend Schema Typed Island Pilot`
 - Closeout date: `2026-05-06`
 - Delivery status: `completed and validated`
 - Commit state: `not committed in this closeout`
 - Documentation sync outcome: `reviewed, no update needed`
 - Residual note: `none`
-- Report surface: `docs/pmo/history/reports/parsed-body-rollout-projects-and-tasks.md`
+- Report surface: `docs/pmo/history/reports/backend-schema-typed-island-pilot.md`
 
 ## Next PMO Action
 

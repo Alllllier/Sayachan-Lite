@@ -42,6 +42,24 @@
 - Reason: `The task-service pilot passed with JSDoc/checkJs/noEmit but needed noResolve and a local Vue ref shim. The Phase 2 apiClient pilot proved a minimal shared support boundary can be included without broadening the graph, while also confirming that the shim remains a pilot artifact rather than durable frontend-wide typing.`
 - Follow-up: `For the next TypeScript step, choose either another narrow shared support/service pilot or pause to design a durable frontend type-support plan if the next target imports feature modules, Vue SFCs, or broad shared runtime code. Do not promote full-repo checkJs or full TypeScript migration directly from these pilots.`
 
+### `Backend TypeScript should start from pure typed islands, not route checkJs expansion`
+
+- Date: `2026-05-06`
+- Type: `transition-rule`
+- Scope: `backend TypeScript migration, DTO typing, route/service boundaries, and typed-island sequencing`
+- Decision: `Do not expand backend TypeScript by broadly enabling checkJs from route handlers. Route-level DTO JSDoc/checkJs may be useful as a diagnostic pilot, but durable backend TypeScript migration should start from pure, low-dependency typed islands such as product mutation schemas/DTOs before moving outward to services and routes.`
+- Reason: `The Type-Aware Backend DTO Pilot passed validation but required noResolve and narrow suppression to avoid TypeScript pulling services, models, Koa ctx, and runtime package surfaces into the check graph. That is a useful signal that route handlers are integration hubs, not good first typed islands.`
+- Follow-up: `Shape Backend Schema Typed Island Pilot next. Before activation, confirm CommonJS route interop and build/typecheck conventions so the schema island does not force broad module-system or route conversion work.`
+
+### `Backend typed islands may use transitional generated CommonJS artifacts`
+
+- Date: `2026-05-06`
+- Type: `transition-rule`
+- Scope: `backend TypeScript migration interop, CommonJS runtime, generated JavaScript artifacts, and final dist migration`
+- Decision: `During gradual backend TypeScript migration, a typed island may use a .ts source file as the authority and provide generated or facade-backed CommonJS-compatible .js for existing JavaScript consumers. This is a transitional migration pattern, not the final backend runtime shape. As typed islands expand and the backend can run through a coherent build output, the generated per-island JavaScript should be deleted or retired in favor of a whole-backend dist runtime.`
+- Reason: `The backend currently runs plain CommonJS through node src/server.js, so existing routes cannot directly require .ts files. A transitional generated-JS/facade convention lets the repo gain typed source-of-truth files without immediately redesigning backend startup, deployment, or every route/service import.`
+- Follow-up: `Backend Schema Typed Island Pilot may proceed with this convention. Closeout should document where generated/facade JS lives, whether it is committed or build-produced, and what condition later triggers cleanup into the final dist-based backend runtime.`
+
 ### `Repo constraints are JavaScript-first, not early-stage freeze rules`
 
 - Date: `2026-05-05`

@@ -20,6 +20,14 @@ It is a truth baseline, not a protocol and not a policy file.
 - Note, Project, and Task product services require `userId` and do not support unowned single-user content reads or writes
 - owner bootstrap may be invoked by API or by `npm run bootstrap:owner` from the backend workspace, which calls the same API against a configured backend URL
 
+## Backend Type Boundary
+
+- the backend API runtime remains CommonJS and does not require a whole-backend build before `node src/server.js`
+- Notes, Projects, and Tasks mutation schemas are authored in `backend/src/routes/schemas/mutations.ts`
+- existing route modules consume those schemas through the stable CommonJS facade at `backend/src/routes/schemas/mutations.js`
+- schema-island build output lives under `backend/src/routes/schemas/__generated__/` and is checked in as transitional migration scaffolding
+- this type boundary does not change route URLs, request bodies, parsed DTO behavior, or public error payloads
+
 ## Current Models
 
 ### Note

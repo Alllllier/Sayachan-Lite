@@ -1,0 +1,36 @@
+# Type-Aware Backend DTO Pilot
+
+- Archived date: `2026-05-06`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Type-Aware Backend DTO Pilot`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Added `backend/tsconfig.dto-pilot.json` with `allowJs`, `checkJs`, `noEmit`, and a narrow include list limited to the DTO pilot middleware, schema, and Notes/Projects/Tasks route files.
+  - Added backend script `typecheck:dto-pilot` and root forwarding script `typecheck:backend-dto`.
+  - Added backend-local TypeScript tooling dependencies in `backend/package.json` and `backend/package-lock.json`.
+  - Added focused JSDoc DTO typedefs for Notes, Projects, and Tasks create/update mutation payloads beside the existing Zod mutation schemas.
+  - Annotated `assertZodSchema` and `validateBody` with structural safe-parse/request-body schema types so `ctx.state.validatedBody` has a typed DTO handoff without changing runtime behavior.
+  - Added route-local DTO annotations for Notes/Projects/Tasks create/update handlers before service calls.
+  - Kept the schema definitions, `.passthrough()` behavior, validation error shape, raw `ctx.request.body` behavior, and service/model runtime code unchanged.
+  - Recommendation: `expand backend DTO typing incrementally`, using narrow pilot configs per boundary. Do not expand by enabling broad module resolution/checkJs over services until PMO approves the next slice.
+- Validation summary:
+  - `npm --prefix backend run typecheck:dto-pilot`: `passed`
+  - `npm --prefix backend test -- test/routes.contract-baseline.test.js`: `passed`, 13 tests.
+  - `npm --prefix backend test`: `passed`, 40 tests.
+  - `npm run check`: `passed`; frontend lint, backend lint, frontend tests, backend tests, and frontend build completed. Vite emitted the existing large chunk warning during build.
+  - Runtime behavior and public validation responses were checked through the focused route contract tests, especially the parsed-body rollout and validation-response cases.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states: `n/a`
+  - If skipped, why skipping was acceptable: this sprint changed backend-only type annotations, package scripts, and no-emission typecheck config. It did not change frontend interaction, rendering, routing, or browser-visible behavior.
+- Unverified areas:
+  - Browser validation was not performed because no UI or browser behavior changed.
+  - UI review was not performed because the sprint did not touch frontend files or presentation behavior.
+- Residual risks or escalations:
+  - The pilot intentionally uses `noResolve: true` to keep checkJs from pulling broad backend service/model surfaces. When module resolution was allowed, TypeScript began checking service files outside the safe touch zone, so broader backend typechecking should remain a separate PMO-approved sprint.
+  - The DTO typedefs are structural mirrors of the existing Zod schemas rather than inferred Zod types, because external type resolution would broaden the pilot. Future expansion should decide whether to introduce focused shims or a different typed boundary strategy.
+- Documentation-sync outcome: `reviewed, no update needed`
+- Follow-up routing:
+  - No blocking escalation remains for this sprint.
+  - PMO should decide whether the next slice expands DTO typing to service signatures, introduces focused type shims, or pauses until a broader backend typing strategy is approved.

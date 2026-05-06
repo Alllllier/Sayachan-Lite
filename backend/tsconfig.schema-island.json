@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "sourceMap": false,
+    "declarationMap": false,
+    "rootDir": "src/routes/schemas",
+    "outDir": "src/routes/schemas/__generated__",
+    "noEmitOnError": true
+  },
+  "include": [
+    "src/routes/schemas/mutations.ts"
+  ]
+}

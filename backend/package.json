@@ -8,6 +8,8 @@
     "dev": "node src/server.js",
     "lint": "npm --prefix .. run lint:backend",
     "test": "node --test",
+    "typecheck:dto-pilot": "tsc -p tsconfig.dto-pilot.json",
+    "build:schema-island": "tsc -p tsconfig.schema-island.json",
     "bootstrap:owner": "node scripts/bootstrapOwner.mjs",
     "normalize:legacy-archived-tasks": "node scripts/normalizeLegacyArchivedTasks.js"
   },
@@ -24,5 +26,9 @@
     "mongoose": "^9.3.3",
     "openai": "^6.34.0",
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.9.3"
   }
 }

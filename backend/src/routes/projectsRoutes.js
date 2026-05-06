@@ -1,3 +1,4 @@
+// @ts-ignore dto-pilot keeps module resolution narrow and relies on runtime package loading.
 const Router = require('@koa/router');
 const projectsService = require('../services/projectsService');
 const { requireCurrentUser } = require('../middleware/currentUser');
@@ -17,6 +18,7 @@ router.get('/projects', requireCurrentUser, async (ctx) => {
 
 // POST /projects
 router.post('/projects', requireCurrentUser, validateBody(projectCreateSchema), async (ctx) => {
+  /** @type {import('./schemas/mutations').ProjectCreateDto} */
   const body = ctx.state.validatedBody;
   ctx.status = 201;
   ctx.body = await projectsService.createProject(body, { userId: ctx.state.userId });
@@ -25,6 +27,7 @@ router.post('/projects', requireCurrentUser, validateBody(projectCreateSchema), 
 // PUT /projects/:id
 router.put('/projects/:id', requireCurrentUser, validateBody(projectUpdateSchema), async (ctx) => {
   const id = ctx.params.id;
+  /** @type {import('./schemas/mutations').ProjectUpdateDto} */
   const body = ctx.state.validatedBody;
   const project = await projectsService.updateProject(id, body, { userId: ctx.state.userId });
   if (!project) {

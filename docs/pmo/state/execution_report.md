@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Parsed Body Rollout: Projects And Tasks`
+- Sprint: `Backend Schema Typed Island Pilot`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/parsed-body-rollout-projects-and-tasks.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/backend-schema-typed-island-pilot.md`
 
 ## Next Use
 

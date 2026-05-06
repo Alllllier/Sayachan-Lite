@@ -16,6 +16,19 @@ The current intended product loop is still:
 
 This loop is implemented across multiple surfaces rather than through a single workflow engine.
 
+## Backend Type-Island Runtime
+
+The backend still starts and runs as plain Node/CommonJS, not as a whole compiled TypeScript `dist` runtime.
+
+Current transitional type-island truth:
+
+- product mutation schemas and DTO types are authored in `backend/src/routes/schemas/mutations.ts`
+- `npm --prefix backend run build:schema-island` emits checked-in CommonJS artifacts under `backend/src/routes/schemas/__generated__/`
+- existing Notes, Projects, and Tasks route modules still consume `backend/src/routes/schemas/mutations.js`
+- `backend/src/routes/schemas/mutations.js` is a stable facade over the generated artifact so route import paths do not churn during migration
+- generated schema-island files are migration scaffolding and should be regenerated after edits to `mutations.ts`
+- the long-term cleanup target is to remove this facade/generated-source pattern once the backend has an approved whole-TypeScript build/runtime path
+
 ## Auth And Account Runtime
 
 Current phase-one auth runtime:
