@@ -1,60 +1,39 @@
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 const SESSION_TOKEN_KEY = 'sayachan_session_token'
 
-/**
- * @typedef {Record<string, string>} ApiHeaderMap
- * @typedef {Omit<RequestInit, 'headers'> & {
- *   headers?: ApiHeaderMap
- * }} ApiFetchOptions
- */
+type ApiHeaderMap = Record<string, string>
+type FetchOptions = NonNullable<Parameters<typeof fetch>[1]>
+type ApiFetchOptions = Omit<FetchOptions, 'headers'> & {
+  headers?: ApiHeaderMap
+}
 
-/**
- * @returns {Storage | undefined}
- */
-function getStorage() {
+function getStorage(): Storage | undefined {
   return globalThis.localStorage
 }
 
-/**
- * @returns {string | null}
- */
-export function getAuthToken() {
+export function getAuthToken(): string | null {
   return getStorage()?.getItem(SESSION_TOKEN_KEY) || null
 }
 
-/**
- * @param {string | null | undefined} token
- * @returns {void}
- */
-export function setAuthToken(token) {
+export function setAuthToken(token: string | null | undefined): void {
   if (token) {
     getStorage()?.setItem(SESSION_TOKEN_KEY, token)
   }
 }
 
-/**
- * @returns {void}
- */
-export function clearAuthToken() {
+export function clearAuthToken(): void {
   getStorage()?.removeItem(SESSION_TOKEN_KEY)
 }
 
-/**
- * @param {string} path
- * @param {ApiFetchOptions} [options]
- * @returns {Promise<Response>}
- */
-export function apiFetch(path, options = {}) {
+export function apiFetch(path: string, options: ApiFetchOptions = {}): Promise<Response> {
   const url = path.startsWith('http') ? path : `${API_BASE}${path}`
   const authToken = getAuthToken()
-  /** @type {ApiHeaderMap} */
-  const headers = {
+  const headers: ApiHeaderMap = {
     ...(options.body ? { 'Content-Type': 'application/json' } : {}),
     ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     ...(options.headers || {})
   }
-  /** @type {RequestInit} */
-  const fetchOptions = {
+  const fetchOptions: FetchOptions = {
     ...options,
     credentials: 'include'
   }

@@ -1,18 +1,22 @@
 const CACHE_PREFIX = 'sayachan_resource_cache'
 
-function getStorage() {
+function getStorage(): Storage | undefined {
   return globalThis.localStorage
 }
 
-function safeUserKey(userKey) {
+function safeUserKey(userKey: unknown): string {
   return encodeURIComponent(String(userKey || 'anonymous'))
 }
 
-function safePart(part) {
+function safePart(part: unknown): string {
   return encodeURIComponent(String(part || 'default'))
 }
 
-export function buildResourceCacheKey(userKey, resourceName, variant = 'default') {
+export function buildResourceCacheKey(
+  userKey: unknown,
+  resourceName: unknown,
+  variant: unknown = 'default'
+): string {
   return [
     CACHE_PREFIX,
     safeUserKey(userKey),
@@ -21,7 +25,11 @@ export function buildResourceCacheKey(userKey, resourceName, variant = 'default'
   ].join(':')
 }
 
-export function readResourceCache(userKey, resourceName, variant = 'default') {
+export function readResourceCache<T = unknown>(
+  userKey: unknown,
+  resourceName: unknown,
+  variant: unknown = 'default'
+): T | null {
   try {
     const raw = getStorage()?.getItem(buildResourceCacheKey(userKey, resourceName, variant))
     if (!raw) return null
@@ -32,7 +40,12 @@ export function readResourceCache(userKey, resourceName, variant = 'default') {
   }
 }
 
-export function writeResourceCache(userKey, resourceName, variant = 'default', data) {
+export function writeResourceCache(
+  userKey: unknown,
+  resourceName: unknown,
+  variant: unknown = 'default',
+  data: unknown
+): void {
   try {
     getStorage()?.setItem(
       buildResourceCacheKey(userKey, resourceName, variant),
@@ -43,7 +56,7 @@ export function writeResourceCache(userKey, resourceName, variant = 'default', d
   }
 }
 
-export function clearResourceCache() {
+export function clearResourceCache(): void {
   const storage = getStorage()
   if (!storage) return
 

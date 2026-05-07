@@ -2,22 +2,44 @@ import { useCockpitSignals } from '../stores/cockpitSignals'
 
 import { apiFetch, API_BASE } from './apiClient'
 
-export function deriveCockpitSnapshot(projects, tasks) {
+type CockpitProject = {
+  _id?: unknown
+  name?: string
+  archived?: boolean
+  isPinned?: boolean
+  currentFocusTaskId?: unknown
+}
+
+type CockpitTask = {
+  _id?: unknown
+  title?: string
+  archived?: boolean
+  status?: string
+}
+
+export type CockpitSnapshot = {
+  activeProjectsCount: number
+  activeTasksCount: number
+  pinnedProjectName: string
+  currentNextAction: string
+}
+
+export function deriveCockpitSnapshot(projects: unknown, tasks: unknown): CockpitSnapshot {
   const safeProjects = Array.isArray(projects) ? projects : []
   const safeTasks = Array.isArray(tasks) ? tasks : []
 
-  const activeProjectsCount = safeProjects.filter(p => !p.archived).length
-  const activeTasksCount = safeTasks.filter(t => !t.archived && t.status !== 'completed').length
-  const pinnedProject = safeProjects.find(p => p.isPinned && !p.archived)
+  const activeProjectsCount = safeProjects.filter((p: CockpitProject) => !p.archived).length
+  const activeTasksCount = safeTasks.filter((t: CockpitTask) => !t.archived && t.status !== 'completed').length
+  const pinnedProject = safeProjects.find((p: CockpitProject) => p.isPinned && !p.archived)
   const pinnedProjectName = pinnedProject?.name || ''
 
   const focusProject = safeProjects.find(
-    p => !p.archived && p.currentFocusTaskId
+    (p: CockpitProject) => !p.archived && p.currentFocusTaskId
   )
   let currentNextAction = ''
   if (focusProject) {
     const focusTask = safeTasks.find(
-      t => String(t._id) === String(focusProject.currentFocusTaskId)
+      (t: CockpitTask) => String(t._id) === String(focusProject.currentFocusTaskId)
     )
     currentNextAction = focusTask?.title || ''
   }
@@ -30,7 +52,7 @@ export function deriveCockpitSnapshot(projects, tasks) {
   }
 }
 
-export async function refreshCockpitContext() {
+export async function refreshCockpitContext(): Promise<CockpitSnapshot> {
   const cockpitSignals = useCockpitSignals()
 
   try {

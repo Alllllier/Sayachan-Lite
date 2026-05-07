@@ -1,34 +1,24 @@
 import { buildTaskPayload, normalizeSavedTask } from './task.rules.js'
+import type { NormalizedTask, TaskApiTask, TaskUpdatePayload } from './task.rules.js'
 
 import { apiFetch, API_BASE } from '../apiClient'
 
-/** @typedef {import('./task.rules.js').NormalizedTask} ApiNormalizedTask */
-/** @typedef {import('./task.rules.js').TaskApiTask} ApiTask */
-/** @typedef {import('./task.rules.js').TaskUpdatePayload} ApiTaskUpdatePayload */
-
-/**
- * @typedef {Object} FetchTaskListOptions
- * @property {boolean} [archived]
- */
-
-/**
- * @param {FetchTaskListOptions} [options]
- * @returns {Promise<ApiTask[]>}
- */
-export async function fetchTaskList({ archived = false } = {}) {
-  const url = archived ? `${API_BASE}/tasks?archived=true` : `${API_BASE}/tasks`
-  const res = await apiFetch(url)
-  return res.json()
+type FetchTaskListOptions = {
+  archived?: boolean
 }
 
-/**
- * @param {string} title
- * @param {string} creationMode
- * @param {string} [originModule]
- * @param {string | null} [originId]
- * @returns {Promise<ApiNormalizedTask | null | undefined>}
- */
-export async function createTask(title, creationMode, originModule = '', originId = null) {
+export async function fetchTaskList({ archived = false }: FetchTaskListOptions = {}): Promise<TaskApiTask[]> {
+  const url = archived ? `${API_BASE}/tasks?archived=true` : `${API_BASE}/tasks`
+  const res = await apiFetch(url)
+  return res.json() as Promise<TaskApiTask[]>
+}
+
+export async function createTask(
+  title: string,
+  creationMode: string,
+  originModule = '',
+  originId: string | null = null
+): Promise<NormalizedTask | null | undefined> {
   const taskData = buildTaskPayload(
     title,
     creationMode,
@@ -41,30 +31,24 @@ export async function createTask(title, creationMode, originModule = '', originI
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(taskData)
   })
-  const savedTask = await res.json()
+  const savedTask = await res.json() as TaskApiTask | null | undefined
   return normalizeSavedTask(savedTask)
 }
 
-/**
- * @param {string} taskId
- * @param {ApiTaskUpdatePayload} payload
- * @returns {Promise<ApiNormalizedTask | null | undefined>}
- */
-export async function updateTask(taskId, payload) {
+export async function updateTask(
+  taskId: string,
+  payload: TaskUpdatePayload
+): Promise<NormalizedTask | null | undefined> {
   const res = await apiFetch(`${API_BASE}/tasks/${taskId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   })
-  const updatedTask = await res.json()
+  const updatedTask = await res.json() as TaskApiTask | null | undefined
   return normalizeSavedTask(updatedTask)
 }
 
-/**
- * @param {string} taskId
- * @returns {Promise<void>}
- */
-export async function deleteTask(taskId) {
+export async function deleteTask(taskId: string): Promise<void> {
   const res = await apiFetch(`${API_BASE}/tasks/${taskId}`, {
     method: 'DELETE'
   })
@@ -73,19 +57,14 @@ export async function deleteTask(taskId) {
   }
 }
 
-/**
- * @param {string} projectId
- * @param {boolean} [archived]
- * @returns {Promise<ApiTask[]>}
- */
-export async function fetchProjectTasks(projectId, archived = false) {
+export async function fetchProjectTasks(projectId: string, archived = false): Promise<TaskApiTask[]> {
   try {
     let url = `${API_BASE}/tasks?projectId=${projectId}`
     if (archived) {
       url += '&archived=true'
     }
     const res = await apiFetch(url)
-    const tasks = await res.json()
+    const tasks = await res.json() as TaskApiTask[]
     return tasks
   } catch (e) {
     console.error('Failed to fetch project tasks:', e)
@@ -93,12 +72,7 @@ export async function fetchProjectTasks(projectId, archived = false) {
   }
 }
 
-/**
- * @param {string} projectId
- * @param {boolean} [projectArchived]
- * @returns {Promise<ApiTask[]>}
- */
-export async function fetchProjectCardTasks(projectId, projectArchived = false) {
+export async function fetchProjectCardTasks(projectId: string, projectArchived = false): Promise<TaskApiTask[]> {
   if (projectArchived) {
     return fetchProjectTasks(projectId, true)
   }
