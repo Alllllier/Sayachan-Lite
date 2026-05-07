@@ -1,21 +1,21 @@
-type ApiId = string
-type ApiDateString = string
+export type ApiId = string
+export type ApiDateString = string
 
-type AuthRole = 'owner' | 'tester'
-type ProjectStatus = 'pending' | 'in_progress' | 'completed' | 'on_hold'
-type ChatPersonalityBaseline = 'warm' | 'strict' | 'haraguro'
-type ChatConvergenceMode = 'explore' | 'guided' | 'decisive'
+export type AuthRole = 'owner' | 'tester'
+export type ProjectStatus = 'pending' | 'in_progress' | 'completed' | 'on_hold'
+export type ChatPersonalityBaseline = 'warm' | 'strict' | 'haraguro'
+export type ChatConvergenceMode = 'explore' | 'guided' | 'decisive'
 
-type AuthCredentialsDto = {
+export type AuthCredentialsDto = {
   email: string
   password: string
 }
 
-type RegisterTesterDto = AuthCredentialsDto & {
+export type RegisterTesterDto = AuthCredentialsDto & {
   inviteCode: string
 }
 
-type PublicUserDto = {
+export type PublicUserDto = {
   _id?: ApiId | null
   email?: string
   role?: AuthRole
@@ -25,13 +25,13 @@ type PublicUserDto = {
   lastLoginAt?: ApiDateString | null
 }
 
-type AuthLoginResponseDto = {
+export type AuthLoginResponseDto = {
   sessionToken?: string
   user?: PublicUserDto | null
   error?: string
 }
 
-type PublicInviteDto = {
+export type PublicInviteDto = {
   _id?: ApiId | null
   codePreview?: string
   createdBy?: ApiId | null
@@ -42,11 +42,11 @@ type PublicInviteDto = {
   createdAt?: ApiDateString | null
 }
 
-type CreatedInviteDto = PublicInviteDto & {
+export type CreatedInviteDto = PublicInviteDto & {
   code?: string
 }
 
-type OwnerSystemStatusDto = {
+export type OwnerSystemStatusDto = {
   userCount: number
   testerCount: number
   activeInviteCount: number
@@ -54,56 +54,56 @@ type OwnerSystemStatusDto = {
   roles: AuthRole[]
 }
 
-type FetchListOptionsDto = {
+export type FetchListOptionsDto = {
   archived?: boolean
 }
 
-type NoteWriteDto = {
+export type NoteWriteDto = {
   title: string
   content: string
 }
 
-type NoteDto = NoteWriteDto & {
+export type NoteDto = NoteWriteDto & {
   _id?: ApiId
   archived?: boolean
   isPinned?: boolean
   updatedAt?: ApiDateString
 }
 
-type ProjectWriteDto = {
+export type ProjectWriteDto = {
   name: string
   summary: string
   status: ProjectStatus
   currentFocusTaskId?: ApiId | null
 }
 
-type ProjectDto = ProjectWriteDto & {
+export type ProjectDto = ProjectWriteDto & {
   _id?: ApiId
   archived?: boolean
   isPinned?: boolean
   updatedAt?: ApiDateString
 }
 
-type AiResourceRequestDto = {
+export type AiResourceRequestDto = {
   _id: ApiId
 }
 
-type NoteTaskDraftsResponseDto = {
+export type NoteTaskDraftsResponseDto = {
   drafts: string[]
 }
 
-type ProjectNextActionsResponseDto = {
+export type ProjectNextActionsResponseDto = {
   suggestions: string[]
 }
 
-type ChatMessageDto = {
+export type ChatMessageDto = {
   role: string
   content?: string
 }
 
-type ChatContextDto = Record<string, unknown> | null
+export type ChatContextDto = Record<string, unknown> | null
 
-type ChatRuntimeControlsDto = {
+export type ChatRuntimeControlsDto = {
   personalityBaseline?: ChatPersonalityBaseline
   futureSlots?: {
     warmth?: number
@@ -114,10 +114,10 @@ type ChatRuntimeControlsDto = {
   }
 }
 
-type ChatRuntimePayloadDto = ChatRuntimeControlsDto & {
+export type ChatRuntimePayloadDto = ChatRuntimeControlsDto & {
   lastUserMessage: string
 }
 
-type ChatResponseDto = {
+export type ChatResponseDto = {
   reply: string
 }

@@ -20,13 +20,13 @@
     "src/services/tasks/task.rules.js",
     "src/services/tasks/task.api.js",
     "src/services/tasks/task.runtime.js",
-    "src/features/auth/auth.api.js",
-    "src/features/chat/chat.api.js",
+    "src/features/auth/auth.api.ts",
+    "src/features/chat/chat.api.ts",
     "src/features/chat/chat.rules.ts",
     "src/features/dashboard/dashboard.rules.ts",
-    "src/features/notes/notes.api.js",
+    "src/features/notes/notes.api.ts",
     "src/features/notes/notes.rules.ts",
-    "src/features/projects/projects.api.js",
+    "src/features/projects/projects.api.ts",
     "src/features/projects/projects.rules.ts"
   ]
 }

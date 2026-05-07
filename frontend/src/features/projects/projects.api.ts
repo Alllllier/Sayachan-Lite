@@ -1,136 +1,96 @@
-// @ts-check
 import { apiFetch, API_BASE } from '../../services/apiClient'
+import type {
+  FetchListOptionsDto,
+  ProjectDto,
+  ProjectNextActionsResponseDto,
+  ProjectWriteDto
+} from '../../types/api-dtos'
 
-/**
- * @template T
- * @param {Response} response
- * @param {string} errorMessage
- * @returns {Promise<T>}
- */
-async function parseJsonResponse(response, errorMessage) {
+async function parseJsonResponse<T>(response: Response, errorMessage: string): Promise<T> {
   if (!response.ok) {
     throw new Error(errorMessage || `Project request failed: ${response.status}`)
   }
 
-  return /** @type {Promise<T>} */ (response.json())
+  return response.json() as Promise<T>
 }
 
-/**
- * @param {FetchListOptionsDto} [options]
- * @returns {Promise<ProjectDto[]>}
- */
-export async function fetchProjects({ archived = false } = {}) {
+export async function fetchProjects({ archived = false }: FetchListOptionsDto = {}): Promise<ProjectDto[]> {
   const url = archived
     ? `${API_BASE}/projects?archived=true`
     : `${API_BASE}/projects`
   const response = await apiFetch(url)
-  return parseJsonResponse(response, 'Fetch projects failed')
+  return parseJsonResponse<ProjectDto[]>(response, 'Fetch projects failed')
 }
 
-/**
- * @param {ProjectWriteDto} project
- * @returns {Promise<ProjectDto>}
- */
-export async function createProject(project) {
+export async function createProject(project: ProjectWriteDto): Promise<ProjectDto> {
   const response = await apiFetch(`${API_BASE}/projects`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(project)
   })
 
-  return parseJsonResponse(response, 'Create project failed')
+  return parseJsonResponse<ProjectDto>(response, 'Create project failed')
 }
 
-/**
- * @param {string} projectId
- * @param {ProjectWriteDto} project
- * @returns {Promise<ProjectDto>}
- */
-export async function updateProject(projectId, project) {
+export async function updateProject(projectId: string, project: ProjectWriteDto): Promise<ProjectDto> {
   const response = await apiFetch(`${API_BASE}/projects/${projectId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(project)
   })
 
-  return parseJsonResponse(response, 'Update project failed')
+  return parseJsonResponse<ProjectDto>(response, 'Update project failed')
 }
 
-/**
- * @param {string} projectId
- * @returns {Promise<void>}
- */
-export async function deleteProject(projectId) {
+export async function deleteProject(projectId: string): Promise<void> {
   const response = await apiFetch(`${API_BASE}/projects/${projectId}`, { method: 'DELETE' })
   if (!response.ok) {
     throw new Error(`Delete project failed: ${response.status}`)
   }
 }
 
-/**
- * @param {string} projectId
- * @returns {Promise<void>}
- */
-export async function archiveProject(projectId) {
+export async function archiveProject(projectId: string): Promise<void> {
   const response = await apiFetch(`${API_BASE}/projects/${projectId}/archive`, { method: 'PUT' })
   if (!response.ok) {
     throw new Error(`Archive project failed: ${response.status}`)
   }
 }
 
-/**
- * @param {string} projectId
- * @returns {Promise<void>}
- */
-export async function restoreProject(projectId) {
+export async function restoreProject(projectId: string): Promise<void> {
   const response = await apiFetch(`${API_BASE}/projects/${projectId}/restore`, { method: 'PUT' })
   if (!response.ok) {
     throw new Error(`Restore project failed: ${response.status}`)
   }
 }
 
-/**
- * @param {string} projectId
- * @returns {Promise<void>}
- */
-export async function pinProject(projectId) {
+export async function pinProject(projectId: string): Promise<void> {
   const response = await apiFetch(`${API_BASE}/projects/${projectId}/pin`, { method: 'PUT' })
   if (!response.ok) {
     throw new Error(`Pin project failed: ${response.status}`)
   }
 }
 
-/**
- * @param {string} projectId
- * @returns {Promise<void>}
- */
-export async function unpinProject(projectId) {
+export async function unpinProject(projectId: string): Promise<void> {
   const response = await apiFetch(`${API_BASE}/projects/${projectId}/unpin`, { method: 'PUT' })
   if (!response.ok) {
     throw new Error(`Unpin project failed: ${response.status}`)
   }
 }
 
-/**
- * @param {string} projectId
- * @returns {Promise<ProjectNextActionsResponseDto>}
- */
-export async function fetchProjectNextActions(projectId) {
+export async function fetchProjectNextActions(projectId: string): Promise<ProjectNextActionsResponseDto> {
   const response = await apiFetch(`${API_BASE}/ai/projects/next-action`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ _id: projectId })
   })
 
-  return parseJsonResponse(response, 'Fetch project next actions failed')
+  return parseJsonResponse<ProjectNextActionsResponseDto>(response, 'Fetch project next actions failed')
 }
 
-/**
- * @param {ProjectWriteDto & { _id: string }} project
- * @param {string} taskId
- * @returns {Promise<ProjectDto>}
- */
-export async function updateProjectFocus(project, taskId) {
+export async function updateProjectFocus(
+  project: ProjectWriteDto & { _id: string },
+  taskId: string
+): Promise<ProjectDto> {
   return updateProject(project._id, {
     name: project.name,
     summary: project.summary,
