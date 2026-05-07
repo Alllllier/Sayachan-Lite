@@ -1,6 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import type { AuthStore } from '../stores/auth'
 import { useProjectsFeature } from '../features/projects/useProjectsFeature.js'
 import {
   PROJECT_TASK_PREVIEW_LIMIT,
@@ -30,20 +31,29 @@ import {
   ItemContent,
   ItemMeta
 } from './ui/list'
+import type { ProjectDto, ProjectStatus } from '../types/api-dtos'
+import type { TaskApiTask } from '../services/tasks/task.rules'
 
-const menuOpenProjectId = ref(null)
-const auth = useAuthStore()
+type ToastType = 'success' | 'error'
+type PreviewFilter = 'active' | 'completed'
+type ProjectPreviewFilterMap = Record<string, PreviewFilter>
+type ProjectWithId = ProjectDto & { _id: string }
+type StatusLabelMap = Record<ProjectStatus, string>
+type StatusClassMap = Record<ProjectStatus, string>
+
+const menuOpenProjectId = ref<string | null>(null)
+const auth = useAuthStore() as AuthStore
 const accountCacheKey = computed(() => auth.currentUser?._id || auth.currentUser?.email || 'anonymous')
 
 // Project task preview expansion and filter state
-const expandedPrimaryPreviewProjects = ref(new Set())
-const expandedArchivedPreviewProjects = ref(new Set())
-const previewFilter = ref({}) // { [projectId]: 'active' | 'completed' }
+const expandedPrimaryPreviewProjects = ref<Set<string>>(new Set())
+const expandedArchivedPreviewProjects = ref<Set<string>>(new Set())
+const previewFilter = ref<ProjectPreviewFilterMap>({})
 
 // Toast notifications
-const toast = ref(null)
+const toast = ref(false)
 const toastMessage = ref('')
-const toastType = ref('success') // success, error
+const toastType = ref<ToastType>('success')
 
 const archiveViewOptions = [
   { value: 'active', label: 'Active' },
@@ -60,7 +70,7 @@ const taskCaptureModeOptions = [
   { value: 'batch', label: 'Batch' }
 ]
 
-function showToast(message, type = 'success') {
+function showToast(message: string, type: ToastType = 'success'): void {
   toastMessage.value = message
   toastType.value = type
   toast.value = true
@@ -69,7 +79,9 @@ function showToast(message, type = 'success') {
   }, 3000)
 }
 
-const emit = defineEmits(['refreshed'])
+const emit = defineEmits<{
+  refreshed: [projects: ProjectDto[]]
+}>()
 
 const {
   projects,
@@ -120,125 +132,184 @@ const {
   onRefreshed: refreshedProjects => emit('refreshed', refreshedProjects)
 })
 
-function toggleProjectMenu(projectId) {
-  if (menuOpenProjectId.value === projectId) {
-    menuOpenProjectId.value = null
-  } else {
-    menuOpenProjectId.value = projectId
+function projectId(project: ProjectDto): string {
+  return String(project._id)
+}
+
+function editableProject(project: ProjectDto): ProjectWithId {
+  return {
+    ...project,
+    _id: projectId(project)
   }
 }
 
-function closeProjectMenu() {
+function toggleProjectMenu(id: string): void {
+  if (menuOpenProjectId.value === id) {
+    menuOpenProjectId.value = null
+  } else {
+    menuOpenProjectId.value = id
+  }
+}
+
+function closeProjectMenu(): void {
   menuOpenProjectId.value = null
 }
 
 // Status mapping: internal enum → user-friendly language and color
-function formatStatus(status) {
-  const statusMap = {
-    'pending': 'Planning',
-    'in_progress': 'In Progress',
-    'completed': 'Completed',
-    'on_hold': 'Paused'
+function formatStatus(status: ProjectStatus): string {
+  const statusMap: StatusLabelMap = {
+    pending: 'Planning',
+    in_progress: 'In Progress',
+    completed: 'Completed',
+    on_hold: 'Paused'
   }
-  return statusMap[status] || status
+  return statusMap[status]
 }
 
-function getStatusClass(status) {
-  const classMap = {
-    'pending': 'status-planning',
-    'in_progress': 'status-active',
-    'completed': 'status-completed',
-    'on_hold': 'status-paused'
+function getStatusClass(status: ProjectStatus): string {
+  const classMap: StatusClassMap = {
+    pending: 'status-planning',
+    in_progress: 'status-active',
+    completed: 'status-completed',
+    on_hold: 'status-paused'
   }
-  return classMap[status] || 'status-default'
+  return classMap[status]
 }
 
 onMounted(fetchProjects)
 
-function getActiveTasks(projectId) {
-  return getProjectTaskBuckets(projectTasks.value[projectId] || []).active
+function getProjectTasks(id: string): TaskApiTask[] {
+  return projectTasks.value[id] || []
 }
 
-function getCompletedTasks(projectId) {
-  return getProjectTaskBuckets(projectTasks.value[projectId] || []).completed
+function getActiveTasks(id: string): TaskApiTask[] {
+  return getProjectTaskBuckets(getProjectTasks(id)).active
 }
 
-function getArchivedTasks(projectId) {
-  return getProjectTaskBuckets(projectTasks.value[projectId] || []).archived
+function getCompletedTasks(id: string): TaskApiTask[] {
+  return getProjectTaskBuckets(getProjectTasks(id)).completed
 }
 
-function hasPrimaryTaskSection(projectId) {
-  const { active, completed } = getProjectTaskBuckets(projectTasks.value[projectId] || [])
+function getArchivedTasks(id: string): TaskApiTask[] {
+  return getProjectTaskBuckets(getProjectTasks(id)).archived
+}
+
+function hasPrimaryTaskSection(id: string): boolean {
+  const { active, completed } = getProjectTaskBuckets(getProjectTasks(id))
   return active.length > 0 || completed.length > 0
 }
 
-function getPreviewFilter(projectId) {
-  return previewFilter.value[projectId] || 'active'
+function getPreviewFilter(id: string): PreviewFilter {
+  return previewFilter.value[id] || 'active'
 }
 
-function getPrimaryPreviewTaskTotal(projectId) {
-  const buckets = getProjectTaskBuckets(projectTasks.value[projectId] || [])
-  return getPreviewFilter(projectId) === 'completed'
+function getPrimaryPreviewTaskTotal(id: string): number {
+  const buckets = getProjectTaskBuckets(getProjectTasks(id))
+  return getPreviewFilter(id) === 'completed'
     ? buckets.completed.length
     : buckets.active.length
 }
 
-function getArchivedPreviewTaskTotal(projectId) {
-  return getProjectTaskBuckets(projectTasks.value[projectId] || []).archived.length
+function getArchivedPreviewTaskTotal(id: string): number {
+  return getProjectTaskBuckets(getProjectTasks(id)).archived.length
 }
 
-function getProjectPreviewToggleLabel(isExpanded, total) {
+function getProjectPreviewToggleLabel(isExpanded: boolean, total: number): string {
   if (isExpanded) {
     return '收起'
   }
   return total > PROJECT_TASK_PREVIEW_LIMIT ? `展开全部 (${total})` : '展开详情'
 }
 
-function getPrimaryPreviewTasks(projectId) {
-  const project = projects.value.find(p => p._id === projectId)
+function getPrimaryPreviewTasks(id: string): TaskApiTask[] {
+  const project = projects.value.find(p => p._id === id)
   return getProjectPrimaryPreviewTasks(
     project,
-    projectTasks.value[projectId] || [],
-    getPreviewFilter(projectId),
-    expandedPrimaryPreviewProjects.value.has(projectId)
+    getProjectTasks(id),
+    getPreviewFilter(id),
+    expandedPrimaryPreviewProjects.value.has(id)
   )
 }
 
-function getArchivedPreviewTasks(projectId) {
-  const project = projects.value.find(p => p._id === projectId)
+function getArchivedPreviewTasks(id: string): TaskApiTask[] {
+  const project = projects.value.find(p => p._id === id)
   return getProjectArchivedPreviewTasks(
     project,
-    projectTasks.value[projectId] || [],
-    expandedArchivedPreviewProjects.value.has(projectId)
+    getProjectTasks(id),
+    expandedArchivedPreviewProjects.value.has(id)
   )
 }
 
-function togglePrimaryProjectPreview(projectId) {
-  if (expandedPrimaryPreviewProjects.value.has(projectId)) {
-    expandedPrimaryPreviewProjects.value.delete(projectId)
+function togglePrimaryProjectPreview(id: string): void {
+  if (expandedPrimaryPreviewProjects.value.has(id)) {
+    expandedPrimaryPreviewProjects.value.delete(id)
   } else {
-    expandedPrimaryPreviewProjects.value.add(projectId)
+    expandedPrimaryPreviewProjects.value.add(id)
   }
 }
 
-function toggleArchivedProjectPreview(projectId) {
-  if (expandedArchivedPreviewProjects.value.has(projectId)) {
-    expandedArchivedPreviewProjects.value.delete(projectId)
+function toggleArchivedProjectPreview(id: string): void {
+  if (expandedArchivedPreviewProjects.value.has(id)) {
+    expandedArchivedPreviewProjects.value.delete(id)
   } else {
-    expandedArchivedPreviewProjects.value.add(projectId)
+    expandedArchivedPreviewProjects.value.add(id)
   }
 }
 
-function setPreviewFilter(projectId, filter) {
-  previewFilter.value[projectId] = filter
+function setPreviewFilter(id: string, filter: PreviewFilter): void {
+  previewFilter.value[id] = filter
 }
 
-function isFocusTask(project, task) {
+function isFocusTask(project: ProjectDto, task: TaskApiTask): boolean {
   return String(project.currentFocusTaskId) === String(task._id)
 }
 
-function getArchivedSectionTitle(project) {
+function getArchivedSectionTitle(project: ProjectDto): string {
   return project?.archived ? 'Archived Tasks' : 'Archived'
+}
+
+async function updateEditableProject(project: ProjectDto): Promise<void> {
+  await updateProject(editableProject(project))
+}
+
+function startEditableProject(project: ProjectDto): void {
+  startEditingProject(editableProject(project))
+}
+
+function cancelEditableProject(project: ProjectDto): void {
+  cancelEditProject(editableProject(project))
+}
+
+async function archiveEditableProject(project: ProjectDto): Promise<void> {
+  await archiveProject(editableProject(project))
+}
+
+async function restoreEditableProject(project: ProjectDto): Promise<void> {
+  await restoreProject(editableProject(project))
+}
+
+async function pinEditableProject(project: ProjectDto): Promise<void> {
+  await pinProject(editableProject(project))
+}
+
+async function unpinEditableProject(project: ProjectDto): Promise<void> {
+  await unpinProject(editableProject(project))
+}
+
+async function addManualProjectTask(project: ProjectDto): Promise<void> {
+  await addManualTask(editableProject(project))
+}
+
+async function addBatchProjectTasks(project: ProjectDto): Promise<void> {
+  await addBatchTasks(editableProject(project))
+}
+
+async function suggestProjectNextActions(project: ProjectDto): Promise<void> {
+  await handleAISuggest(editableProject(project))
+}
+
+async function setProjectFocusTask(project: ProjectDto, task: TaskApiTask): Promise<void> {
+  await setTaskAsFocus(editableProject(project), task)
 }
 
 </script>
@@ -274,7 +345,7 @@ function getArchivedSectionTitle(project) {
           <template #actions>
           <button
             v-if="!project.archived"
-            @click.stop="project.isPinned ? unpinProject(project) : pinProject(project)"
+            @click.stop="project.isPinned ? unpinEditableProject(project) : pinEditableProject(project)"
             class="panel-surface-icon-btn"
             :class="{ pinned: project.isPinned }"
             :title="project.isPinned ? 'Unpin project' : 'Pin project'"
@@ -391,7 +462,7 @@ function getArchivedSectionTitle(project) {
                     :current="isFocusTask(project, task)"
                     :muted="task.status === 'completed'"
                     :aria-pressed="canSetProjectFocus(task) ? isFocusTask(project, task) : undefined"
-                    @click.stop="canSetProjectFocus(task) ? setTaskAsFocus(project, task) : null"
+                    @click.stop="canSetProjectFocus(task) ? setProjectFocusTask(project, task) : null"
                   >
                     <ItemContent :text="task.title" />
                     <ItemMeta v-if="isFocusTask(project, task)">
@@ -448,8 +519,8 @@ function getArchivedSectionTitle(project) {
 
       <template #actions v-if="editingProjectId === project._id && !project.archived">
         <ActionRow>
-          <button @click="cancelEditProject(project)" :disabled="loading" class="btn btn-secondary">Cancel</button>
-          <button @click="updateProject(project)" :disabled="loading" class="btn btn-primary">Save</button>
+          <button @click="cancelEditableProject(project)" :disabled="loading" class="btn btn-secondary">Cancel</button>
+          <button @click="updateEditableProject(project)" :disabled="loading" class="btn btn-primary">Save</button>
         </ActionRow>
       </template>
 
@@ -479,7 +550,7 @@ function getArchivedSectionTitle(project) {
                 <input
                   v-model="manualTaskInputs[project._id]"
                   placeholder="Task title..."
-                  @keyup.enter="addManualTask(project)"
+                  @keyup.enter="addManualProjectTask(project)"
                   :disabled="addingManualTasks.has(project._id)"
                   class="input"
                   :class="{ 'is-invalid': taskCaptureErrors[project._id]?.single }"
@@ -491,7 +562,7 @@ function getArchivedSectionTitle(project) {
                 </p>
               </div>
               <div class="manual-task-actions">
-                <button @click="addManualTask(project)" class="btn btn-primary btn-sm" :disabled="addingManualTasks.has(project._id)">
+                <button @click="addManualProjectTask(project)" class="btn btn-primary btn-sm" :disabled="addingManualTasks.has(project._id)">
                   {{ addingManualTasks.has(project._id) ? 'Saving...' : 'Save' }}
                 </button>
               </div>
@@ -514,7 +585,7 @@ function getArchivedSectionTitle(project) {
                 </p>
               </div>
               <div class="batch-task-actions">
-                <button @click="addBatchTasks(project)" class="btn btn-primary btn-sm" :disabled="addingBatchTasks.has(project._id)">
+                <button @click="addBatchProjectTasks(project)" class="btn btn-primary btn-sm" :disabled="addingBatchTasks.has(project._id)">
                   {{ addingBatchTasks.has(project._id) ? 'Saving...' : 'Save All' }}
                 </button>
               </div>
@@ -524,7 +595,7 @@ function getArchivedSectionTitle(project) {
 
         <template v-if="project.archived">
           <ActionRow>
-            <button @click="restoreProject(project)" class="btn btn-secondary">Restore</button>
+            <button @click="restoreEditableProject(project)" class="btn btn-secondary">Restore</button>
             <button @click="deleteProject(project._id)" class="btn btn-danger">Delete</button>
           </ActionRow>
         </template>
@@ -533,7 +604,7 @@ function getArchivedSectionTitle(project) {
           variant="ai"
           active-kind="icon"
           :state="getProjectAIState(project._id)"
-          @activate="handleAISuggest(project)"
+          @activate="suggestProjectNextActions(project)"
           @cancel="closeAISuggestions(project._id)"
         >
           <template #idle-icon>
@@ -545,8 +616,8 @@ function getArchivedSectionTitle(project) {
               title="Actions"
               @toggle="toggleProjectMenu(project._id)"
             >
-              <button @click="startEditingProject(project)" class="btn btn-menu-item btn-secondary">Edit</button>
-              <button @click="archiveProject(project)" class="btn btn-menu-item btn-archive">Archive</button>
+              <button @click="startEditableProject(project)" class="btn btn-menu-item btn-secondary">Edit</button>
+              <button @click="archiveEditableProject(project)" class="btn btn-menu-item btn-archive">Archive</button>
               <button @click="deleteProject(project._id)" class="btn btn-menu-item btn-danger">Delete</button>
             </OverflowMenu>
           </template>

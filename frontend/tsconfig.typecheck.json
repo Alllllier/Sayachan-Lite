@@ -41,6 +41,7 @@
     "src/components/Chat.vue",
     "src/components/Dashboard.vue",
     "src/components/NotesPanel.vue",
+    "src/components/ProjectsPanel.vue",
     "src/services/apiClient.ts",
     "src/services/cockpitContextService.ts",
     "src/services/resourceCache.ts",
