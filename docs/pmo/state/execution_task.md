@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `AI Core Public Bridge Contract`
+- Sprint: `Auth Public DTO Contract Tightening`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/ai-core-public-bridge-contract.md`
+- Report surface: `docs/pmo/history/reports/auth-public-dto-contract-tightening.md`
 
 ## Next Activation Rule
 

@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `AI Core Public Bridge Contract`
+- Sprint: `Auth Public DTO Contract Tightening`
 - Closeout date: `2026-05-07`
 - Delivery status: `completed and validated`
 - Commit state: `committed after closeout in this repository commit`
 - Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `Narrow backend-consumed private-core chat contract landed; future private-core exports should extend this contract deliberately.`
-- Report surface: `docs/pmo/history/reports/ai-core-public-bridge-contract.md`
+- Residual note: `Auth public DTO contracts tightened; product DTO contract tightening remains parked as the remaining backend-hardening-002 surface.`
+- Report surface: `docs/pmo/history/reports/auth-public-dto-contract-tightening.md`
 
 ## Next PMO Action
 
