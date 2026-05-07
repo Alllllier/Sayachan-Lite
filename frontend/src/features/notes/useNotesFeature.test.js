@@ -188,7 +188,7 @@ describe('useNotesFeature orchestration', () => {
     await feature.handleAIGenerateTasks(note)
     await feature.saveNoteTaskDraft(note._id, 'Write handoff')
 
-    expect(fetchNoteTaskDrafts).toHaveBeenCalledWith(note)
+    expect(fetchNoteTaskDrafts).toHaveBeenCalledWith(note._id)
     expect(feature.aiTasksByNote[note._id]).toEqual(['Write handoff'])
     expect(saveTask).toHaveBeenCalledWith('Write handoff', 'ai', 'note', 'note-1')
     expect(notify).toHaveBeenCalledWith('Task saved')

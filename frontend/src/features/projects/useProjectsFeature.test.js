@@ -4,6 +4,7 @@ import { writeResourceCache } from '../../services/resourceCache.js'
 import {
   archiveProject,
   createProject,
+  fetchProjectNextActions,
   fetchProjects,
   updateProject,
   updateProjectFocus
@@ -180,6 +181,17 @@ describe('useProjectsFeature orchestration', () => {
     expect(fetchProjectCardTasks).toHaveBeenCalledWith('project-1', false)
     expect(feature.projectTasks.value['project-1']).toEqual([{ _id: 'task-1', title: 'Draft' }])
     expect(notify).toHaveBeenCalledWith('Saved as task')
+  })
+
+  it('generates project AI suggestions from the current project id', async () => {
+    const feature = useProjectsFeature()
+    const project = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending' }
+    fetchProjectNextActions.mockResolvedValue({ suggestions: ['Write handoff'] })
+
+    await feature.handleAISuggest(project)
+
+    expect(fetchProjectNextActions).toHaveBeenCalledWith(project._id)
+    expect(feature.aiSuggestions.value[project._id]).toEqual(['Write handoff'])
   })
 
   it('adds a single manual project task, closes capture, and refreshes card tasks', async () => {

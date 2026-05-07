@@ -85,15 +85,13 @@ describe('notes api boundary', () => {
   })
 
   it('keeps note AI task generation behind the note API boundary', async () => {
-    const note = { _id: 'note-1', title: 'PMO', content: 'Plan notes' }
-
     fetch.mockResolvedValueOnce(jsonResponse({ drafts: ['Write handoff'] }))
-    await expect(fetchNoteTaskDrafts(note)).resolves.toEqual({ drafts: ['Write handoff'] })
+    await expect(fetchNoteTaskDrafts('note-1')).resolves.toEqual({ drafts: ['Write handoff'] })
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/ai/notes/tasks', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(note)
+      body: JSON.stringify({ _id: 'note-1' })
     })
   })
 })

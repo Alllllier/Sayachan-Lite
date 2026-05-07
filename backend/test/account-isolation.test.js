@@ -293,7 +293,7 @@ test('direct-id mutations for another account behave as not found', async () => 
   });
 });
 
-test('AI note task generation reloads persisted notes through current-user ownership before fallback', async () => {
+test('AI note task generation reloads persisted notes by id through current-user ownership before fallback', async () => {
   const noteAiHandler = getRouteHandler(aiRoutes, 'POST', '/ai/notes/tasks');
   const originalKey = process.env.GLM_API_KEY;
   delete process.env.GLM_API_KEY;
@@ -309,14 +309,13 @@ test('AI note task generation reloads persisted notes through current-user owner
     }
   ], async () => {
     const ctx = createCtx({
-      body: { _id: '000000000000000000000101', title: 'Tampered title', content: 'Tampered content' },
+      body: { _id: '000000000000000000000101' },
       userId: '000000000000000000000015'
     });
     await noteAiHandler(ctx, async () => {});
 
     assert.equal(ctx.status, 200);
     assert.equal(ctx.body.drafts[0].includes('Owned title'), true);
-    assert.equal(ctx.body.drafts[0].includes('Tampered title'), false);
   });
 
   if (originalKey) {
@@ -368,13 +367,13 @@ test('AI project next-action resolves focus tasks by task id and current user', 
     };
 
     const ctx = createCtx({
-      body: { _id: '000000000000000000000201', currentFocusTaskId: '00000000000000000000030f', name: 'Tampered project' },
+      body: { _id: '000000000000000000000201' },
       userId: '000000000000000000000016'
     });
     await projectAiHandler(ctx, async () => {});
 
     assert.deepEqual(normalizeIds(capturedTaskQuery), { _id: '0000000000000000000003f0', userId: '000000000000000000000016' });
-    assert.equal(capturedPrompt.includes('Tampered project'), false);
+    assert.equal(capturedPrompt.includes('Owned project'), true);
     assert.equal(capturedPrompt.includes('当前下一步：(无)'), true);
     assert.deepEqual(ctx.body, { suggestions: ['推进一项安全任务'] });
   });
@@ -405,11 +404,17 @@ test('AI routes validate request bodies before downstream AI or model work', asy
       [noteAiHandler, createCtx({ body: null })],
       [noteAiHandler, createCtx({ body: [] })],
       [noteAiHandler, createCtx({ body: { _id: 42, title: 'Note' } })],
+      [noteAiHandler, createCtx({ body: { title: 'Note' } })],
       [noteAiHandler, createCtx({ body: { title: 42 } })],
+      [noteAiHandler, createCtx({ body: { id: '000000000000000000000101' } })],
+      [noteAiHandler, createCtx({ body: { _id: '000000000000000000000101', title: 'Note' } })],
       [projectAiHandler, createCtx({ body: null })],
       [projectAiHandler, createCtx({ body: [] })],
       [projectAiHandler, createCtx({ body: { id: 42, name: 'Project' } })],
+      [projectAiHandler, createCtx({ body: { name: 'Project' } })],
       [projectAiHandler, createCtx({ body: { name: 42 } })],
+      [projectAiHandler, createCtx({ body: { id: '000000000000000000000201' } })],
+      [projectAiHandler, createCtx({ body: { _id: '000000000000000000000201', name: 'Project' } })],
       [chatAiHandler, createCtx({ body: null })],
       [chatAiHandler, createCtx({ body: [] })],
       [chatAiHandler, createCtx({ body: { messages: 'hello' } })],

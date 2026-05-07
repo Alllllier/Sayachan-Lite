@@ -1,7 +1,8 @@
-import { type ObjectId, optionalObjectId } from '../middleware/objectIdParsing.js';
+import { type ObjectId, toObjectId } from '../middleware/objectIdParsing.js';
 import type {
   AiChatDto,
-  AiResourcePayloadDto
+  AiNoteTaskRequestDto,
+  AiProjectNextActionRequestDto
 } from '../routes/schemas/ai.js';
 import { chat as runChat } from '../ai/bridge.js';
 import Note from '../models/Note.js';
@@ -103,38 +104,26 @@ function chatFallback() {
   return { reply: '我在这，我们先把当前最重要的一步理清楚。' };
 }
 
-function getPayloadId(payload: AiPayload | null | undefined): unknown {
-  return payload?._id || payload?.id || null;
-}
-
 function normalizeDoc(doc: AiPayload | null): AiPayload | null {
   return doc?.toObject ? doc.toObject() : doc;
 }
 
-async function resolveOwnedNotePayload(payload: AiPayload | null | undefined, userId: ObjectId): Promise<AiPayload | null> {
-  const noteId = optionalObjectId(getPayloadId(payload), 'request.body._id');
-  if (!noteId) {
-    return payload || {};
-  }
-
+async function resolveOwnedNotePayload(payload: AiNoteTaskRequestDto, userId: ObjectId): Promise<AiPayload | null> {
+  const noteId = toObjectId(payload._id, 'request.body._id');
   const note = await Note.findOne({ _id: noteId, userId });
 
   return normalizeDoc(note);
 }
 
-async function resolveOwnedProjectPayload(payload: AiPayload | null | undefined, userId: ObjectId): Promise<AiPayload | null> {
-  const projectId = optionalObjectId(getPayloadId(payload), 'request.body._id');
-  if (!projectId) {
-    return payload || {};
-  }
-
+async function resolveOwnedProjectPayload(payload: AiProjectNextActionRequestDto, userId: ObjectId): Promise<AiPayload | null> {
+  const projectId = toObjectId(payload._id, 'request.body._id');
   const project = await Project.findOne({ _id: projectId, userId });
 
   return normalizeDoc(project);
 }
 
 export async function generateNoteTaskDrafts(
-  payload: AiResourcePayloadDto,
+  payload: AiNoteTaskRequestDto,
   userId: ObjectId
 ): Promise<AiBodyResult<{ drafts: string[] }> | AiNotFoundResult> {
   const note = await resolveOwnedNotePayload(payload, userId);
@@ -215,7 +204,7 @@ export async function generateNoteTaskDrafts(
 }
 
 export async function suggestProjectNextActions(
-  payload: AiResourcePayloadDto,
+  payload: AiProjectNextActionRequestDto,
   userId: ObjectId
 ): Promise<AiBodyResult<{ suggestions: string[] }> | AiNotFoundResult> {
   const project = await resolveOwnedProjectPayload(payload, userId);

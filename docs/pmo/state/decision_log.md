@@ -24,6 +24,24 @@
 
 ## Recorded Decisions
 
+### `AI product generation requests use context ids instead of product response objects`
+
+- Date: `2026-05-07`
+- Type: `approved`
+- Scope: `frontend AI note/project callers, backend AI request DTOs, product response whitelist sequencing`
+- Decision: `AI note-task and project-next-action requests should not depend on whole note/project response objects. The frontend AI action already has the current note/project id in context, so it should call the AI endpoint directly with the resource id instead of first fetching the full product object and posting that object back to the backend. Backend AI request DTOs can narrow toward id-only, with persisted note/project content reloaded server-side under the current user before bridge/private-core prompt construction. Ordinary product response whitelists should not include fields only for AI payload compatibility.`
+- Reason: `The current whole-object AI payload path is a historical convenience: frontend state or an extra GET provides the full resource object, then the same object is returned to the backend, even though trusted AI prompt content should come from backend-owned database reload. Moving AI requests to context id keeps product responses focused on product UI needs and prevents AI compatibility fields from distorting public product response contracts.`
+- Follow-up: `Implement this as a separate AI payload narrowing slice: remove any frontend pre-AI resource refetch, post only the current resource id, split endpoint-specific backend AI schemas, and test that missing/foreign ids fail while prompt fields come from persisted state. Implement ordinary product response whitelists independently using the approved non-AI field list.`
+
+### `Ordinary product response whitelist excludes ownership and compatibility spillover`
+
+- Date: `2026-05-07`
+- Type: `approved`
+- Scope: `backend product response mappers, task/project/note public API fields, non-AI product responses`
+- Decision: `Ordinary product responses should move from broad spread-compatible output toward explicit field whitelists. Approved fields are Task: _id, title, status, archived, completed, creationMode, originModule, originId; Project: _id, name, summary, status, archived, isPinned, updatedAt, currentFocusTaskId; Note: _id, title, content, archived, isPinned, updatedAt. Do not expose userId, __v, or createdAt in ordinary product responses. Do not expose Task updatedAt for now. Keep Project/Note updatedAt because the frontend uses it. Keep Task originModule and originId together for now; revisit provenance later if route/use-case-specific task mappers split.`
+- Reason: `The Product Response Field Usage Audit showed which fields are directly used by frontend product surfaces and which are only spread through compatibility. The human approved the non-AI recommendations so implementation can remove model spillover without rediscovering field ownership.`
+- Follow-up: `Implement ordinary product response whitelists in backend/src/services/responses/productResponses.ts with contract tests. Audit AI note/project payload fields separately before narrowing AI endpoints away from whole object passing.`
+
 ### `App middleware and route middleware are separate backend concepts`
 
 - Date: `2026-05-07`

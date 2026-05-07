@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Product Response Mapper Ownership Split`
+- Sprint: `AI Context Id Payload Narrowing`
 - Closeout date: `2026-05-07`
 - Delivery status: `completed and validated`
 - Commit state: `committed after closeout in this repository commit`
-- Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `Product response mappers moved to service-owned response layer while shared lifecycle helpers remain in domain/tasks/lifecycle; public response behavior unchanged.`
-- Report surface: `docs/pmo/history/reports/product-response-mapper-ownership-split.md`
+- Documentation sync outcome: `update completed: execution_report documents id-only AI payload narrowing; prior AI payload audit and decision log already record the architecture direction`
+- Residual note: `none`
+- Report surface: `docs/pmo/history/reports/ai-context-id-payload-narrowing.md`
 
 ## Next PMO Action
 

@@ -268,8 +268,12 @@ function assertAiSchemaDistArtifactFromTypeScriptSource() {
   const aiSchemaDistSource = fs.readFileSync(path.join(distRoot, 'routes', 'schemas', 'ai.js'), 'utf8');
 
   assert(
-    aiSchemaDistSource.includes('aiResourcePayloadSchema'),
-    'dist AI schema artifact must preserve aiResourcePayloadSchema.'
+    aiSchemaDistSource.includes('aiNoteTaskRequestSchema'),
+    'dist AI schema artifact must preserve aiNoteTaskRequestSchema.'
+  );
+  assert(
+    aiSchemaDistSource.includes('aiProjectNextActionRequestSchema'),
+    'dist AI schema artifact must preserve aiProjectNextActionRequestSchema.'
   );
   assert(
     aiSchemaDistSource.includes('aiChatSchema'),

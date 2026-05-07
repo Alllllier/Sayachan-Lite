@@ -2,7 +2,8 @@ import Router from '@koa/router';
 
 import type {
   AiChatDto,
-  AiResourcePayloadDto
+  AiNoteTaskRequestDto,
+  AiProjectNextActionRequestDto
 } from './schemas/ai.js';
 import type {
   AuthenticatedRouteState,
@@ -13,7 +14,8 @@ import { requireCurrentUser } from '../middleware/currentUser.js';
 import { validateBody } from '../middleware/requestBodyValidation.js';
 import {
   aiChatSchema,
-  aiResourcePayloadSchema
+  aiNoteTaskRequestSchema,
+  aiProjectNextActionRequestSchema
 } from './schemas/ai.js';
 
 type AiState = AuthenticatedRouteState;
@@ -26,8 +28,8 @@ function validatedBody<TBody>(ctx: Parameters<AiHandler>[0]): TBody {
 }
 
 // POST /ai/notes/tasks - Generate tasks from a note
-router.post('/ai/notes/tasks', requireCurrentUser, validateBody<AiResourcePayloadDto, AiState>(aiResourcePayloadSchema), (async (ctx) => {
-  const result = await aiService.generateNoteTaskDrafts(validatedBody<AiResourcePayloadDto>(ctx), ctx.state.userId);
+router.post('/ai/notes/tasks', requireCurrentUser, validateBody<AiNoteTaskRequestDto, AiState>(aiNoteTaskRequestSchema), (async (ctx) => {
+  const result = await aiService.generateNoteTaskDrafts(validatedBody<AiNoteTaskRequestDto>(ctx), ctx.state.userId);
   if (!result.found) {
     ctx.status = 404;
     ctx.body = { error: 'Note not found' };
@@ -38,8 +40,8 @@ router.post('/ai/notes/tasks', requireCurrentUser, validateBody<AiResourcePayloa
 }) as AiHandler);
 
 // POST /ai/projects/next-action - Suggest next action for a project
-router.post('/ai/projects/next-action', requireCurrentUser, validateBody<AiResourcePayloadDto, AiState>(aiResourcePayloadSchema), (async (ctx) => {
-  const result = await aiService.suggestProjectNextActions(validatedBody<AiResourcePayloadDto>(ctx), ctx.state.userId);
+router.post('/ai/projects/next-action', requireCurrentUser, validateBody<AiProjectNextActionRequestDto, AiState>(aiProjectNextActionRequestSchema), (async (ctx) => {
+  const result = await aiService.suggestProjectNextActions(validatedBody<AiProjectNextActionRequestDto>(ctx), ctx.state.userId);
   if (!result.found) {
     ctx.status = 404;
     ctx.body = { error: 'Project not found' };

@@ -1,0 +1,57 @@
+# AI Product Payload Field Audit
+
+- Archived date: `2026-05-07`
+- PMO closeout result: `completed and validated`
+- Source sprint: `AI Product Payload Field Audit`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Created `docs/pmo/state/ai_product_payload_field_audit.md`.
+  - Audited `POST /ai/notes/tasks` and `POST /ai/projects/next-action` separately.
+  - Mapped current frontend-sent fields, backend-accepted schema fields, backend-read fields, prompt-used fields, fallback-used fields, and owned-entity reload fields.
+  - Proposed AI-specific DTO whitelist candidates as decision-gated candidates only; no implementation decision was made.
+  - Listed human/PMO decision gates before any later AI DTO implementation.
+- Validation summary:
+  - Documentation/search validation only, as expected for low-risk docs-only audit work.
+  - Read execution contract and direct in-scope source files:
+    - `Get-Content -Raw AGENT.md`
+    - `Get-Content -Raw docs/pmo/state/execution_task.md`
+    - `Get-Content -Raw frontend/src/features/notes/notes.api.js`
+    - `Get-Content -Raw frontend/src/features/projects/projects.api.js`
+    - `Get-Content -Raw backend/src/routes/schemas/ai.ts`
+    - `Get-Content -Raw backend/src/routes/ai.ts`
+    - `Get-Content -Raw backend/src/services/aiService.ts`
+  - Ran endpoint and field searches:
+    - `rg -n "fetchNoteTaskDrafts|/ai/notes/tasks|generateNoteTaskDrafts|noteTaskFallback|resolveOwnedNotePayload" frontend backend docs -g "!*node_modules*"`
+    - `rg -n "fetchProjectNextActions|/ai/projects/next-action|suggestProjectNextActions|projectNextActionFallback|resolveOwnedProjectPayload|getProjectFocusContext" frontend backend docs -g "!*node_modules*"`
+    - `rg -n "aiResourcePayloadSchema|AiResourcePayloadDto|currentFocusTaskId|title|content|name|summary|status" backend/src/routes backend/src/services backend/test backend/tests -g "!*node_modules*"`
+    - `rg -n "fetchNoteTaskDrafts\\(|fetchProjectNextActions\\(" frontend/src -g "!*node_modules*"`
+    - `rg -n "notes\\.value|projects\\.value|fetchNotes\\(|fetchProjects\\(|sort|map|toNote|toProject" frontend/src/features/notes frontend/src/features/projects -g "!*node_modules*"`
+  - Supplemental reads:
+    - `Get-Content -Raw docs/pmo/state/product_response_field_usage_audit.md`
+    - `Get-Content -Raw backend/src/models/Note.ts`
+    - `Get-Content -Raw backend/src/models/Project.ts`
+    - `Get-Content -Raw backend/src/services/responses/productResponses.ts`
+  - Code validation: `not run`; no code, tests, route schemas, prompts, fallback, provider, private core, or product response mapper files were changed.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states: `n/a`
+  - If skipped, why skipping was acceptable: this sprint only wrote PMO/docs audit artifacts and did not change UI or runtime behavior.
+- Unverified areas:
+  - Did not run frontend/backend test suites because the active contract says no code validation is required for docs-only PMO artifacts.
+  - Did not browser-test or perform UI review because no UI/runtime files changed.
+  - Did not inspect private AI core/provider internals because the handoff explicitly excluded prompt/provider/private_core behavior changes and the audited endpoints use public backend AI service code.
+  - Did not exhaustively enumerate live database documents; frontend-sent whole-object fields are inferred from current mapper/model behavior and the prior product response field audit.
+  - `backend/tests` does not exist; `backend/test` was searched.
+- Residual risks or escalations:
+  - Current frontend AI callers send whole product objects, so AI payload size/shape can continue to drift with ordinary product response fields until a later AI DTO implementation lands.
+  - Current shared AI resource schema accepts a union of note and project fields, so endpoint-specific intent remains implicit.
+  - Current no-id path still trusts frontend-supplied note/project content for prompt/fallback construction; changing or removing that path is a product/architecture decision.
+- Documentation-sync outcome: `update completed: ai_product_payload_field_audit.md created`
+- Follow-up routing:
+  - Decide whether AI payloads should become id-only and require backend reload, or preserve compatibility for no-id direct-content requests.
+  - Decide whether `_id` alone is enough, or whether `id` should remain accepted as an alias.
+  - Decide whether the shared AI resource payload schema should split into endpoint-specific note/project AI request schemas.
+  - Decide whether narrowing AI payloads should include prompt/fallback behavior changes when id is absent.
+  - Decide whether frontend AI callers should be narrowed in the same sprint as backend schema changes, or after backend compatibility is established.
+  - Decide sequencing against ordinary product response whitelist implementation; the two decisions should remain separate unless PMO intentionally groups them.

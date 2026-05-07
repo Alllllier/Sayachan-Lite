@@ -71,11 +71,11 @@ export async function unpinProject(projectId) {
   }
 }
 
-export async function fetchProjectNextActions(project) {
+export async function fetchProjectNextActions(projectId) {
   const response = await apiFetch(`${API_BASE}/ai/projects/next-action`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(project)
+    body: JSON.stringify({ _id: projectId })
   })
 
   return parseJsonResponse(response, 'Fetch project next actions failed')

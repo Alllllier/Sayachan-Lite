@@ -74,11 +74,11 @@ export async function unpinNote(noteId) {
   }
 }
 
-export async function fetchNoteTaskDrafts(note) {
+export async function fetchNoteTaskDrafts(noteId) {
   const response = await apiFetch(`${API_BASE}/ai/notes/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(note)
+    body: JSON.stringify({ _id: noteId })
   })
 
   return parseJsonResponse(response, 'Fetch note task drafts failed')

@@ -1,19 +1,14 @@
 import { z } from 'zod';
 
-const optionalIdSchema = z.union([z.string(), z.null()]).optional();
+const aiResourceIdSchema = z.object({
+  _id: z.string().min(1)
+}).strict();
 
-export const aiResourcePayloadSchema = z.object({
-  _id: optionalIdSchema,
-  id: optionalIdSchema,
-  title: z.string().optional(),
-  content: z.string().optional(),
-  name: z.string().optional(),
-  summary: z.string().optional(),
-  status: z.string().optional(),
-  currentFocusTaskId: z.unknown().optional()
-});
+export const aiNoteTaskRequestSchema = aiResourceIdSchema;
+export const aiProjectNextActionRequestSchema = aiResourceIdSchema;
 
-export type AiResourcePayloadDto = z.infer<typeof aiResourcePayloadSchema>;
+export type AiNoteTaskRequestDto = z.infer<typeof aiNoteTaskRequestSchema>;
+export type AiProjectNextActionRequestDto = z.infer<typeof aiProjectNextActionRequestSchema>;
 
 const aiChatMessageSchema = z.object({
   role: z.string().optional(),

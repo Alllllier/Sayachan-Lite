@@ -1,0 +1,34 @@
+# AI Context Id Payload Narrowing
+
+- Archived date: `2026-05-07`
+- PMO closeout result: `completed and validated`
+- Source sprint: `AI Context Id Payload Narrowing`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Frontend note/project AI API functions now accept the current resource id and POST `{ _id }` only.
+  - Notes and Projects feature orchestration now calls AI generation from `note._id` / `project._id` instead of passing whole resource objects.
+  - Backend AI request schemas split into endpoint-specific note-task and project-next-action schemas, both strict id-only.
+  - Backend AI service now requires `_id` and always reloads owned Note/Project state before prompt/fallback generation; the no-id direct-content compatibility path was removed.
+  - Backend dist-build guard was updated to track the new AI schema exports.
+  - Focused frontend and backend tests were updated to characterize id-only payloads and strict backend validation.
+- Validation summary:
+  - `npm --prefix frontend exec vitest run src/features/notes/notes.api.test.js src/features/notes/useNotesFeature.test.js src/features/projects/projects.api.test.js src/features/projects/useProjectsFeature.test.js`
+  - `npm --prefix backend run build:backend`
+  - `node --test backend/test/account-isolation.test.js`
+  - `npm --prefix backend run test`
+  - `npm run check`
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states: `n/a`
+  - If skipped, why skipping was acceptable: `This sprint changed request payload contracts and tests, not UI rendering or interaction layout.`
+- Unverified areas:
+  - No browser/UI review was performed.
+  - No live provider call was performed; tests cover fallback and prompt construction boundaries.
+- Residual risks or escalations:
+  - Existing external clients that still POST whole note/project objects, `id` aliases, or no-id direct content to these AI endpoints will now receive `400 Invalid request body`.
+  - This is intended by the approved PMO direction, but it is a compatibility break if any non-frontend caller exists.
+- Documentation-sync outcome: `update completed: execution_report documents id-only AI payload narrowing; prior AI payload audit and decision log already record the architecture direction`
+- Follow-up routing:
+  - No blocker for this sprint.
+  - Ordinary product response whitelist implementation remains a separate follow-up and no longer needs to preserve fields for AI payload compatibility.

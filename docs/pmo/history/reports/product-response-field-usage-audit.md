@@ -1,0 +1,56 @@
+# Product Response Field Usage Audit
+
+- Archived date: `2026-05-07`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Product Response Field Usage Audit`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Added `docs/pmo/state/product_response_field_usage_audit.md`.
+  - Audited current task/project/note response mapper behavior and product DTO characterization tests.
+  - Mapped frontend direct field usage by model and surface.
+  - Separated direct usage from inferred/pass-through usage such as whole-object resource cache writes, spread merges, and AI endpoint payload forwarding.
+  - Proposed conservative public whitelist candidates per model for a later implementation sprint.
+  - Listed human decision gates before any whitelist implementation.
+  - Confirmed out-of-scope boundaries stayed intact: no response mapper implementation changed, no field whitelist implemented, no frontend runtime files changed, no route/service/model behavior changed, no tests changed, and no API behavior changed.
+- Validation summary:
+  - Read/verified active execution contract from `AGENT.md` and `docs/pmo/state/execution_task.md`.
+  - Verified prerequisite trace in `docs/pmo/state/discussions/discussion_batch_018.md` via search results showing `Product DTO Contract Characterization completed and validated` and `Product Response Mapper Ownership Split completed and validated`.
+  - Reviewed current mapper: `backend/src/services/responses/productResponses.ts`.
+  - Reviewed characterization tests: `backend/test/product-dtos.contract.test.js`.
+  - Reviewed current model fields: `backend/src/models/Task.ts`, `backend/src/models/Project.ts`, `backend/src/models/Note.ts`.
+  - Searched frontend runtime field usage with `rg`, excluding tests/CSS for the final direct-usage pass.
+  - Searched backend AI payload usage for note/project pass-through fields.
+  - No code validation command was run because only docs/PMO artifacts were written, per low-risk validation expectations.
+  
+  Search commands or methods recorded in the audit:
+  
+  - `rg --files frontend/src backend/src docs/pmo/state | rg "(productResponses|response|task|project|note|execution-report|Product DTO|DTO Contract|Mapper Ownership)"`
+  - `rg -n "productResponses|map(Task|Project|Note)|to(Task|Project|Note)|public.*field|spread|originId|originModule|currentFocusTaskId|createdAt|updatedAt|userId" backend/src docs/pmo/state`
+  - `rg -n "toTaskDto|toProjectDto|toNoteDto|productResponses|spread-compatible|customField|extra|unknown|createdAt|updatedAt|userId|originModule|currentFocusTaskId" backend`
+  - `rg -n "project\\?\\.|note\\?\\.|payload\\?\\.|currentFocusTaskId|title|content|name|summary|status" backend/src/services/aiService.ts backend/src/routes/schemas/ai.ts`
+  - `rg -n "\\b(task|project|note|draft)\\.(?:_id|id|title|content|name|summary|status|archived|completed|originModule|originId|currentFocusTaskId|isPinned|pinnedAt|createdAt|updatedAt|userId)|\\b(?:_id|id|title|content|name|summary|status|archived|completed|originModule|originId|currentFocusTaskId|isPinned|pinnedAt|createdAt|updatedAt|userId)\\s*:" frontend/src`
+  - `rg -n "currentFocusTaskId|originModule|originId|userId|createdAt|updatedAt|isPinned|pinnedAt|archived|completed|status|summary|content|title|name" frontend/src`
+  - `rg -n "note\\.(_id|title|content|archived|isPinned|updatedAt)|project\\.(_id|name|summary|status|archived|currentFocusTaskId|isPinned|updatedAt)|task\\.(_id|title|status|archived|completed|originModule|creationMode)|task\\?\\._id|task\\?\\.archived|task\\?\\.status|task\\?\\.completed|task\\?\\.originModule|task\\?\\.creationMode|p\\.archived|p\\.isPinned|p\\.currentFocusTaskId|p\\.name|t\\.archived|t\\.status|t\\._id|t\\.title" frontend/src --glob "!**/*.test.js" --glob "!**/*.css"`
+  - `rg -n "JSON\\.stringify\\((note|project|task)|writeResourceCache|readResourceCache|fetchNoteTaskDrafts\\(note\\)|fetchProjectNextActions\\(project\\)|syncTaskIntoActiveSnapshot\\(updated\\)|applyDashboardTaskUpdate|\\{ \\.\\.task|\\{ \\.\\.project|\\{ \\.\\.note" frontend/src --glob "!**/*.test.js"`
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states: `n/a`
+  - If skipped, why skipping was acceptable: docs-only audit; browser validation and UI review are not expected by the active execution contract.
+- Unverified areas:
+  - Did not run product tests or type/build checks because no code or tests changed.
+  - Did not inspect generated/dist backend output beyond source/test references.
+  - Did not perform browser validation or UI review.
+  - Did not prove every possible dynamic bracket access because the searched runtime uses mostly dot-property access and generic object pass-through; generic pass-through is marked as inferred where found.
+- Residual risks or escalations:
+  - Whole-object pass-through to resource cache and AI endpoints means a later whitelist could affect downstream behavior even when direct field reads are absent.
+  - `__v` exposure is inferred from Mongoose `toObject()` spread behavior, not directly asserted in the current product DTO test.
+  - A single model-wide whitelist may be too blunt if AI/cockpit/project-card contexts need different public surfaces.
+  - Task `originId` has backend relationship semantics but no direct frontend response read in searched runtime; treating it as public or private requires product judgment.
+- Documentation-sync outcome: `update completed: product_response_field_usage_audit.md created`
+- Follow-up routing:
+  - Human/PMO decision required before whitelist implementation for `userId`.
+  - Human/PMO decision required before whitelist implementation for task `originId`/`originModule`.
+  - Human/PMO decision required before whitelist implementation for project `currentFocusTaskId`.
+  - Human/PMO decision required before whitelist implementation for `createdAt`/`updatedAt`.
+  - Human/PMO decision required on whether AI endpoints should keep accepting whole note/project objects or receive narrower AI-specific DTOs.

@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Product Response Mapper Ownership Split`
+- Sprint: `AI Context Id Payload Narrowing`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/product-response-mapper-ownership-split.md`
+- Report surface: `docs/pmo/history/reports/ai-context-id-payload-narrowing.md`
 
 ## Next Activation Rule
 

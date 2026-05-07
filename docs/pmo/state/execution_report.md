@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Product Response Mapper Ownership Split`
+- Sprint: `AI Context Id Payload Narrowing`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/product-response-mapper-ownership-split.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/ai-context-id-payload-narrowing.md`
 
 ## Next Use
 

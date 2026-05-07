@@ -324,7 +324,7 @@ export function useNotesFeature(options = {}) {
   async function handleAIGenerateTasks(note) {
     aiLoadingNotes.value.add(note._id)
     try {
-      const result = await fetchNoteTaskDrafts(note)
+      const result = await fetchNoteTaskDrafts(note._id)
       aiTasksByNote[note._id] = result.drafts || []
     } catch (e) {
       aiTasksByNote[note._id] = ['Failed to generate tasks']

@@ -89,12 +89,12 @@ describe('projects api boundary', () => {
     const project = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending' }
 
     fetch.mockResolvedValueOnce(jsonResponse({ suggestions: ['Write handoff'] }))
-    await expect(fetchProjectNextActions(project)).resolves.toEqual({ suggestions: ['Write handoff'] })
+    await expect(fetchProjectNextActions(project._id)).resolves.toEqual({ suggestions: ['Write handoff'] })
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/ai/projects/next-action', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(project)
+      body: JSON.stringify({ _id: 'project-1' })
     })
 
     fetch.mockResolvedValueOnce(jsonResponse({ ...project, currentFocusTaskId: 'task-1' }))

@@ -339,6 +339,28 @@ The Backend TS Quality Gate Cleanup sprint briefly tried `typescript-eslint` typ
 - Non-goals: `No field whitelist adoption, no field removal, no public API response behavior change, no frontend API changes, no route/service behavior changes beyond import ownership, no task/project/note use-case mapper split yet.`
 - Validation: `focused product DTO/response mapper contract test, backend tests, root npm run check.`
 - Escalation: `Stop if moving ownership requires changing response fields, splitting task/project/note use cases, or redesigning service folder structure beyond the minimal responses location.`
+- Split outcome: `Product Response Mapper Ownership Split completed and validated. Response mappers now live under backend/src/services/responses/productResponses.ts while shared lifecycle helpers live under backend/src/domain/tasks/lifecycle.ts. The next safe step before field whitelist implementation is a frontend/backend usage audit that proposes public response field sets per model/use case.`
+
+#### `backend-hardening-002d`
+
+- Name: `Product Response Field Usage Audit`
+- Maturity: `candidate-shaped`
+- Goal: `Audit frontend and backend usage of task/project/note response fields and produce a proposed public field whitelist for future response mapper tightening, without changing runtime behavior.`
+- Likely scope: `frontend/src/**`, `backend/src/services/responses/productResponses.ts`, product route/service tests, and a new PMO audit artifact under docs/pmo/state if useful.`
+- Non-goals: `No product response mapper implementation changes; no field removal; no API behavior change; no frontend behavior change; no route/service/model changes.`
+- Validation: `read-only/code-search audit plus focused documentation artifact review; root validation only if code or tests are changed.`
+- Escalation: `Stop if the audit reveals fields whose public/private status needs human product decision, especially userId, originId/originModule, currentFocusTaskId, createdAt/updatedAt, or AI/dashboard-only context fields.`
+- Split outcome: `Product Response Field Usage Audit completed and validated. The human approved the ordinary non-AI product response whitelist decisions; AI endpoint payloads remain separate and should be audited by prompt/service usage before any AI-specific DTO narrowing.`
+
+#### `backend-hardening-002e`
+
+- Name: `AI Product Payload Field Audit`
+- Maturity: `candidate-shaped`
+- Goal: `Audit frontend-to-backend AI note/project payloads and backend prompt/service field usage to propose narrow AI-specific DTO fields, without changing AI route behavior.`
+- Likely scope: `frontend/src/features/notes/notes.api.js`, `frontend/src/features/projects/projects.api.js`, `backend/src/routes/schemas/ai.ts`, `backend/src/services/aiService.ts`, AI route tests, and a new PMO audit artifact under docs/pmo/state if useful.`
+- Non-goals: `No AI route implementation change; no frontend payload change; no prompt text change; no private_core/provider change; no product response whitelist implementation.`
+- Validation: `read-only/code-search audit plus documentation artifact review; root validation only if code or tests are changed.`
+- Escalation: `Stop if narrowing AI payload fields requires deciding prompt behavior, fallback behavior, private-core contracts, or whether AI should reload entities only by id instead of consuming frontend-supplied content.`
 
 #### `backend-hardening-003`
 

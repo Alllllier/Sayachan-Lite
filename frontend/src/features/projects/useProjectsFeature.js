@@ -493,7 +493,7 @@ export function useProjectsFeature(options = {}) {
   async function handleAISuggest(project) {
     aiLoadingProjects.value.add(project._id)
     try {
-      const result = await fetchProjectNextActions(project)
+      const result = await fetchProjectNextActions(project._id)
       aiSuggestions.value[project._id] = result.suggestions || []
     } catch (e) {
       aiSuggestions.value[project._id] = ['Failed to get AI suggestion']
