@@ -213,7 +213,7 @@ function createCodeMirror(parent: HTMLElement, initialValue: string, onChange: (
   })
 }
 
-function bindEditEditor(el: Element | null, note: NoteDto): void {
+function bindEditEditor(el: unknown, note: NoteDto): void {
   const id = noteId(note)
   if (!(el instanceof HTMLElement) || editingId.value !== id) return
   if (editEditorViews[id]) {
@@ -238,6 +238,26 @@ function cancelEdit(note?: NoteDto | null): void {
   const id = note?._id ? noteId(note) : editingId.value
   cancelEditFeature(note ? editableNote(note) : null)
   destroyEditEditor(id)
+}
+
+function pinEditableNote(note: NoteDto): Promise<void> {
+  return pinNote(editableNote(note))
+}
+
+function unpinEditableNote(note: NoteDto): Promise<void> {
+  return unpinNote(editableNote(note))
+}
+
+function archiveEditableNote(note: NoteDto): Promise<void> {
+  return archiveNote(editableNote(note))
+}
+
+function restoreEditableNote(note: NoteDto): Promise<void> {
+  return restoreNote(editableNote(note))
+}
+
+function generateNoteTasks(note: NoteDto): Promise<void> {
+  return handleAIGenerateTasks(editableNote(note))
 }
 
 onMounted(() => {
@@ -288,10 +308,10 @@ async function updateNote(note: NoteDto): Promise<void> {
       <p v-if="newNoteErrors.content" class="field-helper field-helper--error">{{ newNoteErrors.content }}</p>
     </div>
     <ActionRow>
-      <button @click="createNote" :disabled="loading || editingId" class="btn btn-primary">
+      <button @click="createNote" :disabled="loading || Boolean(editingId)" class="btn btn-primary">
         {{ loading ? 'Saving...' : 'Add Note' }}
       </button>
-      <button v-if="editingId" @click="cancelEdit" :disabled="loading" class="btn btn-secondary">
+      <button v-if="editingId" @click="cancelEdit()" :disabled="loading" class="btn btn-secondary">
         Cancel
       </button>
     </ActionRow>
@@ -322,7 +342,7 @@ async function updateNote(note: NoteDto): Promise<void> {
           <template #actions>
           <button
             v-if="canUseNoteAction(note, 'canPin')"
-            @click.stop="note.isPinned ? unpinNote(note) : pinNote(note)"
+            @click.stop="note.isPinned ? unpinEditableNote(note) : pinEditableNote(note)"
             class="panel-surface-icon-btn"
             :class="{ pinned: note.isPinned }"
             :title="note.isPinned ? 'Unpin note' : 'Pin note'"
@@ -389,7 +409,7 @@ async function updateNote(note: NoteDto): Promise<void> {
       <template #actions v-else>
         <template v-if="canUseNoteAction(note, 'canRestore')">
           <ActionRow>
-            <button @click="restoreNote(note)" class="btn btn-secondary">Restore</button>
+            <button @click="restoreEditableNote(note)" class="btn btn-secondary">Restore</button>
             <button v-if="canUseNoteAction(note, 'canDelete')" @click="deleteNote(note._id)" class="btn btn-danger">Delete</button>
           </ActionRow>
         </template>
@@ -398,7 +418,7 @@ async function updateNote(note: NoteDto): Promise<void> {
           variant="ai"
           active-kind="icon"
           :state="getNoteAIState(note._id)"
-          @activate="handleAIGenerateTasks(note)"
+          @activate="generateNoteTasks(note)"
           @cancel="closeAITasks(note._id)"
         >
           <template #idle-icon>
@@ -411,7 +431,7 @@ async function updateNote(note: NoteDto): Promise<void> {
               @toggle="toggleNoteMenu(note._id)"
             >
               <button v-if="canUseNoteAction(note, 'canEdit')" @click="startEditing(note)" class="btn btn-menu-item btn-secondary">Edit</button>
-              <button v-if="canUseNoteAction(note, 'canArchive')" @click="archiveNote(note)" class="btn btn-menu-item btn-archive">Archive</button>
+              <button v-if="canUseNoteAction(note, 'canArchive')" @click="archiveEditableNote(note)" class="btn btn-menu-item btn-archive">Archive</button>
               <button v-if="canUseNoteAction(note, 'canDelete')" @click="deleteNote(note._id)" class="btn btn-menu-item btn-danger">Delete</button>
             </OverflowMenu>
           </template>

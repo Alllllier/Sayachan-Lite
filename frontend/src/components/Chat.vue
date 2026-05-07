@@ -49,6 +49,10 @@ function updateWarmth(event: Event): void {
     runtimeControls.setWarmth(Number(target.value))
   }
 }
+
+function sendCurrentMessage(): Promise<void> {
+  return handleSend()
+}
 </script>
 
 <template>
@@ -120,7 +124,7 @@ function updateWarmth(event: Event): void {
             :disabled="chatInputDisabled"
             @keydown="handleKeydown"
           />
-          <button class="btn btn-primary chat-send-btn" :disabled="chatInputDisabled" @click="handleSend">
+          <button class="btn btn-primary chat-send-btn" :disabled="chatInputDisabled" @click="sendCurrentMessage">
             {{ chatSendButtonLabel }}
           </button>
         </div>

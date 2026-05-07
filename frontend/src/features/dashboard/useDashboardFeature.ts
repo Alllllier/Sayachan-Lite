@@ -1,4 +1,5 @@
 import { computed, ref, unref } from 'vue'
+import type { MaybeRef } from 'vue'
 import { readResourceCache, writeResourceCache } from '../../services/resourceCache.js'
 import type { TaskApiTask } from '../../services/tasks/task.rules.js'
 import {
@@ -28,7 +29,7 @@ type NotifyFn = (message: string, variant?: string) => void
 type DashboardFeatureOptions = {
   notify?: NotifyFn
   onRefreshed?: () => void
-  cacheUserKey?: string | { value: string | null | undefined } | null | undefined
+  cacheUserKey?: MaybeRef<string | null | undefined> | null | undefined
 }
 
 type ArchiveView = 'active' | 'archived' | (string & {})

@@ -1,11 +1,10 @@
 import { ref } from 'vue'
+import type { Ref } from 'vue'
 
 import { createTask, fetchTaskList } from './task.api.js'
 import type { NormalizedTask, TaskApiTask } from './task.rules.js'
 
-type RuntimeTaskListRef = {
-  value: TaskApiTask[]
-}
+type RuntimeTaskListRef = Ref<TaskApiTask[]>
 
 export const tasksRef: RuntimeTaskListRef = ref([])
 

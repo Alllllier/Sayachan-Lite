@@ -1,4 +1,5 @@
 import { ref, unref } from 'vue'
+import type { MaybeRef, Ref } from 'vue'
 import type { ProjectDto, ProjectWriteDto } from '../../types/api-dtos'
 import { readResourceCache, writeResourceCache } from '../../services/resourceCache.js'
 import type { TaskApiTask } from '../../services/tasks/task.rules.js'
@@ -34,7 +35,6 @@ const PROJECTS_CACHE_RESOURCE = 'projects'
 const PROJECT_TASKS_CACHE_RESOURCE = 'project-tasks'
 
 type NotifyFn = (message: string, variant?: string) => void
-type MaybeRef<T> = T | { value: T }
 type ProjectsFeatureOptions = {
   notify?: NotifyFn
   onRefreshed?: (projects: ProjectDto[]) => void
@@ -48,7 +48,7 @@ type ProjectWithId = ProjectDto & {
 type ProjectForm = ProjectWriteDto
 type ProjectErrorsById = Record<string, ReturnType<typeof createEmptyProjectErrors>>
 type ProjectSnapshotsById = Record<string, ProjectWriteDto>
-type StringSetRef = { value: Set<string> }
+type StringSetRef = Ref<Set<string>>
 type ProjectStringMap = Record<string, string>
 type ProjectTaskMap = Record<string, TaskApiTask[]>
 type TaskCaptureMode = 'single' | 'batch'

@@ -24,6 +24,7 @@ type ChatFeatureOptions = {
 }
 
 type ChatStoreLike = {
+  isOpen: boolean
   isSending: boolean
   messages: ChatMessageDto[]
   openChat: () => void

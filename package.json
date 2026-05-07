@@ -17,7 +17,7 @@
     "test": "npm run test:frontend && npm run test:backend",
     "build:frontend": "npm --prefix frontend run build",
     "build": "npm run build:frontend",
-    "check": "npm run lint && npm run check:backend-dist-runtime && npm run test && npm run build"
+    "check": "npm run lint && npm run typecheck:frontend && npm run check:backend-dist-runtime && npm run test && npm run build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

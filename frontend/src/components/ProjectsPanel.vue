@@ -260,6 +260,12 @@ function setPreviewFilter(id: string, filter: PreviewFilter): void {
   previewFilter.value[id] = filter
 }
 
+function setPreviewFilterValue(id: string, filter: string): void {
+  if (filter === 'active' || filter === 'completed') {
+    setPreviewFilter(id, filter)
+  }
+}
+
 function isFocusTask(project: ProjectDto, task: TaskApiTask): boolean {
   return String(project.currentFocusTaskId) === String(task._id)
 }
@@ -440,7 +446,7 @@ async function setProjectFocusTask(project: ProjectDto, task: TaskApiTask): Prom
                         :options="previewFilterOptions"
                         variant="inline"
                         aria-label="Task preview filter"
-                        @update:model-value="setPreviewFilter(project._id, $event)"
+                        @update:model-value="setPreviewFilterValue(project._id, $event)"
                       />
                     </div>
                   </template>

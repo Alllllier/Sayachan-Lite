@@ -1,4 +1,5 @@
 import { reactive, ref, unref } from 'vue'
+import type { MaybeRef } from 'vue'
 import type { NoteDto, NoteWriteDto } from '../../types/api-dtos'
 import { readResourceCache, writeResourceCache } from '../../services/resourceCache.js'
 import { saveTask } from '../../services/tasks/index.js'
@@ -27,7 +28,6 @@ import type { NoteFieldErrors } from './notes.rules'
 const noop = () => {}
 
 type NotifyFn = (message: string, variant?: string) => void
-type MaybeRef<T> = T | { value: T }
 type DraftStorageKey = string | MaybeRef<string | null | undefined> | (() => string | null | undefined)
 type NotesFeatureOptions = {
   notify?: NotifyFn
