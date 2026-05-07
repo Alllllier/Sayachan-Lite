@@ -33,6 +33,7 @@ const fetchNoteTaskDraftsMock = vi.mocked(fetchNoteTaskDrafts)
 const fetchNotesMock = vi.mocked(fetchNotes)
 const saveTaskMock = vi.mocked(saveTask)
 const updateNoteMock = vi.mocked(updateNote)
+const NOTE_UPDATED_AT = '2026-01-01'
 
 function stubLocalStorage() {
   const store: Record<string, string> = {}
@@ -63,7 +64,8 @@ describe('useNotesFeature orchestration', () => {
     createNoteMock.mockResolvedValue({
       _id: 'note-1',
       title: 'PMO',
-      content: 'Plan notes'
+      content: 'Plan notes',
+      updatedAt: NOTE_UPDATED_AT
     })
 
     await feature.createNote()
@@ -147,14 +149,14 @@ describe('useNotesFeature orchestration', () => {
   it('archives through the note API before refreshing the list', async () => {
     const notify = vi.fn()
     const feature = useNotesFeature({ notify })
-    fetchNotesMock.mockResolvedValue([{ _id: 'note-2', title: 'Remaining', content: 'Open' }])
+    fetchNotesMock.mockResolvedValue([{ _id: 'note-2', title: 'Remaining', content: 'Open', updatedAt: NOTE_UPDATED_AT }])
     archiveNoteMock.mockResolvedValue()
 
-    await feature.archiveNote({ _id: 'note-1', title: 'Done', content: 'Done content' })
+    await feature.archiveNote({ _id: 'note-1', title: 'Done', content: 'Done content', updatedAt: NOTE_UPDATED_AT })
 
     expect(archiveNote).toHaveBeenCalledWith('note-1')
     expect(fetchNotes).toHaveBeenCalledWith({ archived: false })
-    expect(feature.notes.value).toEqual([{ _id: 'note-2', title: 'Remaining', content: 'Open' }])
+    expect(feature.notes.value).toEqual([{ _id: 'note-2', title: 'Remaining', content: 'Open', updatedAt: NOTE_UPDATED_AT }])
     expect(notify).toHaveBeenCalledWith('Note archived')
   })
 
@@ -162,25 +164,25 @@ describe('useNotesFeature orchestration', () => {
     const feature = useNotesFeature()
     fetchNotesMock
       .mockRejectedValueOnce(new Error('network'))
-      .mockResolvedValueOnce([{ _id: 'note-1', title: 'Recovered', content: 'Ready' }])
+      .mockResolvedValueOnce([{ _id: 'note-1', title: 'Recovered', content: 'Ready', updatedAt: NOTE_UPDATED_AT }])
 
     await feature.fetchNotes()
     expect(feature.error.value).toBe('Failed to load notes')
 
     await feature.fetchNotes()
     expect(feature.error.value).toBe(null)
-    expect(feature.notes.value).toEqual([{ _id: 'note-1', title: 'Recovered', content: 'Ready' }])
+    expect(feature.notes.value).toEqual([{ _id: 'note-1', title: 'Recovered', content: 'Ready', updatedAt: NOTE_UPDATED_AT }])
   })
 
   it('shows cached notes when refresh fails after a previous successful load', async () => {
     const notify = vi.fn()
-    writeResourceCache('user-1', 'notes', 'active', [{ _id: 'note-cached', title: 'Cached', content: 'Snapshot' }])
+    writeResourceCache('user-1', 'notes', 'active', [{ _id: 'note-cached', title: 'Cached', content: 'Snapshot', updatedAt: NOTE_UPDATED_AT }])
     fetchNotesMock.mockRejectedValue(new Error('network'))
 
     const feature = useNotesFeature({ notify, cacheUserKey: 'user-1' })
     await feature.fetchNotes()
 
-    expect(feature.notes.value).toEqual([{ _id: 'note-cached', title: 'Cached', content: 'Snapshot' }])
+    expect(feature.notes.value).toEqual([{ _id: 'note-cached', title: 'Cached', content: 'Snapshot', updatedAt: NOTE_UPDATED_AT }])
     expect(feature.error.value).toBe(null)
     expect(notify).toHaveBeenCalledWith('Showing cached notes. Refresh failed.', 'error')
   })
@@ -188,7 +190,7 @@ describe('useNotesFeature orchestration', () => {
   it('generates and saves note task drafts through feature boundaries', async () => {
     const notify = vi.fn()
     const feature = useNotesFeature({ notify })
-    const note = { _id: 'note-1', title: 'PMO', content: 'Plan notes' }
+    const note = { _id: 'note-1', title: 'PMO', content: 'Plan notes', updatedAt: NOTE_UPDATED_AT }
     fetchNoteTaskDraftsMock.mockResolvedValue({ drafts: ['Write handoff'] })
     saveTaskMock.mockResolvedValue({ _id: 'task-1', title: 'Write handoff', status: 'active', archived: false, completed: false })
 

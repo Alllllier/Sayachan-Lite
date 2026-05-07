@@ -1,6 +1,30 @@
 import { activeProjects, archivedProjects, projectAiSuggestions, projectTasks } from './fixtures.js'
+import type { Page } from '@playwright/test'
 
-function json(data, status = 200) {
+type ReviewProject = {
+  _id: string
+  name: string
+  summary: string
+  status: string
+  currentFocusTaskId: string | null
+  isPinned: boolean
+  archived: boolean
+  updatedAt: string
+}
+type ReviewTask = {
+  _id: string
+  title: string
+  status: string
+  archived: boolean
+  projectId?: string
+  creationMode?: string
+  originModule?: string
+  originId?: string | null
+  completed?: boolean
+  updatedAt?: string
+}
+
+function json(data: unknown, status = 200) {
   return {
     status,
     contentType: 'application/json',
@@ -8,21 +32,21 @@ function json(data, status = 200) {
   }
 }
 
-function sortProjects(projects) {
+function sortProjects(projects: ReviewProject[]): ReviewProject[] {
   return projects.sort((a, b) => {
     if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1
-    return new Date(b.updatedAt) - new Date(a.updatedAt)
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   })
 }
 
-function createProjectsStore() {
+function createProjectsStore(): Map<string, ReviewProject> {
   return new Map([
-    ...activeProjects.map(project => [project._id, { ...project }]),
-    ...archivedProjects.map(project => [project._id, { ...project }])
+    ...activeProjects.map(project => [project._id, { ...project }] as const),
+    ...archivedProjects.map(project => [project._id, { ...project }] as const)
   ])
 }
 
-function createProjectTasksStore() {
+function createProjectTasksStore(): Map<string, ReviewTask[]> {
   return new Map(
     Object.entries(projectTasks).map(([projectId, tasks]) => [
       projectId,
@@ -31,12 +55,12 @@ function createProjectTasksStore() {
   )
 }
 
-function nextTaskId(tasksByProject) {
+function nextTaskId(tasksByProject: Map<string, ReviewTask[]>): string {
   const count = [...tasksByProject.values()].flat().length + 1
   return `task-created-${count}`
 }
 
-export async function installProjectsReviewApiMocks(page) {
+export async function installProjectsReviewApiMocks(page: Page): Promise<void> {
   const projectsById = createProjectsStore()
   const tasksByProject = createProjectTasksStore()
 
@@ -71,7 +95,7 @@ export async function installProjectsReviewApiMocks(page) {
     }
 
     if (method === 'POST' && pathname === '/projects') {
-      const project = request.postDataJSON()
+      const project = request.postDataJSON() as Pick<ReviewProject, 'name' | 'summary' | 'status'>
       const saved = {
         _id: 'project-created',
         name: project.name,
@@ -100,7 +124,7 @@ export async function installProjectsReviewApiMocks(page) {
     }
 
     if (method === 'POST' && pathname === '/tasks') {
-      const task = request.postDataJSON()
+      const task = request.postDataJSON() as Record<string, string>
       const projectId = task.originModule === 'project' ? task.originId : task.projectId
       const saved = {
         _id: nextTaskId(tasksByProject),
@@ -113,8 +137,9 @@ export async function installProjectsReviewApiMocks(page) {
         originId: task.originId,
         updatedAt: '2026-05-03T10:06:00.000Z'
       }
-      const projectTasks = tasksByProject.get(projectId) || []
-      tasksByProject.set(projectId, [saved, ...projectTasks])
+      const targetProjectId = projectId || ''
+      const projectTasks = tasksByProject.get(targetProjectId) || []
+      tasksByProject.set(targetProjectId, [saved, ...projectTasks])
       await route.fulfill(json(saved, 201))
       return
     }
@@ -129,12 +154,12 @@ export async function installProjectsReviewApiMocks(page) {
       }
 
       if (method === 'PUT' && !action) {
-        const updates = request.postDataJSON()
+        const updates = request.postDataJSON() as Partial<ReviewProject>
         const updated = {
           ...project,
-          name: updates.name,
-          summary: updates.summary,
-          status: updates.status,
+          name: updates.name || project.name,
+          summary: updates.summary || project.summary,
+          status: updates.status || project.status,
           currentFocusTaskId: updates.currentFocusTaskId ?? project.currentFocusTaskId,
           updatedAt: '2026-05-03T10:07:00.000Z'
         }

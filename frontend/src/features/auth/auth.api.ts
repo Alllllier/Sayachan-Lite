@@ -33,7 +33,7 @@ export async function fetchCurrentUser(): Promise<PublicUserDto | null> {
   return parseJsonResponse<PublicUserDto>(response, 'Fetch current user failed')
 }
 
-export async function login(credentials: AuthCredentialsDto): Promise<PublicUserDto | AuthLoginResponseDto | null> {
+export async function login(credentials: AuthCredentialsDto): Promise<PublicUserDto | null> {
   const response = await apiFetch('/auth/login', {
     method: 'POST',
     body: JSON.stringify(credentials)
@@ -43,7 +43,7 @@ export async function login(credentials: AuthCredentialsDto): Promise<PublicUser
     setAuthToken(result.sessionToken)
     return result.user || null
   }
-  return result
+  return result?.user || null
 }
 
 export async function logout(): Promise<null> {

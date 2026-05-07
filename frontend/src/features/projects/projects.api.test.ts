@@ -13,7 +13,7 @@ import {
 } from './projects.api.js'
 import type { ProjectDto, ProjectWriteDto } from '../../types/api-dtos'
 
-function jsonResponse(body, ok = true, status = 200) {
+function jsonResponse(body: unknown, ok = true, status = 200): Response {
   return {
     ok,
     status,
@@ -91,7 +91,7 @@ describe('projects api boundary', () => {
   })
 
   it('keeps project AI and focus updates behind the project API boundary', async () => {
-    const project: ProjectDto & { _id: string } = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending' }
+    const project: ProjectDto & { _id: string } = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending', updatedAt: '2026-01-01' }
 
     mockedFetch().mockResolvedValueOnce(jsonResponse({ suggestions: ['Write handoff'] }))
     await expect(fetchProjectNextActions(project._id)).resolves.toEqual({ suggestions: ['Write handoff'] })

@@ -18,7 +18,7 @@ export async function createTask(
   creationMode: string,
   originModule = '',
   originId: string | null = null
-): Promise<NormalizedTask | null | undefined> {
+): Promise<NormalizedTask | null> {
   const taskData = buildTaskPayload(
     title,
     creationMode,
@@ -32,20 +32,20 @@ export async function createTask(
     body: JSON.stringify(taskData)
   })
   const savedTask = await res.json() as TaskApiTask | null | undefined
-  return normalizeSavedTask(savedTask)
+  return normalizeSavedTask(savedTask) || null
 }
 
 export async function updateTask(
   taskId: string,
   payload: TaskUpdatePayload
-): Promise<NormalizedTask | null | undefined> {
+): Promise<NormalizedTask | null> {
   const res = await apiFetch(`${API_BASE}/tasks/${taskId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   })
   const updatedTask = await res.json() as TaskApiTask | null | undefined
-  return normalizeSavedTask(updatedTask)
+  return normalizeSavedTask(updatedTask) || null
 }
 
 export async function deleteTask(taskId: string): Promise<void> {

@@ -70,9 +70,13 @@ const taskCaptureModeOptions = [
   { value: 'batch', label: 'Batch' }
 ]
 
-function showToast(message: string, type: ToastType = 'success'): void {
+function normalizeToastType(type: string | undefined): ToastType {
+  return type === 'error' ? 'error' : 'success'
+}
+
+function showToast(message: string, type?: string): void {
   toastMessage.value = message
-  toastType.value = type
+  toastType.value = normalizeToastType(type)
   toast.value = true
   setTimeout(() => {
     toast.value = false

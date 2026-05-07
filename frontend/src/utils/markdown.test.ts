@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('dompurify', () => ({
   default: {
-    sanitize: (html) => html
+    sanitize: (html: string) => html
   }
 }))
 

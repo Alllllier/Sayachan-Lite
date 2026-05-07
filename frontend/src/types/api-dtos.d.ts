@@ -64,10 +64,10 @@ export type NoteWriteDto = {
 }
 
 export type NoteDto = NoteWriteDto & {
-  _id?: ApiId
+  _id: ApiId
   archived?: boolean
   isPinned?: boolean
-  updatedAt?: ApiDateString
+  updatedAt: ApiDateString
 }
 
 export type ProjectWriteDto = {
@@ -78,10 +78,10 @@ export type ProjectWriteDto = {
 }
 
 export type ProjectDto = ProjectWriteDto & {
-  _id?: ApiId
+  _id: ApiId
   archived?: boolean
   isPinned?: boolean
-  updatedAt?: ApiDateString
+  updatedAt: ApiDateString
 }
 
 export type AiResourceRequestDto = {

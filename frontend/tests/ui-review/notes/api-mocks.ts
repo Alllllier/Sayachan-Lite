@@ -1,6 +1,16 @@
 import { activeNotes, aiDrafts, archivedNotes } from './fixtures.js'
+import type { Page } from '@playwright/test'
 
-function json(data, status = 200) {
+type ReviewNote = {
+  _id: string
+  title: string
+  content: string
+  isPinned: boolean
+  archived: boolean
+  updatedAt: string
+}
+
+function json(data: unknown, status = 200) {
   return {
     status,
     contentType: 'application/json',
@@ -8,21 +18,21 @@ function json(data, status = 200) {
   }
 }
 
-function sortNotes(notes) {
+function sortNotes(notes: ReviewNote[]): ReviewNote[] {
   return notes.sort((a, b) => {
     if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1
-    return new Date(b.updatedAt) - new Date(a.updatedAt)
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   })
 }
 
-function createNotesStore() {
+function createNotesStore(): Map<string, ReviewNote> {
   return new Map([
-    ...activeNotes.map(note => [note._id, { ...note }]),
-    ...archivedNotes.map(note => [note._id, { ...note }])
+    ...activeNotes.map(note => [note._id, { ...note }] as const),
+    ...archivedNotes.map(note => [note._id, { ...note }] as const)
   ])
 }
 
-export async function installNotesReviewApiMocks(page) {
+export async function installNotesReviewApiMocks(page: Page): Promise<void> {
   const notesById = createNotesStore()
 
   await page.route('http://localhost:3001/**', async route => {
@@ -47,7 +57,7 @@ export async function installNotesReviewApiMocks(page) {
     }
 
     if (method === 'POST' && pathname === '/tasks') {
-      const task = request.postDataJSON()
+      const task = request.postDataJSON() as Record<string, string | null>
       await route.fulfill(json({
         _id: 'task-from-note-draft',
         title: task.title,
@@ -72,7 +82,7 @@ export async function installNotesReviewApiMocks(page) {
     }
 
     if (method === 'POST' && pathname === '/notes') {
-      const note = request.postDataJSON()
+      const note = request.postDataJSON() as Pick<ReviewNote, 'title' | 'content'>
       const saved = {
         _id: 'note-created',
         title: note.title,
@@ -105,7 +115,7 @@ export async function installNotesReviewApiMocks(page) {
     }
 
     if (method === 'PUT' && !action) {
-      const updates = request.postDataJSON()
+      const updates = request.postDataJSON() as Pick<ReviewNote, 'title' | 'content'>
       const updated = {
         ...note,
         title: updates.title,

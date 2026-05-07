@@ -1,6 +1,23 @@
 import { activeDashboardTasks, archivedDashboardTasks } from './fixtures.js'
+import type { Page } from '@playwright/test'
 
-function json(data, status = 200) {
+type ReviewDashboardTask = {
+  _id: string
+  title: string
+  creationMode: string
+  originModule: string
+  originId: string | null
+  archived: boolean
+  status: string
+  completed: boolean
+  updatedAt: string
+}
+type DashboardMockOptions = {
+  activeTasks?: ReviewDashboardTask[]
+  archivedTasks?: ReviewDashboardTask[]
+}
+
+function json(data: unknown, status = 200) {
   return {
     status,
     contentType: 'application/json',
@@ -8,22 +25,22 @@ function json(data, status = 200) {
   }
 }
 
-function cloneTask(task) {
+function cloneTask(task: ReviewDashboardTask): ReviewDashboardTask {
   return { ...task }
 }
 
-function createTaskStore({ activeTasks = activeDashboardTasks, archivedTasks = archivedDashboardTasks } = {}) {
+function createTaskStore({ activeTasks = activeDashboardTasks, archivedTasks = archivedDashboardTasks }: DashboardMockOptions = {}): Map<string, ReviewDashboardTask> {
   return new Map([
-    ...activeTasks.map(task => [task._id, cloneTask(task)]),
-    ...archivedTasks.map(task => [task._id, cloneTask(task)])
+    ...activeTasks.map(task => [task._id, cloneTask(task)] as const),
+    ...archivedTasks.map(task => [task._id, cloneTask(task)] as const)
   ])
 }
 
-function sortedTasks(tasks) {
-  return tasks.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+function sortedTasks(tasks: ReviewDashboardTask[]): ReviewDashboardTask[] {
+  return tasks.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
 }
 
-export async function installDashboardReviewApiMocks(page, options = {}) {
+export async function installDashboardReviewApiMocks(page: Page, options: DashboardMockOptions = {}): Promise<void> {
   const tasksById = createTaskStore(options)
   let createdTaskCount = 0
 
@@ -48,13 +65,13 @@ export async function installDashboardReviewApiMocks(page, options = {}) {
     }
 
     if (method === 'POST' && pathname === '/tasks') {
-      const task = request.postDataJSON()
+      const task = request.postDataJSON() as Record<string, string | null>
       createdTaskCount += 1
       const saved = {
         _id: `dashboard-created-task-${createdTaskCount}`,
-        title: task.title,
-        creationMode: task.creationMode,
-        originModule: task.originModule,
+        title: task.title || '',
+        creationMode: task.creationMode || 'manual',
+        originModule: task.originModule || 'dashboard',
         originId: task.originId,
         archived: false,
         status: 'active',
@@ -80,7 +97,7 @@ export async function installDashboardReviewApiMocks(page, options = {}) {
     }
 
     if (method === 'PUT') {
-      const updates = request.postDataJSON()
+      const updates = request.postDataJSON() as Partial<ReviewDashboardTask>
       const updated = {
         ...task,
         ...updates,

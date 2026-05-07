@@ -143,6 +143,7 @@ export function useDashboardFeature(options: DashboardFeatureOptions = {}) {
     try {
       const payload = buildDashboardTaskCompletionPayload(task)
       const updated = await updateTask(task._id, payload)
+      if (!updated) return
       savedTasks.value = applyDashboardTaskUpdate(savedTasks.value, updated)
       syncTaskIntoActiveSnapshot(updated)
       cacheCurrentTasks()
@@ -157,6 +158,7 @@ export function useDashboardFeature(options: DashboardFeatureOptions = {}) {
     try {
       const payload = buildDashboardTaskArchivePayload(task)
       const updated = await updateTask(task._id, payload)
+      if (!updated) return
       savedTasks.value = removeDashboardTask(savedTasks.value, updated._id)
       syncTaskIntoActiveSnapshot(updated)
       cacheCurrentTasks()

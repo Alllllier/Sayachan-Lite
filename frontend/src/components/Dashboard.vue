@@ -35,9 +35,13 @@ function taskForMutation(task: TaskApiTask): DashboardTaskWithStringId {
   }
 }
 
-function showToast(message: string, type: 'success' | 'error' = 'success'): void {
+function normalizeToastType(type: string | undefined): 'success' | 'error' {
+  return type === 'error' ? 'error' : 'success'
+}
+
+function showToast(message: string, type?: string): void {
   toastMessage.value = message
-  toastType.value = type
+  toastType.value = normalizeToastType(type)
   toast.value = true
   setTimeout(() => {
     toast.value = false

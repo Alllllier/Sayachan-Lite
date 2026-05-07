@@ -90,8 +90,16 @@ async function handleTesterStatus(tester: PublicUserDto): Promise<void> {
 function inviteState(invite: PublicInviteDto): 'revoked' | 'used' | 'expired' | 'active' {
   if (invite.revokedAt) return 'revoked'
   if (invite.usedAt) return 'used'
-  if (new Date(invite.expiresAt) <= new Date()) return 'expired'
+  if (!invite.expiresAt || new Date(invite.expiresAt) <= new Date()) return 'expired'
   return 'active'
+}
+
+function inviteId(invite: PublicInviteDto): string {
+  return String(invite._id || invite.codePreview || '')
+}
+
+function testerId(tester: PublicUserDto): string {
+  return String(tester._id || tester.email || '')
 }
 
 onMounted(loadOwnerData)
@@ -129,7 +137,7 @@ onMounted(loadOwnerData)
       <article class="card">
         <h2 class="card-title">Invites</h2>
         <ul class="owner-list">
-          <li v-for="invite in invites" :key="invite._id">
+          <li v-for="invite in invites" :key="inviteId(invite)">
             <div>
               <strong>{{ invite.codePreview }}</strong>
               <p class="card-meta">{{ inviteState(invite) }}</p>
@@ -138,7 +146,7 @@ onMounted(loadOwnerData)
               v-if="inviteState(invite) === 'active'"
               class="btn btn-danger btn-sm"
               type="button"
-              @click="handleRevoke(invite._id)"
+              @click="handleRevoke(inviteId(invite))"
             >
               Revoke
             </button>
@@ -149,7 +157,7 @@ onMounted(loadOwnerData)
       <article class="card">
         <h2 class="card-title">Tester accounts</h2>
         <ul class="owner-list">
-          <li v-for="tester in testers" :key="tester._id">
+          <li v-for="tester in testers" :key="testerId(tester)">
             <div>
               <strong>{{ tester.email }}</strong>
               <p class="card-meta">{{ tester.disabled ? 'disabled' : 'active' }}</p>

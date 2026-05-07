@@ -3,18 +3,22 @@ import taskLists from 'markdown-it-task-lists'
 import hljs from 'highlight.js'
 import DOMPurify from 'dompurify'
 
-const md = new MarkdownIt({
+let md: MarkdownIt
+
+function highlightCode(str: string, lang: string): string {
+  if (lang && hljs.getLanguage(lang)) {
+    try {
+      return `<pre class="hljs"><code>${hljs.highlight(str, { language: lang }).value}</code></pre>`
+    } catch {}
+  }
+  return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`
+}
+
+md = new MarkdownIt({
   html: false,
   linkify: true,
   breaks: true,
-  highlight: (str: string, lang: string) => {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return `<pre class="hljs"><code>${hljs.highlight(str, { language: lang }).value}</code></pre>`
-      } catch {}
-    }
-    return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`
-  }
+  highlight: highlightCode
 })
 
 md.use(taskLists)

@@ -11,7 +11,7 @@ import {
   updateNote
 } from './notes.api.js'
 
-function jsonResponse(body, ok = true, status = 200) {
+function jsonResponse(body: unknown, ok = true, status = 200): Response {
   return {
     ok,
     status,

@@ -37,11 +37,12 @@ export async function saveTask(
       originModule,
       originId
     )
-    if (newTask) {
-      tasksRef.value.unshift(newTask)
-      if (!newTask.archived) {
-        activeTasksSnapshotRef.value = [newTask, ...activeTasksSnapshotRef.value]
-      }
+    if (!newTask) {
+      return null
+    }
+    tasksRef.value.unshift(newTask)
+    if (!newTask.archived) {
+      activeTasksSnapshotRef.value = [newTask, ...activeTasksSnapshotRef.value]
     }
     return newTask
   } catch (e) {

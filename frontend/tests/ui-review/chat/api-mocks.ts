@@ -1,6 +1,19 @@
 import { assistantMarkdownReply, cockpitProjects, cockpitTasks } from './fixtures.js'
+import type { Page } from '@playwright/test'
 
-function json(data, status = 200) {
+type Gate = {
+  promise: Promise<void>
+  release: () => void
+}
+
+type ChatReviewApiOptions = {
+  delayCockpit?: boolean
+  delayChat?: boolean
+  chatReply?: string
+  chatStatus?: number
+}
+
+function json(data: unknown, status = 200) {
   return {
     status,
     contentType: 'application/json',
@@ -8,15 +21,15 @@ function json(data, status = 200) {
   }
 }
 
-function createGate() {
-  let release
-  const promise = new Promise(resolve => {
+function createGate(): Gate {
+  let release: () => void = () => {}
+  const promise = new Promise<void>(resolve => {
     release = resolve
   })
   return { promise, release }
 }
 
-export async function installChatReviewApiMocks(page, options = {}) {
+export async function installChatReviewApiMocks(page: Page, options: ChatReviewApiOptions = {}): Promise<{ releaseCockpit: () => void, releaseChat: () => void }> {
   const cockpitGate = options.delayCockpit ? createGate() : null
   const chatGate = options.delayChat ? createGate() : null
   const chatReply = options.chatReply || assistantMarkdownReply

@@ -53,23 +53,24 @@ type RuntimeControlsMock = {
 }
 
 function createChatStore() {
-  return {
+  const store = {
     isOpen: false,
     isSending: false,
     messages: [] as ChatMessageDto[],
-    openChat: vi.fn(function openChat() {
-      this.isOpen = true
+    openChat: vi.fn(() => {
+      store.isOpen = true
     }),
-    closeChat: vi.fn(function closeChat() {
-      this.isOpen = false
+    closeChat: vi.fn(() => {
+      store.isOpen = false
     }),
-    appendMessage: vi.fn(function appendMessage(message) {
-      this.messages.push(message)
+    appendMessage: vi.fn((message: ChatMessageDto) => {
+      store.messages.push(message)
     }),
-    setSending: vi.fn(function setSending(value) {
-      this.isSending = value
+    setSending: vi.fn((value: boolean) => {
+      store.isSending = value
     })
   }
+  return store
 }
 
 describe('useChatFeature orchestration', () => {

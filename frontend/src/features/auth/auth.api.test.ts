@@ -13,7 +13,7 @@ import {
   revokeInvite
 } from './auth.api'
 
-function jsonResponse(body, ok = true, status = 200) {
+function jsonResponse(body: unknown, ok = true, status = 200): Response {
   return {
     ok,
     status,
@@ -21,14 +21,22 @@ function jsonResponse(body, ok = true, status = 200) {
   } as unknown as Response
 }
 
-function createLocalStorageMock() {
-  const values = new Map()
+function createLocalStorageMock(): Storage {
+  const values = new Map<string, string>()
   return {
     clear: vi.fn(() => values.clear()),
-    getItem: vi.fn((key) => values.get(key) || null),
-    removeItem: vi.fn((key) => values.delete(key)),
-    setItem: vi.fn((key, value) => values.set(key, String(value)))
-  }
+    getItem: vi.fn((key: string) => values.get(key) || null),
+    key: vi.fn((index: number) => Array.from(values.keys())[index] || null),
+    get length() {
+      return values.size
+    },
+    removeItem: vi.fn((key: string) => {
+      values.delete(key)
+    }),
+    setItem: vi.fn((key: string, value: string) => {
+      values.set(key, String(value))
+    })
+  } as Storage
 }
 
 function mockedFetch() {

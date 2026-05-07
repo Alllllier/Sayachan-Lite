@@ -9,6 +9,7 @@ const auth = useAuthStore() as AuthStore
 const route = useRoute()
 const router = useRouter()
 const isPublicAuthRoute = computed(() => route.meta.public)
+const currentUserEmail = computed(() => auth.currentUser?.email || '')
 
 async function logout(): Promise<void> {
   await auth.logout()
@@ -21,7 +22,7 @@ async function logout(): Promise<void> {
     <header v-if="!isPublicAuthRoute && auth.isAuthenticated" class="top-shell">
       <div>
         <strong>Sayachan Lite</strong>
-        <span>{{ auth.currentUser.email }}</span>
+        <span>{{ currentUserEmail }}</span>
       </div>
       <div class="top-shell__actions">
         <RouterLink v-if="auth.isOwner" to="/owner" class="btn btn-secondary btn-sm">Owner</RouterLink>

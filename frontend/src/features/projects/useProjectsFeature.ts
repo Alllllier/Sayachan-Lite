@@ -52,6 +52,9 @@ type StringSetRef = Ref<Set<string>>
 type ProjectStringMap = Record<string, string>
 type ProjectTaskMap = Record<string, TaskApiTask[]>
 type TaskCaptureMode = 'single' | 'batch'
+type ProjectFieldTarget = 'new' | 'edit'
+type ProjectEditableField = 'name' | 'summary'
+type TaskCaptureError = ReturnType<typeof createEmptyTaskCaptureError>
 
 function sortProjects(projects: ProjectDto[]): ProjectDto[] {
   return [...projects].sort((a, b) => {
@@ -88,24 +91,24 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
   const editProjectErrors = ref<ProjectErrorsById>({})
   const editingOriginalData = ref<ProjectSnapshotsById>({})
 
-  function emitRefreshed() {
+  function emitRefreshed(): void {
     onRefreshed(projects.value)
   }
 
-  function resolveCacheUserKey() {
+  function resolveCacheUserKey(): string {
     return unref(cacheUserKey) || 'anonymous'
   }
 
-  function resolveProjectsCacheVariant() {
+  function resolveProjectsCacheVariant(): 'active' | 'archived' {
     return showArchived.value ? 'archived' : 'active'
   }
 
-  function resolveProjectTasksCacheVariant(projectId, archived) {
+  function resolveProjectTasksCacheVariant(projectId: string, archived: boolean): string {
     return `${projectId}:${archived ? 'archived' : 'active'}`
   }
 
-  function hydrateProjectsFromCache() {
-    const cachedProjects = readResourceCache(resolveCacheUserKey(), PROJECTS_CACHE_RESOURCE, resolveProjectsCacheVariant())
+  function hydrateProjectsFromCache(): boolean {
+    const cachedProjects = readResourceCache<ProjectDto[]>(resolveCacheUserKey(), PROJECTS_CACHE_RESOURCE, resolveProjectsCacheVariant())
     if (!Array.isArray(cachedProjects)) return false
     projects.value = cachedProjects
     projects.value.forEach(project => {
@@ -115,12 +118,12 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     return true
   }
 
-  function cacheCurrentProjects() {
+  function cacheCurrentProjects(): void {
     writeResourceCache(resolveCacheUserKey(), PROJECTS_CACHE_RESOURCE, resolveProjectsCacheVariant(), projects.value)
   }
 
-  function hydrateProjectTasksFromCache(projectId, archived) {
-    const cachedTasks = readResourceCache(
+  function hydrateProjectTasksFromCache(projectId: string, archived: boolean): boolean {
+    const cachedTasks = readResourceCache<TaskApiTask[]>(
       resolveCacheUserKey(),
       PROJECT_TASKS_CACHE_RESOURCE,
       resolveProjectTasksCacheVariant(projectId, archived)
@@ -130,7 +133,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     return true
   }
 
-  function cacheProjectTasks(projectId, archived) {
+  function cacheProjectTasks(projectId: string, archived: boolean): void {
     writeResourceCache(
       resolveCacheUserKey(),
       PROJECT_TASKS_CACHE_RESOURCE,
@@ -139,7 +142,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     )
   }
 
-  function syncProjects(nextProjects) {
+  function syncProjects(nextProjects: ProjectDto[]): void {
     if (!Array.isArray(nextProjects)) return
     projects.value = [...nextProjects]
     projects.value.forEach(project => {
@@ -147,7 +150,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     })
   }
 
-  async function fetchProjectTasksForCard(projectId) {
+  async function fetchProjectTasksForCard(projectId: string): Promise<void> {
     loadingProjectTasks.value.add(projectId)
     const project = projects.value.find(p => p._id === projectId)
     const archived = project?.archived === true
@@ -166,7 +169,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  async function fetchProjects() {
+  async function fetchProjects(): Promise<void> {
     loading.value = true
     error.value = null
     const hydratedFromCache = hydrateProjectsFromCache()
@@ -187,7 +190,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  async function createProject() {
+  async function createProject(): Promise<void> {
     const errors = validateProjectFields(projectForm.value)
     projectFormErrors.value = errors
     if (hasProjectErrors(errors)) return
@@ -210,7 +213,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  async function updateProject(project) {
+  async function updateProject(project: ProjectWithId): Promise<void> {
     const errors = validateProjectFields(project)
     editProjectErrors.value[project._id] = errors
     if (hasProjectErrors(errors)) return
@@ -234,7 +237,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  async function deleteProject(id) {
+  async function deleteProject(id: string): Promise<void> {
     if (!confirm('Delete this project?')) return
 
     loading.value = true
@@ -252,7 +255,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  async function archiveProject(project) {
+  async function archiveProject(project: ProjectWithId): Promise<void> {
     if (!confirm(`Archive "${project.name}"? All related tasks will be archived too.`)) return
 
     loading.value = true
@@ -269,7 +272,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  async function restoreProject(project) {
+  async function restoreProject(project: ProjectWithId): Promise<void> {
     loading.value = true
     error.value = null
     try {
@@ -285,7 +288,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  async function pinProject(project) {
+  async function pinProject(project: ProjectWithId): Promise<void> {
     loading.value = true
     try {
       await pinProjectRequest(project._id)
@@ -298,7 +301,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  async function unpinProject(project) {
+  async function unpinProject(project: ProjectWithId): Promise<void> {
     loading.value = true
     try {
       await unpinProjectRequest(project._id)
@@ -311,7 +314,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  function startEditingProject(project) {
+  function startEditingProject(project: ProjectWithId): void {
     editingProjectId.value = project._id
     editProjectErrors.value[project._id] = createEmptyProjectErrors()
     editingOriginalData.value[project._id] = {
@@ -321,7 +324,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  function cancelEditProject(project) {
+  function cancelEditProject(project: ProjectWithId | null): void {
     if (project && editingOriginalData.value[project._id]) {
       project.name = editingOriginalData.value[project._id].name
       project.summary = editingOriginalData.value[project._id].summary
@@ -334,14 +337,14 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     editingProjectId.value = null
   }
 
-  function ensureEditProjectErrorState(projectId) {
+  function ensureEditProjectErrorState(projectId: string): ReturnType<typeof createEmptyProjectErrors> {
     if (!editProjectErrors.value[projectId]) {
       editProjectErrors.value[projectId] = createEmptyProjectErrors()
     }
     return editProjectErrors.value[projectId]
   }
 
-  function updateProjectFieldError(target, field, value, projectId = null) {
+  function updateProjectFieldError(target: ProjectFieldTarget, field: ProjectEditableField, value: string, projectId: string | null = null): void {
     const trimmed = value.trim()
     if (target === 'new') {
       if (field === 'name') {
@@ -352,6 +355,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
       return
     }
 
+    if (!projectId) return
     const errors = ensureEditProjectErrorState(projectId)
     if (field === 'name') {
       errors.name = trimmed ? '' : errors.name
@@ -360,23 +364,23 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  function clearEditProjectErrors(projectId) {
+  function clearEditProjectErrors(projectId: string): void {
     delete editProjectErrors.value[projectId]
   }
 
-  function ensureTaskCaptureErrorState(projectId) {
+  function ensureTaskCaptureErrorState(projectId: string): TaskCaptureError {
     if (!taskCaptureErrors.value[projectId]) {
       taskCaptureErrors.value[projectId] = createEmptyTaskCaptureError()
     }
     return taskCaptureErrors.value[projectId]
   }
 
-  function setTaskCaptureError(projectId, mode, message) {
+  function setTaskCaptureError(projectId: string, mode: TaskCaptureMode, message: string): void {
     const errors = ensureTaskCaptureErrorState(projectId)
     errors[mode] = message
   }
 
-  function clearTaskCaptureError(projectId, mode = null) {
+  function clearTaskCaptureError(projectId: string, mode: TaskCaptureMode | null = null): void {
     if (!taskCaptureErrors.value[projectId]) return
     if (!mode) {
       delete taskCaptureErrors.value[projectId]
@@ -385,18 +389,18 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     taskCaptureErrors.value[projectId][mode] = ''
   }
 
-  function handleTaskCaptureInput(projectId, mode, value) {
+  function handleTaskCaptureInput(projectId: string, mode: TaskCaptureMode, value: string): void {
     if (value.trim()) {
       clearTaskCaptureError(projectId, mode)
     }
   }
 
-  function openTaskCapture(projectId) {
+  function openTaskCapture(projectId: string): void {
     const nextState = getInitialTaskCaptureState()
 
     taskCaptureOpen.value.add(projectId)
     taskCaptureMode.value[projectId] = nextState.mode
-    manualTaskInputs.value[projectId] = nextState.singleInput
+    manualTaskInputs.value[projectId] = nextState.singleInput || ''
     taskCaptureErrors.value[projectId] = nextState.errors
 
     if (nextState.manualProjectActive) {
@@ -406,7 +410,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  function closeTaskCapture(projectId) {
+  function closeTaskCapture(projectId: string): void {
     taskCaptureOpen.value.delete(projectId)
     delete taskCaptureMode.value[projectId]
     delete manualTaskInputs.value[projectId]
@@ -415,7 +419,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     clearTaskCaptureError(projectId)
   }
 
-  function setTaskCaptureMode(projectId, mode) {
+  function setTaskCaptureMode(projectId: string, mode: string): void {
     const nextState = getNextTaskCaptureModeState(mode, {
       singleInput: manualTaskInputs.value[projectId],
       batchInput: batchTaskInputs.value[projectId]
@@ -426,16 +430,16 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
 
     if (nextState.manualProjectActive) {
       manualTaskProjects.value.add(projectId)
-      manualTaskInputs.value[projectId] = nextState.singleInput
+      manualTaskInputs.value[projectId] = nextState.singleInput || ''
       delete batchTaskInputs.value[projectId]
     } else {
       manualTaskProjects.value.delete(projectId)
-      batchTaskInputs.value[projectId] = nextState.batchInput
+      batchTaskInputs.value[projectId] = nextState.batchInput || ''
       delete manualTaskInputs.value[projectId]
     }
   }
 
-  async function addManualTask(project) {
+  async function addManualTask(project: ProjectWithId): Promise<void> {
     const taskTitle = manualTaskInputs.value[project._id]?.trim()
     const validationError = validateSingleTaskCapture(taskTitle)
     if (validationError) {
@@ -464,7 +468,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  async function addBatchTasks(project) {
+  async function addBatchTasks(project: ProjectWithId): Promise<void> {
     const inputText = batchTaskInputs.value[project._id]
     const validationError = validateBatchTaskCapture(inputText)
     if (validationError) {
@@ -498,21 +502,21 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  function getCurrentFocusDisplay(project) {
+  function getCurrentFocusDisplay(project: ProjectDto): string {
     return getProjectFocusTitle(project, projectTasks.value[project._id] || [])
   }
 
-  function closeAISuggestions(projectId) {
+  function closeAISuggestions(projectId: string): void {
     delete aiSuggestions.value[projectId]
   }
 
-  function getProjectAIState(projectId) {
+  function getProjectAIState(projectId: string): 'pending' | 'active' | 'idle' {
     if (aiLoadingProjects.value.has(projectId)) return 'pending'
     if (aiSuggestions.value[projectId] && aiSuggestions.value[projectId].length > 0) return 'active'
     return 'idle'
   }
 
-  async function handleAISuggest(project) {
+  async function handleAISuggest(project: ProjectWithId): Promise<void> {
     aiLoadingProjects.value.add(project._id)
     try {
       const result = await fetchProjectNextActions(project._id)
@@ -524,7 +528,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  async function saveSuggestionAsTask(projectId, suggestion) {
+  async function saveSuggestionAsTask(projectId: string, suggestion: string): Promise<void> {
     if (savedSuggestions.value.has(suggestion)) {
       return
     }
@@ -545,11 +549,12 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  async function setTaskAsFocus(project, task) {
+  async function setTaskAsFocus(project: ProjectWithId, task: TaskApiTask): Promise<void> {
     if (!canSetProjectFocus(task)) return
+    if (!task._id) return
 
     try {
-      const updated = await updateProjectFocus(project, task._id)
+      const updated = await updateProjectFocus(project, String(task._id))
       const index = projects.value.findIndex(p => p._id === project._id)
       if (index !== -1) {
         projects.value[index] = updated
@@ -560,7 +565,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     }
   }
 
-  function setProjectArchiveView(view) {
+  function setProjectArchiveView(view: string): void {
     showArchived.value = view === 'archived'
     fetchProjects()
   }

@@ -5,8 +5,43 @@ import {
   ownerUser,
   testerUser
 } from './fixtures.js'
+import type { Page } from '@playwright/test'
 
-function json(data, status = 200) {
+type ReviewUser = {
+  _id: string
+  email: string
+  role: string
+  disabled: boolean
+  createdAt: string
+  updatedAt: string
+  lastLoginAt: string
+}
+type ReviewInvite = {
+  _id: string
+  codePreview: string
+  code?: string
+  createdBy: string
+  expiresAt: string
+  revokedAt: string | null
+  usedAt: string | null
+  usedBy: string | null
+  createdAt: string
+}
+type ReviewSystemStatus = typeof ownerSystemStatus
+type AuthMockOptions = {
+  invites?: ReviewInvite[]
+  testers?: ReviewUser[]
+  currentUser?: ReviewUser | null
+  loginStatus?: number
+  loginError?: string
+  loginUser?: ReviewUser
+  registerStatus?: number
+  registerError?: string
+  registerUser?: ReviewUser
+  systemStatus?: ReviewSystemStatus
+}
+
+function json(data: unknown, status = 200) {
   return {
     status,
     contentType: 'application/json',
@@ -14,11 +49,11 @@ function json(data, status = 200) {
   }
 }
 
-function clone(data) {
-  return JSON.parse(JSON.stringify(data))
+function clone<T>(data: T): T {
+  return JSON.parse(JSON.stringify(data)) as T
 }
 
-export async function installAuthReviewApiMocks(page, options = {}) {
+export async function installAuthReviewApiMocks(page: Page, options: AuthMockOptions = {}): Promise<void> {
   const invitesById = new Map(clone(options.invites || ownerInvites).map(invite => [invite._id, invite]))
   const testersById = new Map(clone(options.testers || ownerTesters).map(tester => [tester._id, tester]))
   let currentUser = options.currentUser === undefined ? null : options.currentUser

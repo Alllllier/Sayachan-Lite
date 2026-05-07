@@ -38,6 +38,7 @@ const fetchProjectsMock = vi.mocked(fetchProjects)
 const saveTaskMock = vi.mocked(saveTask)
 const updateProjectMock = vi.mocked(updateProject)
 const updateProjectFocusMock = vi.mocked(updateProjectFocus)
+const PROJECT_UPDATED_AT = '2026-01-01'
 
 function stubLocalStorage() {
   const store: Record<string, string> = {}
@@ -69,7 +70,8 @@ describe('useProjectsFeature orchestration', () => {
       _id: 'project-1',
       name: 'PMO',
       summary: 'Plan work',
-      status: 'pending'
+      status: 'pending',
+      updatedAt: PROJECT_UPDATED_AT
     })
 
     await feature.createProject()
@@ -110,14 +112,14 @@ describe('useProjectsFeature orchestration', () => {
   it('archives through the project API before refreshing the list', async () => {
     const notify = vi.fn()
     const feature = useProjectsFeature({ notify })
-    fetchProjectsMock.mockResolvedValue([{ _id: 'project-2', name: 'Remaining', summary: 'Open', status: 'pending' }])
+    fetchProjectsMock.mockResolvedValue([{ _id: 'project-2', name: 'Remaining', summary: 'Open', status: 'pending', updatedAt: PROJECT_UPDATED_AT }])
     archiveProjectMock.mockResolvedValue()
 
-    await feature.archiveProject({ _id: 'project-1', name: 'Done', summary: 'Done summary', status: 'pending' })
+    await feature.archiveProject({ _id: 'project-1', name: 'Done', summary: 'Done summary', status: 'pending', updatedAt: PROJECT_UPDATED_AT })
 
     expect(archiveProject).toHaveBeenCalledWith('project-1')
     expect(fetchProjects).toHaveBeenCalledWith({ archived: false })
-    expect(feature.projects.value).toEqual([{ _id: 'project-2', name: 'Remaining', summary: 'Open', status: 'pending' }])
+    expect(feature.projects.value).toEqual([{ _id: 'project-2', name: 'Remaining', summary: 'Open', status: 'pending', updatedAt: PROJECT_UPDATED_AT }])
     expect(notify).toHaveBeenCalledWith('Project archived')
   })
 
@@ -125,32 +127,32 @@ describe('useProjectsFeature orchestration', () => {
     const feature = useProjectsFeature()
     fetchProjectsMock
       .mockRejectedValueOnce(new Error('network'))
-      .mockResolvedValueOnce([{ _id: 'project-1', name: 'Recovered', summary: 'Ready', status: 'pending' }])
+      .mockResolvedValueOnce([{ _id: 'project-1', name: 'Recovered', summary: 'Ready', status: 'pending', updatedAt: PROJECT_UPDATED_AT }])
 
     await feature.fetchProjects()
     expect(feature.error.value).toBe('Failed to load projects')
 
     await feature.fetchProjects()
     expect(feature.error.value).toBe(null)
-    expect(feature.projects.value).toEqual([{ _id: 'project-1', name: 'Recovered', summary: 'Ready', status: 'pending' }])
+    expect(feature.projects.value).toEqual([{ _id: 'project-1', name: 'Recovered', summary: 'Ready', status: 'pending', updatedAt: PROJECT_UPDATED_AT }])
   })
 
   it('shows cached projects when refresh fails after a previous successful load', async () => {
     const notify = vi.fn()
-    writeResourceCache('user-1', 'projects', 'active', [{ _id: 'project-cached', name: 'Cached', summary: 'Snapshot' }])
+    writeResourceCache('user-1', 'projects', 'active', [{ _id: 'project-cached', name: 'Cached', summary: 'Snapshot', status: 'pending', updatedAt: PROJECT_UPDATED_AT }])
     fetchProjectsMock.mockRejectedValue(new Error('network'))
 
     const feature = useProjectsFeature({ notify, cacheUserKey: 'user-1' })
     await feature.fetchProjects()
 
-    expect(feature.projects.value).toEqual([{ _id: 'project-cached', name: 'Cached', summary: 'Snapshot' }])
+    expect(feature.projects.value).toEqual([{ _id: 'project-cached', name: 'Cached', summary: 'Snapshot', status: 'pending', updatedAt: PROJECT_UPDATED_AT }])
     expect(feature.error.value).toBe(null)
     expect(notify).toHaveBeenCalledWith('Showing cached projects. Refresh failed.', 'error')
   })
 
   it('hydrates cached project card tasks immediately with cached projects', async () => {
     writeResourceCache('user-1', 'projects', 'active', [
-      { _id: 'project-cached', name: 'Cached', summary: 'Snapshot', archived: false }
+      { _id: 'project-cached', name: 'Cached', summary: 'Snapshot', status: 'pending', archived: false, updatedAt: PROJECT_UPDATED_AT }
     ])
     writeResourceCache('user-1', 'project-tasks', 'project-cached:active', [
       { _id: 'task-cached', title: 'Cached task' }
@@ -166,7 +168,7 @@ describe('useProjectsFeature orchestration', () => {
 
   it('guards focus updates to active non-archived tasks', async () => {
     const feature = useProjectsFeature()
-    const project: ProjectDto & { _id: string } = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending' }
+    const project: ProjectDto & { _id: string } = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending', updatedAt: PROJECT_UPDATED_AT }
 
     await feature.setTaskAsFocus(project, { _id: 'task-archived', status: 'active', archived: true })
     expect(updateProjectFocus).not.toHaveBeenCalled()
@@ -195,7 +197,7 @@ describe('useProjectsFeature orchestration', () => {
 
   it('generates project AI suggestions from the current project id', async () => {
     const feature = useProjectsFeature()
-    const project: ProjectDto & { _id: string } = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending' }
+    const project: ProjectDto & { _id: string } = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending', updatedAt: PROJECT_UPDATED_AT }
     fetchProjectNextActionsMock.mockResolvedValue({ suggestions: ['Write handoff'] })
 
     await feature.handleAISuggest(project)
@@ -207,7 +209,7 @@ describe('useProjectsFeature orchestration', () => {
   it('adds a single manual project task, closes capture, and refreshes card tasks', async () => {
     const notify = vi.fn()
     const feature = useProjectsFeature({ notify })
-    const project: ProjectDto & { _id: string } = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending' }
+    const project: ProjectDto & { _id: string } = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending', updatedAt: PROJECT_UPDATED_AT }
     saveTaskMock.mockResolvedValue({ _id: 'task-1', title: 'Draft', status: 'active', archived: false, completed: false })
     fetchProjectCardTasksMock.mockResolvedValue([{ _id: 'task-1', title: 'Draft' }])
 
@@ -225,7 +227,7 @@ describe('useProjectsFeature orchestration', () => {
   it('adds batch project tasks, closes capture, and refreshes card tasks', async () => {
     const notify = vi.fn()
     const feature = useProjectsFeature({ notify })
-    const project: ProjectDto & { _id: string } = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending' }
+    const project: ProjectDto & { _id: string } = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending', updatedAt: PROJECT_UPDATED_AT }
     saveTaskMock.mockResolvedValue({ _id: 'task-1', title: 'Saved', status: 'active', archived: false, completed: false })
     fetchProjectCardTasksMock.mockResolvedValue([{ _id: 'task-1', title: 'First' }])
 
