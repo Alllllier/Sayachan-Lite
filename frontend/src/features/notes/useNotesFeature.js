@@ -20,7 +20,7 @@ import {
   hasNoteErrors,
   restoreNoteFromSnapshot,
   validateNoteFields
-} from './notes.rules.js'
+} from './notes.rules'
 
 const noop = () => {}
 

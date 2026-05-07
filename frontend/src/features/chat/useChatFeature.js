@@ -12,7 +12,7 @@ import {
   isChatInputDisabled,
   resolveChatContextForSend,
   shouldClearChatDraft
-} from './chat.rules.js'
+} from './chat.rules'
 
 const noop = () => {}
 

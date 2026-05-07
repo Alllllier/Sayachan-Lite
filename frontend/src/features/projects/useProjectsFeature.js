@@ -13,7 +13,7 @@ import {
   validateBatchTaskCapture,
   validateProjectFields,
   validateSingleTaskCapture
-} from './projects.rules.js'
+} from './projects.rules'
 import {
   archiveProject as archiveProjectRequest,
   createProject as createProjectRequest,

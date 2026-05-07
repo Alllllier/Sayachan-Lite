@@ -16,7 +16,7 @@ import {
   validateBatchTaskCapture,
   validateProjectFields,
   validateSingleTaskCapture
-} from './projects.rules.js'
+} from './projects.rules'
 
 describe('projects rules locks', () => {
   const mixedTasks = [

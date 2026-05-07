@@ -17,7 +17,7 @@ import {
   getDashboardTaskToggleLabel,
   getVisibleDashboardTasks,
   removeDashboardTask
-} from './dashboard.rules.js'
+} from './dashboard.rules'
 
 const noop = () => {}
 const DASHBOARD_TASKS_CACHE_RESOURCE = 'dashboard-tasks'

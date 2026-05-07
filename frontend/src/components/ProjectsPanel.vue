@@ -8,7 +8,7 @@ import {
   getProjectArchivedPreviewTasks,
   getProjectPrimaryPreviewTasks,
   getProjectTaskBuckets
-} from '../features/projects/projects.rules.js'
+} from '../features/projects/projects.rules'
 import {
   Card,
   CardHeaderRow,

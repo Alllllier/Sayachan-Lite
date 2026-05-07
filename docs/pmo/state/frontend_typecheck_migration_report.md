@@ -26,10 +26,20 @@
 | Shared support | `frontend/src/services/apiClient.js` | Included. |
 | Existing task service pilot | `frontend/src/services/tasks/index.js`, `task.rules.js`, `task.api.js`, `task.runtime.js` | Included. |
 | Auth API island | `frontend/src/features/auth/auth.api.js` | Included. |
-| Chat API/rules island | `frontend/src/features/chat/chat.api.js`, `chat.rules.js` | Included. |
-| Dashboard rules island | `frontend/src/features/dashboard/dashboard.rules.js` | Included. |
-| Notes API/rules island | `frontend/src/features/notes/notes.api.js`, `notes.rules.js` | Included. |
-| Projects API/rules island | `frontend/src/features/projects/projects.api.js`, `projects.rules.js` | Included. |
+| Chat API/rules island | `frontend/src/features/chat/chat.api.js`, `chat.rules.ts` | Included. |
+| Dashboard rules island | `frontend/src/features/dashboard/dashboard.rules.ts` | Included. |
+| Notes API/rules island | `frontend/src/features/notes/notes.api.js`, `notes.rules.ts` | Included. |
+| Projects API/rules island | `frontend/src/features/projects/projects.api.js`, `projects.rules.ts` | Included. |
+
+## First TypeScript Conversion
+
+- First `.ts` conversion batch completed for pure feature rules:
+  - `frontend/src/features/chat/chat.rules.ts`
+  - `frontend/src/features/dashboard/dashboard.rules.ts`
+  - `frontend/src/features/notes/notes.rules.ts`
+  - `frontend/src/features/projects/projects.rules.ts`
+- Imports from Vue components, feature composables, and rules tests now use extensionless rule-module paths.
+- API islands remain JS + checkJs; DTO/runtime-validation decisions remain parked for a later gate.
 
 ## Scaffolding Notes
 

@@ -7,7 +7,7 @@ import {
   hasNoteErrors,
   restoreNoteFromSnapshot,
   validateNoteFields
-} from './notes.rules.js'
+} from './notes.rules'
 
 describe('notes rules locks', () => {
   it('returns a title error for empty or whitespace-only titles', () => {

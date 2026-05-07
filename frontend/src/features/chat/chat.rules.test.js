@@ -9,7 +9,7 @@ import {
   resolveChatContextForSend,
   resolveChatContextSnapshot,
   shouldClearChatDraft
-} from './chat.rules.js'
+} from './chat.rules'
 
 describe('chat rules locks', () => {
   it('normalizes typed and preset send text before submission', () => {

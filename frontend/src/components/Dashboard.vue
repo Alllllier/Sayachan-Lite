@@ -5,7 +5,7 @@ import {
   deriveDashboardTaskProvenance,
   deriveDashboardTaskRowState,
   getDashboardTaskActions
-} from '../features/dashboard/dashboard.rules.js'
+} from '../features/dashboard/dashboard.rules'
 import { useDashboardFeature } from '../features/dashboard/useDashboardFeature.js'
 import EmptyState from './ui/EmptyState.vue'
 import OverflowMenu from './ui/OverflowMenu.vue'
