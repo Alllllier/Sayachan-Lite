@@ -41,6 +41,8 @@ type CockpitSignalsLike = {
   hasHydrated: boolean
 }
 
+type ChatKeydownEvent = Pick<KeyboardEvent, 'key' | 'shiftKey' | 'preventDefault'>
+
 export function useChatFeature(options: ChatFeatureOptions = {}) {
   const scrollToBottom = options.scrollToBottom || noop
   const onHydrationError = options.onHydrationError || noop
@@ -111,7 +113,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
         currentContext: context.value,
         refreshCockpitContext,
         onHydrationError
-      }) as ChatContextDto
+      })
       isHydrating.value = false
     }
 
@@ -136,7 +138,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     }
   }
 
-  function handleKeydown(event: KeyboardEvent) {
+  function handleKeydown(event: ChatKeydownEvent) {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
       handleSend()

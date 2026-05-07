@@ -1,8 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildChatRuntimePayload, sendChat } from './chat.api.js'
+import type { ChatContextDto } from '../../types/api-dtos'
+
+const emptyContext: ChatContextDto = {
+  activeProjectsCount: 0,
+  activeTasksCount: 0,
+  pinnedProjectName: '',
+  currentNextAction: ''
+}
 
 function mockedFetch() {
   return vi.mocked(fetch)
+}
+
+function jsonResponse(body: unknown, ok = true, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status: ok ? status : status || 500,
+    headers: { 'Content-Type': 'application/json' }
+  })
 }
 
 describe('chat api boundary', () => {
@@ -11,17 +26,17 @@ describe('chat api boundary', () => {
   })
 
   it('sends chat messages with context, runtime controls, last user message, and future slots', async () => {
-    mockedFetch().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({ reply: 'Ready.' })
-    } as unknown as Response)
+    mockedFetch().mockResolvedValue(jsonResponse({ reply: 'Ready.' }))
 
     await expect(sendChat([
       { role: 'user', content: 'first' },
       { role: 'assistant', content: 'reply' },
       { role: 'user', content: 'latest' }
     ], {
-      activeTasksCount: 3
+      activeProjectsCount: 0,
+      activeTasksCount: 3,
+      pinnedProjectName: '',
+      currentNextAction: ''
     }, {
       personalityBaseline: 'strict',
       futureSlots: {
@@ -43,7 +58,10 @@ describe('chat api boundary', () => {
         { role: 'user', content: 'latest' }
       ],
       context: {
-        activeTasksCount: 3
+        activeProjectsCount: 0,
+        activeTasksCount: 3,
+        pinnedProjectName: '',
+        currentNextAction: ''
       },
       runtimeControls: {
         personalityBaseline: 'strict',
@@ -62,32 +80,23 @@ describe('chat api boundary', () => {
   })
 
   it('throws when the chat endpoint returns a non-ok response', async () => {
-    mockedFetch().mockResolvedValue({
-      ok: false,
-      status: 503
-    } as unknown as Response)
+    mockedFetch().mockResolvedValue(jsonResponse(null, false, 503))
 
-    await expect(sendChat([{ role: 'user', content: 'hello' }], {}, {}))
+    await expect(sendChat([{ role: 'user', content: 'hello' }], emptyContext, {}))
       .rejects
       .toThrow('Chat request failed: 503')
   })
 
   it('throws when the chat endpoint reply is empty or invalid', async () => {
-    mockedFetch().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({ reply: '' })
-    } as unknown as Response)
+    mockedFetch().mockResolvedValue(jsonResponse({ reply: '' }))
 
-    await expect(sendChat([{ role: 'user', content: 'hello' }], {}, {}))
+    await expect(sendChat([{ role: 'user', content: 'hello' }], emptyContext, {}))
       .rejects
       .toThrow('Empty or invalid reply from server')
 
-    mockedFetch().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({ reply: null })
-    } as unknown as Response)
+    mockedFetch().mockResolvedValue(jsonResponse({ reply: null }))
 
-    await expect(sendChat([{ role: 'user', content: 'hello' }], {}, {}))
+    await expect(sendChat([{ role: 'user', content: 'hello' }], emptyContext, {}))
       .rejects
       .toThrow('Empty or invalid reply from server')
   })

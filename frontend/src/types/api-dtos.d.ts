@@ -101,7 +101,12 @@ export type ChatMessageDto = {
   content?: string
 }
 
-export type ChatContextDto = Record<string, unknown> | null
+export type ChatContextDto = {
+  activeProjectsCount: number
+  activeTasksCount: number
+  pinnedProjectName: string
+  currentNextAction: string
+} | null
 
 export type ChatRuntimeControlsDto = {
   personalityBaseline?: ChatPersonalityBaseline

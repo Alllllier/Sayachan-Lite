@@ -44,7 +44,12 @@ describe('chat rules locks', () => {
 
   it('reuses hydrated cockpit signals without refreshing cockpit context', async () => {
     const refreshCockpitContext = vi.fn()
-    const currentContext = { activeTasksCount: 3 }
+    const currentContext = {
+      activeProjectsCount: 0,
+      activeTasksCount: 3,
+      pinnedProjectName: '',
+      currentNextAction: ''
+    }
 
     await expect(resolveChatContextSnapshot({
       cockpitSignals: { hasHydrated: true },
@@ -56,13 +61,24 @@ describe('chat rules locks', () => {
   })
 
   it('hydrates cockpit context before sending when cockpit signals are cold', async () => {
-    const refreshCockpitContext = vi.fn().mockResolvedValue({ activeTasksCount: 2 })
+    const refreshedContext = {
+      activeProjectsCount: 0,
+      activeTasksCount: 2,
+      pinnedProjectName: '',
+      currentNextAction: ''
+    }
+    const refreshCockpitContext = vi.fn().mockResolvedValue(refreshedContext)
 
     await expect(resolveChatContextSnapshot({
       cockpitSignals: { hasHydrated: false },
-      currentContext: { activeTasksCount: 99 },
+      currentContext: {
+        activeProjectsCount: 0,
+        activeTasksCount: 99,
+        pinnedProjectName: '',
+        currentNextAction: ''
+      },
       refreshCockpitContext
-    })).resolves.toEqual({ activeTasksCount: 2 })
+    })).resolves.toEqual(refreshedContext)
 
     expect(refreshCockpitContext).toHaveBeenCalledTimes(1)
   })
@@ -71,7 +87,12 @@ describe('chat rules locks', () => {
     const error = new Error('offline')
     const onHydrationError = vi.fn()
     const refreshCockpitContext = vi.fn().mockRejectedValue(error)
-    const currentContext = { activeTasksCount: 99 }
+    const currentContext = {
+      activeProjectsCount: 0,
+      activeTasksCount: 99,
+      pinnedProjectName: '',
+      currentNextAction: ''
+    }
 
     await expect(resolveChatContextForSend({
       cockpitSignals: { hasHydrated: false },

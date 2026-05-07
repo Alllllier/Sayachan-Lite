@@ -261,8 +261,8 @@ describe('projects rules locks', () => {
     expect(getProjectFocusTitle({ currentFocusTaskId: 'task-3' }, mixedTasks)).toBe('Archived one')
     expect(getProjectFocusTitle({ currentFocusTaskId: 'missing' }, mixedTasks)).toBe('')
     const projectWithLegacyFocusTitle = { currentFocusTaskId: 'task-4', focusTitle: 'Cached title' }
-    const projectWithOnlyLegacyFocusTitle = { focusTitle: 'Cached title' }
+    const projectWithOnlyLegacyFocusTitle = { currentFocusTaskId: undefined, focusTitle: 'Cached title' }
     expect(getProjectFocusTitle(projectWithLegacyFocusTitle, [])).toBe('')
-    expect(getProjectFocusTitle(projectWithOnlyLegacyFocusTitle as unknown as { currentFocusTaskId?: string }, mixedTasks)).toBe('')
+    expect(getProjectFocusTitle(projectWithOnlyLegacyFocusTitle, mixedTasks)).toBe('')
   })
 })

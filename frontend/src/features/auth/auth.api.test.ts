@@ -14,11 +14,10 @@ import {
 } from './auth.api'
 
 function jsonResponse(body: unknown, ok = true, status = 200): Response {
-  return {
-    ok,
-    status,
-    json: vi.fn().mockResolvedValue(body)
-  } as unknown as Response
+  return new Response(JSON.stringify(body), {
+    status: ok ? status : status || 500,
+    headers: { 'Content-Type': 'application/json' }
+  })
 }
 
 function createLocalStorageMock(): Storage {

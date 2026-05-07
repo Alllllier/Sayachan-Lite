@@ -1,22 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChatFeature } from './useChatFeature.js'
-import { useChatStore } from '../../stores/chat'
-import { useCockpitSignals } from '../../stores/cockpitSignals'
-import { useRuntimeControls } from '../../stores/runtimeControls'
 import { refreshCockpitContext } from '../../services/cockpitContextService'
 import { sendChat } from './chat.api.js'
 import type { ChatMessageDto } from '../../types/api-dtos'
 
+const storeMocks = vi.hoisted(() => ({
+  chatStore: undefined as ChatStoreMock | undefined,
+  cockpitSignals: undefined as CockpitSignalsMock | undefined,
+  runtimeControls: undefined as RuntimeControlsMock | undefined
+}))
+
 vi.mock('../../stores/chat', () => ({
-  useChatStore: vi.fn()
+  useChatStore: () => storeMocks.chatStore
 }))
 
 vi.mock('../../stores/cockpitSignals', () => ({
-  useCockpitSignals: vi.fn()
+  useCockpitSignals: () => storeMocks.cockpitSignals
 }))
 
 vi.mock('../../stores/runtimeControls', () => ({
-  useRuntimeControls: vi.fn()
+  useRuntimeControls: () => storeMocks.runtimeControls
 }))
 
 vi.mock('./chat.api.js', () => ({
@@ -27,9 +30,6 @@ vi.mock('../../services/cockpitContextService', () => ({
   refreshCockpitContext: vi.fn()
 }))
 
-const useChatStoreMock = vi.mocked(useChatStore)
-const useCockpitSignalsMock = vi.mocked(useCockpitSignals)
-const useRuntimeControlsMock = vi.mocked(useRuntimeControls)
 const refreshCockpitContextMock = vi.mocked(refreshCockpitContext)
 const sendChatMock = vi.mocked(sendChat)
 
@@ -99,9 +99,9 @@ describe('useChatFeature orchestration', () => {
       }
     }
 
-    useChatStoreMock.mockReturnValue(chatStore as unknown as ReturnType<typeof useChatStore>)
-    useCockpitSignalsMock.mockReturnValue(cockpitSignals as unknown as ReturnType<typeof useCockpitSignals>)
-    useRuntimeControlsMock.mockReturnValue(runtimeControls as unknown as ReturnType<typeof useRuntimeControls>)
+    storeMocks.chatStore = chatStore
+    storeMocks.cockpitSignals = cockpitSignals
+    storeMocks.runtimeControls = runtimeControls
     sendChatMock.mockResolvedValue({ reply: 'Done' })
   })
 
@@ -202,8 +202,9 @@ describe('useChatFeature orchestration', () => {
     const feature = useChatFeature()
     feature.handleSend = vi.fn()
     const preventDefault = vi.fn()
+    const event = { key: 'Enter', shiftKey: false, preventDefault }
 
-    feature.handleKeydown({ key: 'Enter', shiftKey: false, preventDefault } as unknown as KeyboardEvent)
+    feature.handleKeydown(event)
 
     expect(preventDefault).toHaveBeenCalled()
   })

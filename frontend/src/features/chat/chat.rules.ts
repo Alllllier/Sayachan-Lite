@@ -1,3 +1,5 @@
+import type { ChatContextDto } from '../../types/api-dtos'
+
 type ChatBaseline = 'warm' | 'strict' | 'haraguro' | (string & {})
 
 type ChatSendState = {
@@ -22,8 +24,8 @@ type CockpitSignals = {
 
 type ChatContextSnapshotOptions = {
   cockpitSignals: CockpitSignals | null | undefined
-  currentContext: unknown
-  refreshCockpitContext: () => unknown | Promise<unknown>
+  currentContext: ChatContextDto
+  refreshCockpitContext: () => ChatContextDto | Promise<ChatContextDto>
 }
 
 type ChatContextSendOptions = ChatContextSnapshotOptions & {
@@ -76,7 +78,7 @@ export async function resolveChatContextSnapshot({
   cockpitSignals,
   currentContext,
   refreshCockpitContext
-}: ChatContextSnapshotOptions): Promise<unknown> {
+}: ChatContextSnapshotOptions): Promise<ChatContextDto> {
   if (cockpitSignals?.hasHydrated) {
     return currentContext
   }
@@ -89,7 +91,7 @@ export async function resolveChatContextForSend({
   currentContext,
   refreshCockpitContext,
   onHydrationError
-}: ChatContextSendOptions): Promise<unknown> {
+}: ChatContextSendOptions): Promise<ChatContextDto> {
   try {
     return await resolveChatContextSnapshot({
       cockpitSignals,
