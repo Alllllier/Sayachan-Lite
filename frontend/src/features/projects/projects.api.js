@@ -2,32 +2,22 @@
 import { apiFetch, API_BASE } from '../../services/apiClient'
 
 /**
- * @typedef {Record<string, unknown> & {
- *   name: string,
- *   summary: string,
- *   status: string,
- *   _id?: string,
- *   currentFocusTaskId?: string
- * }} ProjectPayload
- * @typedef {{ archived?: boolean }} FetchProjectsOptions
- */
-
-/**
+ * @template T
  * @param {Response} response
  * @param {string} errorMessage
- * @returns {Promise<unknown>}
+ * @returns {Promise<T>}
  */
 async function parseJsonResponse(response, errorMessage) {
   if (!response.ok) {
     throw new Error(errorMessage || `Project request failed: ${response.status}`)
   }
 
-  return response.json()
+  return /** @type {Promise<T>} */ (response.json())
 }
 
 /**
- * @param {FetchProjectsOptions} [options]
- * @returns {Promise<unknown>}
+ * @param {FetchListOptionsDto} [options]
+ * @returns {Promise<ProjectDto[]>}
  */
 export async function fetchProjects({ archived = false } = {}) {
   const url = archived
@@ -38,8 +28,8 @@ export async function fetchProjects({ archived = false } = {}) {
 }
 
 /**
- * @param {ProjectPayload} project
- * @returns {Promise<unknown>}
+ * @param {ProjectWriteDto} project
+ * @returns {Promise<ProjectDto>}
  */
 export async function createProject(project) {
   const response = await apiFetch(`${API_BASE}/projects`, {
@@ -53,8 +43,8 @@ export async function createProject(project) {
 
 /**
  * @param {string} projectId
- * @param {ProjectPayload} project
- * @returns {Promise<unknown>}
+ * @param {ProjectWriteDto} project
+ * @returns {Promise<ProjectDto>}
  */
 export async function updateProject(projectId, project) {
   const response = await apiFetch(`${API_BASE}/projects/${projectId}`, {
@@ -123,7 +113,7 @@ export async function unpinProject(projectId) {
 
 /**
  * @param {string} projectId
- * @returns {Promise<unknown>}
+ * @returns {Promise<ProjectNextActionsResponseDto>}
  */
 export async function fetchProjectNextActions(projectId) {
   const response = await apiFetch(`${API_BASE}/ai/projects/next-action`, {
@@ -136,9 +126,9 @@ export async function fetchProjectNextActions(projectId) {
 }
 
 /**
- * @param {ProjectPayload & { _id: string }} project
+ * @param {ProjectWriteDto & { _id: string }} project
  * @param {string} taskId
- * @returns {Promise<unknown>}
+ * @returns {Promise<ProjectDto>}
  */
 export async function updateProjectFocus(project, taskId) {
   return updateProject(project._id, {

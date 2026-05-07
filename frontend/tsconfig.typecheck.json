@@ -13,6 +13,7 @@
     "skipLibCheck": true
   },
   "include": [
+    "src/types/api-dtos.d.ts",
     "src/types/typecheck-shims.d.ts",
     "src/services/apiClient.js",
     "src/services/tasks/index.js",

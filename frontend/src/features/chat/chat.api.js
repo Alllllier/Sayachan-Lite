@@ -2,16 +2,9 @@
 import { apiFetch, API_BASE } from '../../services/apiClient'
 
 /**
- * @typedef {{ role: string, content?: string }} ChatMessage
- * @typedef {Record<string, unknown>} ChatContext
- * @typedef {Record<string, unknown>} ChatRuntimeControls
- * @typedef {{ reply?: unknown }} ChatResponseBody
- */
-
-/**
- * @param {ChatMessage[]} messages
- * @param {ChatRuntimeControls} [runtimeControls]
- * @returns {ChatRuntimeControls & { lastUserMessage: string }}
+ * @param {ChatMessageDto[]} messages
+ * @param {ChatRuntimeControlsDto} [runtimeControls]
+ * @returns {ChatRuntimePayloadDto}
  */
 export function buildChatRuntimePayload(messages, runtimeControls = {}) {
   const lastUserMessage = messages.filter(message => message.role === 'user').pop()?.content || ''
@@ -23,10 +16,10 @@ export function buildChatRuntimePayload(messages, runtimeControls = {}) {
 }
 
 /**
- * @param {ChatMessage[]} messages
- * @param {ChatContext} context
- * @param {ChatRuntimeControls} [runtimeControls]
- * @returns {Promise<{ reply: string }>}
+ * @param {ChatMessageDto[]} messages
+ * @param {ChatContextDto} context
+ * @param {ChatRuntimeControlsDto} [runtimeControls]
+ * @returns {Promise<ChatResponseDto>}
  */
 export async function sendChat(messages, context, runtimeControls = {}) {
   const res = await apiFetch(`${API_BASE}/ai/chat`, {
@@ -43,7 +36,7 @@ export async function sendChat(messages, context, runtimeControls = {}) {
     throw new Error(`Chat request failed: ${res.status}`)
   }
 
-  /** @type {ChatResponseBody} */
+  /** @type {{ reply?: unknown }} */
   const data = await res.json()
   if (!data.reply || typeof data.reply !== 'string') {
     throw new Error('Empty or invalid reply from server')

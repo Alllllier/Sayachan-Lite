@@ -2,23 +2,16 @@
 import { apiFetch, clearAuthToken, setAuthToken } from '../../services/apiClient'
 
 /**
- * @typedef {Record<string, unknown>} JsonObject
- * @typedef {{ error?: string, sessionToken?: string, user?: unknown }} AuthResponseBody
- * @typedef {{ email: string, password: string }} LoginCredentials
- * @typedef {{ email: string, password: string, inviteCode: string }} RegisterTesterPayload
- * @typedef {JsonObject} BootstrapOwnerPayload
- */
-
-/**
+ * @template T
  * @param {Response} response
  * @param {string} errorMessage
- * @returns {Promise<unknown>}
+ * @returns {Promise<T | null>}
  */
 async function parseJsonResponse(response, errorMessage) {
   if (!response.ok) {
     let message = errorMessage
     try {
-      /** @type {AuthResponseBody} */
+      /** @type {AuthLoginResponseDto} */
       const body = await response.json()
       message = body.error || message
     } catch {
@@ -31,11 +24,11 @@ async function parseJsonResponse(response, errorMessage) {
     return null
   }
 
-  return response.json()
+  return /** @type {Promise<T>} */ (response.json())
 }
 
 /**
- * @returns {Promise<unknown>}
+ * @returns {Promise<PublicUserDto | null>}
  */
 export async function fetchCurrentUser() {
   const response = await apiFetch('/auth/me')
@@ -43,24 +36,24 @@ export async function fetchCurrentUser() {
 }
 
 /**
- * @param {LoginCredentials} credentials
- * @returns {Promise<unknown>}
+ * @param {AuthCredentialsDto} credentials
+ * @returns {Promise<PublicUserDto | AuthLoginResponseDto | null>}
  */
 export async function login(credentials) {
   const response = await apiFetch('/auth/login', {
     method: 'POST',
     body: JSON.stringify(credentials)
   })
-  const result = /** @type {AuthResponseBody | null} */ (await parseJsonResponse(response, 'Login failed'))
+  const result = await parseJsonResponse(response, 'Login failed')
   if (result?.sessionToken) {
     setAuthToken(result.sessionToken)
-    return result.user
+    return result.user || null
   }
   return result
 }
 
 /**
- * @returns {Promise<unknown>}
+ * @returns {Promise<null>}
  */
 export async function logout() {
   try {
@@ -72,8 +65,8 @@ export async function logout() {
 }
 
 /**
- * @param {RegisterTesterPayload} payload
- * @returns {Promise<unknown>}
+ * @param {RegisterTesterDto} payload
+ * @returns {Promise<PublicUserDto | null>}
  */
 export async function registerTester(payload) {
   const response = await apiFetch('/auth/register', {
@@ -84,8 +77,8 @@ export async function registerTester(payload) {
 }
 
 /**
- * @param {BootstrapOwnerPayload} payload
- * @returns {Promise<unknown>}
+ * @param {AuthCredentialsDto} payload
+ * @returns {Promise<PublicUserDto | null>}
  */
 export async function bootstrapOwner(payload) {
   const response = await apiFetch('/auth/bootstrap-owner', {
@@ -96,7 +89,7 @@ export async function bootstrapOwner(payload) {
 }
 
 /**
- * @returns {Promise<unknown>}
+ * @returns {Promise<CreatedInviteDto | null>}
  */
 export async function createInvite() {
   const response = await apiFetch('/owner/invites', { method: 'POST' })
@@ -104,7 +97,7 @@ export async function createInvite() {
 }
 
 /**
- * @returns {Promise<unknown>}
+ * @returns {Promise<PublicInviteDto[] | null>}
  */
 export async function fetchInvites() {
   const response = await apiFetch('/owner/invites')
@@ -113,7 +106,7 @@ export async function fetchInvites() {
 
 /**
  * @param {string} inviteId
- * @returns {Promise<unknown>}
+ * @returns {Promise<PublicInviteDto | null>}
  */
 export async function revokeInvite(inviteId) {
   const response = await apiFetch(`/owner/invites/${inviteId}/revoke`, { method: 'POST' })
@@ -121,7 +114,7 @@ export async function revokeInvite(inviteId) {
 }
 
 /**
- * @returns {Promise<unknown>}
+ * @returns {Promise<PublicUserDto[] | null>}
  */
 export async function fetchTesters() {
   const response = await apiFetch('/owner/testers')
@@ -130,7 +123,7 @@ export async function fetchTesters() {
 
 /**
  * @param {string} testerId
- * @returns {Promise<unknown>}
+ * @returns {Promise<PublicUserDto | null>}
  */
 export async function disableTester(testerId) {
   const response = await apiFetch(`/owner/testers/${testerId}/disable`, { method: 'POST' })
@@ -139,7 +132,7 @@ export async function disableTester(testerId) {
 
 /**
  * @param {string} testerId
- * @returns {Promise<unknown>}
+ * @returns {Promise<PublicUserDto | null>}
  */
 export async function restoreTester(testerId) {
   const response = await apiFetch(`/owner/testers/${testerId}/restore`, { method: 'POST' })
@@ -147,7 +140,7 @@ export async function restoreTester(testerId) {
 }
 
 /**
- * @returns {Promise<unknown>}
+ * @returns {Promise<OwnerSystemStatusDto | null>}
  */
 export async function fetchSystemStatus() {
   const response = await apiFetch('/owner/system-status')

@@ -2,26 +2,22 @@
 import { apiFetch, API_BASE } from '../../services/apiClient'
 
 /**
- * @typedef {{ title: string, content: string }} NoteWritePayload
- * @typedef {{ archived?: boolean }} FetchNotesOptions
- */
-
-/**
+ * @template T
  * @param {Response} response
  * @param {string} errorMessage
- * @returns {Promise<unknown>}
+ * @returns {Promise<T>}
  */
 async function parseJsonResponse(response, errorMessage) {
   if (!response.ok) {
     throw new Error(errorMessage || `Note request failed: ${response.status}`)
   }
 
-  return response.json()
+  return /** @type {Promise<T>} */ (response.json())
 }
 
 /**
- * @param {FetchNotesOptions} [options]
- * @returns {Promise<unknown>}
+ * @param {FetchListOptionsDto} [options]
+ * @returns {Promise<NoteDto[]>}
  */
 export async function fetchNotes({ archived = false } = {}) {
   const url = archived
@@ -32,8 +28,8 @@ export async function fetchNotes({ archived = false } = {}) {
 }
 
 /**
- * @param {NoteWritePayload} note
- * @returns {Promise<unknown>}
+ * @param {NoteWriteDto} note
+ * @returns {Promise<NoteDto>}
  */
 export async function createNote(note) {
   const response = await apiFetch(`${API_BASE}/notes`, {
@@ -47,8 +43,8 @@ export async function createNote(note) {
 
 /**
  * @param {string} noteId
- * @param {NoteWritePayload} note
- * @returns {Promise<unknown>}
+ * @param {NoteWriteDto} note
+ * @returns {Promise<NoteDto>}
  */
 export async function updateNote(noteId, note) {
   const response = await apiFetch(`${API_BASE}/notes/${noteId}`, {
@@ -120,7 +116,7 @@ export async function unpinNote(noteId) {
 
 /**
  * @param {string} noteId
- * @returns {Promise<unknown>}
+ * @returns {Promise<NoteTaskDraftsResponseDto>}
  */
 export async function fetchNoteTaskDrafts(noteId) {
   const response = await apiFetch(`${API_BASE}/ai/notes/tasks`, {
