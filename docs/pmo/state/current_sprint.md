@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Backend TS Quality Gate Cleanup`
+- Sprint: `AI Core Public Bridge Contract`
 - Closeout date: `2026-05-07`
 - Delivery status: `completed and validated`
-- Commit state: `committed after closeout: 71cbba6 chore(backend): lint ts source and dist artifacts`
+- Commit state: `committed after closeout in this repository commit`
 - Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `none`
-- Report surface: `docs/pmo/history/reports/backend-ts-quality-gate-cleanup.md`
+- Residual note: `Narrow backend-consumed private-core chat contract landed; future private-core exports should extend this contract deliberately.`
+- Report surface: `docs/pmo/history/reports/ai-core-public-bridge-contract.md`
 
 ## Next PMO Action
 

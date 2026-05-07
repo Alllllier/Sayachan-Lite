@@ -258,6 +258,86 @@ The backend migration produced several rules that should guide frontend TypeScri
   - which first typed island should follow after support boundary cleanup
   - which frontend surfaces are explicitly out of scope until lower layers are typed
 
+## Backend Type-Aware Lint Findings And Follow-Up Slices
+
+The Backend TS Quality Gate Cleanup sprint briefly tried `typescript-eslint` type-aware recommended rules before settling on a low-noise non-type-aware TS lint setup. The stricter rule set surfaced useful signals, but most findings crossed the quality-gate slice boundary. Record them here so they do not get lost or accidentally forced into unrelated work.
+
+### Finding classification
+
+#### `private_core bridge contract is still trust-based`
+
+- Signal: `backend/src/ai/bridge.ts` imports `@allier/sayachan-ai-core` through an `unknown` module declaration and asserts it to `{ chat: Chat }`.
+- Classification: `real boundary weakness`.
+- Current rationale: this is a deliberate migration boundary that keeps private_core out of the backend TypeScript build/runtime cutover.
+- Risk: private core can change its public `chat` API without backend TypeScript catching the mismatch.
+- Do not fix by: pulling `backend/private_core/**` into backend build or lint.
+
+#### `public DTO contracts are still wider than final form`
+
+- Signal: product DTOs still use `Record<string, unknown>` and auth public DTOs expose many fields as `unknown`.
+- Classification: `real boundary weakness plus compatibility compromise`.
+- Current rationale: broad DTOs preserved current Mongoose `toObject()` output and public response compatibility during migration.
+- Risk: backend TypeScript confirms DTO adapters exist, but does not yet strongly describe public API response contracts.
+- Do not fix by: casually deleting extra fields or changing API response shapes without route/API contract tests.
+
+#### `route middleware state still uses optional state plus route-local assertions`
+
+- Signal: `validatedBody` and `objectIds` are optional in shared route state, while routes read them via local typed accessors or `as` casts.
+- Classification: `real type-safety weakness and practical Koa middleware compromise`.
+- Current rationale: Koa/@koa/router middleware ordering and state refinement are hard to express cleanly without over-engineering route composition.
+- Risk: a future route middleware ordering mistake may be caught by tests rather than the compiler.
+- Do not fix by: forcing app-level middleware and route-level helpers into a single giant context type.
+
+#### `type-aware lint found several local rule frictions`
+
+- Signal examples: redundant `unknown` union in bridge input, `unknown` stringification warnings in auth service, async route handler without `await`, and enum-comparison lint friction in health route.
+- Classification: `mixed`.
+- Current rationale: some are symptoms of the broader bridge/DTO/route-state boundaries; some are local cleanup opportunities.
+- Risk: enabling type-aware recommended rules globally now would force several unrelated architecture cleanups into one lint sprint.
+- Do not fix by: turning on strict semantic lint without a candidate that owns the resulting noise.
+
+### Follow-up slice candidates
+
+#### `backend-hardening-001`
+
+- Name: `AI Core Public Bridge Contract`
+- Maturity: `candidate-shaped`
+- Goal: `Replace the public backend's private-core bridge trust boundary with an explicit narrow contract for the imported AI core surface, without pulling private_core into backend build or changing AI route behavior.`
+- Likely scope: `backend/src/ai/privateCoreContract.d.ts`, `backend/src/ai/bridge.ts`, possibly a small bridge contract/test around chat invocation shape.`
+- Non-goals: `No private_core TypeScript/ESM migration, no provider orchestration redesign, no prompt/kernel changes, no AI route response changes.`
+- Validation: `backend build, backend tests, AI route tests, root npm run check.`
+- Escalation: `Stop if the fix requires changing private_core package internals or expanding backend build/lint into private_core.`
+
+#### `backend-hardening-002`
+
+- Name: `Backend Public DTO Contract Tightening`
+- Maturity: `emerging`
+- Goal: `Tighten public DTO response types for auth/product records where the API contract is already stable, while preserving public response behavior and Mongoose model separation.`
+- Likely scope: `backend/src/domain/dtos/*.ts`, route/service tests that lock response fields, possibly focused model-to-DTO adapter tests.`
+- Non-goals: `No frontend API client changes unless tests prove an existing contract mismatch; no deletion of compatibility fields without explicit approval; no model schema redesign.`
+- Validation: `backend tests plus root npm run check; add focused DTO tests if response contract risk increases.`
+- Escalation: `Stop if tightening types implies public API response shape changes or frontend contract changes.`
+
+#### `backend-hardening-003`
+
+- Name: `Route State Accessor Refinement`
+- Maturity: `emerging`
+- Goal: `Reduce route-local casts around validated bodies and parsed ObjectIds with shared accessors or runtime assertions, without redesigning Koa middleware composition.`
+- Likely scope: `backend/src/routes/routeTypes.ts`, route helper/accessor module if needed, route files that currently read `ctx.state.validatedBody` or `ctx.state.objectIds`.`
+- Non-goals: `No app-level middleware unification, no route behavior changes, no broad router abstraction, no removal of tests that currently protect middleware order.`
+- Validation: `backend tests, route contract tests, root npm run check.`
+- Escalation: `Stop if the implementation needs a new route composition framework or changes middleware ordering semantics.`
+
+#### `backend-hardening-004`
+
+- Name: `Backend Type-Aware ESLint Readiness`
+- Maturity: `emerging`
+- Goal: `Re-evaluate a type-aware backend ESLint subset after bridge/DTO/route-state hardening has removed the noisiest findings.`
+- Likely scope: `eslint.config.mjs`, root lint scripts, possibly a small allowlist of semantic rules with known value.`
+- Non-goals: `No blanket adoption of recommendedTypeChecked if it forces unrelated architecture work; no frontend lint changes.`
+- Validation: `npm run lint:backend, npm run check.`
+- Escalation: `Stop if the rule set creates more architectural work than lint value.`
+
 ## Promotion Outcome
 
 - `slice-001` was promoted to `docs/pmo/state/sprint_candidates.md` as `Engineering Quality Gate V1`, executed, validated through root `npm run check`, and accepted for closeout.
@@ -288,4 +368,5 @@ The backend migration produced several rules that should guide frontend TypeScri
 - Completed backend DTO pilot report: `docs/pmo/history/reports/type-aware-backend-dto-pilot.md`
 - Follow-up candidate created from backend DTO pilot: `Backend Schema Typed Island Pilot`.
 - Backend TypeScript/ESM migration through route/service/model/middleware cleanup and Route Middleware Typing Cleanup produced the frontend migration lessons recorded above. Use them before promoting the next frontend TS candidate.
+- Backend TS Quality Gate Cleanup completed the low-noise lint/guardrail layer and recorded type-aware lint findings as backend-hardening follow-up slices above.
 - `slice-004` through `slice-007` remain discussion-shaped follow-ons until Quality Gate V1, target architecture mapping, or a concrete architecture pressure makes them execution-ready.

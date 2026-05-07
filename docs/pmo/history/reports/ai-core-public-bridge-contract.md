@@ -1,0 +1,35 @@
+# AI Core Public Bridge Contract
+
+- Archived date: `2026-05-07`
+- PMO closeout result: `completed and validated`
+- Source sprint: `AI Core Public Bridge Contract`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Declared `@allier/sayachan-ai-core` with the narrow backend-consumed public contract in `backend/src/ai/privateCoreContract.d.ts`.
+  - The declaration now models only the default export's `chat` surface: messages, context, optional runtime controls, and `{ reply?: string }` result.
+  - Updated `backend/src/ai/bridge.ts` to destructure and re-export `chat` from the typed module boundary directly, removing the broad package-level `unknown` assertion.
+  - No focused tests were added because the existing backend suite already includes AI route validation and chat bridge handoff coverage (`AI chat validation strips unknown message fields before bridge handoff`).
+  - PMO sharpening slots were followed as written. No revision or broadening was needed.
+  - Confirmed out of scope stayed out of scope:
+    - No files under `backend/private_core/sayachan-ai-core/**` were edited.
+    - No `/ai/*` public route response behavior or response shape was intentionally changed.
+    - No provider orchestration, prompt/kernel behavior, fallback policy, or AI product behavior was changed.
+    - No type-aware ESLint or global lint rule adoption was introduced.
+- Validation summary:
+  - `npm --prefix backend run build:backend` passed.
+  - `npm --prefix backend run test` passed: 43 backend tests passed.
+  - `npm run check` passed, including frontend lint/tests/build, backend lint, backend dist boundary/runtime smoke, and backend tests.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states: `n/a`
+  - If skipped, why skipping was acceptable: backend contract-only typing hardening; no UI, browser, or public behavior surface was changed.
+- Unverified areas:
+  - No manual browser validation or UI review was performed, per handoff expectation.
+  - No live external Kimi/GLM provider request was made; validation covered build, lint, backend runtime smoke, and existing route/service tests.
+- Residual risks or escalations:
+  - The declaration intentionally tracks only the backend's current `chat` consumption shape. Future backend use of additional private-core exports should extend this narrow contract deliberately.
+  - Runtime CommonJS package shape remains verified by existing backend dist runtime smoke rather than by changing private_core internals.
+- Documentation-sync outcome: `reviewed, no update needed`
+- Follow-up routing:
+  - None.

@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Backend TS Quality Gate Cleanup`
+- Sprint: `AI Core Public Bridge Contract`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/backend-ts-quality-gate-cleanup.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/ai-core-public-bridge-contract.md`
 
 ## Next Use
 
