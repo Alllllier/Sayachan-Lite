@@ -16,34 +16,65 @@ function createDoc(data) {
   };
 }
 
-test('task DTO preserves spread-compatible product fields while normalizing lifecycle fields', () => {
+function assertOnlyKeys(actual, expectedKeys) {
+  assert.deepEqual(Object.keys(actual).sort(), [...expectedKeys].sort());
+}
+
+function assertAbsent(actual, fields) {
+  for (const field of fields) {
+    assert.equal(Object.hasOwn(actual, field), false, `${field} should not be present`);
+  }
+}
+
+const basePrivateFields = ['userId', '__v', 'createdAt', 'pinnedAt'];
+const compatibilityFields = ['legacyId', 'legacyStatus', 'ownerId', 'source'];
+
+test('task DTO returns only the approved public contract while normalizing lifecycle fields', () => {
   const createdAt = new Date('2026-03-01T00:00:00.000Z');
   const updatedAt = new Date('2026-03-02T00:00:00.000Z');
   const task = createDoc({
     _id: 'task-1',
     title: 'Ship DTO contract tests',
+    creationMode: 'manual',
     originId: 'project-1',
     originModule: 'project',
     userId: 'user-1',
+    __v: 7,
     createdAt,
     updatedAt,
+    pinnedAt: new Date('2026-03-03T00:00:00.000Z'),
+    legacyId: 'legacy-task-1',
+    legacyStatus: 'done',
+    ownerId: 'owner-1',
+    source: 'compat',
     archived: 1,
     completed: 1,
     status: 'done'
   });
 
-  assert.deepEqual(toTaskDto(task), {
+  const dto = toTaskDto(task);
+
+  assert.deepEqual(dto, {
     _id: 'task-1',
     title: 'Ship DTO contract tests',
-    originId: 'project-1',
-    originModule: 'project',
-    userId: 'user-1',
-    createdAt,
-    updatedAt,
+    status: 'active',
     archived: false,
     completed: false,
-    status: 'active'
+    creationMode: 'manual',
+    originId: 'project-1',
+    originModule: 'project'
   });
+  assertOnlyKeys(dto, [
+    '_id',
+    'title',
+    'status',
+    'archived',
+    'completed',
+    'creationMode',
+    'originModule',
+    'originId'
+  ]);
+  assertAbsent(dto, [...basePrivateFields, 'updatedAt', ...compatibilityFields]);
 });
 
 test('task DTO normalizes archived and completed only from strict true values', () => {
@@ -66,7 +97,7 @@ test('task DTO status falls back to active unless the current status is complete
   assert.equal(toTaskDto(undefined), undefined);
 });
 
-test('project DTO preserves spread-compatible product fields while normalizing archived and status', () => {
+test('project DTO returns only the approved public contract while normalizing archived and status', () => {
   const createdAt = new Date('2026-04-01T00:00:00.000Z');
   const updatedAt = new Date('2026-04-02T00:00:00.000Z');
   const project = createDoc({
@@ -74,24 +105,43 @@ test('project DTO preserves spread-compatible product fields while normalizing a
     name: 'Backend hardening',
     summary: 'Make current DTO behavior explicit',
     currentFocusTaskId: 'task-1',
+    isPinned: true,
     userId: 'user-1',
+    __v: 3,
     createdAt,
     updatedAt,
+    pinnedAt: new Date('2026-04-03T00:00:00.000Z'),
+    legacyId: 'legacy-project-1',
+    legacyStatus: 'paused',
+    ownerId: 'owner-1',
+    source: 'compat',
     archived: 'true',
     status: 'paused'
   });
 
-  assert.deepEqual(toProjectDto(project), {
+  const dto = toProjectDto(project);
+
+  assert.deepEqual(dto, {
     _id: 'project-1',
     name: 'Backend hardening',
     summary: 'Make current DTO behavior explicit',
     currentFocusTaskId: 'task-1',
-    userId: 'user-1',
-    createdAt,
+    isPinned: true,
     updatedAt,
     archived: false,
     status: 'pending'
   });
+  assertOnlyKeys(dto, [
+    '_id',
+    'name',
+    'summary',
+    'status',
+    'archived',
+    'isPinned',
+    'updatedAt',
+    'currentFocusTaskId'
+  ]);
+  assertAbsent(dto, [...basePrivateFields, ...compatibilityFields]);
 });
 
 test('project DTO normalizes archived only from strict true and keeps valid statuses', () => {
@@ -110,7 +160,7 @@ test('project DTO normalizes archived only from strict true and keeps valid stat
   assert.equal(toProjectDto(undefined), undefined);
 });
 
-test('note DTO preserves spread-compatible product fields while normalizing archived', () => {
+test('note DTO returns only the approved public contract while normalizing archived', () => {
   const createdAt = new Date('2026-05-01T00:00:00.000Z');
   const updatedAt = new Date('2026-05-02T00:00:00.000Z');
   const note = createDoc({
@@ -119,23 +169,38 @@ test('note DTO preserves spread-compatible product fields while normalizing arch
     content: 'Characterize current note DTO spread behavior',
     originId: 'task-1',
     originModule: 'task',
+    isPinned: true,
     userId: 'user-1',
+    __v: 5,
     createdAt,
     updatedAt,
+    pinnedAt: new Date('2026-05-03T00:00:00.000Z'),
+    legacyId: 'legacy-note-1',
+    legacyStatus: 'draft',
+    ownerId: 'owner-1',
+    source: 'compat',
     archived: 1
   });
 
-  assert.deepEqual(toNoteDto(note), {
+  const dto = toNoteDto(note);
+
+  assert.deepEqual(dto, {
     _id: 'note-1',
     title: 'DTO notes',
     content: 'Characterize current note DTO spread behavior',
-    originId: 'task-1',
-    originModule: 'task',
-    userId: 'user-1',
-    createdAt,
+    archived: false,
+    isPinned: true,
     updatedAt,
-    archived: false
   });
+  assertOnlyKeys(dto, [
+    '_id',
+    'title',
+    'content',
+    'archived',
+    'isPinned',
+    'updatedAt'
+  ]);
+  assertAbsent(dto, [...basePrivateFields, 'originId', 'originModule', ...compatibilityFields]);
 });
 
 test('note DTO normalizes archived only from strict true values', () => {
