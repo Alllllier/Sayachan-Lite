@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { projectStatusValues } from '@sayachan/contracts';
-
-const TASK_CREATION_MODES = ['ai', 'manual'] as const;
-const TASK_STATUSES = ['active', 'completed'] as const;
+import {
+  projectStatusValues,
+  taskCreationModeValues,
+  taskStatusValues
+} from '@sayachan/contracts';
 
 export type { ProjectStatus } from '@sayachan/contracts';
-export type TaskCreationMode = (typeof TASK_CREATION_MODES)[number];
-export type TaskStatus = (typeof TASK_STATUSES)[number];
+export type { TaskCreationMode, TaskStatus } from '@sayachan/contracts';
 
 const nonEmptyStringSchema = z.string().refine((value) => value.trim().length > 0);
 
@@ -50,7 +50,7 @@ export type ProjectUpdateDto = z.infer<typeof projectUpdateSchema>;
 
 export const taskCreateSchema = z.object({
   title: nonEmptyStringSchema,
-  creationMode: z.enum(TASK_CREATION_MODES).optional(),
+  creationMode: z.enum(taskCreationModeValues).optional(),
   originModule: z.string().optional(),
   originId: z.union([z.string(), z.null()]).optional()
 });
@@ -58,7 +58,7 @@ export const taskCreateSchema = z.object({
 export type TaskCreateDto = z.infer<typeof taskCreateSchema>;
 
 export const taskUpdateSchema = z.object({
-  status: z.enum(TASK_STATUSES).optional(),
+  status: z.enum(taskStatusValues).optional(),
   archived: z.boolean().optional(),
   completed: z.boolean().optional()
 })

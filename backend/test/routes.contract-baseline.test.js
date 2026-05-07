@@ -53,10 +53,29 @@ function createCtx({ query = {}, params = {}, body = {}, userId = '0000000000000
 }
 
 function createDoc(data) {
+  const id = typeof data?._id === 'string' ? data._id : '';
+  const defaults = data?.name !== undefined || data?.summary !== undefined || id.startsWith('0000000000000000000002')
+    ? {
+        name: 'Project',
+        summary: 'Summary',
+        status: 'pending',
+        updatedAt: new Date('2026-05-01T00:00:00.000Z')
+      }
+    : data?.content !== undefined || id.startsWith('0000000000000000000001')
+      ? {
+          title: 'Note',
+          content: '',
+          updatedAt: new Date('2026-05-01T00:00:00.000Z')
+        }
+      : {};
+  const normalized = {
+    ...defaults,
+    ...data
+  };
   return {
-    ...data,
+    ...normalized,
     toObject() {
-      return { ...data };
+      return { ...normalized };
     }
   };
 }
@@ -274,7 +293,8 @@ test('list and filter reads preserve canonical backend semantics for tasks, proj
       name: 'Project 1',
       summary: 'Summary',
       status: 'pending',
-      archived: false
+      archived: false,
+      updatedAt: '2026-05-01T00:00:00.000Z'
     });
 
     const projectArchivedCtx = createCtx({ query: { archived: 'true' } });
@@ -292,7 +312,8 @@ test('list and filter reads preserve canonical backend semantics for tasks, proj
       _id: '000000000000000000000101',
       title: 'Note 1',
       content: 'Content',
-      archived: false
+      archived: false,
+      updatedAt: '2026-05-01T00:00:00.000Z'
     });
 
     const noteArchivedCtx = createCtx({ query: { archived: 'true' } });
@@ -464,7 +485,8 @@ test('create, update, and delete routes keep first-pass status code and response
       name: 'Project X',
       summary: 'Summary',
       status: 'pending',
-      archived: false
+      archived: false,
+      updatedAt: '2026-05-01T00:00:00.000Z'
     });
 
     const updateProjectCtx = createCtx({
@@ -479,7 +501,8 @@ test('create, update, and delete routes keep first-pass status code and response
       summary: 'Updated summary',
       status: 'in_progress',
       archived: false,
-      currentFocusTaskId: null
+      currentFocusTaskId: null,
+      updatedAt: '2026-05-01T00:00:00.000Z'
     });
 
     const deleteProjectCtx = createCtx({ params: { id: '0000000000000000000002e1' } });
@@ -494,7 +517,8 @@ test('create, update, and delete routes keep first-pass status code and response
       _id: '0000000000000000000001e1',
       title: 'Scratchpad',
       content: 'Initial content',
-      archived: false
+      archived: false,
+      updatedAt: '2026-05-01T00:00:00.000Z'
     });
 
     const updateNoteCtx = createCtx({
@@ -507,7 +531,8 @@ test('create, update, and delete routes keep first-pass status code and response
       _id: '0000000000000000000001e1',
       title: 'Scratchpad',
       content: 'Updated content',
-      archived: false
+      archived: false,
+      updatedAt: '2026-05-01T00:00:00.000Z'
     });
 
     const deleteNoteCtx = createCtx({ params: { id: '0000000000000000000001e1' } });

@@ -61,7 +61,7 @@ test('task DTO returns only the approved public contract while normalizing lifec
     userId: 'user-1',
     __v: 7,
     createdAt,
-    updatedAt,
+    updatedAt: updatedAt.toISOString(),
     pinnedAt: new Date('2026-03-03T00:00:00.000Z'),
     legacyId: 'legacy-task-1',
     legacyStatus: 'done',
@@ -129,7 +129,7 @@ test('project DTO returns only the approved public contract while normalizing ar
     userId: 'user-1',
     __v: 3,
     createdAt,
-    updatedAt,
+    updatedAt: updatedAt.toISOString(),
     pinnedAt: new Date('2026-04-03T00:00:00.000Z'),
     legacyId: 'legacy-project-1',
     legacyStatus: 'paused',
@@ -147,7 +147,7 @@ test('project DTO returns only the approved public contract while normalizing ar
     summary: 'Make current DTO behavior explicit',
     currentFocusTaskId: 'task-1',
     isPinned: true,
-    updatedAt,
+    updatedAt: updatedAt.toISOString(),
     archived: false,
     status: 'pending'
   });
@@ -193,7 +193,7 @@ test('note DTO returns only the approved public contract while normalizing archi
     userId: 'user-1',
     __v: 5,
     createdAt,
-    updatedAt,
+    updatedAt: updatedAt.toISOString(),
     pinnedAt: new Date('2026-05-03T00:00:00.000Z'),
     legacyId: 'legacy-note-1',
     legacyStatus: 'draft',
@@ -210,7 +210,7 @@ test('note DTO returns only the approved public contract while normalizing archi
     content: 'Characterize current note DTO spread behavior',
     archived: false,
     isPinned: true,
-    updatedAt,
+    updatedAt: updatedAt.toISOString(),
   });
   assertOnlyKeys(dto, [
     '_id',

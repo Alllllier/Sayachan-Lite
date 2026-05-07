@@ -2,6 +2,11 @@ import { buildTaskPayload, normalizeSavedTask } from './task.rules.js'
 import type { NormalizedTask, TaskApiTask, TaskUpdatePayload } from './task.rules.js'
 
 import { apiFetch, API_BASE } from '../apiClient'
+import {
+  assertApiResponse,
+  taskListResponseSchema,
+  taskResponseSchema
+} from '../../types/api-contracts'
 
 type FetchTaskListOptions = {
   archived?: boolean
@@ -10,7 +15,11 @@ type FetchTaskListOptions = {
 export async function fetchTaskList({ archived = false }: FetchTaskListOptions = {}): Promise<TaskApiTask[]> {
   const url = archived ? `${API_BASE}/tasks?archived=true` : `${API_BASE}/tasks`
   const res = await apiFetch(url)
-  return res.json() as Promise<TaskApiTask[]>
+  if (!res.ok) {
+    throw new Error(`Fetch tasks failed: ${res.status}`)
+  }
+  const payload = await res.json() as unknown
+  return assertApiResponse(payload, taskListResponseSchema, 'tasks list')
 }
 
 export async function createTask(
@@ -31,7 +40,13 @@ export async function createTask(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(taskData)
   })
-  const savedTask = await res.json() as TaskApiTask | null | undefined
+  if (!res.ok) {
+    throw new Error(`Create task failed: ${res.status}`)
+  }
+  const payload = await res.json() as unknown
+  const savedTask = payload === null || payload === undefined
+    ? payload
+    : assertApiResponse(payload, taskResponseSchema, 'task create')
   return normalizeSavedTask(savedTask) || null
 }
 
@@ -44,7 +59,13 @@ export async function updateTask(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   })
-  const updatedTask = await res.json() as TaskApiTask | null | undefined
+  if (!res.ok) {
+    throw new Error(`Update task failed: ${res.status}`)
+  }
+  const payloadBody = await res.json() as unknown
+  const updatedTask = payloadBody === null || payloadBody === undefined
+    ? payloadBody
+    : assertApiResponse(payloadBody, taskResponseSchema, 'task update')
   return normalizeSavedTask(updatedTask) || null
 }
 
@@ -64,8 +85,11 @@ export async function fetchProjectTasks(projectId: string, archived = false): Pr
       url += '&archived=true'
     }
     const res = await apiFetch(url)
-    const tasks = await res.json() as TaskApiTask[]
-    return tasks
+    if (!res.ok) {
+      throw new Error(`Fetch project tasks failed: ${res.status}`)
+    }
+    const payload = await res.json() as unknown
+    return assertApiResponse(payload, taskListResponseSchema, 'project tasks')
   } catch (e) {
     console.error('Failed to fetch project tasks:', e)
     return []

@@ -259,8 +259,8 @@ function assertAuthSchemaDistArtifactFromTypeScriptSource() {
     'dist auth schema artifact must preserve registerTesterSchema.'
   );
   assert(
-    sourceReferencesModule(authSchemaDistSource, 'zod'),
-    'dist auth schema artifact must import zod directly.'
+    sourceReferencesModule(authSchemaDistSource, '@sayachan/contracts'),
+    'dist auth schema artifact must reuse shared contracts.'
   );
 }
 
@@ -280,8 +280,8 @@ function assertAiSchemaDistArtifactFromTypeScriptSource() {
     'dist AI schema artifact must preserve aiChatSchema.'
   );
   assert(
-    sourceReferencesModule(aiSchemaDistSource, 'zod'),
-    'dist AI schema artifact must import zod directly.'
+    sourceReferencesModule(aiSchemaDistSource, '@sayachan/contracts'),
+    'dist AI schema artifact must reuse shared contracts.'
   );
 }
 
@@ -569,16 +569,16 @@ function assertProductResponsesDistArtifactFromTypeScriptSource() {
   );
 }
 
-function assertAuthDtosDistArtifactFromTypeScriptSource() {
-  const authDtosDistSource = fs.readFileSync(path.join(distRoot, 'domain', 'dtos', 'authDtos.js'), 'utf8');
+function assertAuthResponsesDistArtifactFromTypeScriptSource() {
+  const authResponsesDistSource = fs.readFileSync(path.join(distRoot, 'services', 'responses', 'authResponses.js'), 'utf8');
 
   assert(
-    authDtosDistSource.includes('function toPublicUserDto'),
-    'dist authDtos artifact must preserve toPublicUserDto.'
+    authResponsesDistSource.includes('function toPublicUserDto'),
+    'dist authResponses artifact must preserve toPublicUserDto.'
   );
   assert(
-    authDtosDistSource.includes('function toPublicInviteDto'),
-    'dist authDtos artifact must preserve toPublicInviteDto.'
+    authResponsesDistSource.includes('function toPublicInviteDto'),
+    'dist authResponses artifact must preserve toPublicInviteDto.'
   );
 }
 
@@ -772,7 +772,6 @@ const requiredRuntimeEntrypoints = [
   path.join('middleware', 'sessionCookies.js'),
   path.join('domain', 'authSession.js'),
   path.join('domain', 'objectIds.js'),
-  path.join('domain', 'dtos', 'authDtos.js'),
   path.join('domain', 'ownership.js'),
   path.join('domain', 'tasks', 'cascade.js'),
   path.join('domain', 'tasks', 'queryFilters.js'),
@@ -786,6 +785,7 @@ const requiredRuntimeEntrypoints = [
   path.join('services', 'authService.js'),
   path.join('services', 'notesService.js'),
   path.join('services', 'projectsService.js'),
+  path.join('services', 'responses', 'authResponses.js'),
   path.join('services', 'responses', 'productResponses.js'),
   path.join('services', 'tasksService.js'),
   path.join('routes', 'index.js'),
@@ -848,7 +848,7 @@ assertOwnershipDistArtifactFromTypeScriptSource();
 assertProjectsServiceDistArtifactFromTypeScriptSource();
 assertTasksServiceDistArtifactFromTypeScriptSource();
 assertProductResponsesDistArtifactFromTypeScriptSource();
-assertAuthDtosDistArtifactFromTypeScriptSource();
+assertAuthResponsesDistArtifactFromTypeScriptSource();
 assertTaskCascadeDistArtifactFromTypeScriptSource();
 assertTaskQueryFiltersDistArtifactFromTypeScriptSource();
 

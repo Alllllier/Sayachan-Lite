@@ -21,7 +21,7 @@ test.describe('Chat UI review', () => {
 
     await openChatPopup(page)
     await expect(chatPopup(page).getByText('Sayachan')).toBeVisible()
-    await expect(chatBody(page).getByText('我在这。如果你愿意，我们可以先把今天最想推进的那件事理清楚。')).toBeVisible()
+    await expect(chatBody(page).getByText('从一句话开始。')).toBeVisible()
     await expect(chatPopup(page).getByRole('button', { name: '帮我聚焦' })).toBeVisible()
     await expect(chatPopup(page).getByRole('button', { name: '拆下一步' })).toBeVisible()
     await expect(chatPopup(page).getByRole('button', { name: '今天总结' })).toBeVisible()

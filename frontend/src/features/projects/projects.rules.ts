@@ -1,4 +1,5 @@
-type ProjectTaskStatus = 'active' | 'completed' | (string & {})
+import type { TaskStatus } from '@sayachan/contracts'
+
 type ProjectTaskFilter = 'active' | 'completed'
 type TaskCaptureMode = 'single' | 'batch'
 
@@ -14,10 +15,10 @@ type ProjectLike = {
   currentFocusTaskId?: string | number | null
 }
 
-type ProjectTask = {
+export type ProjectTask = {
   _id?: string | number
   title?: string
-  status?: ProjectTaskStatus
+  status?: TaskStatus
   archived?: boolean
 }
 

@@ -1,3 +1,8 @@
+import {
+  chatResponseSchema,
+  noteTaskDraftsResponseSchema,
+  projectNextActionsResponseSchema
+} from '@sayachan/contracts';
 import { type ObjectId, toObjectId } from '../domain/objectIds.js';
 import type {
   AiChatDto,
@@ -79,12 +84,12 @@ async function getProjectFocusContext(project: AiPayload | null | undefined, use
 // Fallback response when API key is missing or request fails
 function noteTaskFallback(note: AiPayload | null): { drafts: string[] } {
   const title = note?.title || '(无标题)';
-  return {
+  return noteTaskDraftsResponseSchema.parse({
     drafts: [
       `基于 "${title}" 的下一步`,
       `整理 "${title}" 的关键点`
     ]
-  };
+  });
 }
 
 function projectNextActionFallback(project: AiPayload | null): { suggestions: string[] } {
@@ -95,13 +100,13 @@ function projectNextActionFallback(project: AiPayload | null): { suggestions: st
     completed: ['记录项目成果并归档', '总结经验教训'],
     on_hold: ['重新评估依赖和时间线', '确定是否需要重启项目']
   };
-  return {
+  return projectNextActionsResponseSchema.parse({
     suggestions: statusMap[status as keyof typeof statusMap] || ['明确里程碑并设定截止日期']
-  };
+  });
 }
 
 function chatFallback() {
-  return { reply: '我在这，我们先把当前最重要的一步理清楚。' };
+  return chatResponseSchema.parse({ reply: '我在这，我们先把当前最重要的一步理清楚。' });
 }
 
 function normalizeDoc(doc: AiPayload | null): AiPayload | null {
@@ -195,7 +200,7 @@ export async function generateNoteTaskDrafts(
       .slice(0, 2);
 
     console.log('[AI Route] GLM note tasks generated');
-    return { found: true, body: { drafts: tasks } };
+    return { found: true, body: noteTaskDraftsResponseSchema.parse({ drafts: tasks }) };
 
   } catch (error) {
     console.error('[AI Route] Note Tasks API call error:', errorMessage(error));
@@ -283,7 +288,7 @@ export async function suggestProjectNextActions(
       .slice(0, 2);
 
     console.log('[AI Route] GLM next action suggestions generated');
-    return { found: true, body: { suggestions } };
+    return { found: true, body: projectNextActionsResponseSchema.parse({ suggestions }) };
 
   } catch (error) {
     console.error('[AI Route] Next Action API call error:', errorMessage(error));
@@ -302,7 +307,7 @@ export async function chat({ messages, context, runtimeControls }: AiChatDto) {
     // TODO: extract options (e.g. thinkingEnabled) from request body when strategy is ready
     const { reply } = await runChat(messages, context, { runtimeControls });
     console.log('[AI Route] Kimi chat reply generated, length:', reply?.length);
-    return { reply };
+    return chatResponseSchema.parse({ reply });
   } catch (error) {
     console.error('[AI Route] Chat service error:', errorMessage(error));
     console.error('[AI Route] Stack:', errorStack(error) || 'no stack');

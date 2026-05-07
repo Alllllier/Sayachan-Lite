@@ -17,9 +17,10 @@ import {
   validateProjectFields,
   validateSingleTaskCapture
 } from './projects.rules'
+import type { ProjectTask } from './projects.rules'
 
 describe('projects rules locks', () => {
-  const mixedTasks = [
+  const mixedTasks: ProjectTask[] = [
     { _id: 'task-1', title: 'Active one', status: 'active', archived: false },
     { _id: 'task-2', title: 'Completed one', status: 'completed', archived: false },
     { _id: 'task-3', title: 'Archived one', status: 'active', archived: true },

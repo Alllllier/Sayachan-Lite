@@ -138,7 +138,13 @@ describe('auth api boundary', () => {
       credentials: 'include'
     })
 
-    mockedFetch().mockResolvedValueOnce(jsonResponse({ userCount: 2 }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({
+      userCount: 2,
+      testerCount: 1,
+      activeInviteCount: 1,
+      activeSessionCount: 1,
+      roles: ['owner', 'tester']
+    }))
     await fetchSystemStatus()
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/owner/system-status', { credentials: 'include' })
   })

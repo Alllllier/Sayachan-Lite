@@ -10,6 +10,7 @@
     "lint:backend": "eslint backend/src backend/test backend/scripts",
     "lint": "npm run lint:contracts && npm run lint:frontend && npm run lint:backend",
     "test:frontend": "npm --prefix frontend run test",
+    "test:ui-review": "npm --prefix frontend run test:ui-review",
     "build:backend": "npm --prefix backend run build:backend",
     "check:backend-build": "npm --prefix backend run check:backend-build",
     "check:backend-dist-runtime": "npm --prefix backend run check:backend-dist-runtime",
@@ -19,7 +20,7 @@
     "test": "npm run test:frontend && npm run test:backend",
     "build:frontend": "npm --prefix frontend run build",
     "build": "npm run build:frontend",
-    "check": "npm run build:contracts && npm run lint && npm run typecheck:frontend && npm run check:backend-dist-runtime && npm run test && npm run build"
+    "check": "npm run build:contracts && npm run lint && npm run typecheck:frontend && npm run check:backend-dist-runtime && npm run test && npm run test:ui-review && npm run build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

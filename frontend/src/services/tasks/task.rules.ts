@@ -1,7 +1,7 @@
-export type TaskStatus = 'active' | 'completed' | 'archived' | (string & {})
+import type { TaskCreationMode, TaskDto, TaskStatus, TaskUpdateDto } from '@sayachan/contracts'
 
 export type TaskProvenance = {
-  creationMode: string
+  creationMode: TaskCreationMode | string
   originModule: string
   originId: string | null
 }
@@ -10,23 +10,9 @@ export type TaskCreatePayload = TaskProvenance & {
   title: string
 }
 
-export type TaskUpdatePayload = Partial<{
-  title: string
-  status: TaskStatus
-  archived: boolean
-  completed: boolean
-  creationMode: string
-  originModule: string
-  originId: string | null
-}>
+export type TaskUpdatePayload = TaskUpdateDto
 
-export type TaskApiTask = Partial<TaskProvenance> & {
-  _id?: string | number
-  title?: string
-  status?: TaskStatus
-  archived?: boolean
-  completed?: boolean
-}
+export type TaskApiTask = TaskDto
 
 export type NormalizedTask = TaskApiTask & {
   status: TaskStatus

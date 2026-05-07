@@ -40,10 +40,29 @@ function createCtx({ query = {}, params = {}, body = {}, userId = '0000000000000
 }
 
 function createDoc(data) {
+  const id = typeof data?._id === 'string' ? data._id : '';
+  const defaults = data?.name !== undefined || data?.summary !== undefined || id.startsWith('0000000000000000000002')
+    ? {
+        name: 'Project',
+        summary: 'Summary',
+        status: 'pending',
+        updatedAt: new Date('2026-05-01T00:00:00.000Z')
+      }
+    : data?.content !== undefined || id.startsWith('0000000000000000000001')
+      ? {
+          title: 'Note',
+          content: '',
+          updatedAt: new Date('2026-05-01T00:00:00.000Z')
+        }
+      : {};
+  const normalized = {
+    ...defaults,
+    ...data
+  };
   return {
-    ...data,
+    ...normalized,
     toObject() {
-      return { ...data };
+      return { ...normalized };
     }
   };
 }

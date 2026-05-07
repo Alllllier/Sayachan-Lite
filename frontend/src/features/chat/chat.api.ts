@@ -1,4 +1,8 @@
 import { apiFetch, API_BASE } from '../../services/apiClient'
+import {
+  assertApiResponse,
+  chatResponseSchema
+} from '../../types/api-contracts'
 import type {
   ChatContextDto,
   ChatMessageDto,
@@ -38,8 +42,10 @@ export async function sendChat(
     throw new Error(`Chat request failed: ${res.status}`)
   }
 
-  const data = await res.json() as { reply?: unknown }
-  if (!data.reply || typeof data.reply !== 'string') {
+  let data: ChatResponseDto
+  try {
+    data = assertApiResponse(await res.json() as unknown, chatResponseSchema, 'chat')
+  } catch {
     throw new Error('Empty or invalid reply from server')
   }
   return { reply: data.reply }

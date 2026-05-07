@@ -17,6 +17,7 @@ describe('task API', () => {
 
   it('creates tasks through the canonical task endpoint', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
       json: async () => ({ _id: 'task-2', title: 'Saved task' })
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -45,6 +46,7 @@ describe('task API', () => {
 
   it('fetches archived tasks from the archived endpoint', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
       json: async () => ([{ _id: 'archived-task', status: 'active', archived: true }])
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -57,6 +59,7 @@ describe('task API', () => {
 
   it('updates tasks through the canonical task endpoint', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
       json: async () => ({ _id: 'task-1', title: 'Updated task', status: 'completed' })
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -92,6 +95,7 @@ describe('task API', () => {
 
   it('fetches project tasks using canonical projectId query', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
       json: async () => ([{ _id: 'project-task' }])
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -104,6 +108,7 @@ describe('task API', () => {
 
   it('fetches archived project tasks with archived flag', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
       json: async () => ([{ _id: 'archived-project-task', status: 'active', archived: true }])
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -117,9 +122,11 @@ describe('task API', () => {
   it('fetches both active and archived project tasks for active project cards', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => ([{ _id: 'project-task', archived: false, status: 'active' }])
       })
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => ([{ _id: 'archived-project-task', archived: true, status: 'active' }])
       })
     vi.stubGlobal('fetch', fetchMock)
@@ -136,6 +143,7 @@ describe('task API', () => {
 
   it('fetches only archived tasks for archived project cards', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
       json: async () => ([{ _id: 'archived-project-task', archived: true, status: 'active' }])
     })
     vi.stubGlobal('fetch', fetchMock)

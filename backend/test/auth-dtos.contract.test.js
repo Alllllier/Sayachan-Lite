@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   toPublicInviteDto,
   toPublicUserDto
-} from '../dist/domain/dtos/authDtos.js';
+} from '../dist/services/responses/authResponses.js';
 
 function createDoc(data) {
   return {
@@ -37,9 +37,9 @@ test('public user DTO keeps the explicit auth response field set', () => {
     email: 'tester@example.com',
     role: 'tester',
     disabled: false,
-    createdAt,
-    updatedAt,
-    lastLoginAt
+    createdAt: createdAt.toISOString(),
+    updatedAt: updatedAt.toISOString(),
+    lastLoginAt: lastLoginAt.toISOString()
   });
 });
 
@@ -73,10 +73,10 @@ test('public invite DTO keeps invite secret material out of the response field s
     _id: 'invite-1',
     codePreview: 'ABCD...WXYZ',
     createdBy: 'owner-1',
-    expiresAt,
+    expiresAt: expiresAt.toISOString(),
     revokedAt,
-    usedAt,
+    usedAt: usedAt.toISOString(),
     usedBy: 'tester-1',
-    createdAt
+    createdAt: createdAt.toISOString()
   });
 });

@@ -12,6 +12,7 @@ import {
   prependDashboardTask,
   removeDashboardTask
 } from './dashboard.rules'
+import type { DashboardTask } from './dashboard.rules'
 
 describe('dashboard saved-task rules locks', () => {
   const tasks = Array.from({ length: 7 }, (_, index) => ({
@@ -79,7 +80,7 @@ describe('dashboard saved-task rules locks', () => {
   })
 
   it('updates row state when a task is completed or reactivated', () => {
-    const tasks = [{ _id: 'task-1', title: 'Existing task', status: 'active', completed: false }]
+    const tasks: DashboardTask[] = [{ _id: 'task-1', title: 'Existing task', status: 'active', completed: false }]
 
     expect(applyDashboardTaskUpdate(tasks, { _id: 'task-1', status: 'completed', completed: true })).toEqual([
       { _id: 'task-1', title: 'Existing task', status: 'completed', completed: true }

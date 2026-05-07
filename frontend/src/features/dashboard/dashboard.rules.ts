@@ -1,14 +1,13 @@
-type DashboardTaskStatus = 'active' | 'completed' | (string & {})
-type DashboardCreationMode = 'ai' | 'manual' | (string & {})
+import type { TaskCreationMode, TaskStatus } from '@sayachan/contracts'
 
-type DashboardTask = {
+export type DashboardTask = {
   _id?: string | number
   title?: string
-  status?: DashboardTaskStatus
+  status?: TaskStatus
   completed?: boolean
   archived?: boolean
   originModule?: string
-  creationMode?: DashboardCreationMode
+  creationMode?: TaskCreationMode | string
 }
 
 type DashboardTaskRowState = {

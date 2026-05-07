@@ -3,10 +3,11 @@ import User from '../models/User.js';
 import Invite from '../models/Invite.js';
 import Session from '../models/Session.js';
 import {
+  toCreatedInviteDto,
   toPublicInviteDto,
   toPublicUserDto,
   type UserAuthRecord
-} from '../domain/dtos/authDtos.js';
+} from './responses/authResponses.js';
 import {
   BadRequestError,
   ConflictError,
@@ -131,10 +132,7 @@ export async function createInvite(owner: UserAuthRecord) {
     expiresAt: new Date(Date.now() + INVITE_TTL_MS)
   });
 
-  return {
-    ...toPublicInviteDto(invite),
-    code: rawCode
-  };
+  return toCreatedInviteDto(toPublicInviteDto(invite), rawCode);
 }
 
 export async function listInvites() {
