@@ -1,24 +1,27 @@
-<script setup>
+<script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import type { AuthCredentialsDto } from '../types/api-dtos'
 import { useAuthStore } from '../stores/auth'
+import type { AuthStore } from '../stores/auth'
 
-const auth = useAuthStore()
+const auth = useAuthStore() as AuthStore
 const router = useRouter()
 const route = useRoute()
 const error = ref('')
-const form = reactive({
+const form = reactive<AuthCredentialsDto>({
   email: '',
   password: ''
 })
 
-async function submit() {
+async function submit(): Promise<void> {
   error.value = ''
   try {
     await auth.login(form)
-    await router.push(route.query.redirect || '/notes')
-  } catch (err) {
-    error.value = err.message
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/notes'
+    await router.push(redirect)
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : String(err)
   }
 }
 </script>

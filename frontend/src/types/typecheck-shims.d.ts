@@ -16,6 +16,7 @@ declare module 'vue' {
   export function reactive<T extends object>(value: T): T
   export function computed<T>(getter: () => T): ComputedRef<T>
   export function unref<T>(value: T | Ref<T>): T
+  export function onMounted(callback: () => unknown): void
 }
 
 declare module 'pinia' {
@@ -38,8 +39,17 @@ declare module 'vue-router' {
 
   export function createRouter(options: { history: unknown, routes: RouteRecordRaw[] }): {
     beforeEach(callback: (to: { meta: Record<string, unknown>, fullPath: string }) => unknown): unknown
+    push(to: string | Record<string, unknown>): Promise<unknown>
   }
   export function createWebHistory(): unknown
+  export function useRoute(): {
+    meta: Record<string, unknown>
+    query: Record<string, string | string[] | undefined>
+  }
+  export function useRouter(): {
+    push(to: string | Record<string, unknown>): Promise<unknown>
+  }
+  export const RouterLink: unknown
 }
 
 declare module '*.vue' {

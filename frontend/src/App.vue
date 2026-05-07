@@ -1,15 +1,16 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import Chat from './components/Chat.vue'
 import { useAuthStore } from './stores/auth'
+import type { AuthStore } from './stores/auth'
 
-const auth = useAuthStore()
+const auth = useAuthStore() as AuthStore
 const route = useRoute()
 const router = useRouter()
 const isPublicAuthRoute = computed(() => route.meta.public)
 
-async function logout() {
+async function logout(): Promise<void> {
   await auth.logout()
   await router.push('/login')
 }

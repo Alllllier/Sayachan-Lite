@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import Dashboard from '../components/Dashboard.vue'
 import { Panel } from '../components/ui/shell'
 </script>

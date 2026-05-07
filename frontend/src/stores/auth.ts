@@ -9,6 +9,20 @@ import { clearResourceCache } from '../services/resourceCache'
 import { useChatStore } from './chat'
 import { useCockpitSignals } from './cockpitSignals'
 
+export type AuthStore = {
+  currentUser: PublicUserDto | null
+  loading: boolean
+  initialized: boolean
+  error: string
+  isAuthenticated: boolean
+  isOwner: boolean
+  loadCurrentUser: () => Promise<void>
+  login: (credentials: AuthCredentialsDto) => Promise<PublicUserDto | null>
+  logout: () => Promise<void>
+  registerTester: (payload: RegisterTesterDto) => Promise<PublicUserDto | null>
+  bootstrapOwner: (payload: AuthCredentialsDto) => Promise<PublicUserDto | null>
+}
+
 function resetAccountScopedRuntimeState() {
   clearResourceCache()
   useChatStore().resetChat()

@@ -1,24 +1,26 @@
-<script setup>
+<script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import type { RegisterTesterDto } from '../types/api-dtos'
 import { useAuthStore } from '../stores/auth'
+import type { AuthStore } from '../stores/auth'
 
-const auth = useAuthStore()
+const auth = useAuthStore() as AuthStore
 const router = useRouter()
 const error = ref('')
-const form = reactive({
+const form = reactive<RegisterTesterDto>({
   email: '',
   password: '',
   inviteCode: ''
 })
 
-async function submit() {
+async function submit(): Promise<void> {
   error.value = ''
   try {
     await auth.registerTester(form)
     await router.push('/login')
-  } catch (err) {
-    error.value = err.message
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : String(err)
   }
 }
 </script>

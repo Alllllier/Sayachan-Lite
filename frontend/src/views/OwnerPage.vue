@@ -1,6 +1,12 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import Toast from '../components/ui/Toast.vue'
+import type {
+  CreatedInviteDto,
+  OwnerSystemStatusDto,
+  PublicInviteDto,
+  PublicUserDto
+} from '../types/api-dtos'
 import {
   createInvite,
   disableTester,
@@ -13,20 +19,20 @@ import {
 
 const loading = ref(false)
 const error = ref('')
-const invites = ref([])
-const testers = ref([])
-const status = ref(null)
+const invites = ref<PublicInviteDto[]>([])
+const testers = ref<PublicUserDto[]>([])
+const status = ref<OwnerSystemStatusDto | null>(null)
 const newestInviteCode = ref('')
-const toast = ref({ visible: false, message: '', type: 'success' })
+const toast = ref<{ visible: boolean, message: string, type: 'success' | 'error' }>({ visible: false, message: '', type: 'success' })
 
-function showToast(message, type = 'success') {
+function showToast(message: string, type: 'success' | 'error' = 'success'): void {
   toast.value = { visible: true, message, type }
   window.setTimeout(() => {
     toast.value.visible = false
   }, 2200)
 }
 
-async function loadOwnerData() {
+async function loadOwnerData(): Promise<void> {
   loading.value = true
   error.value = ''
   try {
@@ -35,53 +41,53 @@ async function loadOwnerData() {
       fetchTesters(),
       fetchSystemStatus()
     ])
-    invites.value = inviteData
-    testers.value = testerData
+    invites.value = inviteData || []
+    testers.value = testerData || []
     status.value = systemData
-  } catch (err) {
-    error.value = err.message
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : String(err)
   } finally {
     loading.value = false
   }
 }
 
-async function handleCreateInvite() {
+async function handleCreateInvite(): Promise<void> {
   try {
-    const invite = await createInvite()
-    newestInviteCode.value = invite.code
+    const invite: CreatedInviteDto | null = await createInvite()
+    newestInviteCode.value = invite?.code || ''
     await loadOwnerData()
     showToast('Invite created')
-  } catch (err) {
-    showToast(err.message, 'error')
+  } catch (err: unknown) {
+    showToast(err instanceof Error ? err.message : String(err), 'error')
   }
 }
 
-async function handleRevoke(inviteId) {
+async function handleRevoke(inviteId: string): Promise<void> {
   try {
     await revokeInvite(inviteId)
     await loadOwnerData()
     showToast('Invite revoked')
-  } catch (err) {
-    showToast(err.message, 'error')
+  } catch (err: unknown) {
+    showToast(err instanceof Error ? err.message : String(err), 'error')
   }
 }
 
-async function handleTesterStatus(tester) {
+async function handleTesterStatus(tester: PublicUserDto): Promise<void> {
   try {
     if (tester.disabled) {
-      await restoreTester(tester._id)
+      await restoreTester(String(tester._id))
       showToast('Tester restored')
     } else {
-      await disableTester(tester._id)
+      await disableTester(String(tester._id))
       showToast('Tester disabled')
     }
     await loadOwnerData()
-  } catch (err) {
-    showToast(err.message, 'error')
+  } catch (err: unknown) {
+    showToast(err instanceof Error ? err.message : String(err), 'error')
   }
 }
 
-function inviteState(invite) {
+function inviteState(invite: PublicInviteDto): 'revoked' | 'used' | 'expired' | 'active' {
   if (invite.revokedAt) return 'revoked'
   if (invite.usedAt) return 'used'
   if (new Date(invite.expiresAt) <= new Date()) return 'expired'
