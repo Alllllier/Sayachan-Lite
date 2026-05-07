@@ -22,6 +22,13 @@ function mockedFetch() {
   return vi.mocked(fetch)
 }
 
+const noteDto = {
+  _id: 'note-1',
+  title: 'PMO',
+  content: 'Plan notes',
+  updatedAt: '2026-01-01T00:00:00.000Z'
+}
+
 describe('notes api boundary', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn())
@@ -32,19 +39,20 @@ describe('notes api boundary', () => {
   })
 
   it('fetches active and archived note lists from the expected endpoints', async () => {
-    mockedFetch().mockResolvedValueOnce(jsonResponse([{ _id: 'note-1' }]))
-    await expect(fetchNotes()).resolves.toEqual([{ _id: 'note-1' }])
+    mockedFetch().mockResolvedValueOnce(jsonResponse([noteDto]))
+    await expect(fetchNotes()).resolves.toEqual([noteDto])
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/notes', { credentials: 'include' })
 
-    mockedFetch().mockResolvedValueOnce(jsonResponse([{ _id: 'note-archived' }]))
-    await expect(fetchNotes({ archived: true })).resolves.toEqual([{ _id: 'note-archived' }])
+    const archivedNote = { ...noteDto, _id: 'note-archived', archived: true }
+    mockedFetch().mockResolvedValueOnce(jsonResponse([archivedNote]))
+    await expect(fetchNotes({ archived: true })).resolves.toEqual([archivedNote])
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/notes?archived=true', { credentials: 'include' })
   })
 
   it('sends create and update payloads through note endpoints', async () => {
     const note = { title: 'PMO', content: 'Plan notes' }
 
-    mockedFetch().mockResolvedValueOnce(jsonResponse({ _id: 'note-1', ...note }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse(noteDto))
     await createNote(note)
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/notes', {
       method: 'POST',
@@ -53,7 +61,7 @@ describe('notes api boundary', () => {
       body: JSON.stringify(note)
     })
 
-    mockedFetch().mockResolvedValueOnce(jsonResponse({ _id: 'note-1', ...note, content: 'Updated' }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ ...noteDto, content: 'Updated' }))
     await updateNote('note-1', { ...note, content: 'Updated' })
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/notes/note-1', {
       method: 'PUT',
@@ -96,5 +104,13 @@ describe('notes api boundary', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ _id: 'note-1' })
     })
+  })
+
+  it('rejects malformed note and AI draft responses before feature state consumes them', async () => {
+    mockedFetch().mockResolvedValueOnce(jsonResponse([{ _id: 'note-1', title: 'Missing content' }]))
+    await expect(fetchNotes()).rejects.toThrow('Invalid notes list response')
+
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ drafts: ['Write handoff', 42] }))
+    await expect(fetchNoteTaskDrafts('note-1')).rejects.toThrow('Invalid note task drafts response')
   })
 })
