@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /**
  * EmptyState - UI Foundation Primitive
  * Phase 4: Reusable empty state component
@@ -16,15 +16,11 @@
  * - default: Action CTA or additional content
  */
 
-defineProps({
-  title: {
-    type: String,
-    required: true
-  },
-  description: {
-    type: String,
-    default: ''
-  }
+withDefaults(defineProps<{
+  title: string
+  description?: string
+}>(), {
+  description: ''
 })
 </script>
 

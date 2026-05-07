@@ -1,9 +1,8 @@
-<script setup>
-defineProps({
-  text: {
-    type: String,
-    default: ''
-  }
+<script setup lang="ts">
+withDefaults(defineProps<{
+  text?: string
+}>(), {
+  text: ''
 })
 </script>
 

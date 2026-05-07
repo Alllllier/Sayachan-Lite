@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /**
  * Toast - UI Foundation Primitive
  * Phase 2: Extracted reusable toast notification
@@ -12,20 +12,15 @@
  * - visible: boolean - Control visibility
  */
 
-defineProps({
-  message: {
-    type: String,
-    required: true
-  },
-  type: {
-    type: String,
-    default: 'success',
-    validator: (value) => ['success', 'error'].includes(value)
-  },
-  visible: {
-    type: Boolean,
-    default: false
-  }
+type ToastType = 'success' | 'error'
+
+withDefaults(defineProps<{
+  message: string
+  type?: ToastType
+  visible?: boolean
+}>(), {
+  type: 'success',
+  visible: false
 })
 </script>
 

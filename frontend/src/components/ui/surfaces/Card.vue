@@ -1,18 +1,16 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 
 defineOptions({ inheritAttrs: false })
 
-const props = defineProps({
-  tag: {
-    type: String,
-    default: 'article'
-  },
-  state: {
-    type: String,
-    default: null,
-    validator: (value) => [null, 'archived'].includes(value)
-  }
+type CardState = 'archived' | null
+
+const props = withDefaults(defineProps<{
+  tag?: string
+  state?: CardState
+}>(), {
+  tag: 'article',
+  state: null
 })
 
 const stateClass = computed(() => props.state ? `card-state-${props.state}` : null)

@@ -1,45 +1,35 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps({
-  state: {
-    type: String,
-    default: 'idle',
-    validator: value => ['idle', 'active', 'pending'].includes(value)
-  },
-  variant: {
-    type: String,
-    default: 'primary',
-    validator: value => ['primary', 'ai'].includes(value)
-  },
-  idleLabel: {
-    type: String,
-    default: ''
-  },
-  activeLabel: {
-    type: String,
-    default: 'Cancel'
-  },
-  pendingLabel: {
-    type: String,
-    default: ''
-  },
-  activeKind: {
-    type: String,
-    default: 'text',
-    validator: value => ['text', 'icon'].includes(value)
-  },
-  buttonClass: {
-    type: [String, Array, Object],
-    default: ''
-  },
-  disabled: {
-    type: Boolean,
-    default: false
-  }
+type ObjectActionState = 'idle' | 'active' | 'pending'
+type ObjectActionVariant = 'primary' | 'ai'
+type ObjectActionActiveKind = 'text' | 'icon'
+type ClassValue = string | string[] | Record<string, boolean>
+
+const props = withDefaults(defineProps<{
+  state?: ObjectActionState
+  variant?: ObjectActionVariant
+  idleLabel?: string
+  activeLabel?: string
+  pendingLabel?: string
+  activeKind?: ObjectActionActiveKind
+  buttonClass?: ClassValue
+  disabled?: boolean
+}>(), {
+  state: 'idle',
+  variant: 'primary',
+  idleLabel: '',
+  activeLabel: 'Cancel',
+  pendingLabel: '',
+  activeKind: 'text',
+  buttonClass: '',
+  disabled: false
 })
 
-const emit = defineEmits(['activate', 'cancel'])
+const emit = defineEmits<{
+  activate: []
+  cancel: []
+}>()
 
 const buttonClasses = computed(() => {
   const classes = ['object-action-area__button']
@@ -63,7 +53,7 @@ const areaClasses = computed(() => ([
 
 const showReveal = computed(() => props.state === 'active')
 
-function handleClick() {
+function handleClick(): void {
   if (props.disabled) return
   if (props.state === 'active') {
     emit('cancel')

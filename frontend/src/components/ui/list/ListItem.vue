@@ -1,35 +1,22 @@
-<script setup>
+<script setup lang="ts">
 defineOptions({ inheritAttrs: false })
 
-defineProps({
-  element: {
-    type: String,
-    default: 'div'
-  },
-  buttonType: {
-    type: String,
-    default: 'button'
-  },
-  interactive: {
-    type: Boolean,
-    default: false
-  },
-  current: {
-    type: Boolean,
-    default: false
-  },
-  muted: {
-    type: Boolean,
-    default: false
-  },
-  archived: {
-    type: Boolean,
-    default: false
-  },
-  raised: {
-    type: Boolean,
-    default: false
-  }
+withDefaults(defineProps<{
+  element?: string
+  buttonType?: 'button' | 'submit' | 'reset'
+  interactive?: boolean
+  current?: boolean
+  muted?: boolean
+  archived?: boolean
+  raised?: boolean
+}>(), {
+  element: 'div',
+  buttonType: 'button',
+  interactive: false,
+  current: false,
+  muted: false,
+  archived: false,
+  raised: false
 })
 </script>
 

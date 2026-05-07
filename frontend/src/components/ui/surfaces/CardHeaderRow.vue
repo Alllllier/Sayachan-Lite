@@ -1,13 +1,9 @@
-<script setup>
-defineProps({
-  title: {
-    type: String,
-    required: true
-  },
-  titleTag: {
-    type: String,
-    default: 'h3'
-  }
+<script setup lang="ts">
+withDefaults(defineProps<{
+  title: string
+  titleTag?: string
+}>(), {
+  titleTag: 'h3'
 })
 </script>
 

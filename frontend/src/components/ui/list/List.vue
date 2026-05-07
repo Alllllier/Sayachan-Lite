@@ -1,15 +1,12 @@
-<script setup>
+<script setup lang="ts">
 defineOptions({ inheritAttrs: false })
 
-defineProps({
-  mode: {
-    type: String,
-    default: 'preview'
-  },
-  tag: {
-    type: String,
-    default: 'div'
-  }
+withDefaults(defineProps<{
+  mode?: string
+  tag?: string
+}>(), {
+  mode: 'preview',
+  tag: 'div'
 })
 </script>
 

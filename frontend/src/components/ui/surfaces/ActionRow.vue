@@ -1,11 +1,10 @@
-<script setup>
+<script setup lang="ts">
 defineOptions({ inheritAttrs: false })
 
-defineProps({
-  tag: {
-    type: String,
-    default: 'div'
-  }
+withDefaults(defineProps<{
+  tag?: string
+}>(), {
+  tag: 'div'
 })
 </script>
 

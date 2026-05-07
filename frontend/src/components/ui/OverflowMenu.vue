@@ -1,18 +1,17 @@
-<script setup>
+<script setup lang="ts">
 defineOptions({ inheritAttrs: false })
 
-defineProps({
-  open: {
-    type: Boolean,
-    default: false
-  },
-  title: {
-    type: String,
-    default: 'Actions'
-  }
+withDefaults(defineProps<{
+  open?: boolean
+  title?: string
+}>(), {
+  open: false,
+  title: 'Actions'
 })
 
-const emit = defineEmits(['toggle'])
+const emit = defineEmits<{
+  toggle: []
+}>()
 </script>
 
 <template>

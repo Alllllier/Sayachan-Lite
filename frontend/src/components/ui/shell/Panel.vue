@@ -1,15 +1,12 @@
-<script setup>
+<script setup lang="ts">
 defineOptions({ inheritAttrs: false })
 
-defineProps({
-  title: {
-    type: String,
-    default: ''
-  },
-  titleTag: {
-    type: String,
-    default: 'h1'
-  }
+withDefaults(defineProps<{
+  title?: string
+  titleTag?: string
+}>(), {
+  title: '',
+  titleTag: 'h1'
 })
 </script>
 

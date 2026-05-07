@@ -1,19 +1,14 @@
-<script setup>
+<script setup lang="ts">
 defineOptions({ inheritAttrs: false })
 
-defineProps({
-  tag: {
-    type: String,
-    default: 'section'
-  },
-  title: {
-    type: String,
-    default: ''
-  },
-  titleTag: {
-    type: String,
-    default: 'h4'
-  }
+withDefaults(defineProps<{
+  tag?: string
+  title?: string
+  titleTag?: string
+}>(), {
+  tag: 'section',
+  title: '',
+  titleTag: 'h4'
 })
 </script>
 

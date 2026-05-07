@@ -10,6 +10,7 @@ declare module 'vue' {
   export function defineEmits<T>(): T extends Record<string, infer TArgs>
     ? <TEvent extends keyof T>(event: TEvent, ...args: TArgs extends unknown[] ? TArgs : never) => void
     : never
+  export function defineOptions(options: Record<string, unknown>): void
   export function withDefaults<T, TDefaults extends Partial<T>>(props: T, defaults: TDefaults): T & Required<TDefaults>
   export function ref<T>(value: T): { value: T }
   export function reactive<T extends object>(value: T): T
