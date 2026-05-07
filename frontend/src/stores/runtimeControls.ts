@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, reactive, computed } from 'vue'
+import type { ChatConvergenceMode, ChatPersonalityBaseline } from '../types/api-dtos'
 
 const LS_BASELINE_KEY = 'sayachan.personalityBaseline'
 const LS_WARMTH_KEY = 'sayachan.warmth'
@@ -7,7 +8,7 @@ const LS_CONVERGENCE_KEY = 'sayachan.convergenceMode'
 
 export const useRuntimeControls = defineStore('runtimeControls', () => {
   const savedBaseline = localStorage.getItem(LS_BASELINE_KEY)
-  const initialBaseline = ['warm', 'strict', 'haraguro'].includes(savedBaseline)
+  const initialBaseline: ChatPersonalityBaseline = isPersonalityBaseline(savedBaseline)
     ? savedBaseline
     : 'warm'
 
@@ -17,7 +18,7 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
   const initialWarmth = savedWarmth !== null ? Number(savedWarmth) : 5
 
   const savedConvergence = localStorage.getItem(LS_CONVERGENCE_KEY)
-  const initialConvergence = ['explore', 'guided', 'decisive'].includes(savedConvergence)
+  const initialConvergence: ChatConvergenceMode = isConvergenceMode(savedConvergence)
     ? savedConvergence
     : 'guided'
 
@@ -59,14 +60,22 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
     return configs[personalityBaseline.value] || configs.warm
   })
 
-  function setBaseline(value) {
-    if (['warm', 'strict', 'haraguro'].includes(value)) {
+  function isPersonalityBaseline(value: unknown): value is ChatPersonalityBaseline {
+    return value === 'warm' || value === 'strict' || value === 'haraguro'
+  }
+
+  function isConvergenceMode(value: unknown): value is ChatConvergenceMode {
+    return value === 'explore' || value === 'guided' || value === 'decisive'
+  }
+
+  function setBaseline(value: unknown): void {
+    if (isPersonalityBaseline(value)) {
       personalityBaseline.value = value
       localStorage.setItem(LS_BASELINE_KEY, value)
     }
   }
 
-  function setWarmth(value) {
+  function setWarmth(value: unknown): void {
     const num = Number(value)
     if (Number.isFinite(num) && num >= 0 && num <= 10) {
       futureSlots.warmth = num
@@ -74,8 +83,8 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
     }
   }
 
-  function setConvergenceMode(value) {
-    if (['explore', 'guided', 'decisive'].includes(value)) {
+  function setConvergenceMode(value: unknown): void {
+    if (isConvergenceMode(value)) {
       futureSlots.convergenceMode = value
       localStorage.setItem(LS_CONVERGENCE_KEY, value)
     }

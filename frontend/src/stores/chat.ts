@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type { ChatMessageDto } from '../types/api-dtos'
 
 export const useChatStore = defineStore('chat', () => {
   const isOpen = ref(false)
-  const messages = ref([])
+  const messages = ref<ChatMessageDto[]>([])
   const isSending = ref(false)
 
   function openChat() {
@@ -14,11 +15,11 @@ export const useChatStore = defineStore('chat', () => {
     isOpen.value = false
   }
 
-  function appendMessage(message) {
+  function appendMessage(message: ChatMessageDto): void {
     messages.value.push(message)
   }
 
-  function setSending(value) {
+  function setSending(value: boolean): void {
     isSending.value = value
   }
 

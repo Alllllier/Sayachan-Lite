@@ -1,7 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-const routes = [
+type AuthRouteStore = {
+  initialized: boolean
+  loadCurrentUser: () => Promise<void>
+  isAuthenticated: boolean
+  isOwner: boolean
+}
+
+const routes: RouteRecordRaw[] = [
   {
     path: '/',
     redirect: '/notes'
@@ -41,7 +49,7 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
-  const auth = useAuthStore()
+  const auth = useAuthStore() as AuthRouteStore
   if (!auth.initialized) {
     await auth.loadCurrentUser()
   }

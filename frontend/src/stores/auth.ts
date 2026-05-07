@@ -1,5 +1,10 @@
 import { defineStore } from 'pinia'
 import * as authApi from '../features/auth/auth.api'
+import type {
+  AuthCredentialsDto,
+  PublicUserDto,
+  RegisterTesterDto
+} from '../types/api-dtos'
 import { clearResourceCache } from '../services/resourceCache'
 import { useChatStore } from './chat'
 import { useCockpitSignals } from './cockpitSignals'
@@ -12,7 +17,7 @@ function resetAccountScopedRuntimeState() {
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    currentUser: null,
+    currentUser: null as PublicUserDto | null,
     loading: false,
     initialized: false,
     error: ''
@@ -32,16 +37,16 @@ export const useAuthStore = defineStore('auth', {
         if (previousUserId && nextUserId && previousUserId !== nextUserId) {
           resetAccountScopedRuntimeState()
         }
-      } catch (error) {
+      } catch (error: unknown) {
         this.currentUser = null
         resetAccountScopedRuntimeState()
-        this.error = error.message
+        this.error = error instanceof Error ? error.message : String(error)
       } finally {
         this.loading = false
         this.initialized = true
       }
     },
-    async login(credentials) {
+    async login(credentials: AuthCredentialsDto) {
       this.loading = true
       this.error = ''
       try {
@@ -53,10 +58,10 @@ export const useAuthStore = defineStore('auth', {
         }
         this.initialized = true
         return this.currentUser
-      } catch (error) {
+      } catch (error: unknown) {
         this.currentUser = null
         resetAccountScopedRuntimeState()
-        this.error = error.message
+        this.error = error instanceof Error ? error.message : String(error)
         throw error
       } finally {
         this.loading = false
@@ -68,10 +73,10 @@ export const useAuthStore = defineStore('auth', {
       resetAccountScopedRuntimeState()
       this.initialized = true
     },
-    async registerTester(payload) {
+    async registerTester(payload: RegisterTesterDto) {
       return authApi.registerTester(payload)
     },
-    async bootstrapOwner(payload) {
+    async bootstrapOwner(payload: AuthCredentialsDto) {
       return authApi.bootstrapOwner(payload)
     }
   }

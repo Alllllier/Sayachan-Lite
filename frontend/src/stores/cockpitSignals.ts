@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type { CockpitSnapshot } from '../services/cockpitContextService'
 
 /**
  * Temporary cockpit UI signals store.
@@ -16,7 +17,7 @@ export const useCockpitSignals = defineStore('cockpitSignals', () => {
   const currentNextAction = ref('')
   const hasHydrated = ref(false)
 
-  function setSignals(payload) {
+  function setSignals(payload: Partial<CockpitSnapshot> | null | undefined): void {
     if (payload && typeof payload === 'object') {
       if (typeof payload.activeProjectsCount === 'number') {
         activeProjectsCount.value = payload.activeProjectsCount
@@ -34,7 +35,7 @@ export const useCockpitSignals = defineStore('cockpitSignals', () => {
     hasHydrated.value = true
   }
 
-  function resetSignals() {
+  function resetSignals(): void {
     activeProjectsCount.value = 0
     activeTasksCount.value = 0
     pinnedProjectName.value = ''

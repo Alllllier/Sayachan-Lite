@@ -7,11 +7,11 @@ const md = new MarkdownIt({
   html: false,
   linkify: true,
   breaks: true,
-  highlight: (str, lang) => {
+  highlight: (str: string, lang: string) => {
     if (lang && hljs.getLanguage(lang)) {
       try {
         return `<pre class="hljs"><code>${hljs.highlight(str, { language: lang }).value}</code></pre>`
-      } catch (__) {}
+      } catch {}
     }
     return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`
   }
@@ -19,7 +19,7 @@ const md = new MarkdownIt({
 
 md.use(taskLists)
 
-export function renderMarkdown(text) {
+export function renderMarkdown(text: string | null | undefined): string {
   if (!text) return ''
   return DOMPurify.sanitize(md.render(text))
 }
