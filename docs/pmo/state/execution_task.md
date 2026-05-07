@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Product Response Whitelist Enforcement`
+- Sprint: `Route State Accessors And Middleware Folder Split`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/product-response-whitelist-enforcement.md`
+- Report surface: `docs/pmo/history/reports/route-state-accessors-and-middleware-folder-split.md`
 
 ## Next Activation Rule
 

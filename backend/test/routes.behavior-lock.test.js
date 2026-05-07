@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import Note from '../dist/models/Note.js';
 import Project from '../dist/models/Project.js';
 import Task from '../dist/models/Task.js';
-import { errorBoundary } from '../dist/middleware/errorBoundary.js';
+import { errorBoundary } from '../dist/middleware/app/errorBoundary.js';
 import routes from '../dist/routes/index.js';
 
 function getRouteHandler(method, path) {

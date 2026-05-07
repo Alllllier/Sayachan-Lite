@@ -2,7 +2,7 @@ import type {
   ProjectCreateDto,
   ProjectUpdateDto
 } from '../routes/schemas/mutations.js';
-import type { ObjectId } from '../middleware/objectIdParsing.js';
+import type { ObjectId } from '../domain/objectIds.js';
 import {
   buildArchiveFilter,
   combineFilters,

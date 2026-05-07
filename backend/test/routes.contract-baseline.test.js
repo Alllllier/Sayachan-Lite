@@ -8,10 +8,10 @@ import Task from '../dist/models/Task.js';
 import notesService from '../dist/services/notesService.js';
 import projectsService from '../dist/services/projectsService.js';
 import tasksService from '../dist/services/tasksService.js';
-import { errorBoundary } from '../dist/middleware/errorBoundary.js';
+import { errorBoundary } from '../dist/middleware/app/errorBoundary.js';
 import routes from '../dist/routes/index.js';
 import { BadRequestError } from '../dist/errors/httpErrors.js';
-import { assertZodSchema } from '../dist/middleware/requestBodyValidation.js';
+import { assertZodSchema } from '../dist/middleware/route/requestBodyValidation.js';
 import {
   taskCreateSchema,
   taskUpdateSchema

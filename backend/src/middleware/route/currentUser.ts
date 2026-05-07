@@ -1,10 +1,10 @@
 import type { Context, Next } from 'koa';
-import { toObjectId, type ObjectId } from './objectIdParsing.js';
+import { toObjectId, type ObjectId } from '../../domain/objectIds.js';
 import type {
   CurrentUserState,
   OptionalCurrentUserState,
   RouteContext
-} from '../routes/routeTypes.js';
+} from '../../routes/routeTypes.js';
 
 type CurrentUserContext = Context & {
   state: Context['state'] & OptionalCurrentUserState;

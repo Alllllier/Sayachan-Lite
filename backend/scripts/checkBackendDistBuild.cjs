@@ -357,7 +357,7 @@ function assertRouteIndexDistArtifactFromTypeScriptSource() {
 }
 
 function assertAuthMiddlewareDistArtifactFromTypeScriptSource() {
-  const authMiddlewareDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'auth.js'), 'utf8');
+  const authMiddlewareDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'app', 'auth.js'), 'utf8');
 
   assert(
     authMiddlewareDistSource.includes('function authMiddleware'),
@@ -367,9 +367,18 @@ function assertAuthMiddlewareDistArtifactFromTypeScriptSource() {
     authMiddlewareDistSource.includes('/auth/login'),
     'dist auth middleware artifact must preserve public auth route gating.'
   );
+}
+
+function assertRouteAuthDistArtifactFromTypeScriptSource() {
+  const routeAuthDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'route', 'auth.js'), 'utf8');
+
   assert(
-    authMiddlewareDistSource.includes('Owner access required'),
-    'dist auth middleware artifact must preserve owner access errors.'
+    routeAuthDistSource.includes('function requireOwner'),
+    'dist route auth artifact must preserve requireOwner.'
+  );
+  assert(
+    routeAuthDistSource.includes('Owner access required'),
+    'dist route auth artifact must preserve owner access errors.'
   );
 }
 
@@ -385,12 +394,46 @@ function assertAuthRoutesDistArtifactFromTypeScriptSource() {
     'dist authRoutes artifact must preserve owner invite revoke route.'
   );
   assert(
-    sourceReferencesModule(authRoutesDistSource, '../middleware/auth'),
-    'dist authRoutes artifact must use the compiled auth middleware boundary.'
+    sourceReferencesModule(authRoutesDistSource, '../middleware/route/auth'),
+    'dist authRoutes artifact must use the compiled route owner guard boundary.'
+  );
+  assert(
+    sourceReferencesModule(authRoutesDistSource, '../middleware/sessionCookies'),
+    'dist authRoutes artifact must use the compiled session cookie utility boundary.'
+  );
+  assert(
+    sourceReferencesModule(authRoutesDistSource, '../domain/authSession'),
+    'dist authRoutes artifact must use the auth session domain constants.'
   );
   assert(
     sourceReferencesModule(authRoutesDistSource, './schemas/auth'),
     'dist authRoutes artifact must use the auth request schema boundary.'
+  );
+}
+
+function assertSessionCookiesDistArtifactFromTypeScriptSource() {
+  const sessionCookiesDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'sessionCookies.js'), 'utf8');
+
+  assert(
+    sourceReferencesModule(sessionCookiesDistSource, '../domain/authSession'),
+    'dist sessionCookies artifact must use the auth session domain constants.'
+  );
+  assert(
+    !sourceReferencesModule(sessionCookiesDistSource, '../services/authService'),
+    'dist sessionCookies artifact must not depend on authService.'
+  );
+}
+
+function assertAuthSessionDistArtifactFromTypeScriptSource() {
+  const authSessionDistSource = fs.readFileSync(path.join(distRoot, 'domain', 'authSession.js'), 'utf8');
+
+  assert(
+    authSessionDistSource.includes('SESSION_COOKIE_NAME'),
+    'dist authSession artifact must preserve SESSION_COOKIE_NAME.'
+  );
+  assert(
+    authSessionDistSource.includes('sayachan_session'),
+    'dist authSession artifact must preserve the stable session cookie name.'
   );
 }
 
@@ -425,7 +468,7 @@ function assertServerDistArtifactFromTypeScriptSource() {
 }
 
 function assertRequestBodyValidationDistArtifactFromTypeScriptSource() {
-  const validationDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'requestBodyValidation.js'), 'utf8');
+  const validationDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'route', 'requestBodyValidation.js'), 'utf8');
 
   assert(
     validationDistSource.includes('assertZodSchema'),
@@ -458,7 +501,7 @@ function assertHttpErrorsDistArtifactFromTypeScriptSource() {
 }
 
 function assertCurrentUserDistArtifactFromTypeScriptSource() {
-  const currentUserDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'currentUser.js'), 'utf8');
+  const currentUserDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'route', 'currentUser.js'), 'utf8');
 
   assert(
     currentUserDistSource.includes('function resolveCurrentUserId'),
@@ -471,15 +514,11 @@ function assertCurrentUserDistArtifactFromTypeScriptSource() {
 }
 
 function assertObjectIdDistArtifactFromTypeScriptSource() {
-  const objectIdDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'objectIdParsing.js'), 'utf8');
+  const objectIdDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'route', 'objectIdParsing.js'), 'utf8');
 
   assert(
-    objectIdDistSource.includes('function toObjectId'),
-    'dist objectIdParsing middleware artifact must preserve toObjectId.'
-  );
-  assert(
-    objectIdDistSource.includes('INVALID_OBJECT_ID'),
-    'dist objectIdParsing middleware artifact must preserve stable invalid object id error code.'
+    sourceReferencesModule(objectIdDistSource, '../../domain/objectIds'),
+    'dist objectIdParsing middleware artifact must use the domain object id conversion boundary.'
   );
   assert(
     objectIdDistSource.includes('function parseParamObjectId'),
@@ -487,8 +526,21 @@ function assertObjectIdDistArtifactFromTypeScriptSource() {
   );
 }
 
+function assertDomainObjectIdsDistArtifactFromTypeScriptSource() {
+  const objectIdsDistSource = fs.readFileSync(path.join(distRoot, 'domain', 'objectIds.js'), 'utf8');
+
+  assert(
+    objectIdsDistSource.includes('function toObjectId'),
+    'dist domain objectIds artifact must preserve toObjectId.'
+  );
+  assert(
+    objectIdsDistSource.includes('INVALID_OBJECT_ID'),
+    'dist domain objectIds artifact must preserve stable invalid object id error code.'
+  );
+}
+
 function assertErrorBoundaryDistArtifactFromTypeScriptSource() {
-  const errorBoundaryDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'errorBoundary.js'), 'utf8');
+  const errorBoundaryDistSource = fs.readFileSync(path.join(distRoot, 'middleware', 'app', 'errorBoundary.js'), 'utf8');
 
   assert(
     errorBoundaryDistSource.includes('function errorBoundary'),
@@ -711,11 +763,15 @@ const requiredRuntimeEntrypoints = [
   'server.js',
   path.join('errors', 'httpErrors.js'),
   path.join('ai', 'bridge.js'),
-  path.join('middleware', 'auth.js'),
-  path.join('middleware', 'currentUser.js'),
-  path.join('middleware', 'errorBoundary.js'),
-  path.join('middleware', 'objectIdParsing.js'),
-  path.join('middleware', 'requestBodyValidation.js'),
+  path.join('middleware', 'app', 'auth.js'),
+  path.join('middleware', 'app', 'errorBoundary.js'),
+  path.join('middleware', 'route', 'auth.js'),
+  path.join('middleware', 'route', 'currentUser.js'),
+  path.join('middleware', 'route', 'objectIdParsing.js'),
+  path.join('middleware', 'route', 'requestBodyValidation.js'),
+  path.join('middleware', 'sessionCookies.js'),
+  path.join('domain', 'authSession.js'),
+  path.join('domain', 'objectIds.js'),
   path.join('domain', 'dtos', 'authDtos.js'),
   path.join('domain', 'ownership.js'),
   path.join('domain', 'tasks', 'cascade.js'),
@@ -733,6 +789,7 @@ const requiredRuntimeEntrypoints = [
   path.join('services', 'responses', 'productResponses.js'),
   path.join('services', 'tasksService.js'),
   path.join('routes', 'index.js'),
+  path.join('routes', 'routeState.js'),
   path.join('routes', 'ai.js'),
   path.join('routes', 'authRoutes.js'),
   path.join('routes', 'healthRoutes.js'),
@@ -770,11 +827,15 @@ assertTasksDistArtifactFromTypeScriptSource();
 assertHealthRoutesDistArtifactFromTypeScriptSource();
 assertRouteIndexDistArtifactFromTypeScriptSource();
 assertAuthMiddlewareDistArtifactFromTypeScriptSource();
+assertSessionCookiesDistArtifactFromTypeScriptSource();
+assertAuthSessionDistArtifactFromTypeScriptSource();
+assertRouteAuthDistArtifactFromTypeScriptSource();
 assertAuthRoutesDistArtifactFromTypeScriptSource();
 assertDatabaseDistArtifactFromTypeScriptSource();
 assertServerDistArtifactFromTypeScriptSource();
 assertHttpErrorsDistArtifactFromTypeScriptSource();
 assertObjectIdDistArtifactFromTypeScriptSource();
+assertDomainObjectIdsDistArtifactFromTypeScriptSource();
 assertCurrentUserDistArtifactFromTypeScriptSource();
 assertErrorBoundaryDistArtifactFromTypeScriptSource();
 assertRequestBodyValidationDistArtifactFromTypeScriptSource();

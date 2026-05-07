@@ -1,4 +1,4 @@
-import type { ObjectId } from '../middleware/objectIdParsing.js';
+import type { ObjectId } from './objectIds.js';
 import { UnauthorizedError } from '../errors/httpErrors.js';
 
 export function requireUserId(userId: ObjectId | null | undefined): ObjectId {

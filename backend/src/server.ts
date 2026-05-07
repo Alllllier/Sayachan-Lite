@@ -2,11 +2,11 @@ import Koa from 'koa';
 import { connectDB } from './database.js';
 import routes from './routes/index.js';
 import aiRoutes from './routes/ai.js';
-import { errorBoundary } from './middleware/errorBoundary.js';
+import { errorBoundary } from './middleware/app/errorBoundary.js';
 import dotenv from 'dotenv';
 import cors from '@koa/cors';
 import { bodyParser } from '@koa/bodyparser';
-import { authMiddleware } from './middleware/auth.js';
+import { authMiddleware } from './middleware/app/auth.js';
 
 dotenv.config();
 

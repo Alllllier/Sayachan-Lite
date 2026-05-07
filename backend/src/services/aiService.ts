@@ -1,4 +1,4 @@
-import { type ObjectId, toObjectId } from '../middleware/objectIdParsing.js';
+import { type ObjectId, toObjectId } from '../domain/objectIds.js';
 import type {
   AiChatDto,
   AiNoteTaskRequestDto,

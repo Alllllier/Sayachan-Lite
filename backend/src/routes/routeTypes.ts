@@ -1,6 +1,6 @@
 import type { RouterContext, RouterMiddleware } from '@koa/router';
 
-import type { ObjectId } from '../middleware/objectIdParsing.js';
+import type { ObjectId } from '../domain/objectIds.js';
 
 export type CurrentUser = {
   _id?: unknown;

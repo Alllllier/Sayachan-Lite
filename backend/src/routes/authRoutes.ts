@@ -5,12 +5,15 @@ import type {
   RegisterTesterDto
 } from './schemas/auth.js';
 import authService from '../services/authService.js';
-import { clearSessionCookie, requireOwner, setSessionCookie } from '../middleware/auth.js';
+import { SESSION_COOKIE_NAME } from '../domain/authSession.js';
+import { requireOwner } from '../middleware/route/auth.js';
+import { clearSessionCookie, setSessionCookie } from '../middleware/sessionCookies.js';
 import {
   authCredentialsSchema,
   registerTesterSchema
 } from './schemas/auth.js';
-import { validateBody } from '../middleware/requestBodyValidation.js';
+import { validateBody } from '../middleware/route/requestBodyValidation.js';
+import { validatedBody } from './routeState.js';
 import type {
   RouteHandler,
   RouteState
@@ -25,10 +28,6 @@ type AuthState = RouteState & {
 type AuthHandler = RouteHandler<AuthState>;
 
 const router = new Router<AuthState>();
-
-function validatedBody<TBody>(ctx: Parameters<AuthHandler>[0]): TBody {
-  return ctx.state.validatedBody as TBody;
-}
 
 router.post('/auth/bootstrap-owner', validateBody<AuthCredentialsDto, AuthState>(authCredentialsSchema), (async (ctx) => {
   ctx.status = 201;
@@ -47,7 +46,7 @@ router.post('/auth/login', validateBody<AuthCredentialsDto, AuthState>(authCrede
 }) as AuthHandler);
 
 router.post('/auth/logout', (async (ctx) => {
-  await authService.logout(ctx.cookies.get(authService.SESSION_COOKIE_NAME));
+  await authService.logout(ctx.cookies.get(SESSION_COOKIE_NAME));
   clearSessionCookie(ctx);
   ctx.status = 204;
   ctx.body = null;

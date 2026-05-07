@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Product Response Whitelist Enforcement`
+- Sprint: `Route State Accessors And Middleware Folder Split`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/product-response-whitelist-enforcement.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/route-state-accessors-and-middleware-folder-split.md`
 
 ## Next Use
 

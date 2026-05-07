@@ -1,4 +1,4 @@
-import type { ObjectId } from '../../middleware/objectIdParsing.js';
+import type { ObjectId } from '../objectIds.js';
 
 export type RuntimeDocument = object & {
   toObject?: () => Record<string, unknown>;

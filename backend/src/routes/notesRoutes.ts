@@ -4,7 +4,6 @@ import type {
   NoteCreateDto,
   NoteUpdateDto
 } from './schemas/mutations.js';
-import { type ObjectId } from '../middleware/objectIdParsing.js';
 import type {
   AuthenticatedRouteState,
   RouteHandler
@@ -18,19 +17,12 @@ import {
   noteCreateSchema,
   noteUpdateSchema
 } from './schemas/mutations.js';
-import { requireCurrentUser } from '../middleware/currentUser.js';
-import { validateBody } from '../middleware/requestBodyValidation.js';
-import { parseParamObjectId } from '../middleware/objectIdParsing.js';
+import { requireCurrentUser } from '../middleware/route/currentUser.js';
+import { validateBody } from '../middleware/route/requestBodyValidation.js';
+import { parseParamObjectId } from '../middleware/route/objectIdParsing.js';
+import { objectId, validatedBody } from './routeState.js';
 
 const router = new Router<NotesState>();
-
-function validatedBody<TBody>(ctx: Parameters<NotesHandler>[0]): TBody {
-  return ctx.state.validatedBody as TBody;
-}
-
-function noteId(ctx: Parameters<NotesHandler>[0]): ObjectId {
-  return ctx.state.objectIds?.id as ObjectId;
-}
 
 const listNotesHandler: NotesHandler = async (ctx) => {
   const { archived } = ctx.query;
@@ -44,7 +36,7 @@ const createNoteHandler: NotesHandler = async (ctx) => {
 };
 
 const updateNoteHandler: NotesHandler = async (ctx) => {
-  const id = noteId(ctx);
+  const id = objectId(ctx);
   const body = validatedBody<NoteUpdateDto>(ctx);
   const note = await notesService.updateNote(id, body, { userId: ctx.state.userId });
   if (!note) {
@@ -56,7 +48,7 @@ const updateNoteHandler: NotesHandler = async (ctx) => {
 };
 
 const deleteNoteHandler: NotesHandler = async (ctx) => {
-  const id = noteId(ctx);
+  const id = objectId(ctx);
   const deleted = await notesService.deleteNote(id, { userId: ctx.state.userId });
   if (!deleted) {
     ctx.status = 404;
@@ -68,7 +60,7 @@ const deleteNoteHandler: NotesHandler = async (ctx) => {
 };
 
 const pinNoteHandler: NotesHandler = async (ctx) => {
-  const id = noteId(ctx);
+  const id = objectId(ctx);
   const note = await notesService.pinNote(id, { userId: ctx.state.userId });
   if (!note) {
     ctx.status = 404;
@@ -79,7 +71,7 @@ const pinNoteHandler: NotesHandler = async (ctx) => {
 };
 
 const unpinNoteHandler: NotesHandler = async (ctx) => {
-  const id = noteId(ctx);
+  const id = objectId(ctx);
   const note = await notesService.unpinNote(id, { userId: ctx.state.userId });
   if (!note) {
     ctx.status = 404;
@@ -90,7 +82,7 @@ const unpinNoteHandler: NotesHandler = async (ctx) => {
 };
 
 const archiveNoteHandler: NotesHandler = async (ctx) => {
-  const id = noteId(ctx);
+  const id = objectId(ctx);
   const note = await notesService.archiveNote(id, { userId: ctx.state.userId });
 
   if (!note) {
@@ -103,7 +95,7 @@ const archiveNoteHandler: NotesHandler = async (ctx) => {
 };
 
 const restoreNoteHandler: NotesHandler = async (ctx) => {
-  const id = noteId(ctx);
+  const id = objectId(ctx);
   const note = await notesService.restoreNote(id, { userId: ctx.state.userId });
 
   if (!note) {

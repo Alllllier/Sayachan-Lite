@@ -5,7 +5,7 @@ import type {
   TaskCreationMode,
   TaskUpdateDto
 } from './schemas/mutations.js';
-import { type ObjectId } from '../middleware/objectIdParsing.js';
+import { type ObjectId } from '../domain/objectIds.js';
 import type {
   AuthenticatedRouteState,
   RouteHandler
@@ -15,13 +15,14 @@ type TasksState = AuthenticatedRouteState;
 type TasksHandler = RouteHandler<TasksState>;
 
 import tasksService from '../services/tasksService.js';
-import { requireCurrentUser } from '../middleware/currentUser.js';
-import { validateBody } from '../middleware/requestBodyValidation.js';
+import { requireCurrentUser } from '../middleware/route/currentUser.js';
+import { validateBody } from '../middleware/route/requestBodyValidation.js';
 import {
   parseBodyObjectId,
   parseParamObjectId,
   parseQueryObjectId
-} from '../middleware/objectIdParsing.js';
+} from '../middleware/route/objectIdParsing.js';
+import { objectId, parsedObjectId, validatedBody } from './routeState.js';
 import {
   taskCreateSchema,
   taskUpdateSchema
@@ -36,21 +37,13 @@ type TaskCreateServiceBody = Omit<TaskCreateDto, 'originId'> & {
   originId?: ObjectId | null;
 };
 
-function validatedBody<TBody>(ctx: Parameters<TasksHandler>[0]): TBody {
-  return ctx.state.validatedBody as TBody;
-}
-
-function taskId(ctx: Parameters<TasksHandler>[0]): ObjectId {
-  return ctx.state.objectIds?.id as ObjectId;
-}
-
 function parsedTaskCreateBody(ctx: Parameters<TasksHandler>[0]): TaskCreateServiceBody {
   const body = validatedBody<TaskCreateDto>(ctx);
   const { originId: _originId, ...rest } = body;
   if (body.originId !== undefined) {
     return {
       ...rest,
-      originId: ctx.state.objectIds?.originId ?? null
+      originId: parsedObjectId(ctx, 'originId') ?? null
     };
   }
   return rest;
@@ -60,7 +53,7 @@ function parsedTaskCreateBody(ctx: Parameters<TasksHandler>[0]): TaskCreateServi
 router.get('/tasks', requireCurrentUser, parseQueryObjectId<TasksState>('projectId', { optional: true }), async (ctx) => {
   const { archived } = ctx.query;
   ctx.body = await tasksService.listTasks({
-    projectId: ctx.state.objectIds?.projectId,
+    projectId: parsedObjectId(ctx, 'projectId'),
     archived,
     userId: ctx.state.userId
   });
@@ -75,7 +68,7 @@ router.post('/tasks', requireCurrentUser, validateBody<TaskCreateDto, TasksState
 
 // PUT /tasks/:id
 router.put('/tasks/:id', requireCurrentUser, parseParamObjectId<TasksState>('id'), validateBody<TaskUpdateDto, TasksState>(taskUpdateSchema), async (ctx) => {
-  const id = taskId(ctx);
+  const id = objectId(ctx);
   const body = validatedBody<TaskUpdateDto>(ctx);
   const task = await tasksService.updateTask(id, body, { userId: ctx.state.userId });
   if (!task) {
@@ -88,7 +81,7 @@ router.put('/tasks/:id', requireCurrentUser, parseParamObjectId<TasksState>('id'
 
 // DELETE /tasks/:id
 router.delete('/tasks/:id', requireCurrentUser, parseParamObjectId<TasksState>('id'), async (ctx) => {
-  const id = taskId(ctx);
+  const id = objectId(ctx);
   const deleted = await tasksService.deleteTask(id, { userId: ctx.state.userId });
   if (!deleted) {
     ctx.status = 404;

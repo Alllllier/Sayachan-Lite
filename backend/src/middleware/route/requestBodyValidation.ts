@@ -1,11 +1,11 @@
-import { BadRequestError } from '../errors/httpErrors.js';
+import { BadRequestError } from '../../errors/httpErrors.js';
 import type {
   RequestBodySchema,
   RouteContext,
   RouteMiddleware,
   ValidationIssue,
   ValidatedBodyState
-} from '../routes/routeTypes.js';
+} from '../../routes/routeTypes.js';
 
 export function assertZodSchema<T>(
   schema: RequestBodySchema<T>,

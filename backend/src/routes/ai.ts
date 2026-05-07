@@ -10,8 +10,9 @@ import type {
   RouteHandler
 } from './routeTypes.js';
 import aiService from '../services/aiService.js';
-import { requireCurrentUser } from '../middleware/currentUser.js';
-import { validateBody } from '../middleware/requestBodyValidation.js';
+import { requireCurrentUser } from '../middleware/route/currentUser.js';
+import { validateBody } from '../middleware/route/requestBodyValidation.js';
+import { validatedBody } from './routeState.js';
 import {
   aiChatSchema,
   aiNoteTaskRequestSchema,
@@ -22,10 +23,6 @@ type AiState = AuthenticatedRouteState;
 type AiHandler = RouteHandler<AiState>;
 
 const router = new Router<AiState>();
-
-function validatedBody<TBody>(ctx: Parameters<AiHandler>[0]): TBody {
-  return ctx.state.validatedBody as TBody;
-}
 
 // POST /ai/notes/tasks - Generate tasks from a note
 router.post('/ai/notes/tasks', requireCurrentUser, validateBody<AiNoteTaskRequestDto, AiState>(aiNoteTaskRequestSchema), (async (ctx) => {

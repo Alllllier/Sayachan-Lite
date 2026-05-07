@@ -18,7 +18,6 @@ import Note from '../models/Note.js';
 import Project from '../models/Project.js';
 import Task from '../models/Task.js';
 
-export const SESSION_COOKIE_NAME = 'sayachan_session';
 const PASSWORD_ITERATIONS = 210000;
 const PASSWORD_KEY_LENGTH = 32;
 const PASSWORD_DIGEST = 'sha256';
@@ -301,7 +300,6 @@ export const __test__ = {
 };
 
 export default {
-  SESSION_COOKIE_NAME,
   bootstrapOwner,
   createInvite,
   getSystemStatus,

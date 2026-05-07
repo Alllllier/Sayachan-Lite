@@ -5,8 +5,8 @@ import User from '../dist/models/User.js';
 import Invite from '../dist/models/Invite.js';
 import Session from '../dist/models/Session.js';
 import authService from '../dist/services/authService.js';
-import { authMiddleware } from '../dist/middleware/auth.js';
-import { errorBoundary } from '../dist/middleware/errorBoundary.js';
+import { authMiddleware } from '../dist/middleware/app/auth.js';
+import { errorBoundary } from '../dist/middleware/app/errorBoundary.js';
 import routes from '../dist/routes/index.js';
 
 function createDoc(data) {

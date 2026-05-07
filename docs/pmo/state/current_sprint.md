@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Product Response Whitelist Enforcement`
+- Sprint: `Route State Accessors And Middleware Folder Split`
 - Closeout date: `2026-05-07`
 - Delivery status: `completed and validated`
 - Commit state: `committed after closeout in this repository commit`
 - Documentation sync outcome: `reviewed, no update needed`
 - Residual note: `none`
-- Report surface: `docs/pmo/history/reports/product-response-whitelist-enforcement.md`
+- Report surface: `docs/pmo/history/reports/route-state-accessors-and-middleware-folder-split.md`
 
 ## Next PMO Action
 

@@ -6,7 +6,7 @@ import Project from '../dist/models/Project.js';
 import Task from '../dist/models/Task.js';
 import aiService from '../dist/services/aiService.js';
 import aiRoutes from '../dist/routes/ai.js';
-import { errorBoundary } from '../dist/middleware/errorBoundary.js';
+import { errorBoundary } from '../dist/middleware/app/errorBoundary.js';
 import routes from '../dist/routes/index.js';
 
 function getRouteHandler(router, method, path) {
