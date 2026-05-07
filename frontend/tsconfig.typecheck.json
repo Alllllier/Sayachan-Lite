@@ -40,6 +40,7 @@
     "src/components/ui/Toast.vue",
     "src/components/Chat.vue",
     "src/components/Dashboard.vue",
+    "src/components/NotesPanel.vue",
     "src/services/apiClient.ts",
     "src/services/cockpitContextService.ts",
     "src/services/resourceCache.ts",

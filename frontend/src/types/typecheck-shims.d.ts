@@ -17,7 +17,7 @@ declare module 'vue' {
   export function computed<T>(getter: () => T): ComputedRef<T>
   export function unref<T>(value: T | Ref<T>): T
   export function nextTick(callback?: () => void): Promise<void>
-  export function watch<T>(source: () => T, callback: () => void): void
+  export function watch<T>(source: (() => T) | Ref<T> | ComputedRef<T>, callback: () => void): void
   export function onMounted(callback: () => unknown): void
 }
 
@@ -72,6 +72,43 @@ declare module 'dompurify' {
     sanitize(html: string): string
   }
   export default DOMPurify
+}
+
+declare module 'codemirror' {
+  export const basicSetup: unknown
+}
+
+declare module '@codemirror/lang-markdown' {
+  export function markdown(): unknown
+}
+
+declare module '@codemirror/view' {
+  export type ViewUpdate = {
+    docChanged: boolean
+    state: {
+      doc: {
+        toString(): string
+      }
+    }
+  }
+
+  export class EditorView {
+    static lineWrapping: unknown
+    static theme(theme: Record<string, unknown>): unknown
+    static updateListener: {
+      of(callback: (update: ViewUpdate) => void): unknown
+    }
+
+    state: {
+      doc: {
+        length: number
+      }
+    }
+
+    constructor(options: { doc: string, extensions: unknown[], parent: HTMLElement })
+    dispatch(options: { changes: { from: number, to: number, insert: string } }): void
+    destroy(): void
+  }
 }
 
 interface ImportMeta {

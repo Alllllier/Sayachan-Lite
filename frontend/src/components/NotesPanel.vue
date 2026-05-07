@@ -1,11 +1,12 @@
-<script setup>
+<script setup lang="ts">
 import { computed, ref, reactive, onMounted, nextTick, watch } from 'vue'
 import { basicSetup } from 'codemirror'
-import { EditorView } from '@codemirror/view'
+import { EditorView, type ViewUpdate } from '@codemirror/view'
 import { markdown } from '@codemirror/lang-markdown'
 import 'highlight.js/styles/github.css'
 import { renderMarkdown } from '../utils/markdown.js'
 import { useNotesFeature } from '../features/notes/useNotesFeature.js'
+import type { NoteDto } from '../types/api-dtos'
 import {
   Card,
   CardHeaderRow,
@@ -20,30 +21,46 @@ import EmptyState from './ui/EmptyState.vue'
 import OverflowMenu from './ui/OverflowMenu.vue'
 import SegmentedControl from './ui/SegmentedControl.vue'
 import { useAuthStore } from '../stores/auth'
+import type { AuthStore } from '../stores/auth'
 
-const menuOpenNoteId = ref(null)
-const auth = useAuthStore()
+type EditableNote = NoteDto & { _id: string }
+type ToastType = 'success' | 'error'
+type EditEditorMap = Record<string, EditorView>
+
+const menuOpenNoteId = ref<string | null>(null)
+const auth = useAuthStore() as AuthStore
 const noteDraftStorageKey = computed(() => (
   `sayachan_note_drafts:${auth.currentUser?._id || auth.currentUser?.email || 'anonymous'}`
 ))
 const accountCacheKey = computed(() => auth.currentUser?._id || auth.currentUser?.email || 'anonymous')
 
 // Markdown editor refs
-const newEditorRef = ref(null)
-const newEditorView = ref(null)
-const editEditorViews = reactive({})
+const newEditorRef = ref<HTMLElement | null>(null)
+const newEditorView = ref<EditorView | null>(null)
+const editEditorViews = reactive<EditEditorMap>({})
 
 // Toast notifications
-const toast = ref(null)
+const toast = ref(false)
 const toastMessage = ref('')
-const toastType = ref('success') // success, error
+const toastType = ref<ToastType>('success')
 
 const archiveViewOptions = [
   { value: 'active', label: 'Active' },
   { value: 'archived', label: 'Archived' }
 ]
 
-function clearNewEditor() {
+function noteId(note: NoteDto): string {
+  return String(note._id)
+}
+
+function editableNote(note: NoteDto): EditableNote {
+  return {
+    ...note,
+    _id: noteId(note)
+  }
+}
+
+function clearNewEditor(): void {
   if (!newEditorView.value) return
   const doc = newEditorView.value.state.doc
   newEditorView.value.dispatch({
@@ -51,14 +68,14 @@ function clearNewEditor() {
   })
 }
 
-function destroyEditEditor(noteId) {
-  if (editEditorViews[noteId]) {
-    editEditorViews[noteId].destroy()
-    delete editEditorViews[noteId]
+function destroyEditEditor(id: string | null | undefined): void {
+  if (id && editEditorViews[id]) {
+    editEditorViews[id].destroy()
+    delete editEditorViews[id]
   }
 }
 
-function showToast(message, type = 'success') {
+function showToast(message: string, type: ToastType = 'success'): void {
   toastMessage.value = message
   toastType.value = type
   toast.value = true
@@ -67,19 +84,21 @@ function showToast(message, type = 'success') {
   }, 3000)
 }
 
-function toggleNoteMenu(noteId) {
-  if (menuOpenNoteId.value === noteId) {
+function toggleNoteMenu(id: string): void {
+  if (menuOpenNoteId.value === id) {
     menuOpenNoteId.value = null
   } else {
-    menuOpenNoteId.value = noteId
+    menuOpenNoteId.value = id
   }
 }
 
-function closeNoteMenu() {
+function closeNoteMenu(): void {
   menuOpenNoteId.value = null
 }
 
-const emit = defineEmits(['refreshed'])
+const emit = defineEmits<{
+  refreshed: [notes: NoteDto[]]
+}>()
 
 const {
   notes,
@@ -125,7 +144,7 @@ watch(noteDraftStorageKey, () => {
 })
 
 // CodeMirror factory
-function createCodeMirror(parent, initialValue, onChange) {
+function createCodeMirror(parent: HTMLElement, initialValue: string, onChange: (value: string) => void): EditorView {
   return new EditorView({
     doc: initialValue || '',
     extensions: [
@@ -180,7 +199,7 @@ function createCodeMirror(parent, initialValue, onChange) {
           background: 'rgba(66, 184, 131, 0.18)'
         }
       }),
-      EditorView.updateListener.of((update) => {
+      EditorView.updateListener.of((update: ViewUpdate) => {
         if (update.docChanged) {
           const value = update.state.doc.toString()
           onChange(value)
@@ -194,29 +213,31 @@ function createCodeMirror(parent, initialValue, onChange) {
   })
 }
 
-function bindEditEditor(el, note) {
-  if (!el || editingId.value !== note._id) return
-  if (editEditorViews[note._id]) {
+function bindEditEditor(el: Element | null, note: NoteDto): void {
+  const id = noteId(note)
+  if (!(el instanceof HTMLElement) || editingId.value !== id) return
+  if (editEditorViews[id]) {
     // Already bound; avoid recreating on minor re-renders
     return
   }
-  editEditorViews[note._id] = createCodeMirror(el, note.content || '', (val) => {
+  editEditorViews[id] = createCodeMirror(el, note.content || '', (val) => {
     note.content = val
-    updateEditNoteError(note._id, 'content', val)
+    updateEditNoteError(id, 'content', val)
   })
 }
 
-function startEditing(note) {
-  if (editingId.value && editingId.value !== note._id) {
+function startEditing(note: NoteDto): void {
+  const id = noteId(note)
+  if (editingId.value && editingId.value !== id) {
     destroyEditEditor(editingId.value)
   }
-  startEditingFeature(note)
+  startEditingFeature(editableNote(note))
 }
 
-function cancelEdit(note) {
-  const noteId = note?._id || editingId.value
-  cancelEditFeature(note)
-  destroyEditEditor(noteId)
+function cancelEdit(note?: NoteDto | null): void {
+  const id = note?._id ? noteId(note) : editingId.value
+  cancelEditFeature(note ? editableNote(note) : null)
+  destroyEditEditor(id)
 }
 
 onMounted(() => {
@@ -230,8 +251,8 @@ onMounted(() => {
   })
 })
 
-async function updateNote(note) {
-  await updateNoteFeature(note)
+async function updateNote(note: NoteDto): Promise<void> {
+  await updateNoteFeature(editableNote(note))
 }
 </script>
 
