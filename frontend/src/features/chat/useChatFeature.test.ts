@@ -5,6 +5,7 @@ import { useCockpitSignals } from '../../stores/cockpitSignals'
 import { useRuntimeControls } from '../../stores/runtimeControls'
 import { refreshCockpitContext } from '../../services/cockpitContextService'
 import { sendChat } from './chat.api.js'
+import type { ChatMessageDto } from '../../types/api-dtos'
 
 vi.mock('../../stores/chat', () => ({
   useChatStore: vi.fn()
@@ -26,11 +27,36 @@ vi.mock('../../services/cockpitContextService', () => ({
   refreshCockpitContext: vi.fn()
 }))
 
+const useChatStoreMock = vi.mocked(useChatStore)
+const useCockpitSignalsMock = vi.mocked(useCockpitSignals)
+const useRuntimeControlsMock = vi.mocked(useRuntimeControls)
+const refreshCockpitContextMock = vi.mocked(refreshCockpitContext)
+const sendChatMock = vi.mocked(sendChat)
+
+type ChatStoreMock = ReturnType<typeof createChatStore>
+type CockpitSignalsMock = {
+  activeProjectsCount: number
+  activeTasksCount: number
+  pinnedProjectName: string
+  currentNextAction: string
+  hasHydrated: boolean
+}
+type RuntimeControlsMock = {
+  personalityBaseline: 'warm'
+  futureSlots: {
+    warmth: number
+    convergenceMode: 'guided'
+  }
+  personalityConfig: {
+    toneLabel: string
+  }
+}
+
 function createChatStore() {
   return {
     isOpen: false,
     isSending: false,
-    messages: [],
+    messages: [] as ChatMessageDto[],
     openChat: vi.fn(function openChat() {
       this.isOpen = true
     }),
@@ -47,9 +73,9 @@ function createChatStore() {
 }
 
 describe('useChatFeature orchestration', () => {
-  let chatStore
-  let cockpitSignals
-  let runtimeControls
+  let chatStore: ChatStoreMock
+  let cockpitSignals: CockpitSignalsMock
+  let runtimeControls: RuntimeControlsMock
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -72,10 +98,10 @@ describe('useChatFeature orchestration', () => {
       }
     }
 
-    useChatStore.mockReturnValue(chatStore)
-    useCockpitSignals.mockReturnValue(cockpitSignals)
-    useRuntimeControls.mockReturnValue(runtimeControls)
-    sendChat.mockResolvedValue({ reply: 'Done' })
+    useChatStoreMock.mockReturnValue(chatStore as unknown as ReturnType<typeof useChatStore>)
+    useCockpitSignalsMock.mockReturnValue(cockpitSignals as unknown as ReturnType<typeof useCockpitSignals>)
+    useRuntimeControlsMock.mockReturnValue(runtimeControls as unknown as ReturnType<typeof useRuntimeControls>)
+    sendChatMock.mockResolvedValue({ reply: 'Done' })
   })
 
   it('opens and closes the chat while keeping the runtime panel state local', () => {
@@ -125,7 +151,12 @@ describe('useChatFeature orchestration', () => {
 
   it('hydrates cockpit context before sending when signals are cold', async () => {
     cockpitSignals.hasHydrated = false
-    refreshCockpitContext.mockResolvedValue({ activeTasksCount: 4 })
+    refreshCockpitContextMock.mockResolvedValue({
+      activeProjectsCount: 1,
+      activeTasksCount: 4,
+      pinnedProjectName: 'PMO',
+      currentNextAction: 'Write handoff'
+    })
     const feature = useChatFeature()
 
     await feature.handleSend('帮我聚焦')
@@ -133,7 +164,12 @@ describe('useChatFeature orchestration', () => {
     expect(refreshCockpitContext).toHaveBeenCalled()
     expect(sendChat).toHaveBeenCalledWith(
       chatStore.messages,
-      { activeTasksCount: 4 },
+      {
+        activeProjectsCount: 1,
+        activeTasksCount: 4,
+        pinnedProjectName: 'PMO',
+        currentNextAction: 'Write handoff'
+      },
       {
         personalityBaseline: 'warm',
         futureSlots: {
@@ -147,7 +183,7 @@ describe('useChatFeature orchestration', () => {
 
   it('uses the local fallback reply when sendChat fails', async () => {
     const onSendError = vi.fn()
-    sendChat.mockRejectedValue(new Error('offline'))
+    sendChatMock.mockRejectedValue(new Error('offline'))
     const feature = useChatFeature({ onSendError })
     feature.inputValue.value = 'hello'
 
@@ -166,7 +202,7 @@ describe('useChatFeature orchestration', () => {
     feature.handleSend = vi.fn()
     const preventDefault = vi.fn()
 
-    feature.handleKeydown({ key: 'Enter', shiftKey: false, preventDefault })
+    feature.handleKeydown({ key: 'Enter', shiftKey: false, preventDefault } as unknown as KeyboardEvent)
 
     expect(preventDefault).toHaveBeenCalled()
   })

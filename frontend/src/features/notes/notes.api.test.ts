@@ -16,7 +16,11 @@ function jsonResponse(body, ok = true, status = 200) {
     ok,
     status,
     json: vi.fn().mockResolvedValue(body)
-  }
+  } as unknown as Response
+}
+
+function mockedFetch() {
+  return vi.mocked(fetch)
 }
 
 describe('notes api boundary', () => {
@@ -29,11 +33,11 @@ describe('notes api boundary', () => {
   })
 
   it('fetches active and archived note lists from the expected endpoints', async () => {
-    fetch.mockResolvedValueOnce(jsonResponse([{ _id: 'note-1' }]))
+    mockedFetch().mockResolvedValueOnce(jsonResponse([{ _id: 'note-1' }]))
     await expect(fetchNotes()).resolves.toEqual([{ _id: 'note-1' }])
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/notes', { credentials: 'include' })
 
-    fetch.mockResolvedValueOnce(jsonResponse([{ _id: 'note-archived' }]))
+    mockedFetch().mockResolvedValueOnce(jsonResponse([{ _id: 'note-archived' }]))
     await expect(fetchNotes({ archived: true })).resolves.toEqual([{ _id: 'note-archived' }])
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/notes?archived=true', { credentials: 'include' })
   })
@@ -41,7 +45,7 @@ describe('notes api boundary', () => {
   it('sends create and update payloads through note endpoints', async () => {
     const note = { title: 'PMO', content: 'Plan notes' }
 
-    fetch.mockResolvedValueOnce(jsonResponse({ _id: 'note-1', ...note }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ _id: 'note-1', ...note }))
     await createNote(note)
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/notes', {
       method: 'POST',
@@ -50,8 +54,8 @@ describe('notes api boundary', () => {
       body: JSON.stringify(note)
     })
 
-    fetch.mockResolvedValueOnce(jsonResponse({ _id: 'note-1', ...note, content: 'Updated' }))
-    await updateNote('note-1', { ...note, content: 'Updated', archived: false })
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ _id: 'note-1', ...note, content: 'Updated' }))
+    await updateNote('note-1', { ...note, content: 'Updated' })
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/notes/note-1', {
       method: 'PUT',
       credentials: 'include',
@@ -61,12 +65,12 @@ describe('notes api boundary', () => {
   })
 
   it('routes note lifecycle mutations through note-specific endpoints', async () => {
-    fetch
-      .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({ ok: true })
+    mockedFetch()
+      .mockResolvedValueOnce({ ok: true } as Response)
+      .mockResolvedValueOnce({ ok: true } as Response)
+      .mockResolvedValueOnce({ ok: true } as Response)
+      .mockResolvedValueOnce({ ok: true } as Response)
+      .mockResolvedValueOnce({ ok: true } as Response)
 
     await archiveNote('note-1')
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/notes/note-1/archive', { method: 'PUT', credentials: 'include' })
@@ -85,7 +89,7 @@ describe('notes api boundary', () => {
   })
 
   it('keeps note AI task generation behind the note API boundary', async () => {
-    fetch.mockResolvedValueOnce(jsonResponse({ drafts: ['Write handoff'] }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ drafts: ['Write handoff'] }))
     await expect(fetchNoteTaskDrafts('note-1')).resolves.toEqual({ drafts: ['Write handoff'] })
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/ai/notes/tasks', {
       method: 'POST',

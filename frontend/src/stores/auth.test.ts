@@ -13,6 +13,9 @@ vi.mock('../features/auth/auth.api', () => ({
   bootstrapOwner: vi.fn()
 }))
 
+const loginMock = vi.mocked(authApi.login)
+const logoutMock = vi.mocked(authApi.logout)
+
 describe('auth store account-scoped runtime reset', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -32,7 +35,7 @@ describe('auth store account-scoped runtime reset', () => {
       pinnedProjectName: 'Owner project',
       currentNextAction: 'Owner task'
     })
-    authApi.logout.mockResolvedValue(null)
+    logoutMock.mockResolvedValue(null)
 
     await auth.logout()
 
@@ -50,7 +53,7 @@ describe('auth store account-scoped runtime reset', () => {
     auth.currentUser = { _id: 'owner-1', email: 'owner@example.com' }
     chat.appendMessage({ role: 'assistant', content: 'owner answer' })
     cockpitSignals.setSignals({ pinnedProjectName: 'Owner project' })
-    authApi.login.mockResolvedValue({ _id: 'tester-1', email: 'tester@example.com' })
+    loginMock.mockResolvedValue({ _id: 'tester-1', email: 'tester@example.com' })
 
     await auth.login({ email: 'tester@example.com', password: 'long-enough' })
 

@@ -40,7 +40,8 @@ describe('notes rules locks', () => {
     expect(hasNoteErrors({ title: 'Enter a note title.', content: '' })).toBe(true)
     expect(hasNoteErrors({ title: '', content: 'Enter note content.' })).toBe(true)
     expect(hasNoteErrors({ title: '', content: '' })).toBe(false)
-    expect(hasNoteErrors({ title: '', content: '', unrelated: 'Server warning' })).toBe(false)
+    const serverErrors = { title: '', content: '', unrelated: 'Server warning' }
+    expect(hasNoteErrors(serverErrors)).toBe(false)
     expect(hasNoteErrors(null)).toBe(false)
   })
 
@@ -110,7 +111,7 @@ describe('notes rules locks', () => {
   })
 
   it('allows active notes to expose pin, edit, archive, delete, and AI task generation', () => {
-    expect(getNoteActionEligibility({ _id: 'note-1', archived: false })).toEqual({
+    expect(getNoteActionEligibility({ archived: false })).toEqual({
       canPin: true,
       canEdit: true,
       canArchive: true,
@@ -121,7 +122,7 @@ describe('notes rules locks', () => {
   })
 
   it('limits archived notes to restore and delete actions', () => {
-    expect(getNoteActionEligibility({ _id: 'note-1', archived: true })).toEqual({
+    expect(getNoteActionEligibility({ archived: true })).toEqual({
       canPin: false,
       canEdit: false,
       canArchive: false,

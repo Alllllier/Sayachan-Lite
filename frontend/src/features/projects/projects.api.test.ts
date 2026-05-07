@@ -11,13 +11,18 @@ import {
   updateProject,
   updateProjectFocus
 } from './projects.api.js'
+import type { ProjectDto, ProjectWriteDto } from '../../types/api-dtos'
 
 function jsonResponse(body, ok = true, status = 200) {
   return {
     ok,
     status,
     json: vi.fn().mockResolvedValue(body)
-  }
+  } as unknown as Response
+}
+
+function mockedFetch() {
+  return vi.mocked(fetch)
 }
 
 describe('projects api boundary', () => {
@@ -30,19 +35,19 @@ describe('projects api boundary', () => {
   })
 
   it('fetches active and archived project lists from the expected endpoints', async () => {
-    fetch.mockResolvedValueOnce(jsonResponse([{ _id: 'project-1' }]))
+    mockedFetch().mockResolvedValueOnce(jsonResponse([{ _id: 'project-1' }]))
     await expect(fetchProjects()).resolves.toEqual([{ _id: 'project-1' }])
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects', { credentials: 'include' })
 
-    fetch.mockResolvedValueOnce(jsonResponse([{ _id: 'project-archived' }]))
+    mockedFetch().mockResolvedValueOnce(jsonResponse([{ _id: 'project-archived' }]))
     await expect(fetchProjects({ archived: true })).resolves.toEqual([{ _id: 'project-archived' }])
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects?archived=true', { credentials: 'include' })
   })
 
   it('sends create and update payloads through project endpoints', async () => {
-    const project = { name: 'PMO', summary: 'Plan', status: 'pending' }
+    const project: ProjectWriteDto = { name: 'PMO', summary: 'Plan', status: 'pending' }
 
-    fetch.mockResolvedValueOnce(jsonResponse({ _id: 'project-1', ...project }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ _id: 'project-1', ...project }))
     await createProject(project)
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects', {
       method: 'POST',
@@ -51,7 +56,7 @@ describe('projects api boundary', () => {
       body: JSON.stringify(project)
     })
 
-    fetch.mockResolvedValueOnce(jsonResponse({ _id: 'project-1', ...project, status: 'in_progress' }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ _id: 'project-1', ...project, status: 'in_progress' }))
     await updateProject('project-1', { ...project, status: 'in_progress' })
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1', {
       method: 'PUT',
@@ -62,12 +67,12 @@ describe('projects api boundary', () => {
   })
 
   it('routes project lifecycle mutations through project-specific endpoints', async () => {
-    fetch
-      .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({ ok: true })
+    mockedFetch()
+      .mockResolvedValueOnce({ ok: true } as Response)
+      .mockResolvedValueOnce({ ok: true } as Response)
+      .mockResolvedValueOnce({ ok: true } as Response)
+      .mockResolvedValueOnce({ ok: true } as Response)
+      .mockResolvedValueOnce({ ok: true } as Response)
 
     await archiveProject('project-1')
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1/archive', { method: 'PUT', credentials: 'include' })
@@ -86,9 +91,9 @@ describe('projects api boundary', () => {
   })
 
   it('keeps project AI and focus updates behind the project API boundary', async () => {
-    const project = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending' }
+    const project: ProjectDto & { _id: string } = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending' }
 
-    fetch.mockResolvedValueOnce(jsonResponse({ suggestions: ['Write handoff'] }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ suggestions: ['Write handoff'] }))
     await expect(fetchProjectNextActions(project._id)).resolves.toEqual({ suggestions: ['Write handoff'] })
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/ai/projects/next-action', {
       method: 'POST',
@@ -97,7 +102,7 @@ describe('projects api boundary', () => {
       body: JSON.stringify({ _id: 'project-1' })
     })
 
-    fetch.mockResolvedValueOnce(jsonResponse({ ...project, currentFocusTaskId: 'task-1' }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ ...project, currentFocusTaskId: 'task-1' }))
     await updateProjectFocus(project, 'task-1')
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1', {
       method: 'PUT',

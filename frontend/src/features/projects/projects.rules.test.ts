@@ -56,7 +56,8 @@ describe('projects rules locks', () => {
     expect(hasProjectErrors({ name: 'Enter a project name.', summary: '' })).toBe(true)
     expect(hasProjectErrors({ name: '', summary: 'Enter a short summary.' })).toBe(true)
     expect(hasProjectErrors({ name: '', summary: '' })).toBe(false)
-    expect(hasProjectErrors({ name: '', summary: '', unrelated: 'Server warning' })).toBe(false)
+    const serverErrors = { name: '', summary: '', unrelated: 'Server warning' }
+    expect(hasProjectErrors(serverErrors)).toBe(false)
     expect(hasProjectErrors(null)).toBe(false)
   })
 
@@ -259,7 +260,9 @@ describe('projects rules locks', () => {
     ])).toBe('String id focus')
     expect(getProjectFocusTitle({ currentFocusTaskId: 'task-3' }, mixedTasks)).toBe('Archived one')
     expect(getProjectFocusTitle({ currentFocusTaskId: 'missing' }, mixedTasks)).toBe('')
-    expect(getProjectFocusTitle({ currentFocusTaskId: 'task-4', focusTitle: 'Cached title' }, [])).toBe('')
-    expect(getProjectFocusTitle({ focusTitle: 'Cached title' }, mixedTasks)).toBe('')
+    const projectWithLegacyFocusTitle = { currentFocusTaskId: 'task-4', focusTitle: 'Cached title' }
+    const projectWithOnlyLegacyFocusTitle = { focusTitle: 'Cached title' }
+    expect(getProjectFocusTitle(projectWithLegacyFocusTitle, [])).toBe('')
+    expect(getProjectFocusTitle(projectWithOnlyLegacyFocusTitle as unknown as { currentFocusTaskId?: string }, mixedTasks)).toBe('')
   })
 })

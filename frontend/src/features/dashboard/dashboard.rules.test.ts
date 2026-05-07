@@ -103,32 +103,36 @@ describe('dashboard saved-task rules locks', () => {
   })
 
   it('derives provenance only from originModule and creationMode', () => {
-    expect(deriveDashboardTaskProvenance({
+    const noteSourceTask = {
       _id: 'task-1',
       originModule: 'note',
       creationMode: 'manual',
       source: 'project'
-    })).toEqual({
-      letter: 'N',
-      className: 'provenance-manual',
-      tooltip: 'Note task'
-    })
-    expect(deriveDashboardTaskProvenance({
+    }
+    const projectSourceTask = {
       _id: 'task-2',
       originModule: 'project',
       creationMode: 'ai',
       source: 'note'
-    })).toEqual({
-      letter: 'P',
-      className: 'provenance-ai',
-      tooltip: 'AI generated'
-    })
-    expect(deriveDashboardTaskProvenance({
+    }
+    const dashboardSourceTask = {
       _id: 'task-3',
       originModule: 'dashboard',
       creationMode: 'manual',
       source: 'note'
-    })).toEqual({
+    }
+
+    expect(deriveDashboardTaskProvenance(noteSourceTask)).toEqual({
+      letter: 'N',
+      className: 'provenance-manual',
+      tooltip: 'Note task'
+    })
+    expect(deriveDashboardTaskProvenance(projectSourceTask)).toEqual({
+      letter: 'P',
+      className: 'provenance-ai',
+      tooltip: 'AI generated'
+    })
+    expect(deriveDashboardTaskProvenance(dashboardSourceTask)).toEqual({
       letter: 'D',
       className: 'provenance-manual',
       tooltip: 'Dashboard quick add'

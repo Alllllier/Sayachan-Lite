@@ -18,7 +18,7 @@ function jsonResponse(body, ok = true, status = 200) {
     ok,
     status,
     json: vi.fn().mockResolvedValue(body)
-  }
+  } as unknown as Response
 }
 
 function createLocalStorageMock() {
@@ -29,6 +29,10 @@ function createLocalStorageMock() {
     removeItem: vi.fn((key) => values.delete(key)),
     setItem: vi.fn((key, value) => values.set(key, String(value)))
   }
+}
+
+function mockedFetch() {
+  return vi.mocked(fetch)
 }
 
 describe('auth api boundary', () => {
@@ -42,11 +46,11 @@ describe('auth api boundary', () => {
   })
 
   it('loads current user and sends login/logout through session-backed endpoints', async () => {
-    fetch.mockResolvedValueOnce(jsonResponse({ email: 'owner@example.com', role: 'owner' }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ email: 'owner@example.com', role: 'owner' }))
     await expect(fetchCurrentUser()).resolves.toEqual({ email: 'owner@example.com', role: 'owner' })
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/auth/me', { credentials: 'include' })
 
-    fetch.mockResolvedValueOnce(jsonResponse({
+    mockedFetch().mockResolvedValueOnce(jsonResponse({
       sessionToken: 'session-token',
       user: { email: 'owner@example.com', role: 'owner' }
     }))
@@ -60,14 +64,14 @@ describe('auth api boundary', () => {
     })
     expect(localStorage.getItem('sayachan_session_token')).toBe('session-token')
 
-    fetch.mockResolvedValueOnce(jsonResponse({ email: 'owner@example.com', role: 'owner' }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ email: 'owner@example.com', role: 'owner' }))
     await fetchCurrentUser()
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/auth/me', {
       credentials: 'include',
       headers: { Authorization: 'Bearer session-token' }
     })
 
-    fetch.mockResolvedValueOnce({ ok: true, status: 204 })
+    mockedFetch().mockResolvedValueOnce({ ok: true, status: 204 } as Response)
     await expect(logout()).resolves.toBe(null)
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/auth/logout', {
       method: 'POST',
@@ -79,7 +83,7 @@ describe('auth api boundary', () => {
 
   it('registers testers with an invite code', async () => {
     const payload = { email: 'tester@example.com', password: 'long-enough', inviteCode: 'INVITE' }
-    fetch.mockResolvedValueOnce(jsonResponse({ email: payload.email, role: 'tester' }, true, 201))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ email: payload.email, role: 'tester' }, true, 201))
 
     await expect(registerTester(payload)).resolves.toEqual({ email: payload.email, role: 'tester' })
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/auth/register', {
@@ -91,43 +95,43 @@ describe('auth api boundary', () => {
   })
 
   it('keeps owner management calls behind owner endpoints', async () => {
-    fetch.mockResolvedValueOnce(jsonResponse({ code: 'NEW-CODE' }, true, 201))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ code: 'NEW-CODE' }, true, 201))
     await createInvite()
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/owner/invites', {
       method: 'POST',
       credentials: 'include'
     })
 
-    fetch.mockResolvedValueOnce(jsonResponse([]))
+    mockedFetch().mockResolvedValueOnce(jsonResponse([]))
     await fetchInvites()
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/owner/invites', { credentials: 'include' })
 
-    fetch.mockResolvedValueOnce(jsonResponse({ _id: 'invite-1', revokedAt: 'now' }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ _id: 'invite-1', revokedAt: 'now' }))
     await revokeInvite('invite-1')
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/owner/invites/invite-1/revoke', {
       method: 'POST',
       credentials: 'include'
     })
 
-    fetch.mockResolvedValueOnce(jsonResponse([]))
+    mockedFetch().mockResolvedValueOnce(jsonResponse([]))
     await fetchTesters()
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/owner/testers', { credentials: 'include' })
 
-    fetch.mockResolvedValueOnce(jsonResponse({ _id: 'tester-1', disabled: true }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ _id: 'tester-1', disabled: true }))
     await disableTester('tester-1')
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/owner/testers/tester-1/disable', {
       method: 'POST',
       credentials: 'include'
     })
 
-    fetch.mockResolvedValueOnce(jsonResponse({ _id: 'tester-1', disabled: false }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ _id: 'tester-1', disabled: false }))
     await restoreTester('tester-1')
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/owner/testers/tester-1/restore', {
       method: 'POST',
       credentials: 'include'
     })
 
-    fetch.mockResolvedValueOnce(jsonResponse({ userCount: 2 }))
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ userCount: 2 }))
     await fetchSystemStatus()
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/owner/system-status', { credentials: 'include' })
   })

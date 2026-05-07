@@ -1,16 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildChatRuntimePayload, sendChat } from './chat.api.js'
 
+function mockedFetch() {
+  return vi.mocked(fetch)
+}
+
 describe('chat api boundary', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn())
   })
 
   it('sends chat messages with context, runtime controls, last user message, and future slots', async () => {
-    fetch.mockResolvedValue({
+    mockedFetch().mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue({ reply: 'Ready.' })
-    })
+    } as unknown as Response)
 
     await expect(sendChat([
       { role: 'user', content: 'first' },
@@ -32,7 +36,7 @@ describe('chat api boundary', () => {
       headers: { 'Content-Type': 'application/json' },
       body: expect.any(String)
     })
-    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({
+    expect(JSON.parse(String(mockedFetch().mock.calls[0][1]?.body))).toEqual({
       messages: [
         { role: 'user', content: 'first' },
         { role: 'assistant', content: 'reply' },
@@ -58,10 +62,10 @@ describe('chat api boundary', () => {
   })
 
   it('throws when the chat endpoint returns a non-ok response', async () => {
-    fetch.mockResolvedValue({
+    mockedFetch().mockResolvedValue({
       ok: false,
       status: 503
-    })
+    } as unknown as Response)
 
     await expect(sendChat([{ role: 'user', content: 'hello' }], {}, {}))
       .rejects
@@ -69,19 +73,19 @@ describe('chat api boundary', () => {
   })
 
   it('throws when the chat endpoint reply is empty or invalid', async () => {
-    fetch.mockResolvedValue({
+    mockedFetch().mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue({ reply: '' })
-    })
+    } as unknown as Response)
 
     await expect(sendChat([{ role: 'user', content: 'hello' }], {}, {}))
       .rejects
       .toThrow('Empty or invalid reply from server')
 
-    fetch.mockResolvedValue({
+    mockedFetch().mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue({ reply: null })
-    })
+    } as unknown as Response)
 
     await expect(sendChat([{ role: 'user', content: 'hello' }], {}, {}))
       .rejects

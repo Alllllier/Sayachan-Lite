@@ -27,8 +27,15 @@ vi.mock('../../services/tasks/index.js', () => ({
   saveTask: vi.fn()
 }))
 
+const archiveNoteMock = vi.mocked(archiveNote)
+const createNoteMock = vi.mocked(createNote)
+const fetchNoteTaskDraftsMock = vi.mocked(fetchNoteTaskDrafts)
+const fetchNotesMock = vi.mocked(fetchNotes)
+const saveTaskMock = vi.mocked(saveTask)
+const updateNoteMock = vi.mocked(updateNote)
+
 function stubLocalStorage() {
-  const store = {}
+  const store: Record<string, string> = {}
   vi.stubGlobal('localStorage', {
     getItem: vi.fn(key => store[key] || null),
     setItem: vi.fn((key, value) => {
@@ -53,7 +60,7 @@ describe('useNotesFeature orchestration', () => {
     const onNoteCreated = vi.fn()
     const feature = useNotesFeature({ notify, onRefreshed, onNoteCreated })
     feature.form.value = { title: 'PMO', content: 'Plan notes' }
-    createNote.mockResolvedValue({
+    createNoteMock.mockResolvedValue({
       _id: 'note-1',
       title: 'PMO',
       content: 'Plan notes'
@@ -73,7 +80,7 @@ describe('useNotesFeature orchestration', () => {
     const notify = vi.fn()
     const feature = useNotesFeature({ notify, draftStorageKey: 'sayachan_note_drafts:user-1' })
     feature.form.value = { title: 'PMO', content: 'Plan notes' }
-    createNote.mockRejectedValue(new Error('network'))
+    createNoteMock.mockRejectedValue(new Error('network'))
 
     await feature.createNote()
 
@@ -88,7 +95,7 @@ describe('useNotesFeature orchestration', () => {
     const notify = vi.fn()
     const draftStorageKey = ref('sayachan_note_drafts:user-1')
     const feature = useNotesFeature({ notify, draftStorageKey })
-    createNote.mockRejectedValue(new Error('network'))
+    createNoteMock.mockRejectedValue(new Error('network'))
 
     feature.form.value = { title: 'Owner draft', content: 'Owner content' }
     await feature.createNote()
@@ -108,7 +115,7 @@ describe('useNotesFeature orchestration', () => {
       'sayachan_note_drafts:user-2',
       expect.stringContaining('"title":"Tester draft"')
     )
-    expect(localStorage.setItem.mock.calls[1][1]).not.toContain('Owner draft')
+    expect(vi.mocked(localStorage.setItem).mock.calls[1][1]).not.toContain('Owner draft')
   })
 
   it('updates notes through the API and keeps pinned notes sorted first', async () => {
@@ -126,7 +133,7 @@ describe('useNotesFeature orchestration', () => {
       isPinned: true,
       updatedAt: '2026-01-01'
     }
-    updateNote.mockResolvedValue(updatedNote)
+    updateNoteMock.mockResolvedValue(updatedNote)
 
     await feature.updateNote(updatedNote)
 
@@ -140,10 +147,10 @@ describe('useNotesFeature orchestration', () => {
   it('archives through the note API before refreshing the list', async () => {
     const notify = vi.fn()
     const feature = useNotesFeature({ notify })
-    fetchNotes.mockResolvedValue([{ _id: 'note-2', title: 'Remaining', content: 'Open' }])
-    archiveNote.mockResolvedValue()
+    fetchNotesMock.mockResolvedValue([{ _id: 'note-2', title: 'Remaining', content: 'Open' }])
+    archiveNoteMock.mockResolvedValue()
 
-    await feature.archiveNote({ _id: 'note-1', title: 'Done' })
+    await feature.archiveNote({ _id: 'note-1', title: 'Done', content: 'Done content' })
 
     expect(archiveNote).toHaveBeenCalledWith('note-1')
     expect(fetchNotes).toHaveBeenCalledWith({ archived: false })
@@ -153,7 +160,7 @@ describe('useNotesFeature orchestration', () => {
 
   it('clears a stale load error when notes are fetched again', async () => {
     const feature = useNotesFeature()
-    fetchNotes
+    fetchNotesMock
       .mockRejectedValueOnce(new Error('network'))
       .mockResolvedValueOnce([{ _id: 'note-1', title: 'Recovered', content: 'Ready' }])
 
@@ -168,7 +175,7 @@ describe('useNotesFeature orchestration', () => {
   it('shows cached notes when refresh fails after a previous successful load', async () => {
     const notify = vi.fn()
     writeResourceCache('user-1', 'notes', 'active', [{ _id: 'note-cached', title: 'Cached', content: 'Snapshot' }])
-    fetchNotes.mockRejectedValue(new Error('network'))
+    fetchNotesMock.mockRejectedValue(new Error('network'))
 
     const feature = useNotesFeature({ notify, cacheUserKey: 'user-1' })
     await feature.fetchNotes()
@@ -182,8 +189,8 @@ describe('useNotesFeature orchestration', () => {
     const notify = vi.fn()
     const feature = useNotesFeature({ notify })
     const note = { _id: 'note-1', title: 'PMO', content: 'Plan notes' }
-    fetchNoteTaskDrafts.mockResolvedValue({ drafts: ['Write handoff'] })
-    saveTask.mockResolvedValue({ _id: 'task-1', title: 'Write handoff' })
+    fetchNoteTaskDraftsMock.mockResolvedValue({ drafts: ['Write handoff'] })
+    saveTaskMock.mockResolvedValue({ _id: 'task-1', title: 'Write handoff', status: 'active', archived: false, completed: false })
 
     await feature.handleAIGenerateTasks(note)
     await feature.saveNoteTaskDraft(note._id, 'Write handoff')

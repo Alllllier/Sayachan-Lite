@@ -6,7 +6,7 @@ import {
   writeResourceCache
 } from './resourceCache.js'
 
-function stubLocalStorage(initialValues = {}) {
+function stubLocalStorage(initialValues: Record<string, string> = {}) {
   const store = { ...initialValues }
   vi.stubGlobal('localStorage', {
     get length() {

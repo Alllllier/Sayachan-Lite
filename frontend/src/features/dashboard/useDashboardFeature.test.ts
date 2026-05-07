@@ -10,6 +10,7 @@ import {
   tasksRef,
   updateTask
 } from '../../services/tasks/index.js'
+import type { TaskApiTask } from '../../services/tasks/task.rules'
 
 vi.mock('../../services/tasks/index.js', () => ({
   deleteTask: vi.fn(),
@@ -21,8 +22,13 @@ vi.mock('../../services/tasks/index.js', () => ({
   updateTask: vi.fn()
 }))
 
+const deleteTaskMock = vi.mocked(deleteTask)
+const fetchTasksMock = vi.mocked(fetchTasks)
+const saveTaskMock = vi.mocked(saveTask)
+const updateTaskMock = vi.mocked(updateTask)
+
 function stubLocalStorage() {
-  const store = {}
+  const store: Record<string, string> = {}
   vi.stubGlobal('localStorage', {
     getItem: vi.fn(key => store[key] || null),
     setItem: vi.fn((key, value) => {
@@ -46,10 +52,13 @@ describe('useDashboardFeature orchestration', () => {
     const notify = vi.fn()
     const feature = useDashboardFeature({ notify })
     feature.quickAddInput.value = '  Write handoff  '
-    saveTask.mockResolvedValue({
+    saveTaskMock.mockResolvedValue({
       _id: 'task-1',
       title: 'Write handoff',
-      originModule: 'dashboard'
+      originModule: 'dashboard',
+      status: 'active',
+      archived: false,
+      completed: false
     })
 
     await feature.handleQuickAddTask()
@@ -64,9 +73,9 @@ describe('useDashboardFeature orchestration', () => {
     const onRefreshed = vi.fn()
     const feature = useDashboardFeature({ notify, onRefreshed })
     tasksRef.value = [{ _id: 'task-1', title: 'Draft', status: 'active', completed: false }]
-    updateTask.mockResolvedValue({ _id: 'task-1', title: 'Draft', status: 'completed', completed: true })
+    updateTaskMock.mockResolvedValue({ _id: 'task-1', title: 'Draft', status: 'completed', archived: false, completed: true })
 
-    await feature.handleTaskComplete(tasksRef.value[0])
+    await feature.handleTaskComplete(tasksRef.value[0] as TaskApiTask & { _id: string })
 
     expect(updateTask).toHaveBeenCalledWith('task-1', { completed: true, status: 'completed' })
     expect(tasksRef.value[0]).toMatchObject({ _id: 'task-1', status: 'completed', completed: true })
@@ -80,13 +89,19 @@ describe('useDashboardFeature orchestration', () => {
     const feature = useDashboardFeature({ notify })
     tasksRef.value = [{ _id: 'task-1', title: 'Draft', archived: false }]
     feature.taskMenuOpen.value = 'task-1'
-    updateTask.mockResolvedValue({ _id: 'task-1', title: 'Draft', archived: true })
+    updateTaskMock.mockResolvedValue({ _id: 'task-1', title: 'Draft', status: 'active', archived: true, completed: false })
 
-    await feature.handleTaskArchive(tasksRef.value[0])
+    await feature.handleTaskArchive(tasksRef.value[0] as TaskApiTask & { _id: string })
 
     expect(updateTask).toHaveBeenCalledWith('task-1', { archived: true })
     expect(tasksRef.value).toEqual([])
-    expect(syncTaskIntoActiveSnapshot).toHaveBeenCalledWith({ _id: 'task-1', title: 'Draft', archived: true })
+    expect(syncTaskIntoActiveSnapshot).toHaveBeenCalledWith({
+      _id: 'task-1',
+      title: 'Draft',
+      status: 'active',
+      archived: true,
+      completed: false
+    })
     expect(feature.taskMenuOpen.value).toBe(null)
     expect(notify).toHaveBeenCalledWith('Task archived')
   })
@@ -96,9 +111,9 @@ describe('useDashboardFeature orchestration', () => {
     const feature = useDashboardFeature({ notify })
     tasksRef.value = [{ _id: 'task-1', title: 'Draft' }]
     feature.taskMenuOpen.value = 'task-1'
-    deleteTask.mockResolvedValue()
+    deleteTaskMock.mockResolvedValue()
 
-    await feature.handleTaskDelete(tasksRef.value[0])
+    await feature.handleTaskDelete(tasksRef.value[0] as TaskApiTask & { _id: string })
 
     expect(deleteTask).toHaveBeenCalledWith('task-1')
     expect(tasksRef.value).toEqual([])
@@ -111,7 +126,7 @@ describe('useDashboardFeature orchestration', () => {
     const feature = useDashboardFeature()
     feature.isSavedTaskListExpanded.value = true
     feature.taskMenuOpen.value = 'task-1'
-    fetchTasks.mockResolvedValue([])
+    fetchTasksMock.mockResolvedValue([])
 
     await feature.setArchiveView('archived')
 
@@ -124,7 +139,7 @@ describe('useDashboardFeature orchestration', () => {
   it('shows cached dashboard tasks when refresh fails after a previous successful load', async () => {
     const notify = vi.fn()
     writeResourceCache('user-1', 'dashboard-tasks', 'active', [{ _id: 'task-cached', title: 'Cached' }])
-    fetchTasks.mockRejectedValue(new Error('network'))
+    fetchTasksMock.mockRejectedValue(new Error('network'))
 
     const feature = useDashboardFeature({ notify, cacheUserKey: 'user-1' })
     await feature.loadSavedTasks()

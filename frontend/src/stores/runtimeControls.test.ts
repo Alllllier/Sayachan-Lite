@@ -17,7 +17,7 @@ function createLocalStorageMock(initialValues = {}) {
   }
 }
 
-function createRuntimeStore(initialValues) {
+function createRuntimeStore(initialValues = {}) {
   vi.stubGlobal('localStorage', createLocalStorageMock(initialValues))
   setActivePinia(createPinia())
   return useRuntimeControls()

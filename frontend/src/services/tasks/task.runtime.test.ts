@@ -15,6 +15,9 @@ vi.mock('./task.api.js', () => ({
   fetchTaskList: vi.fn()
 }))
 
+const createTaskMock = vi.mocked(createTask)
+const fetchTaskListMock = vi.mocked(fetchTaskList)
+
 describe('task runtime', () => {
   beforeEach(() => {
     tasksRef.value = []
@@ -24,7 +27,7 @@ describe('task runtime', () => {
 
   it('keeps active task snapshots stable while browsing archived tasks', async () => {
     activeTasksSnapshotRef.value = [{ _id: 'active-task' }]
-    fetchTaskList.mockResolvedValue([{ _id: 'archived-task', status: 'active', archived: true }])
+    fetchTaskListMock.mockResolvedValue([{ _id: 'archived-task', status: 'active', archived: true }])
 
     const tasks = await fetchTasks(true)
 
@@ -35,7 +38,7 @@ describe('task runtime', () => {
   })
 
   it('refreshes the active snapshot when browsing active tasks', async () => {
-    fetchTaskList.mockResolvedValue([{ _id: 'active-task', status: 'active', archived: false }])
+    fetchTaskListMock.mockResolvedValue([{ _id: 'active-task', status: 'active', archived: false }])
 
     const tasks = await fetchTasks(false)
 
@@ -45,7 +48,7 @@ describe('task runtime', () => {
   })
 
   it('prepends saved active tasks into shared task state', async () => {
-    createTask.mockResolvedValue({
+    createTaskMock.mockResolvedValue({
       _id: 'task-2',
       title: 'Saved task',
       status: 'active',
@@ -61,7 +64,7 @@ describe('task runtime', () => {
   })
 
   it('does not prepend archived saved tasks into the active snapshot', async () => {
-    createTask.mockResolvedValue({
+    createTaskMock.mockResolvedValue({
       _id: 'task-2',
       title: 'Archived task',
       status: 'active',
