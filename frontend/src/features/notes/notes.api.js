@@ -1,5 +1,16 @@
+// @ts-check
 import { apiFetch, API_BASE } from '../../services/apiClient'
 
+/**
+ * @typedef {{ title: string, content: string }} NoteWritePayload
+ * @typedef {{ archived?: boolean }} FetchNotesOptions
+ */
+
+/**
+ * @param {Response} response
+ * @param {string} errorMessage
+ * @returns {Promise<unknown>}
+ */
 async function parseJsonResponse(response, errorMessage) {
   if (!response.ok) {
     throw new Error(errorMessage || `Note request failed: ${response.status}`)
@@ -8,6 +19,10 @@ async function parseJsonResponse(response, errorMessage) {
   return response.json()
 }
 
+/**
+ * @param {FetchNotesOptions} [options]
+ * @returns {Promise<unknown>}
+ */
 export async function fetchNotes({ archived = false } = {}) {
   const url = archived
     ? `${API_BASE}/notes?archived=true`
@@ -16,6 +31,10 @@ export async function fetchNotes({ archived = false } = {}) {
   return parseJsonResponse(response, 'Fetch notes failed')
 }
 
+/**
+ * @param {NoteWritePayload} note
+ * @returns {Promise<unknown>}
+ */
 export async function createNote(note) {
   const response = await apiFetch(`${API_BASE}/notes`, {
     method: 'POST',
@@ -26,6 +45,11 @@ export async function createNote(note) {
   return parseJsonResponse(response, 'Create note failed')
 }
 
+/**
+ * @param {string} noteId
+ * @param {NoteWritePayload} note
+ * @returns {Promise<unknown>}
+ */
 export async function updateNote(noteId, note) {
   const response = await apiFetch(`${API_BASE}/notes/${noteId}`, {
     method: 'PUT',
@@ -39,6 +63,10 @@ export async function updateNote(noteId, note) {
   return parseJsonResponse(response, 'Update note failed')
 }
 
+/**
+ * @param {string} noteId
+ * @returns {Promise<void>}
+ */
 export async function deleteNote(noteId) {
   const response = await apiFetch(`${API_BASE}/notes/${noteId}`, { method: 'DELETE' })
   if (!response.ok) {
@@ -46,6 +74,10 @@ export async function deleteNote(noteId) {
   }
 }
 
+/**
+ * @param {string} noteId
+ * @returns {Promise<void>}
+ */
 export async function archiveNote(noteId) {
   const response = await apiFetch(`${API_BASE}/notes/${noteId}/archive`, { method: 'PUT' })
   if (!response.ok) {
@@ -53,6 +85,10 @@ export async function archiveNote(noteId) {
   }
 }
 
+/**
+ * @param {string} noteId
+ * @returns {Promise<void>}
+ */
 export async function restoreNote(noteId) {
   const response = await apiFetch(`${API_BASE}/notes/${noteId}/restore`, { method: 'PUT' })
   if (!response.ok) {
@@ -60,6 +96,10 @@ export async function restoreNote(noteId) {
   }
 }
 
+/**
+ * @param {string} noteId
+ * @returns {Promise<void>}
+ */
 export async function pinNote(noteId) {
   const response = await apiFetch(`${API_BASE}/notes/${noteId}/pin`, { method: 'PUT' })
   if (!response.ok) {
@@ -67,6 +107,10 @@ export async function pinNote(noteId) {
   }
 }
 
+/**
+ * @param {string} noteId
+ * @returns {Promise<void>}
+ */
 export async function unpinNote(noteId) {
   const response = await apiFetch(`${API_BASE}/notes/${noteId}/unpin`, { method: 'PUT' })
   if (!response.ok) {
@@ -74,6 +118,10 @@ export async function unpinNote(noteId) {
   }
 }
 
+/**
+ * @param {string} noteId
+ * @returns {Promise<unknown>}
+ */
 export async function fetchNoteTaskDrafts(noteId) {
   const response = await apiFetch(`${API_BASE}/ai/notes/tasks`, {
     method: 'POST',

@@ -9,7 +9,8 @@
     "lint": "npm --prefix .. run lint:frontend",
     "preview": "vite preview",
     "test": "vitest run --exclude tests/ui-review/**",
-    "typecheck:tasks": "tsc -p tsconfig.task-service.json",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "typecheck:tasks": "npm run typecheck",
     "test:watch": "vitest --exclude tests/ui-review/**",
     "test:ui-review": "playwright test tests/ui-review --reporter=line",
     "test:ui-review:headed": "playwright test tests/ui-review --headed --reporter=line"
