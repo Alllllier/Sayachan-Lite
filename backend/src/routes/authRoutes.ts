@@ -52,7 +52,7 @@ router.post('/auth/logout', (async (ctx) => {
   ctx.body = null;
 }) as AuthHandler);
 
-router.get('/auth/me', (async (ctx) => {
+router.get('/auth/me', ((ctx) => {
   ctx.body = ctx.state.user || null;
 }) as AuthHandler);
 

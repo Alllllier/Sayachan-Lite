@@ -43,7 +43,8 @@ export async function clearFocusForTask(Project: ProjectModel, taskId: ObjectId,
   await Project.findOneAndUpdate({ _id: project._id, userId }, { currentFocusTaskId: null });
 
   if (reason) {
-    console.log(`[Focus Transition] Project "${project.name}" currentFocusTaskId cleared on ${reason}`);
+    const projectName = typeof project.name === 'string' ? project.name : '';
+    console.log(`[Focus Transition] Project "${projectName}" currentFocusTaskId cleared on ${reason}`);
   }
 
   return true;

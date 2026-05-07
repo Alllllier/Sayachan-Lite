@@ -34,7 +34,7 @@ type RegisterTesterInput = AuthCredentials & {
 };
 
 function normalizeEmail(email: unknown): string {
-  return String(email || '').trim().toLowerCase();
+  return typeof email === 'string' ? email.trim().toLowerCase() : '';
 }
 
 function validateEmailPassword(email: unknown, password: unknown): void {
@@ -48,7 +48,7 @@ function hashToken(token: string): string {
 }
 
 function hashInviteCode(code: unknown): string {
-  return hashToken(String(code || '').trim().toUpperCase());
+  return hashToken(typeof code === 'string' ? code.trim().toUpperCase() : '');
 }
 
 function hashPassword(password: string, salt: string = crypto.randomBytes(16).toString('hex')) {
@@ -159,7 +159,7 @@ export async function revokeInvite(inviteId: unknown) {
 export async function registerTester({ email, password, inviteCode }: RegisterTesterInput) {
   validateEmailPassword(email, password);
 
-  const normalizedInviteCode = String(inviteCode || '').trim();
+  const normalizedInviteCode = typeof inviteCode === 'string' ? inviteCode.trim() : '';
   if (!normalizedInviteCode) {
     throw new BadRequestError('Invite code is required');
   }

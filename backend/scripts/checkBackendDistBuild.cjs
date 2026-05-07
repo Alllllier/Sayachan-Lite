@@ -340,7 +340,7 @@ function assertHealthRoutesDistArtifactFromTypeScriptSource() {
     'dist Health route artifact must preserve the backend service payload.'
   );
   assert(
-    healthDistSource.includes('readyState === 1'),
+    healthDistSource.includes('readyState === mongoose.ConnectionStates.connected'),
     'dist Health route artifact must preserve the mongoose connection health check.'
   );
 }

@@ -75,7 +75,9 @@ export default [
       parser: tseslint.parser,
       parserOptions: {
         ecmaVersion: 'latest',
-        sourceType: 'module'
+        sourceType: 'module',
+        projectService: true,
+        tsconfigRootDir: process.cwd()
       },
       globals: {
         ...globals.node,
@@ -88,6 +90,7 @@ export default [
     rules: {
       ...js.configs.recommended.rules,
       ...tseslint.configs.recommended.at(-1).rules,
+      ...tseslint.configs.recommendedTypeChecked.at(-1).rules,
       ...lowNoiseRules,
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': 'off'

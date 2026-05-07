@@ -1,8 +1,13 @@
 import type { Context } from 'koa';
 
 import { ForbiddenError, UnauthorizedError } from '../../errors/httpErrors.js';
+import type { OptionalCurrentUserState } from '../../routes/routeTypes.js';
 
-export function requireOwner(ctx: Context): void {
+type OwnerContext = Context & {
+  state: Context['state'] & OptionalCurrentUserState;
+};
+
+export function requireOwner(ctx: OwnerContext): void {
   if (!ctx.state.user) {
     throw new UnauthorizedError();
   }

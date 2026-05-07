@@ -9,7 +9,7 @@ router.get('/health', ((ctx) => {
     status: 'ok',
     service: 'backend',
     timestamp: new Date().toISOString(),
-    db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    db: mongoose.connection.readyState === mongoose.ConnectionStates.connected ? 'connected' : 'disconnected'
   };
 }) as RouterMiddleware);
 
