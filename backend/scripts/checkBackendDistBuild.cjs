@@ -496,20 +496,20 @@ function assertErrorBoundaryDistArtifactFromTypeScriptSource() {
   );
 }
 
-function assertProductDtosDistArtifactFromTypeScriptSource() {
-  const dtoDistSource = fs.readFileSync(path.join(distRoot, 'domain', 'dtos', 'productDtos.js'), 'utf8');
+function assertProductResponsesDistArtifactFromTypeScriptSource() {
+  const responseDistSource = fs.readFileSync(path.join(distRoot, 'services', 'responses', 'productResponses.js'), 'utf8');
 
   assert(
-    dtoDistSource.includes('function toTaskDto'),
-    'dist productDtos artifact must preserve toTaskDto.'
+    responseDistSource.includes('function toTaskDto'),
+    'dist productResponses artifact must preserve toTaskDto.'
   );
   assert(
-    dtoDistSource.includes('function toProjectDto'),
-    'dist productDtos artifact must preserve toProjectDto.'
+    responseDistSource.includes('function toProjectDto'),
+    'dist productResponses artifact must preserve toProjectDto.'
   );
   assert(
-    dtoDistSource.includes('function toNoteDto'),
-    'dist productDtos artifact must preserve toNoteDto.'
+    responseDistSource.includes('function toNoteDto'),
+    'dist productResponses artifact must preserve toNoteDto.'
   );
 }
 
@@ -713,7 +713,6 @@ const requiredRuntimeEntrypoints = [
   path.join('middleware', 'objectIdParsing.js'),
   path.join('middleware', 'requestBodyValidation.js'),
   path.join('domain', 'dtos', 'authDtos.js'),
-  path.join('domain', 'dtos', 'productDtos.js'),
   path.join('domain', 'ownership.js'),
   path.join('domain', 'tasks', 'cascade.js'),
   path.join('domain', 'tasks', 'queryFilters.js'),
@@ -727,6 +726,7 @@ const requiredRuntimeEntrypoints = [
   path.join('services', 'authService.js'),
   path.join('services', 'notesService.js'),
   path.join('services', 'projectsService.js'),
+  path.join('services', 'responses', 'productResponses.js'),
   path.join('services', 'tasksService.js'),
   path.join('routes', 'index.js'),
   path.join('routes', 'ai.js'),
@@ -782,7 +782,7 @@ assertNotesServiceDistArtifactFromTypeScriptSource();
 assertOwnershipDistArtifactFromTypeScriptSource();
 assertProjectsServiceDistArtifactFromTypeScriptSource();
 assertTasksServiceDistArtifactFromTypeScriptSource();
-assertProductDtosDistArtifactFromTypeScriptSource();
+assertProductResponsesDistArtifactFromTypeScriptSource();
 assertAuthDtosDistArtifactFromTypeScriptSource();
 assertTaskCascadeDistArtifactFromTypeScriptSource();
 assertTaskQueryFiltersDistArtifactFromTypeScriptSource();

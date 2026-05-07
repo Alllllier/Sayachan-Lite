@@ -11,7 +11,7 @@ import {
   archiveTasks,
   restoreTasks
 } from '../domain/tasks/cascade.js';
-import { toNoteDto } from '../domain/dtos/productDtos.js';
+import { toNoteDto } from './responses/productResponses.js';
 import {
   ownedFilter,
   ownerFilter,

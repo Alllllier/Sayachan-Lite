@@ -1,0 +1,40 @@
+# Product DTO Contract Characterization
+
+- Archived date: `2026-05-07`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Product DTO Contract Characterization`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Added focused backend characterization coverage in `backend/test/product-dtos.contract.test.js`.
+  - Covered `toTaskDto`, `toProjectDto`, and `toNoteDto` directly through the built backend output convention by importing from `backend/dist/domain/dtos/productDtos.js`.
+  - Locked current task DTO behavior: representative spread-compatible fields are preserved, `archived` and `completed` normalize only from strict `true`, and `status` falls back to `active` unless the current status is `completed`.
+  - Locked current project DTO behavior: representative spread-compatible fields are preserved, `archived` normalizes only from strict `true`, valid lifecycle statuses are preserved, and invalid or missing `status` falls back to `pending`.
+  - Locked current note DTO behavior: representative spread-compatible fields are preserved and `archived` normalizes only from strict `true`.
+  - Confirmed non-goals stayed out of scope: no production DTO implementation changes, no field whitelist adoption, no field removal, no type tightening, no frontend API/client changes, no route/service behavior changes, and no model schema changes.
+  - Confirmed `backend/src/domain/dtos/productDtos.ts` production behavior was not changed.
+  - Confirmed no frontend API/client files were changed.
+  - Confirmed no route/service behavior was changed.
+  - PMO sharpening slots were followed as written; no revisions or generic substitutions were needed.
+- Validation summary:
+  - `npm --prefix backend run build:backend` passed.
+  - `node --test backend/test/product-dtos.contract.test.js` passed: 7 tests passed.
+  - `npm --prefix backend run test` passed: 53 backend tests passed.
+  - `npm run check` passed, including lint, backend dist runtime smoke, frontend tests, backend tests, and frontend build.
+  - `npm run check` emitted the existing Vite chunk-size warning during frontend build; it did not fail validation.
+- Project-specific review summary:
+  - Required for this sprint: `no`
+  - Performed: `no`
+  - If performed, reviewed surfaces or states: `n/a`
+  - If skipped, why skipping was acceptable: This was a backend DTO characterization-only sprint with no UI, browser, route, service, or frontend behavior changes.
+- Unverified areas:
+  - Browser validation was not performed because it was out of scope and not expected by the handoff.
+  - UI review was not performed because it was out of scope and not expected by the handoff.
+  - No live database-backed manual API checks were performed; the sprint required focused DTO contract tests and repo quality gates.
+  - End-of-work hygiene check found no listeners on local ports `5173` or `3001` after validation.
+- Residual risks or escalations:
+  - The new tests intentionally preserve the current broad `...normalized` DTO spread compatibility. Any future field whitelist, field removal, or type tightening remains a PMO decision.
+  - The characterization uses representative fields rather than exhaustively enumerating every possible model/runtime field, matching the slice boundary.
+- Documentation-sync outcome: `reviewed, no update needed`
+- Follow-up routing:
+  - No blocking escalations discovered.
+  - Follow-up product DTO type tightening, field whitelist design, or separate task/project/note tightening remains deferred to PMO as stated in the handoff.

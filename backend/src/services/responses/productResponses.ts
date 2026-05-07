@@ -1,21 +1,12 @@
-export type RuntimeDocument = object & {
-  toObject?: () => Record<string, unknown>;
-  archived?: unknown;
-  originId?: unknown;
-  originModule?: unknown;
-};
-
-export type TaskRuntimeRecord = RuntimeDocument & {
-  _id?: unknown;
-  completed?: boolean;
-  status?: 'active' | 'completed';
-};
-
-export type ProjectRuntimeRecord = RuntimeDocument & {
-  _id?: unknown;
-  name?: unknown;
-  status?: 'pending' | 'in_progress' | 'completed' | 'on_hold';
-};
+import {
+  deriveProjectLifecycleStatus,
+  deriveTaskLifecycleStatus,
+  isArchivedEntity,
+  type ProjectLifecycleStatus,
+  type ProjectRuntimeRecord,
+  type RuntimeDocument,
+  type TaskRuntimeRecord
+} from '../../domain/tasks/lifecycle.js';
 
 export type TaskDto = Record<string, unknown> & {
   archived: boolean;
@@ -25,7 +16,7 @@ export type TaskDto = Record<string, unknown> & {
 
 export type ProjectDto = Record<string, unknown> & {
   archived: boolean;
-  status: 'pending' | 'in_progress' | 'completed' | 'on_hold';
+  status: ProjectLifecycleStatus;
 };
 
 export type NoteDto = Record<string, unknown> & {
@@ -34,31 +25,6 @@ export type NoteDto = Record<string, unknown> & {
 
 function toPlainObject(entity: RuntimeDocument): Record<string, unknown> {
   return entity.toObject ? entity.toObject() : { ...entity };
-}
-
-export function isArchivedEntity(entity: RuntimeDocument | null | undefined): boolean {
-  return entity?.archived === true;
-}
-
-export function deriveTaskLifecycleStatus(task: TaskRuntimeRecord | null | undefined): 'active' | 'completed' {
-  if (task?.status === 'completed') {
-    return task.status;
-  }
-
-  return 'active';
-}
-
-export function deriveProjectLifecycleStatus(project: ProjectRuntimeRecord | null | undefined): ProjectDto['status'] {
-  if (
-    project?.status === 'pending'
-    || project?.status === 'in_progress'
-    || project?.status === 'completed'
-    || project?.status === 'on_hold'
-  ) {
-    return project.status;
-  }
-
-  return 'pending';
 }
 
 export function toTaskDto(task: TaskRuntimeRecord | null | undefined): TaskDto | null | undefined {

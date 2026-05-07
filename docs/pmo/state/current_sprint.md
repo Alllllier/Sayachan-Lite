@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Auth Public DTO Contract Tightening`
+- Sprint: `Product Response Mapper Ownership Split`
 - Closeout date: `2026-05-07`
 - Delivery status: `completed and validated`
 - Commit state: `committed after closeout in this repository commit`
 - Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `Auth public DTO contracts tightened; product DTO contract tightening remains parked as the remaining backend-hardening-002 surface.`
-- Report surface: `docs/pmo/history/reports/auth-public-dto-contract-tightening.md`
+- Residual note: `Product response mappers moved to service-owned response layer while shared lifecycle helpers remain in domain/tasks/lifecycle; public response behavior unchanged.`
+- Report surface: `docs/pmo/history/reports/product-response-mapper-ownership-split.md`
 
 ## Next PMO Action
 

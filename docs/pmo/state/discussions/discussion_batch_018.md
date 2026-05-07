@@ -317,6 +317,28 @@ The Backend TS Quality Gate Cleanup sprint briefly tried `typescript-eslint` typ
 - Non-goals: `No frontend API client changes unless tests prove an existing contract mismatch; no deletion of compatibility fields without explicit approval; no model schema redesign.`
 - Validation: `backend tests plus root npm run check; add focused DTO tests if response contract risk increases.`
 - Escalation: `Stop if tightening types implies public API response shape changes or frontend contract changes.`
+- Split outcome: `Auth Public DTO Contract Tightening completed and validated as the safe first cut because auth DTOs already had an explicit public field list. Product DTOs remain intentionally compatibility-wide through Record<string, unknown> plus ...normalized spreading, so the next safe product step is Product DTO Contract Characterization before any type narrowing or field whitelist change.`
+
+#### `backend-hardening-002b`
+
+- Name: `Product DTO Contract Characterization`
+- Maturity: `candidate-shaped`
+- Goal: `Add focused characterization tests for current task/project/note DTO output behavior so later product DTO tightening can distinguish existing public response facts from desired API cleanup.`
+- Likely scope: `backend/src/domain/dtos/productDtos.ts` only as read context; new focused backend DTO contract tests under backend/test; no production behavior change expected.`
+- Non-goals: `No product DTO implementation changes unless needed only to expose existing behavior to tests; no field removal or whitelist adoption; no frontend API changes; no route/service behavior changes; no model schema redesign.`
+- Validation: `focused product DTO contract test, backend tests, root npm run check.`
+- Escalation: `Stop if characterization reveals disagreement about whether currently spread fields such as userId, originId, originModule, createdAt, updatedAt, currentFocusTaskId, title/content/name/summary should remain public API fields.`
+- Split outcome: `Product DTO Contract Characterization completed and validated. It proved current broad spread-compatible behavior and confirmed that true API exposure reduction requires a response/use-case mapper ownership split before field whitelist design.`
+
+#### `backend-hardening-002c`
+
+- Name: `Product Response Mapper Ownership Split`
+- Maturity: `candidate-shaped`
+- Goal: `Move product response mapper ownership out of domain/dtos and into a service-owned response mapper location, preserving current DTO behavior so future use-case-specific response DTOs can be introduced without overloading one generic product DTO.`
+- Likely scope: `backend/src/services/responses/productResponses.ts` or equivalent service-owned response mapper files; service imports currently using productDtos; existing product DTO characterization tests; optional compatibility removal if no references remain.`
+- Non-goals: `No field whitelist adoption, no field removal, no public API response behavior change, no frontend API changes, no route/service behavior changes beyond import ownership, no task/project/note use-case mapper split yet.`
+- Validation: `focused product DTO/response mapper contract test, backend tests, root npm run check.`
+- Escalation: `Stop if moving ownership requires changing response fields, splitting task/project/note use cases, or redesigning service folder structure beyond the minimal responses location.`
 
 #### `backend-hardening-003`
 

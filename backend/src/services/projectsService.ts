@@ -13,9 +13,9 @@ import {
   restoreTasks
 } from '../domain/tasks/cascade.js';
 import {
-  deriveProjectLifecycleStatus,
   toProjectDto
-} from '../domain/dtos/productDtos.js';
+} from './responses/productResponses.js';
+import { deriveProjectLifecycleStatus } from '../domain/tasks/lifecycle.js';
 import {
   ownedFilter,
   ownerFilter,

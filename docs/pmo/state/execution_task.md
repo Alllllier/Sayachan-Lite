@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Auth Public DTO Contract Tightening`
+- Sprint: `Product Response Mapper Ownership Split`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/auth-public-dto-contract-tightening.md`
+- Report surface: `docs/pmo/history/reports/product-response-mapper-ownership-split.md`
 
 ## Next Activation Rule
 

@@ -8,7 +8,7 @@ import {
   type ProjectRuntimeRecord,
   type RuntimeDocument,
   type TaskRuntimeRecord
-} from '../dtos/productDtos.js';
+} from './lifecycle.js';
 
 type FindableModel = {
   find(filter: unknown): Promise<TaskRuntimeRecord[]>;
