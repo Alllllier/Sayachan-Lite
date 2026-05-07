@@ -27,6 +27,28 @@ export default [
     ]
   },
   {
+    files: ['packages/contracts/src/**/*.ts'],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module'
+      },
+      globals: {
+        ...globals.es2024
+      }
+    },
+    plugins: {
+      '@typescript-eslint': tseslint.plugin
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      ...tseslint.configs.recommended.at(-1).rules,
+      ...lowNoiseRules,
+      '@typescript-eslint/no-unused-vars': 'off'
+    }
+  },
+  {
     files: ['frontend/src/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',

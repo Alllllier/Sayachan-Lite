@@ -7,22 +7,26 @@ import type {
 } from '../../types/api-dtos'
 import {
   assertApiResponse,
-  isNoteDto,
-  isNoteListDto,
-  isNoteTaskDraftsResponseDto
+  noteListResponseSchema,
+  noteResponseSchema,
+  noteTaskDraftsResponseSchema
 } from '../../types/api-contracts'
+
+type ApiSchema<T> = {
+  safeParse(value: unknown): { success: true, data: T } | { success: false }
+}
 
 async function parseJsonResponse<T>(
   response: Response,
   errorMessage: string,
-  guard: (value: unknown) => value is T,
+  schema: ApiSchema<T>,
   responseLabel: string
 ): Promise<T> {
   if (!response.ok) {
     throw new Error(errorMessage || `Note request failed: ${response.status}`)
   }
 
-  return assertApiResponse(await response.json(), guard, responseLabel)
+  return assertApiResponse(await response.json(), schema, responseLabel)
 }
 
 export async function fetchNotes({ archived = false }: FetchListOptionsDto = {}): Promise<NoteDto[]> {
@@ -30,7 +34,7 @@ export async function fetchNotes({ archived = false }: FetchListOptionsDto = {})
     ? `${API_BASE}/notes?archived=true`
     : `${API_BASE}/notes`
   const response = await apiFetch(url)
-  return parseJsonResponse<NoteDto[]>(response, 'Fetch notes failed', isNoteListDto, 'notes list')
+  return parseJsonResponse<NoteDto[]>(response, 'Fetch notes failed', noteListResponseSchema, 'notes list')
 }
 
 export async function createNote(note: NoteWriteDto): Promise<NoteDto> {
@@ -40,7 +44,7 @@ export async function createNote(note: NoteWriteDto): Promise<NoteDto> {
     body: JSON.stringify(note)
   })
 
-  return parseJsonResponse<NoteDto>(response, 'Create note failed', isNoteDto, 'note')
+  return parseJsonResponse<NoteDto>(response, 'Create note failed', noteResponseSchema, 'note')
 }
 
 export async function updateNote(noteId: string, note: NoteWriteDto): Promise<NoteDto> {
@@ -53,7 +57,7 @@ export async function updateNote(noteId: string, note: NoteWriteDto): Promise<No
     })
   })
 
-  return parseJsonResponse<NoteDto>(response, 'Update note failed', isNoteDto, 'note')
+  return parseJsonResponse<NoteDto>(response, 'Update note failed', noteResponseSchema, 'note')
 }
 
 export async function deleteNote(noteId: string): Promise<void> {
@@ -101,7 +105,7 @@ export async function fetchNoteTaskDrafts(noteId: string): Promise<NoteTaskDraft
   return parseJsonResponse<NoteTaskDraftsResponseDto>(
     response,
     'Fetch note task drafts failed',
-    isNoteTaskDraftsResponseDto,
+    noteTaskDraftsResponseSchema,
     'note task drafts'
   )
 }

@@ -1,8 +1,26 @@
+import type {
+  NoteDto,
+  NoteTaskDraftsResponseDto,
+  NoteWriteDto,
+  ProjectDto,
+  ProjectNextActionsResponseDto,
+  ProjectStatus,
+  ProjectWriteDto
+} from '@sayachan/contracts'
+
 export type ApiId = string
 export type ApiDateString = string
 
 export type AuthRole = 'owner' | 'tester'
-export type ProjectStatus = 'pending' | 'in_progress' | 'completed' | 'on_hold'
+export type {
+  NoteDto,
+  NoteTaskDraftsResponseDto,
+  NoteWriteDto,
+  ProjectDto,
+  ProjectNextActionsResponseDto,
+  ProjectStatus,
+  ProjectWriteDto
+}
 export type ChatPersonalityBaseline = 'warm' | 'strict' | 'haraguro'
 export type ChatConvergenceMode = 'explore' | 'guided' | 'decisive'
 
@@ -58,42 +76,8 @@ export type FetchListOptionsDto = {
   archived?: boolean
 }
 
-export type NoteWriteDto = {
-  title: string
-  content: string
-}
-
-export type NoteDto = NoteWriteDto & {
-  _id: ApiId
-  archived?: boolean
-  isPinned?: boolean
-  updatedAt: ApiDateString
-}
-
-export type ProjectWriteDto = {
-  name: string
-  summary: string
-  status: ProjectStatus
-  currentFocusTaskId?: ApiId | null
-}
-
-export type ProjectDto = ProjectWriteDto & {
-  _id: ApiId
-  archived?: boolean
-  isPinned?: boolean
-  updatedAt: ApiDateString
-}
-
 export type AiResourceRequestDto = {
   _id: ApiId
-}
-
-export type NoteTaskDraftsResponseDto = {
-  drafts: string[]
-}
-
-export type ProjectNextActionsResponseDto = {
-  suggestions: string[]
 }
 
 export type ChatMessageDto = {

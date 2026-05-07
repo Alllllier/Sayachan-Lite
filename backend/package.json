@@ -5,10 +5,12 @@
   "main": "dist/server.js",
   "scripts": {
     "start": "npm run build:backend && node dist/server.js",
+    "predev": "npm --prefix ../packages/contracts run build",
     "dev": "tsx watch src/server.ts",
     "dev:dist": "npm run build:backend && node dist/server.js",
     "lint": "npm --prefix .. run lint:backend",
     "test": "npm run build:backend && node --test",
+    "prebuild:backend": "npm --prefix ../packages/contracts run build",
     "build:backend": "node scripts/cleanBackendDist.cjs && tsc -p tsconfig.json",
     "smoke:backend-dist": "npm run build:backend && node scripts/smokeBackendDistRuntime.cjs",
     "check:backend-dist-runtime": "npm run build:backend && node scripts/checkBackendDistBuild.cjs && node scripts/smokeBackendDistRuntime.cjs",
@@ -22,6 +24,7 @@
   "type": "module",
   "dependencies": {
     "@allier/sayachan-ai-core": "file:private_core/sayachan-ai-core",
+    "@sayachan/contracts": "file:../packages/contracts",
     "@koa/bodyparser": "^6.1.0",
     "@koa/cors": "^5.0.0",
     "@koa/router": "^15.4.0",

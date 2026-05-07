@@ -1,10 +1,10 @@
 import { z } from 'zod';
+import { projectStatusValues } from '@sayachan/contracts';
 
-const PROJECT_STATUS_VALUES = ['pending', 'in_progress', 'completed', 'on_hold'] as const;
 const TASK_CREATION_MODES = ['ai', 'manual'] as const;
 const TASK_STATUSES = ['active', 'completed'] as const;
 
-export type ProjectStatus = (typeof PROJECT_STATUS_VALUES)[number];
+export type { ProjectStatus } from '@sayachan/contracts';
 export type TaskCreationMode = (typeof TASK_CREATION_MODES)[number];
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
@@ -28,7 +28,7 @@ export type NoteUpdateDto = z.infer<typeof noteUpdateSchema>;
 export const projectCreateSchema = z.object({
   name: nonEmptyStringSchema,
   summary: nonEmptyStringSchema,
-  status: z.enum(PROJECT_STATUS_VALUES).optional()
+  status: z.enum(projectStatusValues).optional()
 });
 
 export type ProjectCreateDto = z.infer<typeof projectCreateSchema>;
@@ -36,7 +36,7 @@ export type ProjectCreateDto = z.infer<typeof projectCreateSchema>;
 export const projectUpdateSchema = z.object({
   name: nonEmptyStringSchema.optional(),
   summary: nonEmptyStringSchema.optional(),
-  status: z.enum(PROJECT_STATUS_VALUES).optional(),
+  status: z.enum(projectStatusValues).optional(),
   currentFocusTaskId: z.union([z.string(), z.null()]).optional()
 })
   .refine((body) => (

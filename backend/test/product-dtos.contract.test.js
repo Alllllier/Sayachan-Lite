@@ -16,6 +16,26 @@ function createDoc(data) {
   };
 }
 
+function createProjectDoc(data = {}) {
+  return createDoc({
+    _id: 'project-1',
+    name: 'Backend hardening',
+    summary: 'Make current DTO behavior explicit',
+    updatedAt: new Date('2026-04-02T00:00:00.000Z'),
+    ...data
+  });
+}
+
+function createNoteDoc(data = {}) {
+  return createDoc({
+    _id: 'note-1',
+    title: 'DTO notes',
+    content: 'Characterize current note DTO spread behavior',
+    updatedAt: new Date('2026-05-02T00:00:00.000Z'),
+    ...data
+  });
+}
+
 function assertOnlyKeys(actual, expectedKeys) {
   assert.deepEqual(Object.keys(actual).sort(), [...expectedKeys].sort());
 }
@@ -145,17 +165,17 @@ test('project DTO returns only the approved public contract while normalizing ar
 });
 
 test('project DTO normalizes archived only from strict true and keeps valid statuses', () => {
-  assert.equal(toProjectDto(createDoc({ archived: true }))?.archived, true);
-  assert.equal(toProjectDto(createDoc({ archived: false }))?.archived, false);
-  assert.equal(toProjectDto(createDoc({ archived: 1 }))?.archived, false);
-  assert.equal(toProjectDto(createDoc({}))?.archived, false);
+  assert.equal(toProjectDto(createProjectDoc({ archived: true }))?.archived, true);
+  assert.equal(toProjectDto(createProjectDoc({ archived: false }))?.archived, false);
+  assert.equal(toProjectDto(createProjectDoc({ archived: 1 }))?.archived, false);
+  assert.equal(toProjectDto(createProjectDoc({}))?.archived, false);
 
   for (const status of ['pending', 'in_progress', 'completed', 'on_hold']) {
-    assert.equal(toProjectDto(createDoc({ status }))?.status, status);
+    assert.equal(toProjectDto(createProjectDoc({ status }))?.status, status);
   }
 
-  assert.equal(toProjectDto(createDoc({ status: 'active' }))?.status, 'pending');
-  assert.equal(toProjectDto(createDoc({}))?.status, 'pending');
+  assert.equal(toProjectDto(createProjectDoc({ status: 'active' }))?.status, 'pending');
+  assert.equal(toProjectDto(createProjectDoc({}))?.status, 'pending');
   assert.equal(toProjectDto(null), null);
   assert.equal(toProjectDto(undefined), undefined);
 });
@@ -204,10 +224,10 @@ test('note DTO returns only the approved public contract while normalizing archi
 });
 
 test('note DTO normalizes archived only from strict true values', () => {
-  assert.equal(toNoteDto(createDoc({ archived: true }))?.archived, true);
-  assert.equal(toNoteDto(createDoc({ archived: false }))?.archived, false);
-  assert.equal(toNoteDto(createDoc({ archived: 'true' }))?.archived, false);
-  assert.equal(toNoteDto(createDoc({}))?.archived, false);
+  assert.equal(toNoteDto(createNoteDoc({ archived: true }))?.archived, true);
+  assert.equal(toNoteDto(createNoteDoc({ archived: false }))?.archived, false);
+  assert.equal(toNoteDto(createNoteDoc({ archived: 'true' }))?.archived, false);
+  assert.equal(toNoteDto(createNoteDoc({}))?.archived, false);
   assert.equal(toNoteDto(null), null);
   assert.equal(toNoteDto(undefined), undefined);
 });

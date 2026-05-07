@@ -4,11 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "npm --prefix ../packages/contracts run build",
     "dev": "vite",
+    "prebuild": "npm --prefix ../packages/contracts run build",
     "build": "vite build",
     "lint": "npm --prefix .. run lint:frontend",
     "preview": "vite preview",
+    "pretest": "npm --prefix ../packages/contracts run build",
     "test": "vitest run --exclude tests/ui-review/**",
+    "pretypecheck": "npm --prefix ../packages/contracts run build",
     "typecheck": "vue-tsc -p tsconfig.typecheck.json --noEmit",
     "typecheck:tasks": "npm run typecheck",
     "test:watch": "vitest --exclude tests/ui-review/**",
@@ -25,6 +29,7 @@
     "markdown-it": "^14.1.1",
     "markdown-it-task-lists": "^2.1.1",
     "pinia": "^3.0.4",
+    "@sayachan/contracts": "file:../packages/contracts",
     "vue": "^3.5.30",
     "vue-router": "^4.6.4"
   },
