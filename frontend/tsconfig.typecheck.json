@@ -17,6 +17,7 @@
     "src/types/typecheck-shims.d.ts",
     "src/main.ts",
     "src/components/ui/list/index.ts",
+    "src/components/ui/SegmentedControl.vue",
     "src/components/ui/shell/index.ts",
     "src/components/ui/surfaces/index.ts",
     "src/services/apiClient.ts",

@@ -1,26 +1,24 @@
-<script setup>
-const props = defineProps({
-  modelValue: {
-    type: String,
-    required: true
-  },
-  options: {
-    type: Array,
-    required: true
-  },
-  variant: {
-    type: String,
-    default: 'page'
-  },
-  ariaLabel: {
-    type: String,
-    default: 'Segmented control'
-  }
+<script setup lang="ts">
+type SegmentedControlOption = {
+  value: string
+  label: string
+}
+
+const props = withDefaults(defineProps<{
+  modelValue: string
+  options: SegmentedControlOption[]
+  variant?: string
+  ariaLabel?: string
+}>(), {
+  variant: 'page',
+  ariaLabel: 'Segmented control'
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+}>()
 
-function selectOption(value) {
+function selectOption(value: string): void {
   if (value === props.modelValue) return
   emit('update:modelValue', value)
 }

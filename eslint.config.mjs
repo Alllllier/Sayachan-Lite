@@ -75,13 +75,15 @@ export default [
       parser: vueParser,
       parserOptions: {
         ecmaVersion: 'latest',
-        sourceType: 'module'
+        sourceType: 'module',
+        parser: tseslint.parser
       },
       globals: {
         ...globals.browser,
         ...globals.es2024,
         defineEmits: 'readonly',
-        defineProps: 'readonly'
+        defineProps: 'readonly',
+        withDefaults: 'readonly'
       }
     },
     processor: vue.processors['.vue'],

@@ -6,6 +6,11 @@ declare module 'vue' {
     use(plugin: unknown): unknown
     mount(selector: string): unknown
   }
+  export function defineProps<T>(): T
+  export function defineEmits<T>(): T extends Record<string, infer TArgs>
+    ? <TEvent extends keyof T>(event: TEvent, ...args: TArgs extends unknown[] ? TArgs : never) => void
+    : never
+  export function withDefaults<T, TDefaults extends Partial<T>>(props: T, defaults: TDefaults): T & Required<TDefaults>
   export function ref<T>(value: T): { value: T }
   export function reactive<T extends object>(value: T): T
   export function computed<T>(getter: () => T): ComputedRef<T>
