@@ -1,4 +1,5 @@
 import { reactive, ref, unref } from 'vue'
+import type { NoteDto, NoteWriteDto } from '../../types/api-dtos'
 import { readResourceCache, writeResourceCache } from '../../services/resourceCache.js'
 import { saveTask } from '../../services/tasks/index.js'
 import {
@@ -21,20 +22,47 @@ import {
   restoreNoteFromSnapshot,
   validateNoteFields
 } from './notes.rules'
+import type { NoteFieldErrors } from './notes.rules'
 
 const noop = () => {}
 
-function sortNotes(notes) {
+type NotifyFn = (message: string, variant?: string) => void
+type MaybeRef<T> = T | { value: T }
+type DraftStorageKey = string | MaybeRef<string | null | undefined> | (() => string | null | undefined)
+type NotesFeatureOptions = {
+  notify?: NotifyFn
+  onRefreshed?: (notes: NoteDto[]) => void
+  onNoteCreated?: () => void
+  onNoteUpdated?: (noteId: string) => void
+  draftStorageKey?: DraftStorageKey
+  cacheUserKey?: string | MaybeRef<string | null | undefined> | null | undefined
+}
+
+type NoteEditSnapshot = {
+  title: string
+  content: string
+}
+
+type EditableNote = NoteDto & {
+  _id: string
+}
+
+type DraftMap = Record<string, NoteWriteDto>
+type NoteErrorsById = Record<string, NoteFieldErrors>
+type NoteSnapshotById = Record<string, NoteEditSnapshot>
+type NoteTaskDraftsById = Record<string, string[]>
+
+function sortNotes(notes: NoteDto[]): NoteDto[] {
   return [...notes].sort((a, b) => {
     if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1
-    return new Date(b.updatedAt) - new Date(a.updatedAt)
+    return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
   })
 }
 
 const DEFAULT_DRAFT_STORAGE_KEY = 'sayachan_note_drafts'
 const NOTES_CACHE_RESOURCE = 'notes'
 
-function readDrafts(storageKey = DEFAULT_DRAFT_STORAGE_KEY) {
+function readDrafts(storageKey = DEFAULT_DRAFT_STORAGE_KEY): DraftMap {
   try {
     return JSON.parse(localStorage.getItem(storageKey) || '{}')
   } catch (e) {
@@ -42,7 +70,7 @@ function readDrafts(storageKey = DEFAULT_DRAFT_STORAGE_KEY) {
   }
 }
 
-export function useNotesFeature(options = {}) {
+export function useNotesFeature(options: NotesFeatureOptions = {}) {
   const notify = options.notify || noop
   const onRefreshed = options.onRefreshed || noop
   const onNoteCreated = options.onNoteCreated || noop
@@ -50,60 +78,60 @@ export function useNotesFeature(options = {}) {
   const draftStorageKey = options.draftStorageKey || DEFAULT_DRAFT_STORAGE_KEY
   const cacheUserKey = options.cacheUserKey || 'anonymous'
 
-  function resolveDraftStorageKey() {
+  function resolveDraftStorageKey(): string {
     const key = typeof draftStorageKey === 'function'
       ? draftStorageKey()
       : unref(draftStorageKey)
     return key || DEFAULT_DRAFT_STORAGE_KEY
   }
 
-  function resolveCacheUserKey() {
+  function resolveCacheUserKey(): string {
     return unref(cacheUserKey) || 'anonymous'
   }
 
-  function resolveCacheVariant() {
+  function resolveCacheVariant(): 'active' | 'archived' {
     return showArchived.value ? 'archived' : 'active'
   }
 
-  function hydrateNotesFromCache() {
-    const cachedNotes = readResourceCache(resolveCacheUserKey(), NOTES_CACHE_RESOURCE, resolveCacheVariant())
+  function hydrateNotesFromCache(): boolean {
+    const cachedNotes = readResourceCache<NoteDto[]>(resolveCacheUserKey(), NOTES_CACHE_RESOURCE, resolveCacheVariant())
     if (!Array.isArray(cachedNotes)) return false
     notes.value = cachedNotes
     emitRefreshed()
     return true
   }
 
-  function cacheCurrentNotes() {
+  function cacheCurrentNotes(): void {
     writeResourceCache(resolveCacheUserKey(), NOTES_CACHE_RESOURCE, resolveCacheVariant(), notes.value)
   }
 
-  const notes = ref([])
-  const form = ref({ title: '', content: '' })
-  const editingId = ref(null)
+  const notes = ref<NoteDto[]>([])
+  const form = ref<NoteWriteDto>({ title: '', content: '' })
+  const editingId = ref<string | null>(null)
   const loading = ref(false)
-  const error = ref(null)
+  const error = ref<string | null>(null)
   const showArchived = ref(false)
-  const aiTasksByNote = reactive({})
-  const aiLoadingNotes = ref(new Set())
-  const savedTaskDrafts = ref(new Set())
+  const aiTasksByNote = reactive<NoteTaskDraftsById>({})
+  const aiLoadingNotes = ref<Set<string>>(new Set())
+  const savedTaskDrafts = ref<Set<string>>(new Set())
   const newNoteErrors = ref(createEmptyNoteErrors())
-  const editNoteErrors = ref({})
-  const editingOriginalData = ref({})
+  const editNoteErrors = ref<NoteErrorsById>({})
+  const editingOriginalData = ref<NoteSnapshotById>({})
   const drafts = ref(readDrafts(resolveDraftStorageKey()))
 
-  function emitRefreshed() {
+  function emitRefreshed(): void {
     onRefreshed(notes.value)
   }
 
-  function saveDraft() {
+  function saveDraft(): void {
     localStorage.setItem(resolveDraftStorageKey(), JSON.stringify(drafts.value))
   }
 
-  function reloadDrafts() {
+  function reloadDrafts(): void {
     drafts.value = readDrafts(resolveDraftStorageKey())
   }
 
-  function updateNewNoteError(field, value) {
+  function updateNewNoteError(field: 'title' | 'content', value: string): void {
     if (field === 'title') {
       newNoteErrors.value.title = value.trim() ? '' : newNoteErrors.value.title
       return
@@ -111,14 +139,14 @@ export function useNotesFeature(options = {}) {
     newNoteErrors.value.content = value.trim() ? '' : newNoteErrors.value.content
   }
 
-  function ensureEditNoteErrorState(noteId) {
+  function ensureEditNoteErrorState(noteId: string): NoteFieldErrors {
     if (!editNoteErrors.value[noteId]) {
       editNoteErrors.value[noteId] = createEmptyNoteErrors()
     }
     return editNoteErrors.value[noteId]
   }
 
-  function updateEditNoteError(noteId, field, value) {
+  function updateEditNoteError(noteId: string, field: 'title' | 'content', value: string): void {
     const errors = ensureEditNoteErrorState(noteId)
     if (field === 'title') {
       errors.title = value.trim() ? '' : errors.title
@@ -127,11 +155,11 @@ export function useNotesFeature(options = {}) {
     errors.content = value.trim() ? '' : errors.content
   }
 
-  function clearEditNoteErrors(noteId) {
+  function clearEditNoteErrors(noteId: string): void {
     delete editNoteErrors.value[noteId]
   }
 
-  async function fetchNotes() {
+  async function fetchNotes(): Promise<void> {
     loading.value = true
     error.value = null
     const hydratedFromCache = hydrateNotesFromCache()
@@ -150,7 +178,7 @@ export function useNotesFeature(options = {}) {
     }
   }
 
-  async function createNote() {
+  async function createNote(): Promise<void> {
     const errors = validateNoteFields(form.value)
     newNoteErrors.value = errors
     if (hasNoteErrors(errors)) return
@@ -175,7 +203,7 @@ export function useNotesFeature(options = {}) {
     }
   }
 
-  async function updateNote(note) {
+  async function updateNote(note: EditableNote): Promise<void> {
     const errors = validateNoteFields(note)
     editNoteErrors.value[note._id] = errors
     if (hasNoteErrors(errors)) return
@@ -200,7 +228,7 @@ export function useNotesFeature(options = {}) {
     }
   }
 
-  async function deleteNote(id) {
+  async function deleteNote(id: string): Promise<void> {
     if (!confirm('Delete this note?')) return
 
     loading.value = true
@@ -218,7 +246,7 @@ export function useNotesFeature(options = {}) {
     }
   }
 
-  async function archiveNote(note) {
+  async function archiveNote(note: EditableNote): Promise<void> {
     if (!confirm(`Archive "${note.title}"? All tasks from this note will be archived too.`)) return
 
     loading.value = true
@@ -235,7 +263,7 @@ export function useNotesFeature(options = {}) {
     }
   }
 
-  async function restoreNote(note) {
+  async function restoreNote(note: EditableNote): Promise<void> {
     loading.value = true
     error.value = null
     try {
@@ -250,7 +278,7 @@ export function useNotesFeature(options = {}) {
     }
   }
 
-  async function pinNote(note) {
+  async function pinNote(note: EditableNote): Promise<void> {
     loading.value = true
     try {
       await pinNoteRequest(note._id)
@@ -263,7 +291,7 @@ export function useNotesFeature(options = {}) {
     }
   }
 
-  async function unpinNote(note) {
+  async function unpinNote(note: EditableNote): Promise<void> {
     loading.value = true
     try {
       await unpinNoteRequest(note._id)
@@ -276,7 +304,7 @@ export function useNotesFeature(options = {}) {
     }
   }
 
-  function startEditing(note) {
+  function startEditing(note: EditableNote): void {
     if (editingId.value && editingId.value !== note._id) {
       const oldNote = notes.value.find(n => n._id === editingId.value)
       if (oldNote && editingOriginalData.value[editingId.value]) {
@@ -290,9 +318,9 @@ export function useNotesFeature(options = {}) {
     editingOriginalData.value[note._id] = createNoteEditSnapshot(note)
   }
 
-  function cancelEdit(note) {
+  function cancelEdit(note?: EditableNote | null): void {
     if (!note && editingId.value) {
-      note = notes.value.find(n => n._id === editingId.value)
+      note = notes.value.find(n => n._id === editingId.value) as EditableNote | undefined
     }
     if (note && editingOriginalData.value[note._id]) {
       restoreNoteFromSnapshot(note, editingOriginalData.value[note._id])
@@ -304,24 +332,24 @@ export function useNotesFeature(options = {}) {
     editingId.value = null
   }
 
-  function closeAITasks(noteId) {
+  function closeAITasks(noteId: string): void {
     delete aiTasksByNote[noteId]
   }
 
-  function getNoteAIState(noteId) {
+  function getNoteAIState(noteId: string) {
     return deriveNoteAIState(noteId, aiLoadingNotes.value, aiTasksByNote)
   }
 
-  function canUseNoteAction(note, action) {
+  function canUseNoteAction(note: NoteDto, action: keyof ReturnType<typeof getNoteActionEligibility>): boolean {
     return Boolean(getNoteActionEligibility(note)[action])
   }
 
-  function setArchiveView(view) {
+  function setArchiveView(view: string): void {
     showArchived.value = view === 'archived'
     fetchNotes()
   }
 
-  async function handleAIGenerateTasks(note) {
+  async function handleAIGenerateTasks(note: EditableNote): Promise<void> {
     aiLoadingNotes.value.add(note._id)
     try {
       const result = await fetchNoteTaskDrafts(note._id)
@@ -333,7 +361,7 @@ export function useNotesFeature(options = {}) {
     }
   }
 
-  async function saveNoteTaskDraft(noteId, draft) {
+  async function saveNoteTaskDraft(noteId: string, draft: string): Promise<void> {
     if (savedTaskDrafts.value.has(draft)) {
       return
     }

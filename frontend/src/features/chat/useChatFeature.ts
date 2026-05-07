@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import type { ChatContextDto, ChatMessageDto } from '../../types/api-dtos'
 import { useChatStore } from '../../stores/chat'
 import { useCockpitSignals } from '../../stores/cockpitSignals'
 import { useRuntimeControls } from '../../stores/runtimeControls'
@@ -16,20 +17,43 @@ import {
 
 const noop = () => {}
 
-export function useChatFeature(options = {}) {
+type ChatFeatureOptions = {
+  scrollToBottom?: () => void
+  onHydrationError?: (error: unknown) => void
+  onSendError?: (error: unknown) => void
+}
+
+type ChatStoreLike = {
+  isSending: boolean
+  messages: ChatMessageDto[]
+  openChat: () => void
+  closeChat: () => void
+  appendMessage: (message: ChatMessageDto) => void
+  setSending: (value: boolean) => void
+}
+
+type CockpitSignalsLike = {
+  activeProjectsCount: number
+  activeTasksCount: number
+  pinnedProjectName: string
+  currentNextAction: string
+  hasHydrated: boolean
+}
+
+export function useChatFeature(options: ChatFeatureOptions = {}) {
   const scrollToBottom = options.scrollToBottom || noop
   const onHydrationError = options.onHydrationError || noop
   const onSendError = options.onSendError || noop
 
-  const chatStore = useChatStore()
-  const cockpitSignals = useCockpitSignals()
+  const chatStore = useChatStore() as ChatStoreLike
+  const cockpitSignals = useCockpitSignals() as CockpitSignalsLike
   const runtimeControls = useRuntimeControls()
 
   const inputValue = ref('')
   const isPanelOpen = ref(false)
   const isHydrating = ref(false)
 
-  const context = computed(() => ({
+  const context = computed<ChatContextDto>(() => ({
     activeProjectsCount: cockpitSignals.activeProjectsCount,
     activeTasksCount: cockpitSignals.activeTasksCount,
     pinnedProjectName: cockpitSignals.pinnedProjectName,
@@ -60,7 +84,7 @@ export function useChatFeature(options = {}) {
     isPanelOpen.value = !isPanelOpen.value
   }
 
-  async function handleSend(presetText) {
+  async function handleSend(presetText?: string | null) {
     const text = getChatSendText({
       presetText,
       inputValue: inputValue.value
@@ -78,7 +102,7 @@ export function useChatFeature(options = {}) {
 
     chatStore.appendMessage({ role: 'user', content: text })
 
-    let chatContext = context.value
+    let chatContext: ChatContextDto = context.value
     if (!cockpitSignals.hasHydrated) {
       isHydrating.value = true
       chatContext = await resolveChatContextForSend({
@@ -86,7 +110,7 @@ export function useChatFeature(options = {}) {
         currentContext: context.value,
         refreshCockpitContext,
         onHydrationError
-      })
+      }) as ChatContextDto
       isHydrating.value = false
     }
 
@@ -111,7 +135,7 @@ export function useChatFeature(options = {}) {
     }
   }
 
-  function handleKeydown(event) {
+  function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
       handleSend()

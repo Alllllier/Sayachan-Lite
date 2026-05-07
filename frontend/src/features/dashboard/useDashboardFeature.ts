@@ -1,5 +1,6 @@
 import { computed, ref, unref } from 'vue'
 import { readResourceCache, writeResourceCache } from '../../services/resourceCache.js'
+import type { TaskApiTask } from '../../services/tasks/task.rules.js'
 import {
   deleteTask,
   fetchTasks,
@@ -22,13 +23,27 @@ import {
 const noop = () => {}
 const DASHBOARD_TASKS_CACHE_RESOURCE = 'dashboard-tasks'
 
-export function useDashboardFeature(options = {}) {
+type NotifyFn = (message: string, variant?: string) => void
+
+type DashboardFeatureOptions = {
+  notify?: NotifyFn
+  onRefreshed?: () => void
+  cacheUserKey?: string | { value: string | null | undefined } | null | undefined
+}
+
+type ArchiveView = 'active' | 'archived' | (string & {})
+
+type DashboardTaskWithId = TaskApiTask & {
+  _id: string
+}
+
+export function useDashboardFeature(options: DashboardFeatureOptions = {}) {
   const notify = options.notify || noop
   const onRefreshed = options.onRefreshed || noop
   const cacheUserKey = options.cacheUserKey || 'anonymous'
 
   const savedTasks = tasksRef
-  const taskMenuOpen = ref(null)
+  const taskMenuOpen = ref<string | null>(null)
   const isSavedTaskListExpanded = ref(false)
   const quickAddInput = ref('')
   const isQuickAdding = ref(false)
@@ -46,26 +61,30 @@ export function useDashboardFeature(options = {}) {
     isSavedTaskListExpanded.value
   ))
 
-  function resolveCacheUserKey() {
+  function resolveCacheUserKey(): string {
     return unref(cacheUserKey) || 'anonymous'
   }
 
-  function resolveCacheVariant() {
+  function resolveCacheVariant(): 'active' | 'archived' {
     return showArchived.value ? 'archived' : 'active'
   }
 
-  function hydrateTasksFromCache() {
-    const cachedTasks = readResourceCache(resolveCacheUserKey(), DASHBOARD_TASKS_CACHE_RESOURCE, resolveCacheVariant())
+  function hydrateTasksFromCache(): boolean {
+    const cachedTasks = readResourceCache<TaskApiTask[]>(
+      resolveCacheUserKey(),
+      DASHBOARD_TASKS_CACHE_RESOURCE,
+      resolveCacheVariant()
+    )
     if (!Array.isArray(cachedTasks)) return false
     savedTasks.value = cachedTasks
     return true
   }
 
-  function cacheCurrentTasks() {
+  function cacheCurrentTasks(): void {
     writeResourceCache(resolveCacheUserKey(), DASHBOARD_TASKS_CACHE_RESOURCE, resolveCacheVariant(), savedTasks.value)
   }
 
-  async function loadSavedTasks() {
+  async function loadSavedTasks(): Promise<TaskApiTask[]> {
     const hydratedFromCache = hydrateTasksFromCache()
     try {
       await fetchTasks(showArchived.value)
@@ -80,27 +99,27 @@ export function useDashboardFeature(options = {}) {
     return savedTasks.value
   }
 
-  function toggleTaskMenu(taskId) {
+  function toggleTaskMenu(taskId: string): void {
     taskMenuOpen.value = taskMenuOpen.value === taskId ? null : taskId
   }
 
-  function closeTaskMenu() {
+  function closeTaskMenu(): void {
     taskMenuOpen.value = null
   }
 
-  function toggleSavedTaskListExpanded() {
+  function toggleSavedTaskListExpanded(): void {
     isSavedTaskListExpanded.value = !isSavedTaskListExpanded.value
     closeTaskMenu()
   }
 
-  async function setArchiveView(view) {
+  async function setArchiveView(view: ArchiveView): Promise<void> {
     showArchived.value = view === 'archived'
     isSavedTaskListExpanded.value = false
     closeTaskMenu()
     await loadSavedTasks()
   }
 
-  async function handleQuickAddTask() {
+  async function handleQuickAddTask(): Promise<void> {
     const title = quickAddInput.value.trim()
     if (!title) return
 
@@ -119,7 +138,7 @@ export function useDashboardFeature(options = {}) {
     }
   }
 
-  async function handleTaskComplete(task) {
+  async function handleTaskComplete(task: DashboardTaskWithId): Promise<void> {
     try {
       const payload = buildDashboardTaskCompletionPayload(task)
       const updated = await updateTask(task._id, payload)
@@ -133,7 +152,7 @@ export function useDashboardFeature(options = {}) {
     }
   }
 
-  async function handleTaskArchive(task) {
+  async function handleTaskArchive(task: DashboardTaskWithId): Promise<void> {
     try {
       const payload = buildDashboardTaskArchivePayload(task)
       const updated = await updateTask(task._id, payload)
@@ -149,7 +168,7 @@ export function useDashboardFeature(options = {}) {
     }
   }
 
-  async function handleTaskDelete(task) {
+  async function handleTaskDelete(task: DashboardTaskWithId): Promise<void> {
     if (!confirm('Delete this task? This cannot be undone.')) {
       return
     }

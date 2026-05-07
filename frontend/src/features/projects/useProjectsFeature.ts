@@ -1,5 +1,7 @@
 import { ref, unref } from 'vue'
+import type { ProjectDto, ProjectWriteDto } from '../../types/api-dtos'
 import { readResourceCache, writeResourceCache } from '../../services/resourceCache.js'
+import type { TaskApiTask } from '../../services/tasks/task.rules.js'
 import { saveTask, fetchProjectCardTasks } from '../../services/tasks/index.js'
 import {
   canSetProjectFocus,
@@ -31,40 +33,60 @@ const noop = () => {}
 const PROJECTS_CACHE_RESOURCE = 'projects'
 const PROJECT_TASKS_CACHE_RESOURCE = 'project-tasks'
 
-function sortProjects(projects) {
+type NotifyFn = (message: string, variant?: string) => void
+type MaybeRef<T> = T | { value: T }
+type ProjectsFeatureOptions = {
+  notify?: NotifyFn
+  onRefreshed?: (projects: ProjectDto[]) => void
+  cacheUserKey?: string | MaybeRef<string | null | undefined> | null | undefined
+}
+
+type ProjectWithId = ProjectDto & {
+  _id: string
+}
+
+type ProjectForm = ProjectWriteDto
+type ProjectErrorsById = Record<string, ReturnType<typeof createEmptyProjectErrors>>
+type ProjectSnapshotsById = Record<string, ProjectWriteDto>
+type StringSetRef = { value: Set<string> }
+type ProjectStringMap = Record<string, string>
+type ProjectTaskMap = Record<string, TaskApiTask[]>
+type TaskCaptureMode = 'single' | 'batch'
+
+function sortProjects(projects: ProjectDto[]): ProjectDto[] {
   return [...projects].sort((a, b) => {
     if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1
-    return new Date(b.updatedAt) - new Date(a.updatedAt)
+    return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
   })
 }
 
-export function useProjectsFeature(options = {}) {
+export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
   const notify = options.notify || noop
   const onRefreshed = options.onRefreshed || noop
   const cacheUserKey = options.cacheUserKey || 'anonymous'
 
-  const projects = ref([])
-  const projectForm = ref({ name: '', summary: '', status: 'pending' })
-  const editingProjectId = ref(null)
+  const projects = ref<ProjectDto[]>([])
+  const projectForm = ref<ProjectForm>({ name: '', summary: '', status: 'pending' })
+  const editingProjectId = ref<string | null>(null)
   const loading = ref(false)
-  const error = ref(null)
+  const error = ref<string | null>(null)
   const showArchived = ref(false)
-  const aiSuggestions = ref({})
-  const aiLoadingProjects = ref(new Set())
-  const savedSuggestions = ref(new Set())
-  const manualTaskProjects = ref(new Set())
-  const addingManualTasks = ref(new Set())
-  const manualTaskInputs = ref({})
-  const taskCaptureOpen = ref(new Set())
-  const taskCaptureMode = ref({})
-  const batchTaskInputs = ref({})
-  const addingBatchTasks = ref(new Set())
-  const taskCaptureErrors = ref({})
-  const projectTasks = ref({})
-  const loadingProjectTasks = ref(new Set())
+  const aiSuggestions = ref<Record<string, string[]>>({})
+  const aiLoadingProjects: StringSetRef = ref(new Set())
+  const savedSuggestions = ref<Set<string>>(new Set())
+  const manualTaskProjects: StringSetRef = ref(new Set())
+  const addingManualTasks: StringSetRef = ref(new Set())
+  const manualTaskInputs = ref<ProjectStringMap>({})
+  const taskCaptureOpen: StringSetRef = ref(new Set())
+  const taskCaptureMode = ref<Record<string, TaskCaptureMode>>({})
+  const batchTaskInputs = ref<ProjectStringMap>({})
+  const addingBatchTasks: StringSetRef = ref(new Set())
+  const taskCaptureErrors = ref<Record<string, ReturnType<typeof createEmptyTaskCaptureError>>>({})
+  const projectTasks = ref<ProjectTaskMap>({})
+  const loadingProjectTasks: StringSetRef = ref(new Set())
   const projectFormErrors = ref(createEmptyProjectErrors())
-  const editProjectErrors = ref({})
-  const editingOriginalData = ref({})
+  const editProjectErrors = ref<ProjectErrorsById>({})
+  const editingOriginalData = ref<ProjectSnapshotsById>({})
 
   function emitRefreshed() {
     onRefreshed(projects.value)

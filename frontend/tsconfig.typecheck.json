@@ -25,10 +25,14 @@
     "src/features/auth/auth.api.ts",
     "src/features/chat/chat.api.ts",
     "src/features/chat/chat.rules.ts",
+    "src/features/chat/useChatFeature.ts",
     "src/features/dashboard/dashboard.rules.ts",
+    "src/features/dashboard/useDashboardFeature.ts",
     "src/features/notes/notes.api.ts",
     "src/features/notes/notes.rules.ts",
+    "src/features/notes/useNotesFeature.ts",
     "src/features/projects/projects.api.ts",
-    "src/features/projects/projects.rules.ts"
+    "src/features/projects/projects.rules.ts",
+    "src/features/projects/useProjectsFeature.ts"
   ]
 }

@@ -20,8 +20,8 @@ export type TaskUpdatePayload = Partial<{
   originId: string | null
 }>
 
-export type TaskApiTask = TaskProvenance & {
-  _id?: string
+export type TaskApiTask = Partial<TaskProvenance> & {
+  _id?: string | number
   title?: string
   status?: TaskStatus
   archived?: boolean
