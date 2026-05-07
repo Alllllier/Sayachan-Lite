@@ -1,11 +1,17 @@
-<script setup>
+<script setup lang="ts">
 import { ref, nextTick, watch } from 'vue'
 import avatarUrl from '../assets/avator/temp.jpg'
 import { useChatFeature } from '../features/chat/useChatFeature.js'
 import { renderMarkdown } from '../utils/markdown.js'
-const messageListRef = ref(null)
 
-function scrollToBottom() {
+type PersonalityBaselineOption = 'warm' | 'strict' | 'haraguro'
+type ConvergenceModeOption = 'explore' | 'guided' | 'decisive'
+
+const messageListRef = ref<HTMLElement | null>(null)
+const personalityBaselineOptions: PersonalityBaselineOption[] = ['warm', 'strict', 'haraguro']
+const convergenceModeOptions: ConvergenceModeOption[] = ['explore', 'guided', 'decisive']
+
+function scrollToBottom(): void {
   nextTick(() => {
     const el = messageListRef.value
     if (el) {
@@ -36,6 +42,13 @@ const {
 watch(() => chatStore.messages.length, () => {
   scrollToBottom()
 })
+
+function updateWarmth(event: Event): void {
+  const target = event.target
+  if (target instanceof HTMLInputElement) {
+    runtimeControls.setWarmth(Number(target.value))
+  }
+}
 </script>
 
 <template>
@@ -125,7 +138,7 @@ watch(() => chatStore.messages.length, () => {
             <div class="runtime-section-title">人格基线</div>
             <div class="runtime-radio-list">
               <label
-                v-for="key in ['warm', 'strict', 'haraguro']"
+                v-for="key in personalityBaselineOptions"
                 :key="key"
                 class="runtime-radio-card"
                 :class="{ active: runtimeControls.personalityBaseline === key }"
@@ -160,7 +173,7 @@ watch(() => chatStore.messages.length, () => {
                   max="10"
                   :value="runtimeControls.futureSlots.warmth"
                   class="runtime-slider"
-                  @input="e => runtimeControls.setWarmth(Number(e.target.value))"
+                  @input="updateWarmth"
                 />
                 <div class="runtime-slider-anchors">
                   <span>{{ runtimeControls.uiLabels.warmth.left }}</span>
@@ -175,7 +188,7 @@ watch(() => chatStore.messages.length, () => {
               </div>
               <div class="runtime-segmented">
                 <button
-                  v-for="opt in ['explore', 'guided', 'decisive']"
+                  v-for="opt in convergenceModeOptions"
                   :key="opt"
                   class="runtime-segmented-btn"
                   :class="{ active: runtimeControls.futureSlots.convergenceMode === opt }"

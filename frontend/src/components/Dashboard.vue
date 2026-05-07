@@ -1,6 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import type { AuthStore } from '../stores/auth'
+import type { TaskApiTask } from '../services/tasks/task.rules'
 import {
   deriveDashboardTaskProvenance,
   deriveDashboardTaskRowState,
@@ -14,13 +16,26 @@ import Toast from './ui/Toast.vue'
 import { List, ListSection, ListItem, ItemContent, ItemMeta } from './ui/list'
 
 // Toast notifications
-const toast = ref(null)
+const toast = ref(false)
 const toastMessage = ref('')
-const toastType = ref('success')
-const auth = useAuthStore()
+const toastType = ref<'success' | 'error'>('success')
+const auth = useAuthStore() as AuthStore
 const accountCacheKey = computed(() => auth.currentUser?._id || auth.currentUser?.email || 'anonymous')
 
-function showToast(message, type = 'success') {
+type DashboardTaskWithStringId = TaskApiTask & { _id: string }
+
+function taskId(task: TaskApiTask): string {
+  return String(task._id)
+}
+
+function taskForMutation(task: TaskApiTask): DashboardTaskWithStringId {
+  return {
+    ...task,
+    _id: taskId(task)
+  }
+}
+
+function showToast(message: string, type: 'success' | 'error' = 'success'): void {
   toastMessage.value = message
   toastType.value = type
   toast.value = true
@@ -115,9 +130,9 @@ onMounted(loadSavedTasks)
           :role="deriveDashboardTaskRowState(task, showArchived).role"
           :tabindex="deriveDashboardTaskRowState(task, showArchived).tabindex"
           :aria-pressed="deriveDashboardTaskRowState(task, showArchived).ariaPressed"
-          @click="deriveDashboardTaskRowState(task, showArchived).interactive ? handleTaskComplete(task) : null"
-          @keydown.enter.prevent="deriveDashboardTaskRowState(task, showArchived).interactive ? handleTaskComplete(task) : null"
-          @keydown.space.prevent="deriveDashboardTaskRowState(task, showArchived).interactive ? handleTaskComplete(task) : null"
+          @click="deriveDashboardTaskRowState(task, showArchived).interactive ? handleTaskComplete(taskForMutation(task)) : null"
+          @keydown.enter.prevent="deriveDashboardTaskRowState(task, showArchived).interactive ? handleTaskComplete(taskForMutation(task)) : null"
+          @keydown.space.prevent="deriveDashboardTaskRowState(task, showArchived).interactive ? handleTaskComplete(taskForMutation(task)) : null"
         >
           <ItemContent :text="task.title" />
           <ItemMeta>
@@ -129,10 +144,10 @@ onMounted(loadSavedTasks)
             <OverflowMenu
               :open="taskMenuOpen === task._id"
               title="Actions"
-              @toggle="toggleTaskMenu(task._id)"
+              @toggle="toggleTaskMenu(taskId(task))"
             >
-              <button @click="handleTaskArchive(task)" class="btn btn-menu-item btn-archive">{{ getDashboardTaskActions(showArchived)[0] }}</button>
-              <button @click="handleTaskDelete(task)" class="btn btn-menu-item btn-danger">{{ getDashboardTaskActions(showArchived)[1] }}</button>
+              <button @click="handleTaskArchive(taskForMutation(task))" class="btn btn-menu-item btn-archive">{{ getDashboardTaskActions(showArchived)[0] }}</button>
+              <button @click="handleTaskDelete(taskForMutation(task))" class="btn btn-menu-item btn-danger">{{ getDashboardTaskActions(showArchived)[1] }}</button>
             </OverflowMenu>
           </ItemMeta>
         </ListItem>

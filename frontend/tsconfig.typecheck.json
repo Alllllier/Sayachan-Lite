@@ -38,6 +38,8 @@
     "src/components/ui/surfaces/ObjectActionArea.vue",
     "src/components/ui/surfaces/SectionBlock.vue",
     "src/components/ui/Toast.vue",
+    "src/components/Chat.vue",
+    "src/components/Dashboard.vue",
     "src/services/apiClient.ts",
     "src/services/cockpitContextService.ts",
     "src/services/resourceCache.ts",

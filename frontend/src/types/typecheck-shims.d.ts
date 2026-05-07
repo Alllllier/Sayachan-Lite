@@ -16,6 +16,8 @@ declare module 'vue' {
   export function reactive<T extends object>(value: T): T
   export function computed<T>(getter: () => T): ComputedRef<T>
   export function unref<T>(value: T | Ref<T>): T
+  export function nextTick(callback?: () => void): Promise<void>
+  export function watch<T>(source: () => T, callback: () => void): void
   export function onMounted(callback: () => unknown): void
 }
 
