@@ -18,34 +18,36 @@ This loop is implemented across multiple surfaces rather than through a single w
 
 ## Backend Type-Island Runtime
 
-The backend starts and develops as plain Node/CommonJS from compiled `backend/dist` output.
+The backend production start path runs plain Node from compiled ESM `backend/dist` output, while local development uses a source watcher.
 
 Current transitional type-island truth:
 
-- `npm --prefix backend run build:backend` can emit the current backend CommonJS runtime graph into ignored `backend/dist` build output as a dry-run
-- `npm --prefix backend run check:backend-build` rebuilds and smoke-loads the emitted dist route/server dependency graph without changing the active runtime startup path
+- `npm --prefix backend run build:backend` emits the current backend TypeScript source graph into ignored ESM build output under `backend/dist`
 - `npm --prefix backend run check:backend-dist-runtime` rebuilds backend dist, runs the dist boundary guard, and smoke-loads the compiled dist runtime graph under MongoDB/Koa listen mocks; root `npm run check` includes this gate
-- backend `start` and `dev` both build and run `node dist/server.js`
-- `backend/dist` is now the default backend runtime output for both start and development commands
-- product mutation schemas and DTO types are authored in `backend/src/routes/schemas/mutations.ts`
+- backend `start` builds and runs `node dist/server.js`
+- backend `dev` uses `tsx watch src/server.ts` for source-mode local development
+- backend `start` preserves the build-backed local dist runtime path with `npm run build:backend && node dist/server.js`
+- `backend/dist` is the default backend production/start runtime output, while development can choose source watch or explicit dist mode
+- product request schemas and DTO types are authored in `packages/contracts/src/product.ts` and consumed from `@sayachan/contracts`
 - the schema island facade/generated path has been retired; root `npm run check` no longer includes `check:schema-island`
-- the unified backend `tsc` build emits `backend/dist/routes/schemas/mutations.js` from the TS schema source
+- the shared contracts package build emits product request schemas for backend route validation and service input DTO typing
 - the default validation path no longer smoke-loads the source runtime, and schema generated/facade artifacts have been removed
 - backend route orchestration is authored in TypeScript under `backend/src/routes/` and emitted directly by the unified backend build
 - the Notes route island facade/generated path has been retired; root `npm run check` no longer includes `check:notes-route-island`
-- Notes, Projects, and Tasks route modules are authored at normal TypeScript route paths and consume compiled `backend/dist/routes/schemas/mutations.js` at runtime
-- `backend/src/routes/schemas/mutations.ts` is the schema source of truth for Notes, Projects, and Tasks mutation validation
+- Notes, Projects, and Tasks route modules are authored at normal TypeScript route paths and consume product request schemas from `@sayachan/contracts` at runtime
+- `packages/contracts/src/product.ts` is the schema source of truth for Notes, Projects, and Tasks request-body validation
 - the old facade/generated-source pattern has been removed from the active backend runtime path
+- MongoDB startup is environment-aware: production or `REQUIRE_MONGODB=true` fails startup when `MONGO_URI` is missing or the connection fails, while local/test development may continue with disconnected readiness
 
 ## Auth And Account Runtime
 
 Current phase-one auth runtime:
 
 - normal product routes require an authenticated session
-- public auth/health routes are limited to health, owner bootstrap, tester registration, login, logout, and current-user lookup
+- public auth/health routes are limited to health, readiness, owner bootstrap, tester registration, login, logout, and current-user lookup
 - sessions are carried by the httpOnly `sayachan_session` cookie
 - the first owner is created through `POST /auth/bootstrap-owner` only while no owner exists
-- owner bootstrap assigns legacy pre-auth Notes, Projects, and Tasks missing `userId` to the new owner
+- owner bootstrap creates the first owner only; legacy pre-auth product-data assignment has been retired after the user-layer migration completed
 - tester registration requires email, password, and a valid invite code
 - invite codes are not bound to email, are single-use, expire after one month, and can be revoked before use
 - tester accounts start with empty product data
@@ -63,7 +65,7 @@ Current account-boundary truth:
 
 - Notes, Projects, and Tasks carry `userId` and their normal product route/service reads and writes are scoped to the current user
 - normal Note, Project, Task, and persisted AI note/project route pipelines attach current-user middleware before product handlers; the product route surface is a personal-account-scoped API, not a shared or anonymous content API
-- Note, Project, and Task product services require `userId` and no longer keep unowned single-user content fallback branches; bootstrap-owner data assignment is the remaining legacy migration path for pre-auth records
+- Note, Project, and Task product services require `userId` and no longer keep unowned single-user content fallback branches; the bootstrap-owner legacy data assignment path has been retired
 - Note, Project, and Task models carry indexes for current-user list reads, archived filters, and task provenance cascades so the personal-account model remains the intended medium-term data shape rather than a temporary patch
 - direct-id mutations across account boundaries behave as not found or owner-scoped no-ops through the covered route/service paths
 - project/task cascade and focus-clearing behavior is scoped to current-user-owned related records
@@ -271,7 +273,7 @@ Current fallback truth:
 - note task generation and project next-action use GLM when `GLM_API_KEY` exists and return route-local fallback drafts or suggestions otherwise
 - persisted note/project AI payloads are ownership-checked against the current authenticated user before fallback/provider prompt construction
 - project next-action resolves the current focus task title on the backend with current-user ownership before prompting
-- chat uses the public `/ai/chat` route and `backend/src/ai/bridge.ts` to call the private AI core package `@allier/sayachan-ai-core` when `KIMI_API_KEY` or `MOONSHOT_API_KEY` exists
+- chat uses the public `/ai/chat` route and `backend/src/privateCore/bridge.ts` to call the private AI core package `@allier/sayachan-ai-core` when `KIMI_API_KEY` or `MOONSHOT_API_KEY` exists
 - chat returns a route-local fallback reply when the key is missing or the bridge call fails
 
 ### Removed Frontend Fallback

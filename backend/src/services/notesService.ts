@@ -1,22 +1,19 @@
 import type {
   NoteCreateDto,
   NoteUpdateDto
-} from '../routes/schemas/mutations.js';
+} from '@sayachan/contracts';
 import type { ObjectId } from '../domain/objectIds.js';
 import {
   buildArchiveFilter,
-  combineFilters
-} from '../domain/tasks/queryFilters.js';
+  changedOnlyFilter,
+  combineFilters,
+  type QueryFilter
+} from './queryFilters.js';
 import {
   archiveTasks,
   restoreTasks
-} from '../domain/tasks/cascade.js';
+} from './cascadeService.js';
 import { toNoteDto } from './responses/productResponses.js';
-import {
-  ownedFilter,
-  ownerFilter,
-  requireUserId
-} from '../domain/ownership.js';
 import Note from '../models/Note.js';
 import Task from '../models/Task.js';
 
@@ -33,10 +30,8 @@ type NoteUpdate = {
   content?: string;
 };
 
-type QueryFilter = Record<string, unknown>;
-
 export async function listNotes({ archived, userId }: ListNotesOptions) {
-  const notes = await Note.find(combineFilters(buildArchiveFilter(archived), ownerFilter(userId)))
+  const notes = await Note.find(combineFilters(buildArchiveFilter(archived), { userId }))
     .sort({ isPinned: -1, pinnedAt: -1, updatedAt: -1 });
   return notes.map(toNoteDto);
 }
@@ -46,7 +41,7 @@ export async function createNote(body: NoteCreateDto, { userId }: ServiceOptions
     title: body.title,
     content: body.content || '',
     archived: false,
-    userId: requireUserId(userId)
+    userId
   });
 
   return toNoteDto(note);
@@ -63,15 +58,8 @@ export function buildNoteUpdate(body: NoteUpdateDto): NoteUpdate {
   return update;
 }
 
-export function changedOnlyFilter(filter: QueryFilter, update: NoteUpdate): QueryFilter {
-  return {
-    ...filter,
-    $or: Object.entries(update).map(([field, value]) => ({ [field]: { $ne: value } }))
-  };
-}
-
 export async function updateNote(id: ObjectId, body: NoteUpdateDto, { userId }: ServiceOptions) {
-  const filter = ownedFilter(id, userId);
+  const filter = { _id: id, userId };
   const update = buildNoteUpdate(body);
   const note = await Note.findOneAndUpdate(
     changedOnlyFilter(filter, update),
@@ -83,13 +71,13 @@ export async function updateNote(id: ObjectId, body: NoteUpdateDto, { userId }: 
 }
 
 export async function deleteNote(id: ObjectId, { userId }: ServiceOptions) {
-  const note = await Note.findOneAndDelete(ownedFilter(id, userId));
+  const note = await Note.findOneAndDelete({ _id: id, userId });
   return Boolean(note);
 }
 
 export async function pinNote(id: ObjectId, { userId }: ServiceOptions) {
   const note = await Note.findOneAndUpdate(
-    ownedFilter(id, userId),
+    { _id: id, userId },
     { isPinned: true, pinnedAt: new Date() },
     { new: true, runValidators: true, timestamps: false }
   );
@@ -103,7 +91,7 @@ export async function pinNote(id: ObjectId, { userId }: ServiceOptions) {
 
 export async function unpinNote(id: ObjectId, { userId }: ServiceOptions) {
   const note = await Note.findOneAndUpdate(
-    ownedFilter(id, userId),
+    { _id: id, userId },
     { isPinned: false, pinnedAt: null },
     { new: true, runValidators: true, timestamps: false }
   );
@@ -117,7 +105,7 @@ export async function unpinNote(id: ObjectId, { userId }: ServiceOptions) {
 
 export async function archiveNote(id: ObjectId, { userId }: ServiceOptions) {
   const note = await Note.findOneAndUpdate(
-    ownedFilter(id, userId),
+    { _id: id, userId },
     { archived: true },
     { new: true, runValidators: true }
   );
@@ -129,7 +117,7 @@ export async function archiveNote(id: ObjectId, { userId }: ServiceOptions) {
   const modifiedCount = await archiveTasks(Task, {
     originId: id,
     originModule: 'note',
-    ...ownerFilter(userId)
+    userId
   });
 
   console.log(`[Note Archive] Note "${note.title}" archived, ${modifiedCount} tasks cascaded`);
@@ -139,7 +127,7 @@ export async function archiveNote(id: ObjectId, { userId }: ServiceOptions) {
 
 export async function restoreNote(id: ObjectId, { userId }: ServiceOptions) {
   const note = await Note.findOneAndUpdate(
-    ownedFilter(id, userId),
+    { _id: id, userId },
     { archived: false },
     { new: true, runValidators: true }
   );
@@ -151,7 +139,7 @@ export async function restoreNote(id: ObjectId, { userId }: ServiceOptions) {
   const modifiedCount = await restoreTasks(Task, {
     originId: id,
     originModule: 'note',
-    ...ownerFilter(userId)
+    userId
   });
 
   console.log(`[Note Restore] Note "${note.title}" restored, ${modifiedCount} tasks cascaded`);

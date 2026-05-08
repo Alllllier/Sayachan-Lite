@@ -1,11 +1,12 @@
 import type { Context, Next } from 'koa';
 
-import { clearSessionCookie } from '../sessionCookies.js';
-import { SESSION_COOKIE_NAME } from '../../domain/authSession.js';
+import { clearSessionCookie } from '../../http/sessionCookies.js';
+import { SESSION_COOKIE_NAME } from '../../http/authSession.js';
 import authService from '../../services/authService.js';
 
 const PUBLIC_PATHS = [
   '/health',
+  '/ready',
   '/auth/bootstrap-owner',
   '/auth/register',
   '/auth/login',

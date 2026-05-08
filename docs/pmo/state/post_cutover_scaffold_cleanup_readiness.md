@@ -7,33 +7,34 @@ Last updated: 2026-05-06
 
 - backend `start` builds and runs `node dist/server.js`
 - backend `dev` builds and runs `node dist/server.js`
-- schema generated/facade scaffolding has been retired
+- schema generated/facade scaffolding has been retired; product request schemas now live in `@sayachan/contracts`
 - Notes route generated/facade scaffolding has been retired
-- root `npm run check` includes schema island guardrail and backend dist runtime readiness
+- root `npm run check` includes backend dist runtime readiness
 
 ## Cleanup Readiness
 
 ### Schema Island
 
-Schema source-runtime scaffold has been retired:
+Schema source-runtime scaffold has been retired, and the product request schema source has moved to shared contracts:
 
-- `backend/src/routes/schemas/mutations.ts` is now the single schema source
-- unified backend build emits `backend/dist/routes/schemas/mutations.js`
+- `packages/contracts/src/product.ts` is now the product request schema source for Notes, Projects, and Tasks
+- backend routes and services consume product request schemas/DTOs from `@sayachan/contracts`
 - `backend/src/routes/schemas/mutations.js`, `backend/src/routes/schemas/mutations.d.ts`, and `backend/src/routes/schemas/__generated__/mutations.*` are no longer active
+- `backend/src/routes/schemas/mutations.ts` has been retired after the request schema move
 
 Reason:
 
 - backend default runtime and backend tests run from dist
-- Projects and Tasks compiled route artifacts require compiled `./schemas/mutations`
-- Node cannot require `mutations.ts` directly without introducing a runtime TS loader
+- backend route modules no longer require compiled `./schemas/mutations`
+- shared request schemas are emitted by the contracts package build before backend build/test
 
 Current dist runtime already uses:
 
-- `backend/dist/routes/schemas/mutations.js` emitted from `backend/src/routes/schemas/mutations.ts`
+- `@sayachan/contracts` for product request schemas and DTOs
 
 Decision:
 
-- schema scaffold deletion is complete
+- schema scaffold deletion is complete; route-local product request schema ownership is retired
 
 ### Notes Route Island
 

@@ -7,16 +7,12 @@
     "start": "npm run build:backend && node dist/server.js",
     "predev": "npm --prefix ../packages/contracts run build",
     "dev": "tsx watch src/server.ts",
-    "dev:dist": "npm run build:backend && node dist/server.js",
     "lint": "npm --prefix .. run lint:backend",
     "test": "npm run build:backend && node --test",
     "prebuild:backend": "npm --prefix ../packages/contracts run build",
     "build:backend": "node scripts/cleanBackendDist.cjs && tsc -p tsconfig.json",
-    "smoke:backend-dist": "npm run build:backend && node scripts/smokeBackendDistRuntime.cjs",
     "check:backend-dist-runtime": "npm run build:backend && node scripts/checkBackendDistBuild.cjs && node scripts/smokeBackendDistRuntime.cjs",
-    "check:backend-build": "npm run build:backend && node scripts/checkBackendDistBuild.cjs && node scripts/smokeBackendDistRuntime.cjs",
-    "bootstrap:owner": "node scripts/bootstrapOwner.mjs",
-    "normalize:legacy-archived-tasks": "npm run build:backend && node scripts/normalizeLegacyArchivedTasks.cjs"
+    "bootstrap:owner": "node scripts/bootstrapOwner.mjs"
   },
   "keywords": [],
   "author": "",

@@ -1,9 +1,10 @@
 import { apiFetch, API_BASE } from '../../services/apiClient'
 import type {
   FetchListOptionsDto,
+  NoteCreateDto,
   NoteDto,
   NoteTaskDraftsResponseDto,
-  NoteWriteDto
+  NoteUpdateDto
 } from '../../types/api-dtos'
 import {
   assertApiResponse,
@@ -37,7 +38,7 @@ export async function fetchNotes({ archived = false }: FetchListOptionsDto = {})
   return parseJsonResponse<NoteDto[]>(response, 'Fetch notes failed', noteListResponseSchema, 'notes list')
 }
 
-export async function createNote(note: NoteWriteDto): Promise<NoteDto> {
+export async function createNote(note: NoteCreateDto): Promise<NoteDto> {
   const response = await apiFetch(`${API_BASE}/notes`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -47,7 +48,7 @@ export async function createNote(note: NoteWriteDto): Promise<NoteDto> {
   return parseJsonResponse<NoteDto>(response, 'Create note failed', noteResponseSchema, 'note')
 }
 
-export async function updateNote(noteId: string, note: NoteWriteDto): Promise<NoteDto> {
+export async function updateNote(noteId: string, note: NoteUpdateDto): Promise<NoteDto> {
   const response = await apiFetch(`${API_BASE}/notes/${noteId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

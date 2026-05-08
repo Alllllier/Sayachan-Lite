@@ -3,7 +3,7 @@ import Router from '@koa/router';
 import type {
   ProjectCreateDto,
   ProjectUpdateDto
-} from './schemas/mutations.js';
+} from '@sayachan/contracts';
 import { type ObjectId } from '../domain/objectIds.js';
 import type {
   AuthenticatedRouteState,
@@ -24,11 +24,11 @@ import {
   parseBodyObjectId,
   parseParamObjectId
 } from '../middleware/route/objectIdParsing.js';
-import { objectId, parsedObjectId, validatedBody } from './routeState.js';
+import { objectId, validatedBody } from './routeState.js';
 import {
   projectCreateSchema,
   projectUpdateSchema
-} from './schemas/mutations.js';
+} from '@sayachan/contracts';
 
 const router = new Router<ProjectsState>();
 
@@ -37,33 +37,24 @@ function parsedProjectUpdateBody(ctx: Parameters<ProjectsHandler>[0]): ProjectUp
   if (body.currentFocusTaskId !== undefined) {
     const { currentFocusTaskId: _currentFocusTaskId, ...rest } = body;
     const parsedBody: ProjectUpdateServiceBody = { ...rest };
-    parsedBody.currentFocusTaskId = parsedObjectId(ctx, 'currentFocusTaskId') ?? null;
+    parsedBody.currentFocusTaskId = ctx.state.objectIds?.currentFocusTaskId ?? null;
     return parsedBody;
   }
   return body as ProjectUpdateServiceBody;
 }
 
-// GET /projects
-router.get('/projects', requireCurrentUser, async (ctx) => {
+const listProjectsHandler: ProjectsHandler = async (ctx) => {
   const { archived } = ctx.query;
   ctx.body = await projectsService.listProjects({ archived, userId: ctx.state.userId });
-});
+};
 
-// POST /projects
-router.post('/projects', requireCurrentUser, validateBody<ProjectCreateDto, ProjectsState>(projectCreateSchema), async (ctx) => {
+const createProjectHandler: ProjectsHandler = async (ctx) => {
   const body = validatedBody<ProjectCreateDto>(ctx);
   ctx.status = 201;
   ctx.body = await projectsService.createProject(body, { userId: ctx.state.userId });
-});
+};
 
-// PUT /projects/:id
-router.put(
-  '/projects/:id',
-  requireCurrentUser,
-  parseParamObjectId<ProjectsState>('id'),
-  validateBody<ProjectUpdateDto, ProjectsState>(projectUpdateSchema),
-  parseBodyObjectId<ProjectsState>('currentFocusTaskId', { optional: true }),
-  async (ctx) => {
+const updateProjectHandler: ProjectsHandler = async (ctx) => {
   const id = objectId(ctx);
   const body = parsedProjectUpdateBody(ctx);
   const project = await projectsService.updateProject(id, body, { userId: ctx.state.userId });
@@ -73,11 +64,9 @@ router.put(
   } else {
     ctx.body = project;
   }
-  }
-);
+};
 
-// DELETE /projects/:id
-router.delete('/projects/:id', requireCurrentUser, parseParamObjectId<ProjectsState>('id'), async (ctx) => {
+const deleteProjectHandler: ProjectsHandler = async (ctx) => {
   const id = objectId(ctx);
   const deleted = await projectsService.deleteProject(id, { userId: ctx.state.userId });
   if (!deleted) {
@@ -87,10 +76,9 @@ router.delete('/projects/:id', requireCurrentUser, parseParamObjectId<ProjectsSt
     ctx.status = 204;
     ctx.body = null;
   }
-});
+};
 
-// PUT /projects/:id/pin - Pin project (does not update content timestamp)
-router.put('/projects/:id/pin', requireCurrentUser, parseParamObjectId<ProjectsState>('id'), async (ctx) => {
+const pinProjectHandler: ProjectsHandler = async (ctx) => {
   const id = objectId(ctx);
   const project = await projectsService.pinProject(id, { userId: ctx.state.userId });
   if (!project) {
@@ -99,10 +87,9 @@ router.put('/projects/:id/pin', requireCurrentUser, parseParamObjectId<ProjectsS
     return;
   }
   ctx.body = project;
-});
+};
 
-// PUT /projects/:id/unpin - Unpin project (does not update content timestamp)
-router.put('/projects/:id/unpin', requireCurrentUser, parseParamObjectId<ProjectsState>('id'), async (ctx) => {
+const unpinProjectHandler: ProjectsHandler = async (ctx) => {
   const id = objectId(ctx);
   const project = await projectsService.unpinProject(id, { userId: ctx.state.userId });
   if (!project) {
@@ -111,10 +98,9 @@ router.put('/projects/:id/unpin', requireCurrentUser, parseParamObjectId<Project
     return;
   }
   ctx.body = project;
-});
+};
 
-// PUT /projects/:id/archive - Archive project and cascade to tasks
-router.put('/projects/:id/archive', requireCurrentUser, parseParamObjectId<ProjectsState>('id'), async (ctx) => {
+const archiveProjectHandler: ProjectsHandler = async (ctx) => {
   const id = objectId(ctx);
   const project = await projectsService.archiveProject(id, { userId: ctx.state.userId });
 
@@ -125,10 +111,9 @@ router.put('/projects/:id/archive', requireCurrentUser, parseParamObjectId<Proje
   }
 
   ctx.body = project;
-});
+};
 
-// PUT /projects/:id/restore - Restore project and cascade to tasks
-router.put('/projects/:id/restore', requireCurrentUser, parseParamObjectId<ProjectsState>('id'), async (ctx) => {
+const restoreProjectHandler: ProjectsHandler = async (ctx) => {
   const id = objectId(ctx);
   const project = await projectsService.restoreProject(id, { userId: ctx.state.userId });
 
@@ -139,6 +124,22 @@ router.put('/projects/:id/restore', requireCurrentUser, parseParamObjectId<Proje
   }
 
   ctx.body = project;
-});
+};
+
+router.get('/projects', requireCurrentUser, listProjectsHandler);
+router.post('/projects', requireCurrentUser, validateBody<ProjectCreateDto, ProjectsState>(projectCreateSchema), createProjectHandler);
+router.put(
+  '/projects/:id',
+  requireCurrentUser,
+  parseParamObjectId<ProjectsState>('id'),
+  validateBody<ProjectUpdateDto, ProjectsState>(projectUpdateSchema),
+  parseBodyObjectId<ProjectsState>('currentFocusTaskId', { optional: true }),
+  updateProjectHandler
+);
+router.delete('/projects/:id', requireCurrentUser, parseParamObjectId<ProjectsState>('id'), deleteProjectHandler);
+router.put('/projects/:id/pin', requireCurrentUser, parseParamObjectId<ProjectsState>('id'), pinProjectHandler);
+router.put('/projects/:id/unpin', requireCurrentUser, parseParamObjectId<ProjectsState>('id'), unpinProjectHandler);
+router.put('/projects/:id/archive', requireCurrentUser, parseParamObjectId<ProjectsState>('id'), archiveProjectHandler);
+router.put('/projects/:id/restore', requireCurrentUser, parseParamObjectId<ProjectsState>('id'), restoreProjectHandler);
 
 export default router;

@@ -14,8 +14,8 @@ It is a truth baseline, not a protocol and not a policy file.
 - CORS origins: comma-separated `FRONTEND_ORIGINS`, fallback `FRONTEND_ORIGIN`, fallback `http://localhost:5173`
 - CORS credentials: enabled for cookie-backed frontend sessions and bearer-token fallback requests
 - body parser: JSON request bodies
-- database startup is non-blocking; the server can run even when MongoDB is unavailable
-- normal non-health product/API routes require a valid `sayachan_session` cookie or `Authorization: Bearer <sessionToken>` unless listed as public auth routes
+- database startup is environment-aware: local/test development may continue when MongoDB is unavailable, while `NODE_ENV=production` or `REQUIRE_MONGODB=true` requires `MONGO_URI` and fails startup on connection failure
+- normal non-health/readiness product/API routes require a valid `sayachan_session` cookie or `Authorization: Bearer <sessionToken>` unless listed as public auth routes
 - Note, Project, Task, and persisted AI note/project product route pipelines attach current-user middleware before service/model access; they are personal-account scoped routes, not anonymous content routes
 - Note, Project, and Task product services require `userId` and do not support unowned single-user content reads or writes
 - product route id boundaries parse valid external id strings into Mongo `ObjectId` values before service/model access; invalid `:id`, `projectId`, `currentFocusTaskId`, or current-user ids fail with a stable 400 invalid object id response instead of reaching Mongoose
@@ -24,9 +24,10 @@ It is a truth baseline, not a protocol and not a policy file.
 
 ## Backend Type Boundary
 
-- the backend API runtime remains CommonJS, with `start` and `dev` building the backend before running `node dist/server.js`
-- Notes, Projects, and Tasks mutation schemas are authored in `backend/src/routes/schemas/mutations.ts`
-- route modules consume those schemas from `backend/src/routes/schemas/mutations.ts`, emitted by the unified backend build
+- the backend API production/start runtime is compiled ESM under `backend/dist`; `start` builds before running `node dist/server.js`
+- backend `dev` uses `tsx watch src/server.ts`, and `start` is the explicit build-backed dist runtime path
+- Notes, Projects, and Tasks request schemas are authored in `packages/contracts/src/product.ts`
+- backend route modules consume product request schemas from `@sayachan/contracts`; product services consume the same shared request DTO types
 - backend source under `backend/src` is TypeScript and is consumed from compiled backend dist output
 - this type boundary does not change route URLs, request bodies, parsed DTO behavior, or public error payloads
 
@@ -171,17 +172,22 @@ Sessions back the httpOnly `sayachan_session` cookie and the frontend bearer-tok
 ### Health
 
 - `GET /health`
+- `GET /ready`
 
-Response includes:
+Health response includes:
 
 - backend status
 - timestamp
 - Mongo connection state
 
+Readiness response uses the same Mongo connection state, returning `200` with `status: ok` when MongoDB is connected and `503` with `status: unavailable` when disconnected.
+
 ### Auth And Owner
 
 Public auth routes:
 
+- `GET /health`
+- `GET /ready`
 - `POST /auth/bootstrap-owner`
 - `POST /auth/register`
 - `POST /auth/login`
@@ -201,7 +207,7 @@ Owner-only routes:
 Current behavior truth:
 
 - bootstrap creates the first owner only when no owner exists
-- bootstrap assigns legacy Notes, Projects, and Tasks without `userId` to the owner
+- bootstrap creates the first owner account only; it no longer assigns legacy product records without `userId`
 - tester registration requires email, password, and a valid invite code
 - login creates a server session, sets `sayachan_session`, and returns `{ sessionToken, user }` for the frontend bearer-token fallback
 - logout clears `sayachan_session` and deletes the server session when present

@@ -8,7 +8,7 @@
 
 - Vue 3 + Vite frontend scaffold
 - Koa backend scaffold
-- MongoDB connection with non-blocking startup
+- MongoDB connection with environment-aware startup and readiness reporting
 - environment-driven local setup
 
 ### Notes Surface
@@ -68,7 +68,7 @@
 - reusable registration page gated by invite code
 - non-email-bound single-use invite codes with one-month expiration and owner revocation
 - cookie-backed login/logout/current-user session flow
-- first-owner bootstrap path that assigns legacy pre-auth Notes, Projects, and Tasks to the owner
+- first-owner bootstrap path for creating the owner account; legacy pre-auth data assignment is retired
 - lightweight owner management for invites, tester metadata, tester disable/restore, and basic system status
 - tester accounts start with empty product data
 - Note/Project/Task `userId` ownership and route/service scoping

@@ -8,15 +8,15 @@
 
 - Canonical frontend command:
   - `npm --prefix frontend run typecheck`
-  - frontend script target: `tsc -p tsconfig.typecheck.json`
+  - frontend script target: `vue-tsc -p tsconfig.typecheck.json --noEmit`
 - Root command:
   - `npm run typecheck:frontend`
   - delegates to the frontend canonical command.
-- Compatibility alias:
-  - root `npm run typecheck:tasks` delegates to `typecheck:frontend`
-  - frontend `npm run typecheck:tasks` delegates to `typecheck`
-  - `frontend/tsconfig.task-service.json` now extends `frontend/tsconfig.typecheck.json` so old direct config usage does not fork coverage.
-- Root `npm run check` remains unchanged and does not include `typecheck:frontend`.
+- Retired compatibility alias:
+  - root `npm run typecheck:tasks` has been retired.
+  - frontend `npm run typecheck:tasks` has been retired.
+  - `frontend/tsconfig.task-service.json` has been retired.
+- Root `npm run check` includes `typecheck:frontend`.
 
 ## Current Include Coverage
 

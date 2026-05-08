@@ -104,10 +104,10 @@
 - Next small-step candidate direction: `Promote Notes/Projects Mutation Zod Boundary before Auth/AI. This tests the schema pattern on ordinary product CRUD payloads while avoiding account/security and AI-contract complexity.`
 - Completed product-boundary expansion: `docs/pmo/history/reports/notes-projects-mutation-zod-boundary.md`
 - Schema placement trigger: `After the Notes/Projects expansion, requestValidation.js now carries task, note, and project Zod schemas plus shared validation behavior. PMO should promote route schema placement before Auth/AI payload migration so runtime-schema adoption continues from a cleaner boundary.`
-- Middleware placement direction: `Route Schema Placement V1 should prefer backend/src/middleware/requestBodyValidation.ts for Koa middleware concerns and backend/src/routes/schemas/mutations.ts for product mutation schemas. requestValidation.js can retire rather than remain as a middleman, while routes should stay thin by declaring validateBody(schema) before handlers.`
+- Middleware placement direction: `Route Schema Placement V1 should prefer backend/src/middleware/route/requestBodyValidation.ts for Koa route middleware concerns and backend/src/routes/schemas/mutations.ts for product mutation schemas. requestValidation.js can retire rather than remain as a middleman, while routes should stay thin by declaring validateBody(schema) before handlers.`
 - Parsed body long-term note: `Long-term, schema validation should likely move from validate-only to a trusted parsed-body boundary, preferably by writing parsed data to ctx.state.validatedBody rather than silently overwriting ctx.request.body. This should not be included in Route Schema Placement V1. It needs a later Parsed Body Boundary Decision/Pilot to decide passthrough vs strip, trim/default/coerce ownership, and whether services should accept validated DTOs.`
 - Completed schema placement: `docs/pmo/history/reports/route-schema-placement-v1.md`
-- Placement closeout readback: `Route Schema Placement V1 moved request-body validation runtime into backend/src/middleware/requestBodyValidation.ts, moved task/note/project mutation schemas into backend/src/routes/schemas/mutations.ts, deleted backend/src/routes/requestValidation.js, and kept validateBody(schema) validate-only with no parsed-body assignment.`
+- Placement closeout readback: `Route Schema Placement V1 moved request-body validation runtime into backend/src/middleware/route/requestBodyValidation.ts, moved task/note/project mutation schemas into backend/src/routes/schemas/mutations.ts, deleted backend/src/routes/requestValidation.js, and kept validateBody(schema) validate-only with no parsed-body assignment.`
 - Parsed-body pilot closeout: `docs/pmo/history/reports/parsed-body-pilot-notes-boundary.md`
 - Parsed-body closeout readback: `validateBody now writes successful Zod parse results to ctx.state.validatedBody while preserving ctx.request.body as raw input. Notes create/update consumed the parsed DTO first; the follow-up Projects/Tasks rollout then moved product mutation routes onto the same trusted DTO boundary. Public 400 responses and schema semantics remain unchanged.`
 - Completed parsed-body rollout: `docs/pmo/history/reports/parsed-body-rollout-projects-and-tasks.md`
@@ -189,7 +189,7 @@
 - A stronger planning route is to define the TypeScript-era target architecture first, then map the current JavaScript repo into it by responsibility. This makes migration a structured fill-in exercise and identifies delete/merge candidates without making every current file feel like a special case.
 - Package workspace tooling should be delayed until root command consolidation proves insufficient or a real shared package/contract need appears.
 - Runtime schema guardrails may be as important as TypeScript for account/API/AI boundaries because they protect live inputs.
-- The runtime-schema placement is now `backend/src/middleware/requestBodyValidation.ts` plus `backend/src/routes/schemas/mutations.ts` for product mutation schemas. Product mutation routes now use `ctx.state.validatedBody` as the parsed DTO boundary while preserving raw `ctx.request.body`; Auth/AI migration, strip/trim/default/coerce semantics, and broader payload validation remain separate decisions.
+- The runtime-schema placement is now `backend/src/middleware/route/requestBodyValidation.ts` plus `@sayachan/contracts` product request schemas for product mutation request bodies. Product mutation routes now use `ctx.state.validatedBody` as the parsed DTO boundary while preserving raw `ctx.request.body`; Auth/AI migration, strip/trim/default/coerce semantics, and broader payload validation remain separate decisions.
 
 ## Backend Migration Lessons For Frontend TypeScript
 
@@ -266,7 +266,7 @@ The Backend TS Quality Gate Cleanup sprint briefly tried `typescript-eslint` typ
 
 #### `private_core bridge contract is still trust-based`
 
-- Signal: `backend/src/ai/bridge.ts` imports `@allier/sayachan-ai-core` through an `unknown` module declaration and asserts it to `{ chat: Chat }`.
+- Signal: `backend/src/privateCore/bridge.ts` imports `@allier/sayachan-ai-core` through a narrow module declaration and re-exports the public chat boundary.
 - Classification: `real boundary weakness`.
 - Current rationale: this is a deliberate migration boundary that keeps private_core out of the backend TypeScript build/runtime cutover.
 - Risk: private core can change its public `chat` API without backend TypeScript catching the mismatch.
@@ -303,7 +303,7 @@ The Backend TS Quality Gate Cleanup sprint briefly tried `typescript-eslint` typ
 - Name: `AI Core Public Bridge Contract`
 - Maturity: `candidate-shaped`
 - Goal: `Replace the public backend's private-core bridge trust boundary with an explicit narrow contract for the imported AI core surface, without pulling private_core into backend build or changing AI route behavior.`
-- Likely scope: `backend/src/ai/privateCoreContract.d.ts`, `backend/src/ai/bridge.ts`, possibly a small bridge contract/test around chat invocation shape.`
+- Likely scope: `backend/src/privateCore/privateCoreContract.d.ts`, `backend/src/privateCore/bridge.ts`, possibly a small bridge contract/test around chat invocation shape.`
 - Non-goals: `No private_core TypeScript/ESM migration, no provider orchestration redesign, no prompt/kernel changes, no AI route response changes.`
 - Validation: `backend build, backend tests, AI route tests, root npm run check.`
 - Escalation: `Stop if the fix requires changing private_core package internals or expanding backend build/lint into private_core.`

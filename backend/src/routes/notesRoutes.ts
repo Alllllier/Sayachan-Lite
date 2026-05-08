@@ -3,7 +3,7 @@ import Router from '@koa/router';
 import type {
   NoteCreateDto,
   NoteUpdateDto
-} from './schemas/mutations.js';
+} from '@sayachan/contracts';
 import type {
   AuthenticatedRouteState,
   RouteHandler
@@ -16,7 +16,7 @@ import notesService from '../services/notesService.js';
 import {
   noteCreateSchema,
   noteUpdateSchema
-} from './schemas/mutations.js';
+} from '@sayachan/contracts';
 import { requireCurrentUser } from '../middleware/route/currentUser.js';
 import { validateBody } from '../middleware/route/requestBodyValidation.js';
 import { parseParamObjectId } from '../middleware/route/objectIdParsing.js';

@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import type { Ref } from 'vue'
 
 import { createTask, fetchTaskList } from './task.api.js'
-import type { NormalizedTask, TaskApiTask } from './task.rules.js'
+import type { NormalizedTask, TaskApiTask, TaskCreationMode } from './task.rules.js'
 
 type RuntimeTaskListRef = Ref<TaskApiTask[]>
 
@@ -26,7 +26,7 @@ export async function fetchTasks(archived = false): Promise<TaskApiTask[]> {
 
 export async function saveTask(
   title: string,
-  creationMode: string,
+  creationMode: TaskCreationMode,
   originModule = '',
   originId: string | null = null
 ): Promise<NormalizedTask | null> {

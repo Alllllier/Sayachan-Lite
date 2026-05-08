@@ -30,6 +30,19 @@
 
 ## Active Entries
 
+### `Backend Test Harness And Route Suite Cleanup`
+
+- Type: `cleanup`
+- Source: `audit`
+- Source reference: `Backend server entrypoint cleanup on 2026-05-08`
+- Problem / Opportunity: `Backend tests now cover useful route contracts, behavior locks, account isolation, DTOs, database startup, and app wiring, but helper code such as createCtx, createDoc, withPatchedMethods, and requestKoaApp is repeated across files. The largest route contract file also mixes multiple concerns that could be easier to maintain if split by app wiring, route contracts, validation, behavior side effects, and account isolation.`
+- Why now: `The new createApp server boundary makes app-level HTTP tests easier without importing the process entrypoint, so future backend test cleanup can reduce duplication without changing runtime behavior.`
+- Current status: `parked`
+- Dependencies: `A small maintenance window that can extract shared backend test helpers and split the largest route suite without weakening behavior coverage.`
+- Risks / unknowns: `Over-extracting too early could hide test intent behind generic helpers. The useful first pass should keep helpers small and preserve the current dist-runtime test path.`
+- Suggested next action: `Later, shape a backend test harness cleanup slice: extract tiny shared helpers, move app-level HTTP checks to server.app tests, and split routes.contract-baseline only along existing behavioral boundaries.`
+- Reopen trigger: `Backend tests become noisy to extend, another route/runtime cleanup touches duplicated helpers, or a human explicitly wants backend test maintainability work.`
+
 ### `Companion-Like Dashboard Day-Phase Rhythm Cue`
 
 - Type: `feature`
@@ -125,7 +138,7 @@
 - Source: `execution report`
 - Source reference: `docs/pmo/state/execution_report.md for Auth Invite Session Owner Skeleton`
 - Problem / Opportunity: `The first-owner bootstrap endpoint is intentionally public until an owner exists. This is acceptable for local/friend-test phase-one auth, but a later deployment or public-launch path should add stronger operator controls around first-owner initialization.`
-- Why now: `The auth skeleton sprint introduced the bootstrap endpoint as the practical way to assign legacy data to the initial owner. PMO should keep the production hardening need visible without blocking the friend-test skeleton closeout.`
+- Why now: `The auth skeleton sprint introduced the bootstrap endpoint as the practical way to create the initial owner. PMO should keep the production hardening need visible without blocking the friend-test skeleton closeout. Legacy product-data assignment has since been retired.`
 - Current status: `parked`
 - Dependencies: `A real deployment or public-launch hardening window; decision on how the owner initializes production data and whether bootstrap should be guarded by environment config, one-time secret, CLI setup, or another operator-only path.`
 - Risks / unknowns: `Leaving bootstrap as-is in a broader deployment could be unsafe if no owner exists and the endpoint is reachable. Hardening too early could complicate local setup and friend testing before deployment constraints are real.`

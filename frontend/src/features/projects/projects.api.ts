@@ -1,9 +1,10 @@
 import { apiFetch, API_BASE } from '../../services/apiClient'
 import type {
   FetchListOptionsDto,
+  ProjectCreateDto,
   ProjectDto,
   ProjectNextActionsResponseDto,
-  ProjectWriteDto
+  ProjectUpdateDto
 } from '../../types/api-dtos'
 import {
   assertApiResponse,
@@ -37,7 +38,7 @@ export async function fetchProjects({ archived = false }: FetchListOptionsDto = 
   return parseJsonResponse<ProjectDto[]>(response, 'Fetch projects failed', projectListResponseSchema, 'projects list')
 }
 
-export async function createProject(project: ProjectWriteDto): Promise<ProjectDto> {
+export async function createProject(project: ProjectCreateDto): Promise<ProjectDto> {
   const response = await apiFetch(`${API_BASE}/projects`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -47,7 +48,7 @@ export async function createProject(project: ProjectWriteDto): Promise<ProjectDt
   return parseJsonResponse<ProjectDto>(response, 'Create project failed', projectResponseSchema, 'project')
 }
 
-export async function updateProject(projectId: string, project: ProjectWriteDto): Promise<ProjectDto> {
+export async function updateProject(projectId: string, project: ProjectUpdateDto): Promise<ProjectDto> {
   const response = await apiFetch(`${API_BASE}/projects/${projectId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -108,7 +109,7 @@ export async function fetchProjectNextActions(projectId: string): Promise<Projec
 }
 
 export async function updateProjectFocus(
-  project: ProjectWriteDto & { _id: string },
+  project: ProjectDto & { _id: string },
   taskId: string
 ): Promise<ProjectDto> {
   return updateProject(project._id, {

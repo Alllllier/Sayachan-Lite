@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { BadRequestError } from '../errors/httpErrors.js';
+import { BadRequestError } from '../http/httpErrors.js';
 
 export type ObjectId = mongoose.Types.ObjectId;
 

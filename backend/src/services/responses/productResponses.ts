@@ -13,11 +13,17 @@ import {
   type ProjectRuntimeRecord,
   type RuntimeDocument,
   type TaskRuntimeRecord
-} from '../../domain/tasks/lifecycle.js';
+} from '../../domain/lifecycle.js';
 
 export type TaskDto = SharedTaskDto;
 export type ProjectDto = SharedProjectDto;
 export type NoteDto = SharedNoteDto;
+
+export type NormalizedTaskDto = TaskDto & {
+  status: NonNullable<TaskDto['status']>;
+  archived: boolean;
+  completed: boolean;
+};
 
 function toPlainObject(entity: RuntimeDocument): Record<string, unknown> {
   return entity.toObject ? entity.toObject() : { ...entity };
@@ -106,6 +112,20 @@ export function toTaskDto(task: TaskRuntimeRecord | null | undefined): TaskDto |
     dto.originId = publicNullableString(normalized.originId);
   }
   return taskResponseSchema.parse(dto);
+}
+
+export function toNormalizedTaskDto(task: TaskRuntimeRecord | null | undefined): NormalizedTaskDto | null | undefined {
+  const dto = toTaskDto(task);
+  if (!dto) {
+    return dto;
+  }
+
+  return {
+    ...dto,
+    status: dto.status || 'active',
+    archived: dto.archived === true,
+    completed: dto.completed === true
+  };
 }
 
 export function toProjectDto(project: ProjectRuntimeRecord | null | undefined): ProjectDto | null | undefined {

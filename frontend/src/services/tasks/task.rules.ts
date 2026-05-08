@@ -1,12 +1,14 @@
-import type { TaskCreationMode, TaskDto, TaskStatus, TaskUpdateDto } from '@sayachan/contracts'
+import type { TaskCreateDto, TaskCreationMode as SharedTaskCreationMode, TaskDto, TaskStatus, TaskUpdateDto } from '@sayachan/contracts'
+
+export type TaskCreationMode = SharedTaskCreationMode
 
 export type TaskProvenance = {
-  creationMode: TaskCreationMode | string
+  creationMode: TaskCreationMode
   originModule: string
   originId: string | null
 }
 
-export type TaskCreatePayload = TaskProvenance & {
+export type TaskCreatePayload = TaskCreateDto & TaskProvenance & {
   title: string
 }
 
@@ -22,7 +24,7 @@ export type NormalizedTask = TaskApiTask & {
 
 export function buildTaskPayload(
   title: string,
-  creationMode: string,
+  creationMode: TaskCreationMode,
   originModule = '',
   originId: string | null = null
 ): TaskCreatePayload {

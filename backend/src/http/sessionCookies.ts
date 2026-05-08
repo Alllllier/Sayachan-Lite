@@ -1,6 +1,6 @@
 import type { Context } from 'koa';
 
-import { SESSION_COOKIE_NAME } from '../domain/authSession.js';
+import { SESSION_COOKIE_NAME } from './authSession.js';
 
 type SessionCookieOptions = {
   httpOnly: boolean;

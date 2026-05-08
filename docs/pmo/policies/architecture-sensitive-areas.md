@@ -10,7 +10,7 @@ This guide gives PMO and execution threads a single place to check which zones s
 
 Treat these areas as architecture-sensitive:
 
-- `backend/src/ai/bridge.js`
+- `backend/src/privateCore/bridge.ts`
 - `backend/private_core/sayachan-ai-core/**`
 - focus/task workflow semantics
 - dashboard-to-chat context contracts

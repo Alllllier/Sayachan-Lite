@@ -14,10 +14,7 @@ import {
   ForbiddenError,
   NotFoundError,
   UnauthorizedError
-} from '../errors/httpErrors.js';
-import Note from '../models/Note.js';
-import Project from '../models/Project.js';
-import Task from '../models/Task.js';
+} from '../http/httpErrors.js';
 
 const PASSWORD_ITERATIONS = 210000;
 const PASSWORD_KEY_LENGTH = 32;
@@ -87,16 +84,6 @@ function verifyPassword(password: string, user: UserAuthRecord): boolean {
   return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
 }
 
-async function assignLegacyDataToOwner(ownerId: unknown): Promise<void> {
-  const unsetOwner = { $or: [{ userId: null }, { userId: { $exists: false } }] };
-
-  await Promise.all([
-    Note.updateMany(unsetOwner, { $set: { userId: ownerId } }),
-    Project.updateMany(unsetOwner, { $set: { userId: ownerId } }),
-    Task.updateMany(unsetOwner, { $set: { userId: ownerId } })
-  ]);
-}
-
 export async function bootstrapOwner({ email, password }: AuthCredentials) {
   validateEmailPassword(email, password);
 
@@ -116,9 +103,6 @@ export async function bootstrapOwner({ email, password }: AuthCredentials) {
     ...passwordRecord,
     role: 'owner'
   });
-
-  // Phase-one bootstrap: claim pre-auth single-user data for the first owner.
-  await assignLegacyDataToOwner(owner._id);
 
   return toPublicUserDto(owner);
 }
@@ -291,7 +275,6 @@ export async function getSystemStatus() {
 }
 
 export const __test__ = {
-  assignLegacyDataToOwner,
   hashInviteCode,
   hashPassword,
   verifyPassword

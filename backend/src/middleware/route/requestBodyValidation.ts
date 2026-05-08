@@ -1,4 +1,4 @@
-import { BadRequestError } from '../../errors/httpErrors.js';
+import { BadRequestError } from '../../http/httpErrors.js';
 import type {
   RequestBodySchema,
   RouteContext,

@@ -1,6 +1,6 @@
 import { ref, unref } from 'vue'
 import type { MaybeRef, Ref } from 'vue'
-import type { ProjectDto, ProjectWriteDto } from '../../types/api-dtos'
+import type { ProjectCreateDto, ProjectDto } from '../../types/api-dtos'
 import { readResourceCache, writeResourceCache } from '../../services/resourceCache.js'
 import type { TaskApiTask } from '../../services/tasks/task.rules.js'
 import { saveTask, fetchProjectCardTasks } from '../../services/tasks/index.js'
@@ -45,9 +45,9 @@ type ProjectWithId = ProjectDto & {
   _id: string
 }
 
-type ProjectForm = ProjectWriteDto
+type ProjectForm = ProjectCreateDto & { status: NonNullable<ProjectCreateDto['status']> }
 type ProjectErrorsById = Record<string, ReturnType<typeof createEmptyProjectErrors>>
-type ProjectSnapshotsById = Record<string, ProjectWriteDto>
+type ProjectSnapshotsById = Record<string, ProjectForm>
 type StringSetRef = Ref<Set<string>>
 type ProjectStringMap = Record<string, string>
 type ProjectTaskMap = Record<string, TaskApiTask[]>

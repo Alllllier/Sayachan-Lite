@@ -1,5 +1,5 @@
 import { buildTaskPayload, normalizeSavedTask } from './task.rules.js'
-import type { NormalizedTask, TaskApiTask, TaskUpdatePayload } from './task.rules.js'
+import type { NormalizedTask, TaskApiTask, TaskCreationMode, TaskUpdatePayload } from './task.rules.js'
 
 import { apiFetch, API_BASE } from '../apiClient'
 import {
@@ -24,7 +24,7 @@ export async function fetchTaskList({ archived = false }: FetchTaskListOptions =
 
 export async function createTask(
   title: string,
-  creationMode: string,
+  creationMode: TaskCreationMode,
   originModule = '',
   originId: string | null = null
 ): Promise<NormalizedTask | null> {

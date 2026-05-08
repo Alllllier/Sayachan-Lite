@@ -5,7 +5,6 @@ import Note from '../dist/models/Note.js';
 import Project from '../dist/models/Project.js';
 import Task from '../dist/models/Task.js';
 import aiService from '../dist/services/aiService.js';
-import aiRoutes from '../dist/routes/ai.js';
 import { errorBoundary } from '../dist/middleware/app/errorBoundary.js';
 import routes from '../dist/routes/index.js';
 
@@ -313,7 +312,7 @@ test('direct-id mutations for another account behave as not found', async () => 
 });
 
 test('AI note task generation reloads persisted notes by id through current-user ownership before fallback', async () => {
-  const noteAiHandler = getRouteHandler(aiRoutes, 'POST', '/ai/notes/tasks');
+  const noteAiHandler = getRouteHandler(routes, 'POST', '/ai/notes/tasks');
   const originalKey = process.env.GLM_API_KEY;
   delete process.env.GLM_API_KEY;
 
@@ -343,7 +342,7 @@ test('AI note task generation reloads persisted notes by id through current-user
 });
 
 test('AI project next-action resolves focus tasks by task id and current user', async () => {
-  const projectAiHandler = getRouteHandler(aiRoutes, 'POST', '/ai/projects/next-action');
+  const projectAiHandler = getRouteHandler(routes, 'POST', '/ai/projects/next-action');
   const originalKey = process.env.GLM_API_KEY;
   const originalFetch = global.fetch;
   process.env.GLM_API_KEY = 'test-key';
@@ -406,9 +405,9 @@ test('AI project next-action resolves focus tasks by task id and current user', 
 });
 
 test('AI routes validate request bodies before downstream AI or model work', async () => {
-  const noteAiHandler = getRouteHandler(aiRoutes, 'POST', '/ai/notes/tasks');
-  const projectAiHandler = getRouteHandler(aiRoutes, 'POST', '/ai/projects/next-action');
-  const chatAiHandler = getRouteHandler(aiRoutes, 'POST', '/ai/chat');
+  const noteAiHandler = getRouteHandler(routes, 'POST', '/ai/notes/tasks');
+  const projectAiHandler = getRouteHandler(routes, 'POST', '/ai/projects/next-action');
+  const chatAiHandler = getRouteHandler(routes, 'POST', '/ai/chat');
 
   const forbiddenRead = async () => {
     throw new Error('AI validation should stop before model reads');
@@ -453,7 +452,7 @@ test('AI routes validate request bodies before downstream AI or model work', asy
 });
 
 test('AI chat validation strips unknown message fields before bridge handoff', async () => {
-  const chatAiHandler = getRouteHandler(aiRoutes, 'POST', '/ai/chat');
+  const chatAiHandler = getRouteHandler(routes, 'POST', '/ai/chat');
   let capturedBody = null;
 
   await withPatchedMethods([

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import Task from '../dist/models/Task.js';
-import { restoreTasks } from '../dist/domain/tasks/cascade.js';
+import { restoreTasks } from '../dist/services/cascadeService.js';
 
 test('restoreTasks keeps canonical project scope when reading archived tasks', async () => {
   const originalFind = Task.find;

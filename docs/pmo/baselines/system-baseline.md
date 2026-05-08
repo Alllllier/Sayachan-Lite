@@ -26,7 +26,7 @@ Current stack at a glance:
 - backend: `Node.js + Koa + Mongoose`
 - database: `MongoDB`
 - public AI surfaces: backend `/ai/*` routes
-- private AI core bridge: `backend/src/ai/bridge.ts`
+- private AI core bridge: `backend/src/privateCore/bridge.ts`
 - private AI core package: `@allier/sayachan-ai-core`
 - private core submodule location: `backend/private_core/sayachan-ai-core`
 
@@ -47,26 +47,27 @@ Current frontend code shape:
 Current repo-native validation shape:
 
 - root `npm run check` is the ordinary quality gate for worker validation
-- root `check` aggregates low-noise lint, backend dist runtime readiness, frontend unit tests, backend tests, and frontend build
-- root exposes focused typecheck scripts for current type-adoption pilots, including frontend task typing and backend DTO typing, but these are not yet part of the default `check` aggregate
-- root exposes `npm run build:backend`, `npm run check:backend-build`, and `npm run check:backend-dist-runtime` as named backend dist commands; backend dist runtime readiness is part of the default `check` aggregate
+- root `check` aggregates contracts build, low-noise lint, frontend typecheck, backend dist runtime readiness, frontend unit tests, backend tests, UI review, and frontend build
+- root exposes `npm run typecheck:frontend` as the canonical frontend typecheck entrypoint
+- root exposes `npm run build:backend` and `npm run check:backend-dist-runtime` as named backend dist commands; backend dist runtime readiness is part of the default `check` aggregate
 - feature and service behavior tests live alongside frontend feature/service modules
 - browser/UI review baselines live under `frontend/tests/ui-review/<surface>/`
 - current UI review surfaces are Notes, Projects, Dashboard, and Chat
-- UI review remains an explicit separate path through frontend Playwright scripts, not part of the default root gate
+- UI review remains available as explicit frontend Playwright scripts and is also included in the default root gate
 - UI review API mocks include authenticated `/auth/me` responses so guarded app-shell routes render during review
 - UI review screenshots are retained as review artifacts, not golden visual assertions
 
 Current backend type-adoption shape:
 
-- backend runtime remains plain Node/CommonJS, with backend `start` and `dev` both building and running `node dist/server.js`
-- `npm --prefix backend run build:backend` is the unified CommonJS `tsc` build that emits the current backend CommonJS runtime graph into ignored build output under `backend/dist`
-- `npm --prefix backend run check:backend-build` runs that build and loads the emitted dist route/server dependency graph under a smoke harness
+- backend production start remains plain Node over compiled ESM output, with backend `start` building and running `node dist/server.js`
+- backend `dev` uses `tsx watch src/server.ts` for source-mode local development, while `start` is the build-backed dist runtime path
+- `npm --prefix backend run build:backend` is the unified NodeNext `tsc` build that emits the current backend TypeScript source graph into ignored build output under `backend/dist`
+- `npm --prefix backend run check:backend-dist-runtime` runs that build, checks the emitted dist boundary, and smoke-loads the emitted dist route/server dependency graph
 - `npm --prefix backend test` builds backend dist before running backend tests, and backend tests import runtime modules from `backend/dist`
-- `backend/src/routes/schemas/mutations.ts` is the first focused TypeScript schema/DTO island for product mutation validation
-- the schema island facade/generated path has been retired; `backend/src/routes/schemas/mutations.ts` is emitted directly by the unified backend build
-- the unified backend `tsc` build emits the TypeScript backend source graph under `backend/src` into CommonJS runtime artifacts under `backend/dist`
-- route modules consume `backend/src/routes/schemas/mutations.ts` as the product mutation schema source and use the compiled `backend/dist/routes/schemas/mutations.js` artifact at runtime
+- `packages/contracts/src/product.ts` is the shared product request/response contract module; product request schemas and DTOs are consumed by backend routes and services through `@sayachan/contracts`
+- the old backend route-local schema island facade/generated path has been retired
+- the unified backend `tsc` build emits the TypeScript backend source graph under `backend/src` into ESM runtime artifacts under `backend/dist`
+- route modules consume `@sayachan/contracts` as the product request schema source; services consume the same shared request DTO types
 
 ## Public Runtime Surfaces
 
@@ -136,11 +137,14 @@ Backend routes currently split into:
 - `backend/src/routes/notesRoutes.ts`
 - `backend/src/routes/projectsRoutes.ts`
 - `backend/src/routes/tasksRoutes.ts`
-- `backend/src/routes/schemas/mutations.ts`
-- `backend/src/routes/schemas/mutations.ts`
-- `backend/src/routes/ai.ts`
-- `backend/src/middleware/requestBodyValidation.ts`
-- `backend/src/middleware/errorBoundary.ts`
+- `backend/src/routes/aiRoutes.ts`
+- `backend/src/middleware/app/auth.ts`
+- `backend/src/middleware/app/errorBoundary.ts`
+- `backend/src/middleware/route/ownerAccess.ts`
+- `backend/src/middleware/route/currentUser.ts`
+- `backend/src/middleware/route/objectIdParsing.ts`
+- `backend/src/middleware/route/requestBodyValidation.ts`
+- `backend/src/http/sessionCookies.ts`
 
 Current AI route surface:
 
@@ -150,22 +154,22 @@ Current AI route surface:
 
 Current route behavior truth:
 
-- `backend/src/middleware/auth.ts` loads the current user from the `sayachan_session` cookie and gates normal non-health product/API routes
-- `backend/src/middleware/errorBoundary.ts` is registered before body parsing, auth, and routers so downstream parser/auth/route failures return stable JSON error payloads
+- `backend/src/middleware/app/auth.ts` loads the current user from the `sayachan_session` cookie and gates normal non-health product/API routes
+- `backend/src/middleware/app/errorBoundary.ts` is registered before body parsing, auth, and routers so downstream parser/auth/route failures return stable JSON error payloads
 - auth, owner, health, note, project, and task routes are registered through `backend/src/routes/index.ts` as the main route aggregator
 - non-AI note/project/task route orchestration is split through first-pass service modules under `backend/src/services/`
 - phase-one auth uses owner/tester roles, invite-gated registration, cookie-backed sessions, and lightweight owner management
 - backend owner bootstrap can be run through `backend/scripts/bootstrapOwner.mjs` or `npm run bootstrap:owner` from the backend workspace
 - Notes, Projects, and Tasks normal route/service reads and writes are scoped by current authenticated user
-- Note, Project, and Task routes attach `requireCurrentUser` from `backend/src/middleware/currentUser.ts` before product handlers, so product handlers consume `ctx.state.userId` rather than resolving ownership themselves
+- Note, Project, and Task routes attach `requireCurrentUser` from `backend/src/middleware/route/currentUser.ts` before product handlers, so product handlers consume `ctx.state.userId` rather than resolving ownership themselves
 - Product route id boundaries cast valid external id strings into Mongo `ObjectId` values before service/model access; invalid direct ids, `projectId`, `currentFocusTaskId`, or current-user ids fail as stable 400 invalid object id responses
 - `Task.originId` remains provenance-specific and is not yet globally cast to `ObjectId`; note/project provenance tightening is a separate contract decision
-- Note, Project, and Task create/update routes validate product mutation bodies through `backend/src/middleware/requestBodyValidation.ts` and route-owned Zod schemas, then pass `ctx.state.validatedBody` to services while preserving raw `ctx.request.body`
-- Note, Project, and Task services use `backend/src/services/ownership.ts` for required owner filters and do not retain unowned single-user content fallback branches
+- Note, Project, and Task create/update routes validate product mutation bodies through `backend/src/middleware/route/requestBodyValidation.ts` and route-owned Zod schemas, then pass `ctx.state.validatedBody` to services while preserving raw `ctx.request.body`
+- Note, Project, and Task services write owner-scoped Mongo filters explicitly with `userId` and do not retain unowned single-user content fallback branches
 - public AI note/project routes reload persisted note/project context by current user ownership before constructing fallback/provider prompts
 - project next-action focus task resolution is scoped by both task id and current user ownership
 - note and project AI routes call GLM through backend route logic
-- chat goes through `backend/src/ai/bridge.ts` into the private core
+- chat goes through `backend/src/privateCore/bridge.ts` into the private core
 - fallback responses still exist for all current AI routes
 
 ## Data Model Truth
@@ -261,7 +265,7 @@ Observed current split:
 
 - public repo owns product UI, stores, services, route surfaces, and the public chat route
 - public frontend feature modules own module API/rules/orchestration boundaries
-- `backend/src/ai/bridge.ts` is the public bridge into the private core
+- `backend/src/privateCore/bridge.ts` is the public bridge into the private core
 - backend consumes the private core through the package dependency `@allier/sayachan-ai-core`, backed by the local submodule path `backend/private_core/sayachan-ai-core`
 - the private core owns chat orchestration, prompt kernel, provider integration used by chat runtime, and deeper context assembly policies
 

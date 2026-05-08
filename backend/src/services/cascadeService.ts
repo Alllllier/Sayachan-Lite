@@ -1,4 +1,4 @@
-import type { ObjectId } from '../objectIds.js';
+import type { ObjectId } from '../domain/objectIds.js';
 import {
   buildArchiveFilter,
   combineFilters
@@ -8,7 +8,7 @@ import {
   type ProjectRuntimeRecord,
   type RuntimeDocument,
   type TaskRuntimeRecord
-} from './lifecycle.js';
+} from '../domain/lifecycle.js';
 
 type FindableModel = {
   find(filter: unknown): Promise<TaskRuntimeRecord[]>;

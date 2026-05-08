@@ -1,7 +1,7 @@
 # Backend Dist Runtime Cutover Plan V1
 
-Status: planning artifact for future PMO execution
-Last updated: 2026-05-06
+Status: superseded planning artifact; current runtime truth lives in `docs/pmo/baselines/runtime-baseline.md`
+Last updated: 2026-05-08
 
 ## Purpose
 
@@ -18,13 +18,13 @@ This document is a plan only. It does not approve a runtime cutover, ESM migrati
 | Area | Current evidence | Cutover implication |
 | --- | --- | --- |
 | Backend runtime | `backend/package.json` uses `"type": "commonjs"`, `start` and `dev` run `node src/server.js`. | Runtime still loads source files. Dist is dry-run only. |
-| Unified dry-run build | `backend/tsconfig.json` emits JS from `src` to `dist`; `npm --prefix backend run check:backend-build` runs `tsc` plus `scripts/checkBackendDistBuild.cjs`. | Dist generation exists but is not authoritative runtime. |
-| Schema module | Source: `backend/src/routes/schemas/mutations.ts`; emitted artifact: `backend/dist/routes/schemas/mutations.js`. | Schema facade/generated scaffolding has been retired. |
+| Unified dist runtime build | `backend/tsconfig.json` emits JS from `src` to `dist`; `npm --prefix backend run check:backend-dist-runtime` runs `tsc`, the dist boundary guard, and dist runtime smoke. | Dist generation is now the authoritative backend start runtime. |
+| Schema module | Product request source: `packages/contracts/src/product.ts`, consumed as `@sayachan/contracts`. | Backend route-local schema source has been retired after the request contract move. |
 | Notes route | Source: `backend/src/routes/notesRoutes.ts`; emitted artifact: `backend/dist/routes/notesRoutes.js`. | Notes island facade/generated scaffolding has been retired. |
 | DTO pilot | Retired after product routes, schema module, and request-body validation middleware moved to TS. | No active DTO pilot tsconfig remains. |
 | Product routes | `backend/src/routes/notesRoutes.ts`, `projectsRoutes.ts`, `tasksRoutes.ts` remain public runtime entrypoints through compiled dist output. | Notes, Projects, and Tasks now compile from normal TS route paths. |
 | Services/models/middleware | Plain CommonJS JS under `backend/src/services`, `backend/src/models`, `backend/src/middleware`. | They can remain JS during early dist runtime if emitted unchanged; type migration is separable. |
-| Private core | `backend/src/ai/bridge.js` crosses into `backend/private_core/sayachan-ai-core`. | Inclusion in backend build is a human architecture gate. Do not absorb implicitly. |
+| Private core | `backend/src/privateCore/bridge.ts` imports `@allier/sayachan-ai-core` through the package boundary backed by `backend/private_core/sayachan-ai-core`. | Inclusion in backend build is a human architecture gate. Do not absorb implicitly. |
 | Root check | Root `npm run check` includes lint, schema island check, backend dist runtime readiness, tests, frontend build. | Dist validation has been added after human approval. |
 | Baselines | `docs/pmo/baselines/backend-api.md`, `runtime-baseline.md`, `system-baseline.md`. | Use as public behavior guards before and after cutover. |
 
@@ -73,7 +73,7 @@ Current checkpoint after dist runtime cutover has retired the schema and Notes i
 
 Expected validation:
 
-- `npm --prefix backend run check:backend-build`
+- `npm --prefix backend run check:backend-dist-runtime`
 - `npm --prefix backend test`
 - `npm run check`
 
@@ -95,7 +95,7 @@ Automation fit:
 - Script-automatable: dist artifact inventory, forbidden path checks, runtime script assertions.
 - Sub-agent-automatable: small tsconfig/check-script edits after the build boundary policy is explicit.
 
-Exit condition: `check:backend-build` reliably proves dist is generated for current runtime graph without changing runtime.
+Exit condition: `check:backend-dist-runtime` reliably proves dist is generated for the current runtime graph.
 
 ### Phase 2: Pre-Cutover Dist Runtime Smoke Harness
 
@@ -116,17 +116,18 @@ Exit condition: dist can be tested without becoming the default runtime.
 
 ### Phase 3: Schema Island Retirement
 
-Goal: retire checked-in generated schema artifacts so `mutations.ts` is consumed from normal dist output.
+Goal: retire checked-in generated schema artifacts so product request schemas are consumed from the approved runtime contract boundary.
 
 Likely work:
 
-- `backend/src/routes/schemas/mutations.ts` now emits to `dist/routes/schemas/mutations.js`.
-- Dist runtime route modules consume the compiled schema module.
+- product request schemas now live in `packages/contracts/src/product.ts`.
+- Dist runtime route modules consume `@sayachan/contracts`.
 - Confirm API/Zod behavior baseline is unchanged.
 
 Retired:
 
 - `backend/src/routes/schemas/mutations.js`
+- `backend/src/routes/schemas/mutations.ts`
 - `backend/src/routes/schemas/__generated__/mutations.js`
 - `backend/src/routes/schemas/__generated__/mutations.d.ts`
 - `check:schema-island`
@@ -260,8 +261,8 @@ Human-owned:
 
 | Phase | Required validation |
 | --- | --- |
-| Current checkpoint | `npm --prefix backend run check:backend-build`; `npm --prefix backend test`; `npm run check` |
-| Dist build hardening | `npm --prefix backend run build:backend`; `npm --prefix backend run check:backend-build`; targeted script tests if added |
+| Current checkpoint | `npm --prefix backend run check:backend-dist-runtime`; `npm --prefix backend test`; `npm run check` |
+| Dist build hardening | `npm --prefix backend run build:backend`; `npm --prefix backend run check:backend-dist-runtime`; targeted script tests if added |
 | Dist smoke prep | dist smoke/check command; dist backend tests; contract baseline |
 | Schema/Notes retirement prep | remaining island checks still green before retirement; unified build emits expected dist modules |
 | Product route batches | unified build; route contract baseline; full backend tests for any route behavior change |
@@ -300,6 +301,6 @@ Non-goals:
 
 Suggested validation:
 
-- `npm --prefix backend run check:backend-build`
+- `npm --prefix backend run check:backend-dist-runtime`
 - `npm --prefix backend test`
 - `npm run check`

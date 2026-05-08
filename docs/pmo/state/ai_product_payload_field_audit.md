@@ -14,7 +14,7 @@
   - `Get-Content -Raw frontend/src/features/notes/notes.api.js`
   - `Get-Content -Raw frontend/src/features/projects/projects.api.js`
   - `Get-Content -Raw backend/src/routes/schemas/ai.ts`
-  - `Get-Content -Raw backend/src/routes/ai.ts`
+  - `Get-Content -Raw backend/src/routes/aiRoutes.ts`
   - `Get-Content -Raw backend/src/services/aiService.ts`
 - Frontend/backend endpoint usage searches:
   - `rg -n "fetchNoteTaskDrafts|/ai/notes/tasks|generateNoteTaskDrafts|noteTaskFallback|resolveOwnedNotePayload" frontend backend docs -g "!*node_modules*"`

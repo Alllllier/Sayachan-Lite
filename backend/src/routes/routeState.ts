@@ -25,12 +25,8 @@ export function validatedBody<TBody>(ctx: ValidatedBodyContext): TBody {
   return body as TBody;
 }
 
-export function parsedObjectId(ctx: ObjectIdsContext, key: string): ObjectId | null | undefined {
-  return ctx.state.objectIds?.[key];
-}
-
 export function objectId(ctx: ObjectIdsContext, key = 'id'): ObjectId {
-  const parsed = parsedObjectId(ctx, key);
+  const parsed = ctx.state.objectIds?.[key];
   if (!parsed) {
     throw missingRouteStateValue(`objectIds.${key}`);
   }

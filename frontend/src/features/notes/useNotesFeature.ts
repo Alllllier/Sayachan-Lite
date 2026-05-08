@@ -1,6 +1,6 @@
 import { reactive, ref, unref } from 'vue'
 import type { MaybeRef } from 'vue'
-import type { NoteDto, NoteWriteDto } from '../../types/api-dtos'
+import type { NoteCreateDto, NoteDto } from '../../types/api-dtos'
 import { readResourceCache, writeResourceCache } from '../../services/resourceCache.js'
 import { saveTask } from '../../services/tasks/index.js'
 import {
@@ -47,7 +47,8 @@ type EditableNote = NoteDto & {
   _id: string
 }
 
-type DraftMap = Record<string, NoteWriteDto>
+type NoteForm = Required<Pick<NoteCreateDto, 'title' | 'content'>>
+type DraftMap = Record<string, NoteForm>
 type NoteErrorsById = Record<string, NoteFieldErrors>
 type NoteSnapshotById = Record<string, NoteEditSnapshot>
 type NoteTaskDraftsById = Record<string, string[]>
@@ -106,7 +107,7 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
   }
 
   const notes = ref<NoteDto[]>([])
-  const form = ref<NoteWriteDto>({ title: '', content: '' })
+  const form = ref<NoteForm>({ title: '', content: '' })
   const editingId = ref<string | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)

@@ -1,5 +1,3 @@
-import type { ObjectId } from '../objectIds.js';
-
 export type QueryFilter = Record<string, unknown>;
 
 export function buildArchiveFilter(archived: unknown): QueryFilter {
@@ -32,9 +30,9 @@ export function combineFilters(...filters: unknown[]): QueryFilter {
   };
 }
 
-export function projectTaskRelationFilter(projectId: ObjectId): QueryFilter {
+export function changedOnlyFilter(filter: QueryFilter, update: QueryFilter): QueryFilter {
   return {
-    originModule: 'project',
-    originId: projectId
+    ...filter,
+    $or: Object.entries(update).map(([field, value]) => ({ [field]: { $ne: value } }))
   };
 }

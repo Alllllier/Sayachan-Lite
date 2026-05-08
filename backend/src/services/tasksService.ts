@@ -2,23 +2,20 @@ import type {
   TaskCreateDto,
   TaskCreationMode,
   TaskUpdateDto
-} from '../routes/schemas/mutations.js';
+} from '@sayachan/contracts';
 import type { ObjectId } from '../domain/objectIds.js';
 import {
   buildArchiveFilter,
   combineFilters,
-  projectTaskRelationFilter,
-} from '../domain/tasks/queryFilters.js';
+} from './queryFilters.js';
 import {
   clearFocusForTask,
   isProjectOwnedTask
-} from '../domain/tasks/cascade.js';
-import { toTaskDto } from './responses/productResponses.js';
+} from './cascadeService.js';
 import {
-  ownedFilter,
-  ownerFilter,
-  requireUserId
-} from '../domain/ownership.js';
+  toNormalizedTaskDto,
+  toTaskDto
+} from './responses/productResponses.js';
 import Project from '../models/Project.js';
 import Task from '../models/Task.js';
 
@@ -44,16 +41,10 @@ type TaskUpdate = {
   completed?: boolean;
 };
 
-type NormalizedTask = {
-  _id?: ObjectId;
-  status?: unknown;
-  archived?: unknown;
-};
-
 export async function listTasks({ projectId, archived, userId }: ListTasksOptions) {
   const filter = projectId
-    ? combineFilters(buildArchiveFilter(archived), projectTaskRelationFilter(projectId), ownerFilter(userId))
-    : combineFilters(buildArchiveFilter(archived), ownerFilter(userId));
+    ? combineFilters(buildArchiveFilter(archived), { originModule: 'project', originId: projectId }, { userId })
+    : combineFilters(buildArchiveFilter(archived), { userId });
   const tasks = await Task.find(filter).sort({ createdAt: -1 });
   return tasks.map(toTaskDto);
 }
@@ -67,7 +58,7 @@ export async function createTask(body: TaskCreateInput, { userId }: ServiceOptio
     status: 'active',
     archived: false,
     completed: false,
-    userId: requireUserId(userId)
+    userId
   };
 
   const task = await Task.create(taskData);
@@ -96,31 +87,35 @@ export function buildTaskUpdate(body: TaskUpdateDto): TaskUpdate {
 }
 
 export async function updateTask(id: ObjectId, body: TaskUpdateDto, { userId }: ServiceOptions) {
-  const existingTask = await Task.findOne(ownedFilter(id, userId));
+  const existingTask = await Task.findOne({ _id: id, userId });
   if (!existingTask) {
     return null;
   }
 
-  const normalizedExistingTask = toTaskDto(existingTask) as NormalizedTask;
-  const task = await Task.findOneAndUpdate(ownedFilter(id, userId), buildTaskUpdate(body), { new: true, runValidators: true });
-  const normalizedTask = toTaskDto(task) as NormalizedTask;
+  const normalizedExistingTask = toNormalizedTaskDto(existingTask);
+  const task = await Task.findOneAndUpdate({ _id: id, userId }, buildTaskUpdate(body), { new: true, runValidators: true });
+  const normalizedTask = toNormalizedTaskDto(task);
+
+  if (!normalizedExistingTask || !normalizedTask) {
+    return null;
+  }
 
   const isBecomingCompleted = normalizedTask.status === 'completed' && normalizedExistingTask.status !== 'completed';
 
-  if (isBecomingCompleted && normalizedTask._id && isProjectOwnedTask(normalizedTask)) {
-    await clearFocusForTask(Project, normalizedTask._id, 'task completion', userId);
+  if (isBecomingCompleted && task?._id && isProjectOwnedTask(task)) {
+    await clearFocusForTask(Project, task._id, 'task completion', userId);
   }
 
   const isBecomingArchived = normalizedTask.archived && !normalizedExistingTask.archived;
-  if (isBecomingArchived && normalizedTask._id) {
-    await clearFocusForTask(Project, normalizedTask._id, 'task archive', userId);
+  if (isBecomingArchived && task?._id) {
+    await clearFocusForTask(Project, task._id, 'task archive', userId);
   }
 
   return normalizedTask;
 }
 
 export async function deleteTask(id: ObjectId, { userId }: ServiceOptions) {
-  const task = await Task.findOneAndDelete(ownedFilter(id, userId));
+  const task = await Task.findOneAndDelete({ _id: id, userId });
 
   if (!task) {
     return false;

@@ -1,15 +1,12 @@
 import {
+  type AiChatRequestDto,
+  type AiResourceRequestDto,
   chatResponseSchema,
   noteTaskDraftsResponseSchema,
   projectNextActionsResponseSchema
 } from '@sayachan/contracts';
 import { type ObjectId, toObjectId } from '../domain/objectIds.js';
-import type {
-  AiChatDto,
-  AiNoteTaskRequestDto,
-  AiProjectNextActionRequestDto
-} from '../routes/schemas/ai.js';
-import { chat as runChat } from '../ai/bridge.js';
+import { chat as runChat } from '../privateCore/bridge.js';
 import Note from '../models/Note.js';
 import Project from '../models/Project.js';
 import Task from '../models/Task.js';
@@ -113,14 +110,14 @@ function normalizeDoc(doc: AiPayload | null): AiPayload | null {
   return doc?.toObject ? doc.toObject() : doc;
 }
 
-async function resolveOwnedNotePayload(payload: AiNoteTaskRequestDto, userId: ObjectId): Promise<AiPayload | null> {
+async function resolveOwnedNotePayload(payload: AiResourceRequestDto, userId: ObjectId): Promise<AiPayload | null> {
   const noteId = toObjectId(payload._id, 'request.body._id');
   const note = await Note.findOne({ _id: noteId, userId });
 
   return normalizeDoc(note);
 }
 
-async function resolveOwnedProjectPayload(payload: AiProjectNextActionRequestDto, userId: ObjectId): Promise<AiPayload | null> {
+async function resolveOwnedProjectPayload(payload: AiResourceRequestDto, userId: ObjectId): Promise<AiPayload | null> {
   const projectId = toObjectId(payload._id, 'request.body._id');
   const project = await Project.findOne({ _id: projectId, userId });
 
@@ -128,7 +125,7 @@ async function resolveOwnedProjectPayload(payload: AiProjectNextActionRequestDto
 }
 
 export async function generateNoteTaskDrafts(
-  payload: AiNoteTaskRequestDto,
+  payload: AiResourceRequestDto,
   userId: ObjectId
 ): Promise<AiBodyResult<{ drafts: string[] }> | AiNotFoundResult> {
   const note = await resolveOwnedNotePayload(payload, userId);
@@ -209,7 +206,7 @@ export async function generateNoteTaskDrafts(
 }
 
 export async function suggestProjectNextActions(
-  payload: AiProjectNextActionRequestDto,
+  payload: AiResourceRequestDto,
   userId: ObjectId
 ): Promise<AiBodyResult<{ suggestions: string[] }> | AiNotFoundResult> {
   const project = await resolveOwnedProjectPayload(payload, userId);
@@ -296,7 +293,7 @@ export async function suggestProjectNextActions(
   }
 }
 
-export async function chat({ messages, context, runtimeControls }: AiChatDto) {
+export async function chat({ messages, context, runtimeControls }: AiChatRequestDto) {
   const KIMI_KEY = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
   if (!KIMI_KEY) {
     console.warn('[AI Route] KIMI_API_KEY not found, using fallback');

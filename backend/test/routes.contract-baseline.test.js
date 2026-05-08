@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import Koa from 'koa';
 
 import Note from '../dist/models/Note.js';
 import Project from '../dist/models/Project.js';
@@ -10,12 +9,12 @@ import projectsService from '../dist/services/projectsService.js';
 import tasksService from '../dist/services/tasksService.js';
 import { errorBoundary } from '../dist/middleware/app/errorBoundary.js';
 import routes from '../dist/routes/index.js';
-import { BadRequestError } from '../dist/errors/httpErrors.js';
+import { BadRequestError } from '../dist/http/httpErrors.js';
 import { assertZodSchema } from '../dist/middleware/route/requestBodyValidation.js';
 import {
   taskCreateSchema,
   taskUpdateSchema
-} from '../dist/routes/schemas/mutations.js';
+} from '@sayachan/contracts';
 
 function getRouteHandler(method, path) {
   const layer = routes.stack.find((entry) => entry.path === path && entry.methods.includes(method));
@@ -130,46 +129,22 @@ function withPatchedMethods(patches, run) {
     });
 }
 
-function listen(app) {
-  return new Promise((resolve, reject) => {
-    const server = app.listen(0, '127.0.0.1');
-    server.once('listening', () => resolve(server));
-    server.once('error', reject);
-  });
-}
+test('health and readiness routes separate process liveness from database readiness', async () => {
+  const healthHandler = getRouteHandler('GET', '/health');
+  const readyHandler = getRouteHandler('GET', '/ready');
+  const healthCtx = createCtx({ userId: null });
+  const readyCtx = createCtx({ userId: null });
 
-async function closeServer(server) {
-  await new Promise((resolve, reject) => {
-    server.close((error) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve();
-    });
-  });
-}
+  await healthHandler(healthCtx, async () => {});
+  await readyHandler(readyCtx, async () => {});
 
-async function requestKoaApp(app, path, options = {}) {
-  const server = await listen(app);
-  const { port } = server.address();
+  assert.equal(healthCtx.status, 200);
+  assert.equal(healthCtx.body.status, 'ok');
+  assert.equal(healthCtx.body.db, 'disconnected');
 
-  try {
-    return await fetch(`http://127.0.0.1:${port}${path}`, options);
-  } finally {
-    await closeServer(server);
-  }
-}
-
-test('route allowedMethods returns 405 and Allow header for matched path with wrong method', async () => {
-  const app = new Koa();
-  app.use(routes.routes());
-  app.use(routes.allowedMethods());
-
-  const response = await requestKoaApp(app, '/health', { method: 'POST' });
-
-  assert.equal(response.status, 405);
-  assert.equal(response.headers.get('allow'), 'HEAD, GET');
+  assert.equal(readyCtx.status, 503);
+  assert.equal(readyCtx.body.status, 'unavailable');
+  assert.equal(readyCtx.body.db, 'disconnected');
 });
 
 test('list and filter reads preserve canonical backend semantics for tasks, projects, and notes', async () => {

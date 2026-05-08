@@ -11,7 +11,7 @@ import {
   updateProject,
   updateProjectFocus
 } from './projects.api.js'
-import type { ProjectDto, ProjectWriteDto } from '../../types/api-dtos'
+import type { ProjectCreateDto, ProjectDto } from '../../types/api-dtos'
 
 function jsonResponse(body: unknown, ok = true, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -53,7 +53,7 @@ describe('projects api boundary', () => {
   })
 
   it('sends create and update payloads through project endpoints', async () => {
-    const project: ProjectWriteDto = { name: 'PMO', summary: 'Plan', status: 'pending' }
+    const project: ProjectCreateDto = { name: 'PMO', summary: 'Plan', status: 'pending' }
 
     mockedFetch().mockResolvedValueOnce(jsonResponse(projectDto))
     await createProject(project)

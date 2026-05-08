@@ -1,7 +1,7 @@
 # Backend TS Build Boundary Decision Prep
 
 Status: decision resolved by `Private Core Package Import Boundary V1`
-Last updated: 2026-05-06
+Last updated: 2026-05-08
 
 ## Why This Exists
 
@@ -9,26 +9,26 @@ The schema island unified-build prep found that adding TS sources to the unified
 
 Two constraints collide:
 
-- TS source files such as `backend/src/routes/schemas/mutations.ts` need normal module resolution for dependencies such as `zod`.
-- Normal module resolution follows `backend/src/ai/bridge.js` into `backend/private_core/sayachan-ai-core`, which is currently outside the approved backend build boundary.
+- TS source files previously included `backend/src/routes/schemas/mutations.ts`, which needed normal module resolution for dependencies such as `zod`. Product request schemas now live in `packages/contracts/src/product.ts`.
+- Normal module resolution previously followed the public private-core bridge into `backend/private_core/sayachan-ai-core`, which is outside the approved backend build boundary.
 
-The current `backend/tsconfig.json` keeps `noResolve: true` as a temporary dry-run guard. That prevents accidental private-core inclusion, but it also prevents the unified backend build from cleanly owning TS sources that need dependency resolution.
+Historical blocker: the earlier `backend/tsconfig.json` kept `noResolve: true` as a temporary dry-run guard. That prevented accidental private-core inclusion, but it also prevented the unified backend build from cleanly owning TS sources that need dependency resolution. Current state: backend normal NodeNext resolution is enabled, backend imports private core through the `@allier/sayachan-ai-core` package boundary, and `backend/private_core/**` remains outside `backend/dist`.
 
 ## Current Facts
 
-- Backend runtime is still source runtime: `node src/server.js`.
-- Backend package remains CommonJS.
-- Unified backend dist build is a dry-run validation path, not production runtime.
-- `backend/src/ai/bridge.js` imports private core through a relative path:
-  - `require('../../private_core/sayachan-ai-core')`
+- Backend runtime is compiled ESM dist runtime: `node dist/server.js`.
+- Backend package is ESM (`"type": "module"`).
+- Unified backend dist build is the production/start runtime path.
+- the backend private-core bridge imports private core through the package boundary:
+  - `@allier/sayachan-ai-core`
 - `backend/private_core/**` is human-gated and must not be silently absorbed into backend dist.
-- Schema and Notes islands still rely on generated/facade scaffolding.
+- Schema and Notes generated/facade scaffolding has been retired.
 
 ## Observed Blockers
 
 Directly adding `mutations.ts` beside `mutations.js` is blocked because both emit to:
 
-- `dist/routes/schemas/mutations.js`
+- `dist/routes/schemas/mutations.js` in the older route-local schema-island plan
 
 Excluding the JS facade and letting the TS source own that dist output requires normal dependency resolution. When normal resolution is enabled, TypeScript follows the backend AI bridge into `backend/private_core/**`, which attempts to emit private-core files and crosses the current architecture boundary.
 
@@ -138,7 +138,7 @@ Resolved on 2026-05-06:
 - keep `backend/private_core/sayachan-ai-core` outside backend dist
 - consume it from backend through the package name `@allier/sayachan-ai-core`
 - represent it as a backend-local file dependency pointing at the existing submodule package
-- reject future regressions back to relative private-core source imports from `backend/src/ai/bridge.js`
+- reject future regressions back to relative private-core source imports from `backend/src/privateCore/bridge.ts`
 
 Implemented by `Private Core Package Import Boundary V1`.
 

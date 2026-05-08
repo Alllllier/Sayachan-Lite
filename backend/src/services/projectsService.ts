@@ -1,26 +1,22 @@
 import type {
   ProjectCreateDto,
   ProjectUpdateDto
-} from '../routes/schemas/mutations.js';
+} from '@sayachan/contracts';
 import type { ObjectId } from '../domain/objectIds.js';
 import {
   buildArchiveFilter,
+  changedOnlyFilter,
   combineFilters,
-  projectTaskRelationFilter
-} from '../domain/tasks/queryFilters.js';
+  type QueryFilter
+} from './queryFilters.js';
 import {
   archiveTasks,
   restoreTasks
-} from '../domain/tasks/cascade.js';
+} from './cascadeService.js';
 import {
   toProjectDto
 } from './responses/productResponses.js';
-import { deriveProjectLifecycleStatus } from '../domain/tasks/lifecycle.js';
-import {
-  ownedFilter,
-  ownerFilter,
-  requireUserId
-} from '../domain/ownership.js';
+import { deriveProjectLifecycleStatus } from '../domain/lifecycle.js';
 import Project from '../models/Project.js';
 import Task from '../models/Task.js';
 
@@ -43,10 +39,8 @@ type ProjectUpdateInput = Omit<ProjectUpdateDto, 'currentFocusTaskId'> & {
   currentFocusTaskId?: ObjectId | null;
 };
 
-type QueryFilter = Record<string, unknown>;
-
 export async function listProjects({ archived, userId }: ListProjectsOptions) {
-  const projects = await Project.find(combineFilters(buildArchiveFilter(archived), ownerFilter(userId)))
+  const projects = await Project.find(combineFilters(buildArchiveFilter(archived), { userId }))
     .sort({ isPinned: -1, pinnedAt: -1, updatedAt: -1 });
   return projects.map(toProjectDto);
 }
@@ -57,7 +51,7 @@ export async function createProject(body: ProjectCreateDto, { userId }: ServiceO
     summary: body.summary,
     status: body.status || 'pending',
     archived: false,
-    userId: requireUserId(userId)
+    userId
   });
 
   return toProjectDto(project);
@@ -80,15 +74,8 @@ export function buildProjectUpdate(body: ProjectUpdateInput): ProjectUpdate {
   return update;
 }
 
-export function changedOnlyFilter(filter: QueryFilter, update: ProjectUpdate): QueryFilter {
-  return {
-    ...filter,
-    $or: Object.entries(update).map(([field, value]) => ({ [field]: { $ne: value } }))
-  };
-}
-
 export async function updateProject(id: ObjectId, body: ProjectUpdateInput, { userId }: ServiceOptions) {
-  const filter = ownedFilter(id, userId);
+  const filter = { _id: id, userId };
   const update = buildProjectUpdate(body);
 
   const project = await Project.findOneAndUpdate(changedOnlyFilter(filter, update), update, { new: true, runValidators: true });
@@ -97,12 +84,12 @@ export async function updateProject(id: ObjectId, body: ProjectUpdateInput, { us
 }
 
 export async function deleteProject(id: ObjectId, { userId }: ServiceOptions) {
-  const project = await Project.findOneAndDelete(ownedFilter(id, userId));
+  const project = await Project.findOneAndDelete({ _id: id, userId });
   return Boolean(project);
 }
 
 export async function pinProject(id: ObjectId, { userId }: ServiceOptions) {
-  const project = await Project.findOneAndUpdate(ownedFilter(id, userId), { isPinned: true, pinnedAt: new Date() }, { new: true, runValidators: true, timestamps: false });
+  const project = await Project.findOneAndUpdate({ _id: id, userId }, { isPinned: true, pinnedAt: new Date() }, { new: true, runValidators: true, timestamps: false });
 
   if (project) {
     console.log(`[Project Pin] "${project.name}" pinned`);
@@ -112,7 +99,7 @@ export async function pinProject(id: ObjectId, { userId }: ServiceOptions) {
 }
 
 export async function unpinProject(id: ObjectId, { userId }: ServiceOptions) {
-  const project = await Project.findOneAndUpdate(ownedFilter(id, userId), { isPinned: false, pinnedAt: null }, { new: true, runValidators: true, timestamps: false });
+  const project = await Project.findOneAndUpdate({ _id: id, userId }, { isPinned: false, pinnedAt: null }, { new: true, runValidators: true, timestamps: false });
 
   if (project) {
     console.log(`[Project Unpin] "${project.name}" unpinned`);
@@ -122,21 +109,22 @@ export async function unpinProject(id: ObjectId, { userId }: ServiceOptions) {
 }
 
 export async function archiveProject(id: ObjectId, { userId }: ServiceOptions) {
-  const project = await Project.findOneAndUpdate(ownedFilter(id, userId), { archived: true }, { new: true, runValidators: true });
+  const project = await Project.findOneAndUpdate({ _id: id, userId }, { archived: true }, { new: true, runValidators: true });
 
   if (!project) {
     return null;
   }
 
   if (project.currentFocusTaskId) {
-    await Project.findOneAndUpdate(ownedFilter(project._id, userId), { currentFocusTaskId: null });
+    await Project.findOneAndUpdate({ _id: project._id, userId }, { currentFocusTaskId: null });
     project.currentFocusTaskId = null;
     console.log(`[Project Archive Shadow] Project "${project.name}" currentFocusTaskId cleared on project archive`);
   }
 
   const modifiedCount = await archiveTasks(Task, {
-    ...projectTaskRelationFilter(id),
-    ...ownerFilter(userId)
+    originModule: 'project',
+    originId: id,
+    userId
   });
 
   console.log(`[Project Archive] Project "${project.name}" archived, ${modifiedCount} tasks cascaded`);
@@ -145,17 +133,18 @@ export async function archiveProject(id: ObjectId, { userId }: ServiceOptions) {
 }
 
 export async function restoreProject(id: ObjectId, { userId }: ServiceOptions) {
-  const existingProject = await Project.findOne(ownedFilter(id, userId));
+  const existingProject = await Project.findOne({ _id: id, userId });
 
-  const project = await Project.findOneAndUpdate(ownedFilter(id, userId), { archived: false, status: deriveProjectLifecycleStatus(existingProject) }, { new: true, runValidators: true });
+  const project = await Project.findOneAndUpdate({ _id: id, userId }, { archived: false, status: deriveProjectLifecycleStatus(existingProject) }, { new: true, runValidators: true });
 
   if (!project) {
     return null;
   }
 
   const modifiedCount = await restoreTasks(Task, {
-    ...projectTaskRelationFilter(id),
-    ...ownerFilter(userId)
+    originModule: 'project',
+    originId: id,
+    userId
   });
 
   console.log(`[Project Restore] Project "${project.name}" restored, ${modifiedCount} tasks cascaded`);

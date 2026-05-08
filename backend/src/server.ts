@@ -1,21 +1,27 @@
 import Koa from 'koa';
 import { connectDB } from './database.js';
 import routes from './routes/index.js';
-import aiRoutes from './routes/ai.js';
 import { errorBoundary } from './middleware/app/errorBoundary.js';
 import dotenv from 'dotenv';
 import cors from '@koa/cors';
 import { bodyParser } from '@koa/bodyparser';
 import { authMiddleware } from './middleware/app/auth.js';
+import { pathToFileURL } from 'url';
 
 dotenv.config();
 
-const app = new Koa();
-const PORT = process.env.PORT || 3001;
+type CreateAppOptions = {
+  corsOrigins?: string[];
+  trustProxy?: boolean;
+};
 
-// Render terminates HTTPS before forwarding requests to the Node process.
-// Trust proxy headers there so Koa can recognize secure requests for cookies.
-app.proxy = process.env.RENDER === 'true' || process.env.TRUST_PROXY === 'true';
+type StartServerOptions = CreateAppOptions & {
+  port?: string | number;
+};
+
+function shouldTrustProxy(): boolean {
+  return process.env.RENDER === 'true' || process.env.TRUST_PROXY === 'true';
+}
 
 function allowedOrigins(): string[] {
   const raw = process.env.FRONTEND_ORIGINS || process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
@@ -25,57 +31,70 @@ function allowedOrigins(): string[] {
     .filter(Boolean);
 }
 
-const corsOrigins = allowedOrigins();
+function createApp(options: CreateAppOptions = {}): Koa {
+  const app = new Koa();
+  const corsOrigins = options.corsOrigins || allowedOrigins();
 
-// CORS 配置，允许前端跨域请求
-app.use(cors({
-  origin: (ctx: Koa.Context) => {
-    const requestOrigin = ctx.get('Origin');
-    if (!requestOrigin) {
-      return corsOrigins[0];
+  // Render terminates HTTPS before forwarding requests to the Node process.
+  // Trust proxy headers there so Koa can recognize secure requests for cookies.
+  app.proxy = options.trustProxy ?? shouldTrustProxy();
+
+  app.use(cors({
+    origin: (ctx: Koa.Context) => {
+      const requestOrigin = ctx.get('Origin');
+      if (!requestOrigin) {
+        return corsOrigins[0];
+      }
+      return corsOrigins.includes(requestOrigin) ? requestOrigin : '';
+    },
+    credentials: true,
+  }));
+
+  // Normalize downstream parser/auth/route failures into stable JSON responses.
+  app.use(errorBoundary);
+
+  app.use(bodyParser());
+
+  // Auth session loader and gate. Public auth/health routes opt out in the middleware.
+  app.use(authMiddleware);
+
+  app.use(routes.routes());
+  app.use(routes.allowedMethods());
+
+  app.use(async (ctx: Koa.Context, next: Koa.Next) => {
+    await next();
+
+    if (ctx.status === 404 && ctx.body === undefined) {
+      ctx.status = 404;
+      ctx.body = { error: 'Not Found' };
     }
-    return corsOrigins.includes(requestOrigin) ? requestOrigin : '';
-  },
-  credentials: true,
-}));
+  });
 
-// Normalize downstream parser/auth/route failures into stable JSON responses.
-app.use(errorBoundary);
+  return app;
+}
 
-// Body parser，处理请求体
-app.use(bodyParser());
+async function startServer(options: StartServerOptions = {}): Promise<void> {
+  const port = options.port || process.env.PORT || 3001;
+  const app = createApp(options);
 
-// Auth session loader and gate. Public auth/health routes opt out in the middleware.
-app.use(authMiddleware);
-
-// 挂载 AI 路由
-app.use(aiRoutes.routes());
-app.use(aiRoutes.allowedMethods());
-
-// 挂载主业务路由
-app.use(routes.routes());
-app.use(routes.allowedMethods());
-
-// 统一 404 处理（最后执行，仅处理真正未匹配的路由）
-app.use(async (ctx: Koa.Context, next: Koa.Next) => {
-  await next();
-
-  // 如果路由没有设置 body，返回 404
-  if (!ctx.body) {
-    ctx.status = 404;
-    ctx.body = { error: 'Not Found' };
-  }
-});
-
-// 启动服务
-async function start(): Promise<void> {
-  // 尝试连接数据库（不阻塞服务启动）
   await connectDB();
 
-  app.listen(PORT, () => {
-    console.log(`Backend server running at http://localhost:${PORT}`);
-    console.log(`Health check available at http://localhost:${PORT}/health`);
+  app.listen(port, () => {
+    console.log(`Backend server running at http://localhost:${port}`);
+    console.log(`Health check available at http://localhost:${port}/health`);
+    console.log(`Readiness check available at http://localhost:${port}/ready`);
   });
 }
 
-start().catch(console.error);
+function isEntrypoint(): boolean {
+  return Boolean(process.argv[1]) && import.meta.url === pathToFileURL(process.argv[1]).href;
+}
+
+if (isEntrypoint()) {
+  startServer().catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
+
+export { allowedOrigins, createApp, startServer };
