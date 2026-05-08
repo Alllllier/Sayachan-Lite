@@ -13,7 +13,7 @@
     "pretest": "npm --prefix ../packages/contracts run build",
     "test": "vitest run --exclude tests/ui-review/**",
     "pretypecheck": "npm --prefix ../packages/contracts run build",
-    "typecheck": "vue-tsc -p tsconfig.typecheck.json --noEmit",
+    "typecheck": "vue-tsc -p tsconfig.json --noEmit",
     "test:watch": "vitest --exclude tests/ui-review/**",
     "test:ui-review": "playwright test tests/ui-review --reporter=line",
     "test:ui-review:headed": "playwright test tests/ui-review --headed --reporter=line"

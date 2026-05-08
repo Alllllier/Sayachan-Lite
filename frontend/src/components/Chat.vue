@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, nextTick, watch } from 'vue'
-import avatarUrl from '../assets/avator/temp.jpg'
+import avatarUrl from '../assets/avatar/sayachan-avatar.jpg'
 import { useChatFeature } from '../features/chat/useChatFeature.js'
 import { renderMarkdown } from '../utils/markdown.js'
 
