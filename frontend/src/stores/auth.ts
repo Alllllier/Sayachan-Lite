@@ -4,7 +4,7 @@ import type {
   AuthCredentialsDto,
   PublicUserDto,
   RegisterTesterDto
-} from '../types/api-dtos'
+} from '@sayachan/contracts'
 import { clearResourceCache } from '../services/resourceCache'
 import { useChatStore } from './chat'
 import { useCockpitSignals } from './cockpitSignals'

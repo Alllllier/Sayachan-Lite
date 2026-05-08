@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChatFeature } from './useChatFeature.js'
 import { refreshCockpitContext } from '../../services/cockpitContextService'
 import { sendChat } from './chat.api.js'
-import type { ChatMessageDto } from '../../types/api-dtos'
+import type { ChatMessageDto } from '@sayachan/contracts'
 
 const storeMocks = vi.hoisted(() => ({
   chatStore: undefined as ChatStoreMock | undefined,

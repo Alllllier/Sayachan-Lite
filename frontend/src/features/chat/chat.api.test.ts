@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildChatRuntimePayload, sendChat } from './chat.api.js'
-import type { ChatContextDto } from '../../types/api-dtos'
+import type { ChatContextDto } from '@sayachan/contracts'
 
 const emptyContext: ChatContextDto = {
   activeProjectsCount: 0,

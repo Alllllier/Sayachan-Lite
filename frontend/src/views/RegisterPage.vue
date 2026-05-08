@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import type { RegisterTesterDto } from '../types/api-dtos'
+import type { RegisterTesterDto } from '@sayachan/contracts'
 import { useAuthStore } from '../stores/auth'
 import type { AuthStore } from '../stores/auth'
 

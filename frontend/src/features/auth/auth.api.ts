@@ -1,6 +1,6 @@
 import { apiFetch, clearAuthToken, setAuthToken } from '../../services/apiClient'
+import { assertApiResponse } from '../../services/apiResponse'
 import {
-  assertApiResponse,
   authLoginResponseSchema,
   createdInviteSchema,
   ownerSystemStatusSchema,
@@ -8,7 +8,7 @@ import {
   publicInviteSchema,
   publicUserListSchema,
   publicUserSchema
-} from '../../types/api-contracts'
+} from '@sayachan/contracts'
 import type {
   AuthCredentialsDto,
   AuthLoginResponseDto,
@@ -17,7 +17,7 @@ import type {
   PublicInviteDto,
   PublicUserDto,
   RegisterTesterDto
-} from '../../types/api-dtos'
+} from '@sayachan/contracts'
 
 type ApiSchema<T> = Parameters<typeof assertApiResponse<T>>[1]
 

@@ -2,11 +2,11 @@ import { buildTaskPayload, normalizeSavedTask } from './task.rules.js'
 import type { NormalizedTask, TaskApiTask, TaskCreationMode, TaskUpdatePayload } from './task.rules.js'
 
 import { apiFetch, API_BASE } from '../apiClient'
+import { assertApiResponse } from '../apiResponse'
 import {
-  assertApiResponse,
   taskListResponseSchema,
   taskResponseSchema
-} from '../../types/api-contracts'
+} from '@sayachan/contracts'
 
 type FetchTaskListOptions = {
   archived?: boolean

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, reactive, computed } from 'vue'
-import type { ChatConvergenceMode, ChatPersonalityBaseline } from '../types/api-dtos'
+import type { ChatConvergenceMode, ChatPersonalityBaseline } from '@sayachan/contracts'
 
 const LS_BASELINE_KEY = 'sayachan.personalityBaseline'
 const LS_WARMTH_KEY = 'sayachan.warmth'

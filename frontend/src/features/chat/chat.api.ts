@@ -1,15 +1,15 @@
 import { apiFetch, API_BASE } from '../../services/apiClient'
+import { assertApiResponse } from '../../services/apiResponse'
 import {
-  assertApiResponse,
   chatResponseSchema
-} from '../../types/api-contracts'
+} from '@sayachan/contracts'
 import type {
   ChatContextDto,
   ChatMessageDto,
   ChatResponseDto,
   ChatRuntimeControlsDto,
   ChatRuntimePayloadDto
-} from '../../types/api-dtos'
+} from '@sayachan/contracts'
 
 export function buildChatRuntimePayload(
   messages: ChatMessageDto[],

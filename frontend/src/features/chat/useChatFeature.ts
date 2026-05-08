@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import type { ChatContextDto, ChatMessageDto } from '../../types/api-dtos'
+import type { ChatContextDto, ChatMessageDto } from '@sayachan/contracts'
 import { useChatStore } from '../../stores/chat'
 import { useCockpitSignals } from '../../stores/cockpitSignals'
 import { useRuntimeControls } from '../../stores/runtimeControls'

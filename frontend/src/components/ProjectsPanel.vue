@@ -31,7 +31,7 @@ import {
   ItemContent,
   ItemMeta
 } from './ui/list'
-import type { ProjectDto, ProjectStatus } from '../types/api-dtos'
+import type { ProjectDto, ProjectStatus } from '@sayachan/contracts'
 import type { TaskApiTask } from '../services/tasks/task.rules'
 
 type ToastType = 'success' | 'error'

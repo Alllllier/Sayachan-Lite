@@ -1,20 +1,23 @@
 import { apiFetch, API_BASE } from '../../services/apiClient'
+import { assertApiResponse } from '../../services/apiResponse'
+import {
+  projectListResponseSchema,
+  projectNextActionsResponseSchema,
+  projectResponseSchema
+} from '@sayachan/contracts'
 import type {
-  FetchListOptionsDto,
   ProjectCreateDto,
   ProjectDto,
   ProjectNextActionsResponseDto,
   ProjectUpdateDto
-} from '../../types/api-dtos'
-import {
-  assertApiResponse,
-  projectListResponseSchema,
-  projectNextActionsResponseSchema,
-  projectResponseSchema
-} from '../../types/api-contracts'
+} from '@sayachan/contracts'
 
 type ApiSchema<T> = {
   safeParse(value: unknown): { success: true, data: T } | { success: false }
+}
+
+type FetchListOptions = {
+  archived?: boolean
 }
 
 async function parseJsonResponse<T>(
@@ -30,7 +33,7 @@ async function parseJsonResponse<T>(
   return assertApiResponse(await response.json(), schema, responseLabel)
 }
 
-export async function fetchProjects({ archived = false }: FetchListOptionsDto = {}): Promise<ProjectDto[]> {
+export async function fetchProjects({ archived = false }: FetchListOptions = {}): Promise<ProjectDto[]> {
   const url = archived
     ? `${API_BASE}/projects?archived=true`
     : `${API_BASE}/projects`

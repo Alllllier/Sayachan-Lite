@@ -1,6 +1,6 @@
 import { reactive, ref, unref } from 'vue'
 import type { MaybeRef } from 'vue'
-import type { NoteCreateDto, NoteDto } from '../../types/api-dtos'
+import type { NoteCreateDto, NoteDto } from '@sayachan/contracts'
 import { readResourceCache, writeResourceCache } from '../../services/resourceCache.js'
 import { saveTask } from '../../services/tasks/index.js'
 import {

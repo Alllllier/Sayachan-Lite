@@ -11,7 +11,7 @@ import {
   updateProject,
   updateProjectFocus
 } from './projects.api.js'
-import type { ProjectCreateDto, ProjectDto } from '../../types/api-dtos'
+import type { ProjectCreateDto, ProjectDto } from '@sayachan/contracts'
 
 function jsonResponse(body: unknown, ok = true, status = 200): Response {
   return new Response(JSON.stringify(body), {

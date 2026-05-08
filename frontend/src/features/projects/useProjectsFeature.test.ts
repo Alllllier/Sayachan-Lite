@@ -10,7 +10,7 @@ import {
   updateProjectFocus
 } from './projects.api.js'
 import { fetchProjectCardTasks, saveTask } from '../../services/tasks/index.js'
-import type { ProjectDto } from '../../types/api-dtos'
+import type { ProjectDto } from '@sayachan/contracts'
 
 vi.mock('./projects.api.js', () => ({
   archiveProject: vi.fn(),

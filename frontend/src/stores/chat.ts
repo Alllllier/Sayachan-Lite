@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { ChatMessageDto } from '../types/api-dtos'
+import type { ChatMessageDto } from '@sayachan/contracts'
 
 export const useChatStore = defineStore('chat', () => {
   const isOpen = ref(false)

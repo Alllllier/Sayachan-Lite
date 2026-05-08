@@ -1,4 +1,4 @@
-import type { ChatContextDto } from '../../types/api-dtos'
+import type { ChatContextDto } from '@sayachan/contracts'
 
 type ChatBaseline = 'warm' | 'strict' | 'haraguro' | (string & {})
 

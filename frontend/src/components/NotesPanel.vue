@@ -6,7 +6,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import 'highlight.js/styles/github.css'
 import { renderMarkdown } from '../utils/markdown.js'
 import { useNotesFeature } from '../features/notes/useNotesFeature.js'
-import type { NoteDto } from '../types/api-dtos'
+import type { NoteDto } from '@sayachan/contracts'
 import {
   Card,
   CardHeaderRow,

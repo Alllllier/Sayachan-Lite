@@ -1,6 +1,6 @@
 import { ref, unref } from 'vue'
 import type { MaybeRef, Ref } from 'vue'
-import type { ProjectCreateDto, ProjectDto } from '../../types/api-dtos'
+import type { ProjectCreateDto, ProjectDto } from '@sayachan/contracts'
 import { readResourceCache, writeResourceCache } from '../../services/resourceCache.js'
 import type { TaskApiTask } from '../../services/tasks/task.rules.js'
 import { saveTask, fetchProjectCardTasks } from '../../services/tasks/index.js'

@@ -6,7 +6,7 @@ import type {
   OwnerSystemStatusDto,
   PublicInviteDto,
   PublicUserDto
-} from '../types/api-dtos'
+} from '@sayachan/contracts'
 import {
   createInvite,
   disableTester,
