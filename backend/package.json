@@ -12,7 +12,8 @@
     "prebuild:backend": "npm --prefix ../packages/contracts run build",
     "build:backend": "node scripts/cleanBackendDist.cjs && tsc -p tsconfig.json",
     "check:backend-dist-runtime": "npm run build:backend && node scripts/checkBackendDistBuild.cjs && node scripts/smokeBackendDistRuntime.cjs",
-    "bootstrap:owner": "node scripts/bootstrapOwner.mjs"
+    "bootstrap:owner": "node scripts/bootstrapOwner.mjs",
+    "repair:project-task-origin-ids": "node scripts/repairProjectTaskOriginIds.mjs"
   },
   "keywords": [],
   "author": "",
