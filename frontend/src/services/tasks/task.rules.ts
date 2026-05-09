@@ -2,11 +2,7 @@ import type { TaskCreateDto, TaskCreationMode as SharedTaskCreationMode, TaskDto
 
 export type TaskCreationMode = SharedTaskCreationMode
 
-export type TaskProvenance = {
-  creationMode: TaskCreationMode
-  originModule: string
-  originId: string | null
-}
+export type TaskProvenance = Required<Pick<TaskCreateDto, 'creationMode' | 'originModule' | 'originId'>>
 
 export type TaskCreatePayload = TaskCreateDto & TaskProvenance & {
   title: string

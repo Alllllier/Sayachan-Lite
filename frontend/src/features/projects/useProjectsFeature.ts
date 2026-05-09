@@ -146,7 +146,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     if (!Array.isArray(nextProjects)) return
     projects.value = [...nextProjects]
     projects.value.forEach(project => {
-      fetchProjectTasksForCard(project._id)
+      void fetchProjectTasksForCard(project._id)
     })
   }
 
@@ -567,7 +567,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
 
   function setProjectArchiveView(view: string): void {
     showArchived.value = view === 'archived'
-    fetchProjects()
+    void fetchProjects()
   }
 
   return {

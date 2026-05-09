@@ -1,8 +1,8 @@
 # Discussion Batch `discussion_batch_018`
 
 - Topic: `Engineering modernization path after MVP guardrails`
-- Last updated: `2026-05-07`
-- Status: `active`
+- Last updated: `2026-05-09`
+- Status: `stable`
 - Discussion mode: `follow-up`
 
 ## Intake Record
@@ -414,3 +414,26 @@ The Backend TS Quality Gate Cleanup sprint briefly tried `typescript-eslint` typ
 - Backend TypeScript/ESM migration through route/service/model/middleware cleanup and Route Middleware Typing Cleanup produced the frontend migration lessons recorded above. Use them before promoting the next frontend TS candidate.
 - Backend TS Quality Gate Cleanup completed the low-noise lint/guardrail layer and recorded type-aware lint findings as backend-hardening follow-up slices above.
 - `slice-004` through `slice-007` remain discussion-shaped follow-ons until Quality Gate V1, target architecture mapping, or a concrete architecture pressure makes them execution-ready.
+
+## PMO Status Sync `2026-05-09`
+
+- Status: `stable`
+- Code recheck outcome: `The active modernization follow-ups recorded in this batch have mostly landed in code and history reports rather than remaining open discussion work.`
+- Confirmed landed:
+  - `AI Core Public Bridge Contract`
+  - `Product DTO Contract Characterization`
+  - `Product Response Mapper Ownership Split`
+  - `Product Response Field Usage Audit`
+  - `Product Response Whitelist Enforcement`
+  - `AI Product Payload Field Audit`
+  - `AI Context Id Payload Narrowing`
+  - `Route State Accessor Refinement`
+  - backend `recommendedTypeChecked` lint readiness
+  - frontend TypeScript support through `vue-tsc` and root `typecheck:frontend`
+  - frontend `.ts` and `.vue` `recommendedTypeChecked` lint enablement, with the initial three `no-floating-promises` findings corrected and `npm run lint:frontend` passing
+- Remaining PMO meaning: `Do not treat this batch as an active follow-up queue. Future work should open as a new discussion or backlog item only if there is fresh pressure.`
+- Residual optional topics:
+  - `Stricter semantic ESLint expansion beyond recommendedTypeChecked`
+  - `Package workspace tooling review if npm --prefix plus packages/contracts stops being enough`
+  - `Use-case-specific product response mappers or task provenance tightening if a concrete API/product pressure appears`
+  - `No-type scaffolding audit if future TypeScript work proposes deleting helper/rules/normalizer layers`

@@ -141,7 +141,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
   function handleKeydown(event: ChatKeydownEvent) {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
-      handleSend()
+      void handleSend()
     }
   }
 

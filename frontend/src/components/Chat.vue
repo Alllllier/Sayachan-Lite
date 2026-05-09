@@ -12,7 +12,7 @@ const personalityBaselineOptions: PersonalityBaselineOption[] = ['warm', 'strict
 const convergenceModeOptions: ConvergenceModeOption[] = ['explore', 'guided', 'decisive']
 
 function scrollToBottom(): void {
-  nextTick(() => {
+  void nextTick(() => {
     const el = messageListRef.value
     if (el) {
       el.scrollTop = el.scrollHeight

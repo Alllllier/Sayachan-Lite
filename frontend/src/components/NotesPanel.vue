@@ -265,8 +265,8 @@ function generateNoteTasks(note: NoteDto): Promise<void> {
 }
 
 onMounted(() => {
-  fetchNotes()
-  nextTick(() => {
+  void fetchNotes()
+  void nextTick(() => {
     if (newEditorRef.value) {
       newEditorView.value = createCodeMirror(newEditorRef.value, '', (val) => {
         form.value.content = val

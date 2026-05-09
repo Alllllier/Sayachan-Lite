@@ -6,8 +6,7 @@ import type { ObjectId } from '../domain/objectIds.js';
 import {
   buildArchiveFilter,
   changedOnlyFilter,
-  combineFilters,
-  type QueryFilter
+  combineFilters
 } from './queryFilters.js';
 import {
   archiveTasks,

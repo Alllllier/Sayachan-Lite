@@ -2,23 +2,26 @@ import Router, { type RouterMiddleware } from '@koa/router';
 import mongoose from 'mongoose';
 
 const router = new Router();
+type HealthHandler = RouterMiddleware;
 
 function dbStatus(): 'connected' | 'disconnected' {
   return mongoose.connection.readyState === mongoose.ConnectionStates.connected ? 'connected' : 'disconnected';
 }
 
 // GET /health
-router.get('/health', ((ctx) => {
+const healthHandler: HealthHandler = (ctx) => {
   ctx.body = {
     status: 'ok',
     service: 'backend',
     timestamp: new Date().toISOString(),
     db: dbStatus()
   };
-}) as RouterMiddleware);
+};
+
+router.get('/health', healthHandler);
 
 // GET /ready
-router.get('/ready', ((ctx) => {
+const readyHandler: HealthHandler = (ctx) => {
   const db = dbStatus();
   const ready = db === 'connected';
 
@@ -29,6 +32,8 @@ router.get('/ready', ((ctx) => {
     timestamp: new Date().toISOString(),
     db
   };
-}) as RouterMiddleware);
+};
+
+router.get('/ready', readyHandler);
 
 export default router;

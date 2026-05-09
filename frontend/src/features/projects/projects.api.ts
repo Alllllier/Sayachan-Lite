@@ -1,5 +1,5 @@
 import { apiFetch, API_BASE } from '../../services/apiClient'
-import { assertApiResponse } from '../../services/apiResponse'
+import { parseApiJsonResponse } from '../../services/apiResponse'
 import {
   projectListResponseSchema,
   projectNextActionsResponseSchema,
@@ -12,25 +12,8 @@ import type {
   ProjectUpdateDto
 } from '@sayachan/contracts'
 
-type ApiSchema<T> = {
-  safeParse(value: unknown): { success: true, data: T } | { success: false }
-}
-
 type FetchListOptions = {
   archived?: boolean
-}
-
-async function parseJsonResponse<T>(
-  response: Response,
-  errorMessage: string,
-  schema: ApiSchema<T>,
-  responseLabel: string
-): Promise<T> {
-  if (!response.ok) {
-    throw new Error(errorMessage || `Project request failed: ${response.status}`)
-  }
-
-  return assertApiResponse(await response.json(), schema, responseLabel)
 }
 
 export async function fetchProjects({ archived = false }: FetchListOptions = {}): Promise<ProjectDto[]> {
@@ -38,7 +21,7 @@ export async function fetchProjects({ archived = false }: FetchListOptions = {})
     ? `${API_BASE}/projects?archived=true`
     : `${API_BASE}/projects`
   const response = await apiFetch(url)
-  return parseJsonResponse<ProjectDto[]>(response, 'Fetch projects failed', projectListResponseSchema, 'projects list')
+  return parseApiJsonResponse<ProjectDto[]>(response, 'Fetch projects failed', projectListResponseSchema, 'projects list')
 }
 
 export async function createProject(project: ProjectCreateDto): Promise<ProjectDto> {
@@ -48,7 +31,7 @@ export async function createProject(project: ProjectCreateDto): Promise<ProjectD
     body: JSON.stringify(project)
   })
 
-  return parseJsonResponse<ProjectDto>(response, 'Create project failed', projectResponseSchema, 'project')
+  return parseApiJsonResponse<ProjectDto>(response, 'Create project failed', projectResponseSchema, 'project')
 }
 
 export async function updateProject(projectId: string, project: ProjectUpdateDto): Promise<ProjectDto> {
@@ -58,7 +41,7 @@ export async function updateProject(projectId: string, project: ProjectUpdateDto
     body: JSON.stringify(project)
   })
 
-  return parseJsonResponse<ProjectDto>(response, 'Update project failed', projectResponseSchema, 'project')
+  return parseApiJsonResponse<ProjectDto>(response, 'Update project failed', projectResponseSchema, 'project')
 }
 
 export async function deleteProject(projectId: string): Promise<void> {
@@ -103,7 +86,7 @@ export async function fetchProjectNextActions(projectId: string): Promise<Projec
     body: JSON.stringify({ _id: projectId })
   })
 
-  return parseJsonResponse<ProjectNextActionsResponseDto>(
+  return parseApiJsonResponse<ProjectNextActionsResponseDto>(
     response,
     'Fetch project next actions failed',
     projectNextActionsResponseSchema,

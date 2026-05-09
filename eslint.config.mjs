@@ -9,6 +9,18 @@ const lowNoiseRules = {
   'no-unused-vars': 'off'
 };
 
+const frontendTypeAwareLowNoiseRules = {
+  '@typescript-eslint/no-base-to-string': 'off',
+  '@typescript-eslint/no-redundant-type-constituents': 'off',
+  '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+  '@typescript-eslint/no-unsafe-argument': 'off',
+  '@typescript-eslint/no-unsafe-assignment': 'off',
+  '@typescript-eslint/no-unsafe-member-access': 'off',
+  '@typescript-eslint/no-unsafe-return': 'off',
+  '@typescript-eslint/require-await': 'off',
+  '@typescript-eslint/unbound-method': 'off'
+};
+
 export default [
   {
     ignores: [
@@ -69,7 +81,9 @@ export default [
       parser: tseslint.parser,
       parserOptions: {
         ecmaVersion: 'latest',
-        sourceType: 'module'
+        sourceType: 'module',
+        projectService: true,
+        tsconfigRootDir: process.cwd()
       },
       globals: {
         ...globals.browser,
@@ -82,13 +96,16 @@ export default [
     rules: {
       ...js.configs.recommended.rules,
       ...tseslint.configs.recommended.at(-1).rules,
+      ...tseslint.configs.recommendedTypeChecked.at(-1).rules,
       ...lowNoiseRules,
+      ...frontendTypeAwareLowNoiseRules,
       '@typescript-eslint/no-unused-vars': 'off'
     }
   },
   {
     files: ['frontend/src/**/*.vue'],
     plugins: {
+      '@typescript-eslint': tseslint.plugin,
       vue
     },
     languageOptions: {
@@ -98,7 +115,10 @@ export default [
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
-        parser: tseslint.parser
+        parser: tseslint.parser,
+        projectService: true,
+        tsconfigRootDir: process.cwd(),
+        extraFileExtensions: ['.vue']
       },
       globals: {
         ...globals.browser,
@@ -111,8 +131,12 @@ export default [
     processor: vue.processors['.vue'],
     rules: {
       ...js.configs.recommended.rules,
+      ...tseslint.configs.recommended.at(-1).rules,
+      ...tseslint.configs.recommendedTypeChecked.at(-1).rules,
       ...vue.configs['flat/essential'].at(-1).rules,
       ...lowNoiseRules,
+      ...frontendTypeAwareLowNoiseRules,
+      '@typescript-eslint/no-unused-vars': 'off',
       'vue/multi-word-component-names': 'off'
     }
   },

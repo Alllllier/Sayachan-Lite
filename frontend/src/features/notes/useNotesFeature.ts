@@ -347,7 +347,7 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
 
   function setArchiveView(view: string): void {
     showArchived.value = view === 'archived'
-    fetchNotes()
+    void fetchNotes()
   }
 
   async function handleAIGenerateTasks(note: EditableNote): Promise<void> {
