@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, reactive, onMounted, nextTick, watch } from 'vue'
-import { basicSetup } from 'codemirror'
-import { EditorView, type ViewUpdate } from '@codemirror/view'
-import { markdown } from '@codemirror/lang-markdown'
+import { EditorView, drawSelection, highlightSpecialChars, keymap, type ViewUpdate } from '@codemirror/view'
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
+import { defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language'
+import { markdown, markdownKeymap } from '@codemirror/lang-markdown'
 import 'highlight.js/styles/github.css'
 import { renderMarkdown } from '../utils/markdown.js'
 import { useNotesFeature } from '../features/notes/useNotesFeature.js'
@@ -152,8 +153,19 @@ function createCodeMirror(parent: HTMLElement, initialValue: string, onChange: (
   return new EditorView({
     doc: initialValue || '',
     extensions: [
-      basicSetup,
-      markdown(),
+      history(),
+      drawSelection(),
+      highlightSpecialChars(),
+      markdown({
+        addKeymap: false,
+        completeHTMLTags: false
+      }),
+      syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+      keymap.of([
+        ...markdownKeymap,
+        ...defaultKeymap,
+        ...historyKeymap
+      ]),
       EditorView.lineWrapping,
       EditorView.theme({
         '&': {
