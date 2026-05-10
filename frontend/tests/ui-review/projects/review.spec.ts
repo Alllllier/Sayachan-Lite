@@ -64,7 +64,7 @@ test.describe('Projects UI review', () => {
     await page.locator('.collection-capture-overlay').click({ position: { x: 10, y: 10 } })
     await expect(page.getByRole('dialog', { name: 'New Project' })).toHaveCount(0)
 
-    await pinnedCard.getByRole('button', { name: /展开全部 \(4\)|展开详情/ }).first().click()
+    await pinnedCard.getByRole('button', { name: /Show all \(4\)|Expand details/ }).first().click()
     await expect(pinnedCard.getByText('Schedule final polish pass for the project browser baseline')).toBeVisible()
     await captureProjectsReviewState(page, 'projects-active-expanded-task-preview')
 
@@ -73,7 +73,7 @@ test.describe('Projects UI review', () => {
     await expect(pinnedCard.getByText('Completed copy review for the pinned project summary')).toBeVisible()
     await captureProjectsReviewState(page, 'projects-completed-task-preview-filter')
 
-    await pinnedCard.getByRole('button', { name: /展开全部 \(4\)|展开详情/ }).last().click()
+    await pinnedCard.getByRole('button', { name: /Show all \(4\)|Expand details/ }).last().click()
     await expect(pinnedCard.getByText('Archived follow-up beyond collapsed preview')).toBeVisible()
     await captureProjectsReviewState(page, 'projects-active-archived-task-preview-expanded')
 

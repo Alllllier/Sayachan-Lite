@@ -4,11 +4,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { installDashboardReviewApiMocks } from './api-mocks.js'
+import { useUiReviewLocale } from '../locale.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const screenshotDir = path.join(__dirname, 'screenshots')
 
 export async function openDashboardReview(page: Page, options = {}): Promise<void> {
+  await useUiReviewLocale(page, 'en')
   await installDashboardReviewApiMocks(page, options)
   await page.goto('/dashboard')
   await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible()

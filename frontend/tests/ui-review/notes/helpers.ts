@@ -4,11 +4,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { installNotesReviewApiMocks } from './api-mocks.js'
+import { useUiReviewLocale } from '../locale.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const screenshotDir = path.join(__dirname, 'screenshots')
 
 export async function openNotesReview(page: Page): Promise<void> {
+  await useUiReviewLocale(page, 'en')
   await installNotesReviewApiMocks(page)
   await page.goto('/notes')
   await expect(page.getByRole('heading', { name: /Notes \(\d+\)/ })).toBeVisible()

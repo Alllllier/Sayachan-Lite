@@ -4,11 +4,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { installChatReviewApiMocks } from './api-mocks.js'
+import { useUiReviewLocale } from '../locale.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const screenshotDir = path.join(__dirname, 'screenshots')
 
 export async function openChatReview(page: Page, options = {}): Promise<{ releaseCockpit: () => void, releaseChat: () => void }> {
+  await useUiReviewLocale(page, 'en')
   const controls = await installChatReviewApiMocks(page, options)
   await page.goto('/dashboard')
   await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible()
@@ -38,9 +40,9 @@ export function chatBody(page: Page): Locator {
 }
 
 export function chatInput(page: Page): Locator {
-  return page.getByPlaceholder(/说点什么/)
+  return page.getByPlaceholder('Say something...')
 }
 
 export function sendButton(page: Page): Locator {
-  return page.getByRole('button', { name: /^(Send|Thinking|准备中)$/ })
+  return page.getByRole('button', { name: /^(Send|Thinking|Preparing|准备中)$/ })
 }

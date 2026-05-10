@@ -4,11 +4,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { installProjectsReviewApiMocks } from './api-mocks.js'
+import { useUiReviewLocale } from '../locale.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const screenshotDir = path.join(__dirname, 'screenshots')
 
 export async function openProjectsReview(page: Page): Promise<void> {
+  await useUiReviewLocale(page, 'en')
   await installProjectsReviewApiMocks(page)
   await page.goto('/projects')
   await expect(page.getByRole('heading', { name: /Projects \(\d+\)/ })).toBeVisible()
