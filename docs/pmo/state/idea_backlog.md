@@ -172,21 +172,6 @@ Validation reliability, browser-specific defects, test harness shape, and comman
 - Suggested next action: `Do not promote until reproducible. If it returns, shape a narrow Mobile Bottom Fixed Safe-Area Baseline slice covering App bottom nav, Chat, and Toast together, with Android Chrome real-device validation.`
 - Reopen trigger: `The visual/hit-test mismatch is observed again, mobile QA can reproduce it, or future work changes bottom-fixed surfaces or safe-area handling.`
 
-### `Broad UI Review Residual Failures`
-
-- Type: `cleanup`
-- Source: `execution report`
-- Source reference: `CardCollection Command Slot And Notes Capture Modal closeout on 2026-05-10`
-- Problem / Opportunity: `During Notes capture-modal validation, an attempted broad UI review run executed unrelated suites and surfaced two non-Notes failures: Chat desktop shell waiting for .chat-popup after opening chat, and Dashboard desktop saved-task review waiting for the Show less button. The selected Notes UI review path passed, so these failures did not block the Notes sprint, but they should not remain only inside the archived execution report.`
-- Additional note: `Frontend Chinese UI Copy Baseline later added a focused no-screenshot UI-copy smoke path and intentionally skipped the broad screenshot-oriented UI review to avoid screenshot churn. Existing screenshot artifacts may still reflect older English chrome and should be refreshed only in a deliberate validation slice.`
-- Additional note: `Account Settings Entry V1 focused validation passed, but full repo npm run check later reached the broad UI-review layer and failed because multiple non-auth specs still expect English headings while the app default and Chinese smoke path render Chinese UI. This reinforces that future broad UI-review cleanup should make locale setup explicit per spec instead of relying on implicit defaults.`
-- Why now: `Broad UI review reliability affects future confidence when UI changes need cross-surface validation, even when focused surface review can pass through grep filtering.`
-- Current status: `parked`
-- Dependencies: `A later validation/tooling cleanup window or a future sprint that touches Chat, Dashboard, or broad UI review invocation behavior.`
-- Risks / unknowns: `The failures may be fixture/timing/script-targeting issues rather than product regressions. Fixing them casually during an unrelated product sprint could create screenshot churn or mask the real cause.`
-- Suggested next action: `Later, run a narrow UI review maintenance pass that reproduces the Chat and Dashboard failures, decides whether they are test timing, fixture drift, or real UI behavior changes, refreshes Chinese-first screenshot/assertion baselines if PMO still treats those artifacts as review truth, and repairs only the affected review paths.`
-- Reopen trigger: `A future broad UI review run still fails on Chat or Dashboard, a sprint needs full UI review confidence, or Chat/Dashboard work touches the failing states.`
-
 ### `Reusable UI Review Harness Helpers`
 
 - Type: `cleanup`
