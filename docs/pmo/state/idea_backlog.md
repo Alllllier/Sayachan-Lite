@@ -30,31 +30,9 @@
 
 ## Active Entries
 
-### `Broad UI Review Residual Failures`
+### Lane: Product Surface
 
-- Type: `cleanup`
-- Source: `execution report`
-- Source reference: `CardCollection Command Slot And Notes Capture Modal closeout on 2026-05-10`
-- Problem / Opportunity: `During Notes capture-modal validation, an attempted broad UI review run executed unrelated suites and surfaced two non-Notes failures: Chat desktop shell waiting for .chat-popup after opening chat, and Dashboard desktop saved-task review waiting for the Show less button. The selected Notes UI review path passed, so these failures did not block the Notes sprint, but they should not remain only inside the archived execution report.`
-- Why now: `Broad UI review reliability affects future confidence when UI changes need cross-surface validation, even when focused surface review can pass through grep filtering.`
-- Current status: `parked`
-- Dependencies: `A later validation/tooling cleanup window or a future sprint that touches Chat, Dashboard, or broad UI review invocation behavior.`
-- Risks / unknowns: `The failures may be fixture/timing/script-targeting issues rather than product regressions. Fixing them casually during an unrelated product sprint could create screenshot churn or mask the real cause.`
-- Suggested next action: `Later, run a narrow UI review maintenance pass that reproduces the Chat and Dashboard failures, decides whether they are test timing, fixture drift, or real UI behavior changes, and repairs only the affected review paths.`
-- Reopen trigger: `A future broad UI review run still fails on Chat or Dashboard, a sprint needs full UI review confidence, or Chat/Dashboard work touches the failing states.`
-
-### `Backend Test Harness And Route Suite Cleanup`
-
-- Type: `cleanup`
-- Source: `audit`
-- Source reference: `Backend server entrypoint cleanup on 2026-05-08`
-- Problem / Opportunity: `Backend tests now cover useful route contracts, behavior locks, account isolation, DTOs, database startup, and app wiring, but helper code such as createCtx, createDoc, withPatchedMethods, and requestKoaApp is repeated across files. The largest route contract file also mixes multiple concerns that could be easier to maintain if split by app wiring, route contracts, validation, behavior side effects, and account isolation.`
-- Why now: `The new createApp server boundary makes app-level HTTP tests easier without importing the process entrypoint, so future backend test cleanup can reduce duplication without changing runtime behavior.`
-- Current status: `parked`
-- Dependencies: `A small maintenance window that can extract shared backend test helpers and split the largest route suite without weakening behavior coverage.`
-- Risks / unknowns: `Over-extracting too early could hide test intent behind generic helpers. The useful first pass should keep helpers small and preserve the current dist-runtime test path.`
-- Suggested next action: `Later, shape a backend test harness cleanup slice: extract tiny shared helpers, move app-level HTTP checks to server.app tests, and split routes.contract-baseline only along existing behavioral boundaries.`
-- Reopen trigger: `Backend tests become noisy to extend, another route/runtime cleanup touches duplicated helpers, or a human explicitly wants backend test maintainability work.`
+Product-facing ideas and UI surface consistency topics that may become user-visible feature or polish sprints.
 
 ### `Companion-Like Dashboard Day-Phase Rhythm Cue`
 
@@ -66,19 +44,6 @@
 - Dependencies: `A clearer day-phase model for Sayachan, including how many phases a day should have, where rough boundaries sit, how each phase should feel, whether any minimal ambient support should sit beneath the text-led cue, and what broader product settings / preference entry should control the cue.`
 - Risks / unknowns: `The cue could still become too managerial, too poetic, too vague to orient, or too visually assertive for the dashboard. The exact balance between lived-time language and explicit time facts is still unresolved, and the feature may feel companion-like for some users but pressure-inducing for others if it ships without user control.`
 - Suggested next action: `Continue the active discussion by defining the day-phase structure, emotional texture, and user-control model first, then reassess whether the cue is stable enough for a bounded dashboard design slice.`
-
-### `Sayachan Dev-Mode Self-Knowledge Boundary`
-
-- Type: `future-lab`
-- Source: `discussion`
-- Source reference: `docs/_legacy_pmo/state/discussion_batches/discussion_batch_001.md theme-003`
-- Problem / Opportunity: `Sayachan may eventually participate more directly in her own development workflow, but that would likely require a development-only self-knowledge surface containing selected architecture and product context. The opportunity is to let Sayachan reason with a bounded internal map of her own system without collapsing production behavior and development scaffolding into the same runtime path.`
-- Why now: `This idea has already been important enough to preserve once, and keeping it in formal PMO state prevents it from remaining trapped in a legacy clustered batch. It also marks a real future-lab direction for AI-assisted development even though the shape is still far from execution-ready.`
-- Current status: `parked`
-- Dependencies: `A clearer decision on whether dev-mode self-knowledge should exist at all, what minimal architecture context would be included, how the knowledge source would be mounted or refreshed, and what hard separation would exist between development-only context and any production-facing runtime path.`
-- Risks / unknowns: `This could blur the boundary between tool support and runtime identity, leak unstable internal architecture into the wrong execution surfaces, or create unsafe assumptions about what Sayachan 'knows' about herself. The hot-pluggable knowledge shape, trust model, update discipline, and developer-only enforcement boundary are all still unresolved.`
-- Suggested next action: `Reopen this as a bounded architecture discussion focused first on whether a dev-only self-knowledge layer should exist, then define the smallest safe boundary before discussing implementation shape.`
-- Reopen trigger: `A human explicitly wants to explore Sayachan's development-mode self-knowledge or dev-only architecture memory boundary.`
 
 ### `Creation And List-Surface Interaction Consistency`
 
@@ -106,6 +71,36 @@
 - Suggested next action: `Reopen this item when Sayachan is ready for a bounded style-refresh discussion that covers rendered note identity and other higher-level presentation surfaces together.`
 - Reopen trigger: `A human explicitly decides to start or discuss a broader Sayachan style refresh rather than a narrow Notes comfort fix.`
 
+### `Account Settings And User Menu Polish`
+
+- Type: `feature`
+- Source: `discussion`
+- Source reference: `Human note on 2026-05-04 after owner/tester auth became usable in deployed app`
+- Problem / Opportunity: `The current top user bar is intentionally minimal and now feels a little rough after the auth flow became usable. The product likely wants a lightweight account/settings surface where logout, account identity, role/status, and later account controls can live without making the main app header carry too much UI weight.`
+- Why now: `Auth is now functional enough that repeated use exposes the navigation and account-management polish gap, but the main login/session chain is already working and should not be reopened just to beautify the header.`
+- Current status: `parked`
+- Dependencies: `A later small product/UI slice that decides the minimal settings scope, whether owner management links belong inside settings or remain as a separate owner route, and how much of the top user bar should collapse into an account menu.`
+- Risks / unknowns: `If scoped too broadly, this could sprawl into password changes, email verification, session management, and admin settings before those capabilities are needed. If ignored too long, logout/account identity will keep feeling like scaffolding instead of product UI.`
+- Suggested next action: `Later, shape a narrow Account Settings / user-menu polish sprint: create a settings/account page for identity and logout, move the top bar toward a cleaner account menu, and leave password/email/session-management expansion as explicit future scope.`
+- Reopen trigger: `A human wants to polish auth/account UI, user testing shows logout/account identity confusion, or future auth capabilities need a natural settings home.`
+
+### Lane: Engineering Cleanup
+
+Codebase, runtime, dependency, typing, and production-hardening cleanup that should not be mixed into product feature sprints.
+
+### `Backend Test Harness And Route Suite Cleanup`
+
+- Type: `cleanup`
+- Source: `audit`
+- Source reference: `Backend server entrypoint cleanup on 2026-05-08`
+- Problem / Opportunity: `Backend tests now cover useful route contracts, behavior locks, account isolation, DTOs, database startup, and app wiring, but helper code such as createCtx, createDoc, withPatchedMethods, and requestKoaApp is repeated across files. The largest route contract file also mixes multiple concerns that could be easier to maintain if split by app wiring, route contracts, validation, behavior side effects, and account isolation.`
+- Why now: `The new createApp server boundary makes app-level HTTP tests easier without importing the process entrypoint, so future backend test cleanup can reduce duplication without changing runtime behavior.`
+- Current status: `parked`
+- Dependencies: `A small maintenance window that can extract shared backend test helpers and split the largest route suite without weakening behavior coverage.`
+- Risks / unknowns: `Over-extracting too early could hide test intent behind generic helpers. The useful first pass should keep helpers small and preserve the current dist-runtime test path.`
+- Suggested next action: `Later, shape a backend test harness cleanup slice: extract tiny shared helpers, move app-level HTTP checks to server.app tests, and split routes.contract-baseline only along existing behavioral boundaries.`
+- Reopen trigger: `Backend tests become noisy to extend, another route/runtime cleanup touches duplicated helpers, or a human explicitly wants backend test maintainability work.`
+
 ### `Frontend And Backend Dependency Hygiene Refresh`
 
 - Type: `cleanup`
@@ -118,19 +113,6 @@
 - Risks / unknowns: `Refreshing dependencies too casually could destabilize a currently working stack, but leaving them unattended for too long increases drift, validation confusion, and environment mismatch risk. The right scope boundary between 'clarify invocation' and 'actually upgrade versions' is still open.`
 - Suggested next action: `Later, shape this into a bounded maintenance pass that first audits frontend and backend dependency age, repo-native script coverage, and the safest upgrade candidates before any broad version bumping starts.`
 - Reopen trigger: `A human explicitly wants a tooling/dependency maintenance sprint, or repeated validation/tooling confusion starts appearing across frontend or backend execution work.`
-
-### `Reusable UI Review Harness Helpers`
-
-- Type: `cleanup`
-- Source: `execution report`
-- Source reference: `Restore Notes UI Review Path sprint follow-up; docs/pmo/state/discussions/discussion_batch_015.md; PMO recheck after Notes/Projects/Dashboard/Chat UI review baselines completed`
-- Problem / Opportunity: `Notes, Projects, Dashboard, and Chat now share a consistent folder shape for UI review files: fixtures, api-mocks, helpers, review spec, and screenshots. The actual reusable code remains thin, mostly screenshot directory/capture helpers and small JSON response helpers. Surface navigation, locators, mock state, route semantics, and review interactions remain intentionally surface-specific.`
-- Why now: `After completing four UI review surfaces, PMO can make a clearer call: forcing a harness now would mostly add indirection without reducing much risk. The useful standard is currently a folder/file convention and reporting policy, not a shared framework.`
-- Current status: `parked`
-- Dependencies: `At least one future UI review expansion that repeats the same screenshot/capture, mock response, or route-composition code enough to make the abstraction pay for itself.`
-- Risks / unknowns: `Extracting now would likely overfit to shallow helper names while hiding surface-specific behavior in a generic layer. Waiting too long could still let tiny helper duplication drift, but the current duplication is readable and low-risk.`
-- Suggested next action: `Do not promote this now. Keep the existing surface-local helpers. If another UI review surface or second-pass expansion creates repeated capture or mock plumbing, extract only a tiny shared utility such as createScreenshotCapture(), json(), and maybe a route-fail helper; keep fixtures, locators, navigation, and interaction helpers surface-local.`
-- Reopen trigger: `A future UI review pass repeats the same nontrivial helper code across at least three surfaces, screenshot/capture behavior diverges in a way that causes review artifact inconsistency, or route mock boilerplate starts creating real maintenance mistakes.`
 
 ### `Frontend Bundle Weight Review`
 
@@ -158,32 +140,6 @@
 - Suggested next action: `Before broader deployment or public launch, shape a narrow bootstrap hardening pass that protects first-owner creation without turning auth into a broad admin system.`
 - Reopen trigger: `A human prepares external deployment beyond trusted friend testing, public hosting, or production-like setup.`
 
-### `Account Settings And User Menu Polish`
-
-- Type: `feature`
-- Source: `discussion`
-- Source reference: `Human note on 2026-05-04 after owner/tester auth became usable in deployed app`
-- Problem / Opportunity: `The current top user bar is intentionally minimal and now feels a little rough after the auth flow became usable. The product likely wants a lightweight account/settings surface where logout, account identity, role/status, and later account controls can live without making the main app header carry too much UI weight.`
-- Why now: `Auth is now functional enough that repeated use exposes the navigation and account-management polish gap, but the main login/session chain is already working and should not be reopened just to beautify the header.`
-- Current status: `parked`
-- Dependencies: `A later small product/UI slice that decides the minimal settings scope, whether owner management links belong inside settings or remain as a separate owner route, and how much of the top user bar should collapse into an account menu.`
-- Risks / unknowns: `If scoped too broadly, this could sprawl into password changes, email verification, session management, and admin settings before those capabilities are needed. If ignored too long, logout/account identity will keep feeling like scaffolding instead of product UI.`
-- Suggested next action: `Later, shape a narrow Account Settings / user-menu polish sprint: create a settings/account page for identity and logout, move the top bar toward a cleaner account menu, and leave password/email/session-management expansion as explicit future scope.`
-- Reopen trigger: `A human wants to polish auth/account UI, user testing shows logout/account identity confusion, or future auth capabilities need a natural settings home.`
-
-### `Repo-Native Claude Launch From PMO`
-
-- Type: `cleanup`
-- Source: `discussion`
-- Source reference: `Human discussion on 2026-04-19 about using PowerShell to launch Claude from the current PMO handoff`
-- Problem / Opportunity: `Codex PMO already writes repo-native execution contracts, but starting Claude execution still depends on a manual human bridge. A future repo-native launcher path could let PMO start Claude from PowerShell against the current `execution_task.md`, while still keeping `execution_report.md` as the formal return surface.`
-- Why now: `The current Codex -> PMO -> Claude loop is working, but repeated manual launching is still a visible source of friction. The environment already exposes a callable Claude CLI, so the idea is practical enough to keep visible even if we are not implementing it now.`
-- Current status: `parked`
-- Dependencies: `A later bounded workflow pass that confirms the safest Claude CLI invocation pattern, how the launcher should target the active repo-native handoff, and how to preserve report-writing discipline without replacing PMO review.`
-- Risks / unknowns: `If automated too early, this could create a brittle launcher flow or blur the line between PMO activation, execution, and report review. It also depends on the Claude CLI being stable enough for predictable PowerShell-driven execution.`
-- Suggested next action: `Later, evaluate a minimal launcher shape where PMO starts Claude from PowerShell using the active `execution_task.md`, keeps `execution_report.md` as the only formal return surface, and avoids introducing a second unofficial execution channel.`
-- Reopen trigger: `A human explicitly wants to prototype or formalize a PowerShell-based Claude launch path from PMO.`
-
 ### `Task Project Note Behavior-Locked Simplification Pass`
 
 - Type: `cleanup`
@@ -197,6 +153,64 @@
 - Suggested next action: `Later, shape this into a test-driven refactor sprint: first capture the currently intended behavior in targeted tests, then simplify the implementation toward the smallest code that still passes that behavior suite, and finally rerun the same tests as the acceptance gate.`
 - Reopen trigger: `A human explicitly wants a behavior-locked simplification pass for note/project/task, or future changes make this area feel too risky to touch without stronger test coverage and cleanup.`
 
+
+
+### `Frontend Strict Type-Aware ESLint Expansion`
+
+- Type: `cleanup`
+- Source: `audit`
+- Source reference: `Post-TS scaffolding tail cleanup and frontend type-aware lint probe on 2026-05-09`
+- Problem / Opportunity: `Frontend .ts and .vue files now run a low-noise type-aware ESLint layer with recommendedTypeChecked enabled but selected high-noise semantic rules disabled. A probe that re-enabled the full recommendedTypeChecked rule set reported 65 frontend errors, mostly from test mocks, runtime unknown/JSON.parse boundaries, resource/cache/cockpit context guards, literal-union widening, and external Vue/plugin type friction. This is useful signal, but too noisy to turn on as the default gate without a bounded cleanup pass.`
+- Why now: `The frontend TypeScript migration is complete enough that stricter semantic lint can reveal real boundary debt. The first low-noise pass already kept high-signal no-floating-promises findings, so the remaining stricter rules can be treated as a future quality-hardening pass rather than blocking daily validation now.`
+- Current status: `parked`
+- Dependencies: `A bounded future maintenance window; agreement on whether strict rules apply to production code first, tests separately, or both; decision on which rules should be fixed versus permanently disabled for frontend runtime-boundary and mock-heavy surfaces.`
+- Risks / unknowns: `Turning every strict semantic rule on at once would force test mock typing, runtime guard design, localStorage/cache shape validation, external plugin typing, and product code cleanup into one noisy slice. Some findings are useful and should be fixed, while others may remain better as rule overrides for tests or trusted library boundaries.`
+- Suggested next action: `Later, shape a Frontend Strict Type-Aware ESLint Cleanup slice: first group the current 65 findings by rule and surface, then fix low-risk production-code issues such as literal-union widening and cache key typing, add narrow guards for genuine unknown boundaries, and separately decide test/mock overrides before considering stricter rules in the default frontend lint gate.`
+- Reopen trigger: `A human explicitly wants stricter frontend semantic lint, future frontend type regressions slip past vue-tsc plus low-noise lint, or frontend runtime-boundary work touches resource cache, cockpit context, API parsing, or test mock infrastructure.`
+
+### Lane: Validation & Tooling
+
+Validation reliability, browser-specific defects, test harness shape, and command-policy issues.
+
+### `Mobile Fixed Bottom Hit-Test Drift`
+
+- Type: `bug`
+- Source: `discussion`
+- Source reference: `Human observed intermittent Android Chrome mobile behavior on 2026-05-10`
+- Problem / Opportunity: `On Android Chrome, the browser may intermittently move or visually retract bottom-fixed app surfaces such as the bottom navigation and global Chat button while leaving their pointer hit-test positions at the original layout location. When this happens, the visible Chat button cannot be clicked, while tapping where it used to be still works; the bottom nav can also be visually hidden while its original hit area still switches pages. This appears related to Chrome Android dynamic bottom chin / edge-to-edge viewport behavior interacting with fixed bottom elements.`
+- Why now: `The issue is intermittent and stopped reproducing during discussion, but when it appears it is a real mobile usability defect rather than a harmless browser visual effect. Capturing it prevents the diagnosis from being lost without forcing a premature fix.`
+- Current status: `parked`
+- Dependencies: `A stable reproduction on Android Chrome, or a future mobile validation pass touching App bottom navigation, Chat, Toast, or fixed-bottom safe-area behavior.`
+- Risks / unknowns: `The exact trigger may depend on Chrome version, Android gesture navigation mode, viewport/chin state, scroll direction, and whether the page has dynamic viewport edge-to-edge behavior. A premature safe-area rewrite could disturb currently acceptable mobile layout without proving it fixes the hit-test drift.`
+- Suggested next action: `Do not promote until reproducible. If it returns, shape a narrow Mobile Bottom Fixed Safe-Area Baseline slice covering App bottom nav, Chat, and Toast together, with Android Chrome real-device validation.`
+- Reopen trigger: `The visual/hit-test mismatch is observed again, mobile QA can reproduce it, or future work changes bottom-fixed surfaces or safe-area handling.`
+
+### `Broad UI Review Residual Failures`
+
+- Type: `cleanup`
+- Source: `execution report`
+- Source reference: `CardCollection Command Slot And Notes Capture Modal closeout on 2026-05-10`
+- Problem / Opportunity: `During Notes capture-modal validation, an attempted broad UI review run executed unrelated suites and surfaced two non-Notes failures: Chat desktop shell waiting for .chat-popup after opening chat, and Dashboard desktop saved-task review waiting for the Show less button. The selected Notes UI review path passed, so these failures did not block the Notes sprint, but they should not remain only inside the archived execution report.`
+- Why now: `Broad UI review reliability affects future confidence when UI changes need cross-surface validation, even when focused surface review can pass through grep filtering.`
+- Current status: `parked`
+- Dependencies: `A later validation/tooling cleanup window or a future sprint that touches Chat, Dashboard, or broad UI review invocation behavior.`
+- Risks / unknowns: `The failures may be fixture/timing/script-targeting issues rather than product regressions. Fixing them casually during an unrelated product sprint could create screenshot churn or mask the real cause.`
+- Suggested next action: `Later, run a narrow UI review maintenance pass that reproduces the Chat and Dashboard failures, decides whether they are test timing, fixture drift, or real UI behavior changes, and repairs only the affected review paths.`
+- Reopen trigger: `A future broad UI review run still fails on Chat or Dashboard, a sprint needs full UI review confidence, or Chat/Dashboard work touches the failing states.`
+
+### `Reusable UI Review Harness Helpers`
+
+- Type: `cleanup`
+- Source: `execution report`
+- Source reference: `Restore Notes UI Review Path sprint follow-up; docs/pmo/state/discussions/discussion_batch_015.md; PMO recheck after Notes/Projects/Dashboard/Chat UI review baselines completed`
+- Problem / Opportunity: `Notes, Projects, Dashboard, and Chat now share a consistent folder shape for UI review files: fixtures, api-mocks, helpers, review spec, and screenshots. The actual reusable code remains thin, mostly screenshot directory/capture helpers and small JSON response helpers. Surface navigation, locators, mock state, route semantics, and review interactions remain intentionally surface-specific.`
+- Why now: `After completing four UI review surfaces, PMO can make a clearer call: forcing a harness now would mostly add indirection without reducing much risk. The useful standard is currently a folder/file convention and reporting policy, not a shared framework.`
+- Current status: `parked`
+- Dependencies: `At least one future UI review expansion that repeats the same screenshot/capture, mock response, or route-composition code enough to make the abstraction pay for itself.`
+- Risks / unknowns: `Extracting now would likely overfit to shallow helper names while hiding surface-specific behavior in a generic layer. Waiting too long could still let tiny helper duplication drift, but the current duplication is readable and low-risk.`
+- Suggested next action: `Do not promote this now. Keep the existing surface-local helpers. If another UI review surface or second-pass expansion creates repeated capture or mock plumbing, extract only a tiny shared utility such as createScreenshotCapture(), json(), and maybe a route-fail helper; keep fixtures, locators, navigation, and interaction helpers surface-local.`
+- Reopen trigger: `A future UI review pass repeats the same nontrivial helper code across at least three surfaces, screenshot/capture behavior diverges in a way that causes review artifact inconsistency, or route mock boilerplate starts creating real maintenance mistakes.`
+
 ### `Npx Validation Fallback Rules`
 
 - Type: `cleanup`
@@ -208,6 +222,23 @@
 - Risks / unknowns: `If the rule stays too strict, workers lose safe fallback options when scripts drift or break. If it becomes too loose, validation discipline will erode and repo-native paths will stop mattering. The right split between `npx` as forbidden bypass and `npx` as explicit fallback still needs careful treatment.`
 - Suggested next action: `Later, run a bounded workflow discussion focused specifically on `npx` validation rules, with separate treatment for backend test execution, frontend unit-test execution, and browser/UI review flows.`
 - Reopen trigger: `A human explicitly wants to refine validation-command policy, or another sprint is blocked or distorted by unclear `npx` fallback rules.`
+
+### Lane: PMO / Workflow
+
+PMO operating model, worker interface, policy extraction, and execution-loop improvements.
+
+### `Repo-Native Claude Launch From PMO`
+
+- Type: `cleanup`
+- Source: `discussion`
+- Source reference: `Human discussion on 2026-04-19 about using PowerShell to launch Claude from the current PMO handoff`
+- Problem / Opportunity: `Codex PMO already writes repo-native execution contracts, but starting Claude execution still depends on a manual human bridge. A future repo-native launcher path could let PMO start Claude from PowerShell against the current `execution_task.md`, while still keeping `execution_report.md` as the formal return surface.`
+- Why now: `The current Codex -> PMO -> Claude loop is working, but repeated manual launching is still a visible source of friction. The environment already exposes a callable Claude CLI, so the idea is practical enough to keep visible even if we are not implementing it now.`
+- Current status: `parked`
+- Dependencies: `A later bounded workflow pass that confirms the safest Claude CLI invocation pattern, how the launcher should target the active repo-native handoff, and how to preserve report-writing discipline without replacing PMO review.`
+- Risks / unknowns: `If automated too early, this could create a brittle launcher flow or blur the line between PMO activation, execution, and report review. It also depends on the Claude CLI being stable enough for predictable PowerShell-driven execution.`
+- Suggested next action: `Later, evaluate a minimal launcher shape where PMO starts Claude from PowerShell using the active `execution_task.md`, keeps `execution_report.md` as the only formal return surface, and avoids introducing a second unofficial execution channel.`
+- Reopen trigger: `A human explicitly wants to prototype or formalize a PowerShell-based Claude launch path from PMO.`
 
 ### `Execution Skills Formalization And Worker Decoupling`
 
@@ -234,15 +265,19 @@
 - Suggested next action: `Later, run a bounded policy-layer audit that classifies current PMO rules into policy, protocol, operator guide, tool documentation, or decision-log homes, then promote only the highest-value repeated rules into policies.`
 - Reopen trigger: `A human explicitly wants a PMO policy-layer audit, PMO rules keep being rediscovered across workflow docs, or new automation makes the policy/protocol/tool boundary feel unclear again.`
 
-### `Frontend Strict Type-Aware ESLint Expansion`
+### Lane: Future Lab
 
-- Type: `cleanup`
-- Source: `audit`
-- Source reference: `Post-TS scaffolding tail cleanup and frontend type-aware lint probe on 2026-05-09`
-- Problem / Opportunity: `Frontend .ts and .vue files now run a low-noise type-aware ESLint layer with recommendedTypeChecked enabled but selected high-noise semantic rules disabled. A probe that re-enabled the full recommendedTypeChecked rule set reported 65 frontend errors, mostly from test mocks, runtime unknown/JSON.parse boundaries, resource/cache/cockpit context guards, literal-union widening, and external Vue/plugin type friction. This is useful signal, but too noisy to turn on as the default gate without a bounded cleanup pass.`
-- Why now: `The frontend TypeScript migration is complete enough that stricter semantic lint can reveal real boundary debt. The first low-noise pass already kept high-signal no-floating-promises findings, so the remaining stricter rules can be treated as a future quality-hardening pass rather than blocking daily validation now.`
+Speculative architecture/product ideas that are intentionally not near-term execution candidates.
+
+### `Sayachan Dev-Mode Self-Knowledge Boundary`
+
+- Type: `future-lab`
+- Source: `discussion`
+- Source reference: `docs/_legacy_pmo/state/discussion_batches/discussion_batch_001.md theme-003`
+- Problem / Opportunity: `Sayachan may eventually participate more directly in her own development workflow, but that would likely require a development-only self-knowledge surface containing selected architecture and product context. The opportunity is to let Sayachan reason with a bounded internal map of her own system without collapsing production behavior and development scaffolding into the same runtime path.`
+- Why now: `This idea has already been important enough to preserve once, and keeping it in formal PMO state prevents it from remaining trapped in a legacy clustered batch. It also marks a real future-lab direction for AI-assisted development even though the shape is still far from execution-ready.`
 - Current status: `parked`
-- Dependencies: `A bounded future maintenance window; agreement on whether strict rules apply to production code first, tests separately, or both; decision on which rules should be fixed versus permanently disabled for frontend runtime-boundary and mock-heavy surfaces.`
-- Risks / unknowns: `Turning every strict semantic rule on at once would force test mock typing, runtime guard design, localStorage/cache shape validation, external plugin typing, and product code cleanup into one noisy slice. Some findings are useful and should be fixed, while others may remain better as rule overrides for tests or trusted library boundaries.`
-- Suggested next action: `Later, shape a Frontend Strict Type-Aware ESLint Cleanup slice: first group the current 65 findings by rule and surface, then fix low-risk production-code issues such as literal-union widening and cache key typing, add narrow guards for genuine unknown boundaries, and separately decide test/mock overrides before considering stricter rules in the default frontend lint gate.`
-- Reopen trigger: `A human explicitly wants stricter frontend semantic lint, future frontend type regressions slip past vue-tsc plus low-noise lint, or frontend runtime-boundary work touches resource cache, cockpit context, API parsing, or test mock infrastructure.`
+- Dependencies: `A clearer decision on whether dev-mode self-knowledge should exist at all, what minimal architecture context would be included, how the knowledge source would be mounted or refreshed, and what hard separation would exist between development-only context and any production-facing runtime path.`
+- Risks / unknowns: `This could blur the boundary between tool support and runtime identity, leak unstable internal architecture into the wrong execution surfaces, or create unsafe assumptions about what Sayachan 'knows' about herself. The hot-pluggable knowledge shape, trust model, update discipline, and developer-only enforcement boundary are all still unresolved.`
+- Suggested next action: `Reopen this as a bounded architecture discussion focused first on whether a dev-only self-knowledge layer should exist, then define the smallest safe boundary before discussing implementation shape.`
+- Reopen trigger: `A human explicitly wants to explore Sayachan's development-mode self-knowledge or dev-only architecture memory boundary.`
