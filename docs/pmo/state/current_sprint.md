@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Frontend Chinese UI Copy Baseline`
+- Sprint: `Notes Projects Sticky Header Offset Fix`
 - Closeout date: `2026-05-10`
 - Delivery status: `completed and validated`
 - Commit state: `pending repository commit`
 - Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `future Settings language switch / persistence remains in discussion_batch_020; Chinese-first broad UI review screenshot refresh is parked as validation follow-up`
-- Report surface: `docs/pmo/history/reports/frontend-chinese-ui-copy-baseline.md`
+- Residual note: `none`
+- Report surface: `docs/pmo/history/reports/notes-projects-sticky-header-offset-fix.md`
 
 ## Next PMO Action
 

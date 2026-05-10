@@ -746,7 +746,7 @@ async function submitProjectCapture(): Promise<void> {
 <style scoped>
 .projects-collection :deep(.card-collection-header) {
   position: sticky;
-  top: 56px;
+  top: 0;
   z-index: 40;
   padding: var(--space-md);
   background: color-mix(in srgb, var(--surface-panel) 84%, transparent);
@@ -994,13 +994,6 @@ async function submitProjectCapture(): Promise<void> {
   :deep(.list-item--current) .focus-badge {
     display: none;
   }
-}
-
-@media (max-width: 640px) {
-  .projects-collection :deep(.card-collection-header) {
-    top: 56px;
-  }
-
 }
 
 .project-edit-form {

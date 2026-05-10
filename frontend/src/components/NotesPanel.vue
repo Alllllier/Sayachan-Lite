@@ -637,7 +637,7 @@ async function updateNote(note: NoteDto): Promise<void> {
 
 .notes-collection :deep(.card-collection-header) {
   position: sticky;
-  top: 56px;
+  top: 0;
   z-index: 40;
   padding: var(--space-md);
   background: color-mix(in srgb, var(--surface-panel) 84%, transparent);
@@ -724,10 +724,4 @@ async function updateNote(note: NoteDto): Promise<void> {
   gap: var(--space-sm);
 }
 
-@media (max-width: 640px) {
-  .notes-collection :deep(.card-collection-header) {
-    top: 56px;
-  }
-
-}
 </style>

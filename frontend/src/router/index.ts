@@ -31,6 +31,10 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/ProjectsPage.vue')
   },
   {
+    path: '/settings',
+    component: () => import('../views/SettingsPage.vue')
+  },
+  {
     path: '/owner',
     component: () => import('../views/OwnerPage.vue'),
     meta: { ownerOnly: true }

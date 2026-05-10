@@ -24,6 +24,15 @@
 
 ## Recorded Decisions
 
+### `Account settings entry starts as normal-user bottom navigation`
+
+- Date: `2026-05-10`
+- Type: `approved`
+- Scope: `frontend app shell, account/settings entry, tester experience, owner management access`
+- Decision: `The first account/settings entry should live in the bottom main navigation as Settings rather than repeating a settings link on every page. The Settings page should not show owner/tester role badges; tester accounts should feel like normal user accounts. Owner-only capability can appear as a management entry visible only to owners.`
+- Reason: `Settings is a global app function rather than page-local content, so the main navigation is the clearest first placement after removing the top user bar. Hiding role labels keeps tester experience aligned with real-user experience while still allowing owner-only management access when relevant.`
+- Follow-up: `If bottom navigation becomes crowded or Settings feels too prominent after use, reopen entry placement as a separate UI-shell discussion.`
+
 ### `AI product generation requests use context ids instead of product response objects`
 
 - Date: `2026-05-07`

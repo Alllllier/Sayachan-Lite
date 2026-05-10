@@ -4,8 +4,10 @@ import {
   openLoginReview,
   openOwnerReview,
   openRegisterReview,
+  openSettingsReview,
   ownerCard
 } from './helpers.js'
+import { ownerUser } from './fixtures.js'
 
 test.describe('Auth and Owner UI review', () => {
   test('captures Login default and invalid-credentials states', async ({ page }) => {
@@ -49,7 +51,6 @@ test.describe('Auth and Owner UI review', () => {
 
     await openOwnerReview(page)
 
-    await expect(page.getByText('owner-review@example.com')).toBeVisible()
     await expect(ownerCard(page, 'System status')).toContainText('Users')
     await expect(ownerCard(page, 'System status')).toContainText('3')
     await expect(ownerCard(page, 'Invites')).toContainText('ABCD...WXYZ')
@@ -69,9 +70,39 @@ test.describe('Auth and Owner UI review', () => {
 
     await openOwnerReview(page)
 
-    await expect(page.getByText('owner-review@example.com')).toBeVisible()
     await expect(ownerCard(page, 'Invites')).toContainText('ABCD...WXYZ')
     await expect(ownerCard(page, 'Tester accounts')).toContainText('tester-review@example.com')
     await captureAuthReviewState(page, 'auth-owner-management-mobile')
+  })
+
+  test('captures Settings normal account state, locale switch, and logout', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+
+    await openSettingsReview(page)
+
+    await expect(page.getByText('tester-review@example.com')).toBeVisible()
+    await expect(page.getByRole('link', { name: '进入管理' })).toHaveCount(0)
+    await expect(page.getByText(/^tester$/i)).toHaveCount(0)
+    await expect(page.getByRole('link', { name: '设置' })).toBeVisible()
+    await captureAuthReviewState(page, 'auth-settings-normal-zh-desktop')
+
+    await page.getByRole('button', { name: 'English' }).click()
+    await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible()
+    await captureAuthReviewState(page, 'auth-settings-normal-en-desktop')
+
+    await page.getByRole('button', { name: 'Logout' }).click()
+    await expect(page.getByRole('heading', { name: 'Log in', level: 1 })).toBeVisible()
+  })
+
+  test('captures Settings owner management entry', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+
+    await openSettingsReview(page, { currentUser: ownerUser })
+
+    await expect(page.getByText('owner-review@example.com')).toBeVisible()
+    await expect(page.getByRole('link', { name: '进入管理' })).toBeVisible()
+    await expect(page.getByText(/^owner$/i)).toHaveCount(0)
+    await captureAuthReviewState(page, 'auth-settings-owner-zh-desktop')
   })
 })

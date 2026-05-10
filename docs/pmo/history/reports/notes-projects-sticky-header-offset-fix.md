@@ -1,0 +1,27 @@
+# Notes Projects Sticky Header Offset Fix
+
+- Archived date: `2026-05-10`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Notes Projects Sticky Header Offset Fix`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Updated Notes collection sticky header offset from the removed top-user-bar height to the viewport top.
+  - Updated Projects collection sticky header offset from the removed top-user-bar height to the viewport top.
+  - Removed now-redundant mobile overrides that preserved the stale `56px` offset.
+  - Kept the change scoped to Notes/Projects panel styling only.
+- Validation summary:
+  - `npm run typecheck` from `frontend/`: passed.
+  - `npm run lint` from `frontend/`: passed.
+  - `rg -n "top:\s*56px|card-collection-header\).*top" frontend/src/components/NotesPanel.vue frontend/src/components/ProjectsPanel.vue`: no stale offset matches.
+- Project-specific review summary:
+  - Required for this micro-fix: `no`
+  - Performed: `code/CSS review only`
+  - Reason: `The change is a narrow stale-offset removal for existing sticky headers after top bar removal.`
+- Unverified areas:
+  - Browser visual inspection was not rerun in this micro-fix pass.
+  - Existing broad UI-review locale drift remains outside this micro-fix scope.
+- Residual risks or escalations:
+  - If the product later adds another top app chrome surface, Notes/Projects sticky offset should be revisited as a shell-level token rather than hard-coded per page.
+- Documentation-sync outcome: `reviewed, no update needed`
+- Follow-up routing:
+  - None.

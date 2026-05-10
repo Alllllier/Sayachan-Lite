@@ -13,6 +13,17 @@ const zh: CopyDictionary = {
   'nav.notes': '笔记',
   'nav.dashboard': '看板',
   'nav.projects': '项目',
+  'nav.settings': '设置',
+
+  'settings.title': '设置',
+  'settings.accountSection': '账号',
+  'settings.emailLabel': '当前账号',
+  'settings.languageSection': '语言',
+  'settings.languageControl': '产品语言',
+  'settings.languageZh': '中文',
+  'settings.languageEn': 'English',
+  'settings.managementSection': '管理',
+  'settings.managementEntry': '进入管理',
 
   'common.actions': '操作',
   'common.active': '进行中',
@@ -196,6 +207,17 @@ const en: CopyDictionary = {
   'nav.notes': 'Notes',
   'nav.dashboard': 'Dashboard',
   'nav.projects': 'Projects',
+  'nav.settings': 'Settings',
+
+  'settings.title': 'Settings',
+  'settings.accountSection': 'Account',
+  'settings.emailLabel': 'Current account',
+  'settings.languageSection': 'Language',
+  'settings.languageControl': 'Product language',
+  'settings.languageZh': '中文',
+  'settings.languageEn': 'English',
+  'settings.managementSection': 'Management',
+  'settings.managementEntry': 'Open management',
 
   'common.actions': 'Actions',
   'common.active': 'Active',
@@ -375,7 +397,22 @@ const en: CopyDictionary = {
 
 export const dictionaries: Record<Locale, CopyDictionary> = { zh, en }
 
-const currentLocale = ref<Locale>('zh')
+const LOCALE_STORAGE_KEY = 'sayachan_product_locale'
+
+function getStorage(): Storage | undefined {
+  try {
+    return globalThis.localStorage
+  } catch {
+    return undefined
+  }
+}
+
+function readStoredLocale(): Locale {
+  const storedLocale = getStorage()?.getItem(LOCALE_STORAGE_KEY)
+  return isSupportedLocale(storedLocale) ? storedLocale : 'zh'
+}
+
+const currentLocale = ref<Locale>(readStoredLocale())
 
 export const locale = computed(() => currentLocale.value)
 
@@ -389,6 +426,7 @@ export function isSupportedLocale(value: unknown): value is Locale {
 
 export function setLocale(value: Locale): void {
   currentLocale.value = value
+  getStorage()?.setItem(LOCALE_STORAGE_KEY, value)
 }
 
 export function t(key: string, params?: CopyParams): string {

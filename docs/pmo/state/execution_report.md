@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Frontend Chinese UI Copy Baseline`
+- Sprint: `Notes Projects Sticky Header Offset Fix`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/frontend-chinese-ui-copy-baseline.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/notes-projects-sticky-header-offset-fix.md`
 
 ## Next Use
 

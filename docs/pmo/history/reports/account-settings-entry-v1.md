@@ -1,0 +1,42 @@
+# Account Settings Entry V1
+
+- Archived date: `2026-05-10`
+- PMO closeout result: `completed with focused validation`
+- Source sprint: `Account Settings Entry V1`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Removed the authenticated fixed top user bar from the app shell and removed its top-padding dependency.
+  - Added Settings as the fourth authenticated bottom navigation item.
+  - Added a protected `/settings` route and `SettingsPage.vue`.
+  - Settings page shows the current account email, a local zh/en language control, logout, and an owner-only link to the existing owner management route.
+  - Logout on Settings uses the existing auth store and routes back to `/login`.
+  - `productLocale` now persists selected locale in frontend local storage only.
+  - Added focused locale persistence unit coverage and auth/settings UI-review coverage for normal-user settings, owner settings, locale switching, and logout.
+  - Updated owner UI-review expectations/screenshots for the removed top user bar.
+  - Out-of-scope confirmation: no backend auth/session/settings model changes, password settings, verification settings, session-management settings, account-persisted settings schema/API, role badges, or owner-admin redesign were added.
+- Validation summary:
+  - `npm run typecheck` from `frontend/`: passed.
+  - `npm run lint` from `frontend/`: passed.
+  - `npm run test` from `frontend/`: passed, 22 files / 134 tests.
+  - `npm exec -- playwright test tests/ui-review/auth/review.spec.ts --reporter=line` from `frontend/`: passed, 6 tests.
+  - `npm run test:ui-copy-smoke` from `frontend/`: passed, 4 tests.
+  - `npm run build` from `frontend/`: passed.
+  - `npm run check` from repo root: partially ran; contracts build, lint, frontend typecheck, backend dist runtime check, frontend tests, and backend tests passed before the full UI-review layer failed on pre-existing broader review expectations that look for English headings while the app default and Chinese smoke render Chinese headings.
+- Project-specific review summary:
+  - Required for this sprint: `yes`
+  - Performed: `yes`
+  - If performed, reviewed surfaces or states:
+    - Authenticated normal-user Settings page with account email, no owner entry, no tester role label, and Settings bottom navigation.
+    - Locale switch from zh to en with visible Settings heading/nav copy update.
+    - Logout from Settings returning to Login.
+    - Authenticated owner Settings page with account email, owner-only management entry, and no owner role badge.
+    - Existing owner management desktop/mobile UI-review states after top user bar removal.
+  - If skipped, why skipping was acceptable: `n/a`
+- Unverified areas:
+  - Full repo `npm run check` remains unverified because the broad UI-review suite failed after the focused settings/auth review passed. The observed failures were in dashboard/chat/notes/projects UI-review helpers expecting English headings such as `Dashboard`, `Notes (...)`, and `Projects (...)` while the rendered app default was Chinese.
+- Residual risks or escalations:
+  - Broader UI-review expectations may need a separate cleanup pass to make locale setup explicit per spec, especially now that locale is locally persisted.
+  - Settings page intentionally uses frontend-local locale persistence only; account-synced language preferences remain deferred.
+- Documentation-sync outcome: `reviewed, no update needed`
+- Follow-up routing:
+  - PMO/human should decide whether to schedule a dedicated UI-review locale-baseline cleanup so English-review specs and Chinese smoke specs do not compete over implicit default locale assumptions.

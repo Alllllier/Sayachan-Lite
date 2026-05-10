@@ -3,7 +3,7 @@ import type { Locator, Page } from '@playwright/test'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { ownerUser } from './fixtures.js'
+import { ownerUser, testerUser } from './fixtures.js'
 import { installAuthReviewApiMocks } from './api-mocks.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -26,6 +26,12 @@ export async function openOwnerReview(page: Page, options = {}): Promise<void> {
   await page.goto('/owner')
   await expect(page.getByRole('heading', { name: 'Management', level: 1 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'System status' })).toBeVisible()
+}
+
+export async function openSettingsReview(page: Page, options = {}): Promise<void> {
+  await installAuthReviewApiMocks(page, { currentUser: testerUser, ...options })
+  await page.goto('/settings')
+  await expect(page.getByRole('heading', { name: '设置', level: 1 })).toBeVisible()
 }
 
 export async function captureAuthReviewState(page: Page, name: string): Promise<void> {

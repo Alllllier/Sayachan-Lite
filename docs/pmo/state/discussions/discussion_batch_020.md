@@ -2,7 +2,7 @@
 
 - Topic: `Product multilingualization and locale boundary`
 - Last updated: `2026-05-10`
-- Status: `active`
+- Status: `stable`
 - Discussion mode: `exploration`
 
 ## Intake Record
@@ -26,8 +26,8 @@
 
 - Summary: `Define what product multilingualization means for Sayachan before selecting an implementation path.`
 - Why grouped: `UI copy, AI voice, locale formatting, user content, and settings ownership all touch the same user-facing language experience even though they may become separate implementation slices later.`
-- Current focus: `yes - define the product and architecture boundary`
-- Status: `in_focus`
+- Current focus: `no - first productLocale boundary completed`
+- Status: `stable`
 
 ## Possible Slices
 
@@ -82,4 +82,5 @@
 - A narrower first implementation slice is now reasonable: introduce a frontend UI-copy dictionary for tagged/static product text and provide a Chinese UI baseline for friend testing.
 - This first slice should include both Chinese and English dictionaries with a small locale-selection boundary so a future user settings page can wire language switching without rewriting the copy layer.
 - This first slice should explicitly exclude AI response language, user-authored content translation, backend validation i18n, visible account/settings UI, account-persisted language settings, and broad locale/date formatting beyond existing simple labels.
-- The first implementation slice is now complete. Remaining active discussion topics are pre-auth locale behavior for Login/Register, visible language switching in the future Settings surface, persistence ownership, and AI response language preference.
+- The first implementation slice is now complete and discussion_batch_020 is stable as source context.
+- Remaining topics are parked future discussion/sprint material rather than active discussion work: pre-auth locale behavior for Login/Register, visible language switching in the future Settings surface, persistence ownership, and AI response language preference.
