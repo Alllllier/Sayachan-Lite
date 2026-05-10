@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, reactive, onMounted, nextTick, watch } from 'vue'
-import { EditorView, drawSelection, highlightSpecialChars, keymap, type ViewUpdate } from '@codemirror/view'
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-import { defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language'
-import { markdown, markdownKeymap } from '@codemirror/lang-markdown'
+import { computed, ref, reactive, onMounted, nextTick, watch, onUnmounted } from 'vue'
+import type { EditorView as CodeMirrorEditorView, ViewUpdate } from '@codemirror/view'
 import 'highlight.js/styles/github.css'
 import { renderMarkdown } from '../utils/markdown.js'
 import { useNotesFeature } from '../features/notes/useNotesFeature.js'
@@ -16,7 +13,7 @@ import {
   ActionRow,
   ObjectActionArea
 } from './ui/surfaces'
-import { CardCollection } from './ui/shell'
+import { CardCollection, CollectionCaptureSurface } from './ui/shell'
 import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
 import OverflowMenu from './ui/OverflowMenu.vue'
@@ -26,7 +23,18 @@ import type { AuthStore } from '../stores/auth'
 
 type EditableNote = NoteDto & { _id: string }
 type ToastType = 'success' | 'error'
-type EditEditorMap = Record<string, EditorView>
+type EditEditorMap = Record<string, CodeMirrorEditorView>
+type CodeMirrorBundle = {
+  view: typeof import('@codemirror/view')
+  commands: typeof import('@codemirror/commands')
+  language: typeof import('@codemirror/language')
+  markdownModule: typeof import('@codemirror/lang-markdown')
+}
+type IdleWindow = Window & {
+  requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number
+}
+
+let editorBundlePromise: Promise<CodeMirrorBundle> | null = null
 
 const menuOpenNoteId = ref<string | null>(null)
 const auth = useAuthStore() as AuthStore
@@ -37,8 +45,12 @@ const accountCacheKey = computed(() => auth.currentUser?._id || auth.currentUser
 
 // Markdown editor refs
 const newEditorRef = ref<HTMLElement | null>(null)
-const newEditorView = ref<EditorView | null>(null)
+const newTitleRef = ref<HTMLInputElement | null>(null)
+const newEditorView = ref<CodeMirrorEditorView | null>(null)
 const editEditorViews = reactive<EditEditorMap>({})
+const captureOpen = ref(false)
+const editorLoading = ref(false)
+const editorLoadError = ref('')
 
 // Toast notifications
 const toast = ref(false)
@@ -67,6 +79,12 @@ function clearNewEditor(): void {
   newEditorView.value.dispatch({
     changes: { from: 0, to: doc.length, insert: '' }
   })
+}
+
+function destroyNewEditor(): void {
+  if (!newEditorView.value) return
+  newEditorView.value.destroy()
+  newEditorView.value = null
 }
 
 function destroyEditEditor(id: string | null | undefined): void {
@@ -148,8 +166,46 @@ watch(noteDraftStorageKey, () => {
   reloadDrafts()
 })
 
-// CodeMirror factory
-function createCodeMirror(parent: HTMLElement, initialValue: string, onChange: (value: string) => void): EditorView {
+function loadEditorBundle(): Promise<CodeMirrorBundle> {
+  editorBundlePromise ??= Promise.all([
+    import('@codemirror/view'),
+    import('@codemirror/commands'),
+    import('@codemirror/language'),
+    import('@codemirror/lang-markdown')
+  ]).then(([view, commands, language, markdownModule]) => ({
+    view,
+    commands,
+    language,
+    markdownModule
+  }))
+  return editorBundlePromise
+}
+
+function preloadEditorWhenIdle(): void {
+  const preload = () => {
+    void loadEditorBundle().catch(() => {
+      editorBundlePromise = null
+    })
+  }
+  const idleWindow = window as IdleWindow
+  if (idleWindow.requestIdleCallback) {
+    idleWindow.requestIdleCallback(preload, { timeout: 2500 })
+    return
+  }
+  window.setTimeout(preload, 1200)
+}
+
+async function createCodeMirror(
+  parent: HTMLElement,
+  initialValue: string,
+  onChange: (value: string) => void
+): Promise<CodeMirrorEditorView> {
+  const { view, commands, language, markdownModule } = await loadEditorBundle()
+  const { EditorView, drawSelection, highlightSpecialChars, keymap } = view
+  const { defaultKeymap, history, historyKeymap } = commands
+  const { defaultHighlightStyle, syntaxHighlighting } = language
+  const { markdown, markdownKeymap } = markdownModule
+
   return new EditorView({
     doc: initialValue || '',
     extensions: [
@@ -229,17 +285,83 @@ function createCodeMirror(parent: HTMLElement, initialValue: string, onChange: (
   })
 }
 
-function bindEditEditor(el: unknown, note: NoteDto): void {
+async function mountNewEditor(): Promise<void> {
+  await nextTick()
+  const parent = newEditorRef.value
+  if (!parent || newEditorView.value) return
+  editorLoading.value = true
+  editorLoadError.value = ''
+  try {
+    const editor = await createCodeMirror(parent, form.value.content || '', (val) => {
+      form.value.content = val
+    })
+    if (!captureOpen.value || newEditorRef.value !== parent) {
+      editor.destroy()
+      return
+    }
+    newEditorView.value = editor
+  } catch {
+    editorBundlePromise = null
+    editorLoadError.value = 'Editor failed to load. Please try again.'
+  } finally {
+    editorLoading.value = false
+  }
+}
+
+function openCapture(): void {
+  captureOpen.value = true
+  void mountNewEditor()
+  void nextTick(() => {
+    newTitleRef.value?.focus()
+  })
+}
+
+function closeCapture({ reset = false } = {}): void {
+  captureOpen.value = false
+  destroyNewEditor()
+  if (reset) {
+    form.value = { title: '', content: '' }
+    newNoteErrors.value = { title: '', content: '' }
+  }
+}
+
+function cancelCapture(): void {
+  closeCapture({ reset: true })
+}
+
+async function submitNewNote(): Promise<void> {
+  await createNote()
+  if (!newNoteErrors.value.title && !newNoteErrors.value.content && !form.value.title && !form.value.content) {
+    closeCapture()
+  }
+}
+
+async function bindEditEditor(el: unknown, note: NoteDto): Promise<void> {
   const id = noteId(note)
   if (!(el instanceof HTMLElement) || editingId.value !== id) return
   if (editEditorViews[id]) {
     // Already bound; avoid recreating on minor re-renders
     return
   }
-  editEditorViews[id] = createCodeMirror(el, note.content || '', (val) => {
-    note.content = val
-    updateEditNoteError(id, 'content', val)
-  })
+  const parent = el
+  editorLoading.value = true
+  editorLoadError.value = ''
+  try {
+    const editor = await createCodeMirror(parent, note.content || '', (val) => {
+      note.content = val
+      updateEditNoteError(id, 'content', val)
+    })
+    if (editingId.value !== id || editEditorViews[id] || !parent.isConnected) {
+      editor.destroy()
+      return
+    }
+    editEditorViews[id] = editor
+  } catch {
+    editorBundlePromise = null
+    editorLoadError.value = 'Editor failed to load. Please try again.'
+  } finally {
+    editorLoading.value = false
+  }
 }
 
 function startEditing(note: NoteDto): void {
@@ -278,13 +400,12 @@ function generateNoteTasks(note: NoteDto): Promise<void> {
 
 onMounted(() => {
   void fetchNotes()
-  void nextTick(() => {
-    if (newEditorRef.value) {
-      newEditorView.value = createCodeMirror(newEditorRef.value, '', (val) => {
-        form.value.content = val
-      })
-    }
-  })
+  preloadEditorWhenIdle()
+})
+
+onUnmounted(() => {
+  destroyNewEditor()
+  Object.keys(editEditorViews).forEach(destroyEditEditor)
 })
 
 async function updateNote(note: NoteDto): Promise<void> {
@@ -298,44 +419,71 @@ async function updateNote(note: NoteDto): Promise<void> {
 
   <div v-if="error" class="error">{{ error }}</div>
 
-  <div class="form-section">
-    <h2>{{ editingId ? 'Edit Note' : 'New Note' }}</h2>
-    <div class="field-stack">
-      <input
-        v-model="form.title"
-        placeholder="Title"
-        class="input"
-        :class="{ 'is-invalid': newNoteErrors.title }"
-        :disabled="loading"
-        :aria-invalid="Boolean(newNoteErrors.title)"
-        @input="updateNewNoteError('title', form.title)"
-      />
-      <p v-if="newNoteErrors.title" class="field-helper field-helper--error">{{ newNoteErrors.title }}</p>
-    </div>
-    <div class="field-stack">
-      <div
-        ref="newEditorRef"
-        class="codemirror-editor"
-        :class="{
-          'is-invalid': newNoteErrors.content,
-          'is-disabled': loading
-        }"
-      ></div>
-      <p v-if="newNoteErrors.content" class="field-helper field-helper--error">{{ newNoteErrors.content }}</p>
-    </div>
-    <ActionRow>
-      <button @click="createNote" :disabled="loading || Boolean(editingId)" class="btn btn-primary">
-        {{ loading ? 'Saving...' : 'Add Note' }}
-      </button>
-      <button v-if="editingId" @click="cancelEdit()" :disabled="loading" class="btn btn-secondary">
-        Cancel
-      </button>
-    </ActionRow>
-  </div>
+  <CollectionCaptureSurface
+    :open="captureOpen"
+    title="New Note"
+    title-id="note-capture-title"
+    close-label="Close new note"
+    @close="cancelCapture"
+  >
+        <div class="field-stack">
+          <input
+            ref="newTitleRef"
+            v-model="form.title"
+            placeholder="Title"
+            class="input"
+            :class="{ 'is-invalid': newNoteErrors.title }"
+            :disabled="loading"
+            :aria-invalid="Boolean(newNoteErrors.title)"
+            @input="updateNewNoteError('title', form.title)"
+          />
+          <p v-if="newNoteErrors.title" class="field-helper field-helper--error">{{ newNoteErrors.title }}</p>
+        </div>
+        <div class="field-stack">
+          <div
+            ref="newEditorRef"
+            class="codemirror-editor"
+            :class="{
+              'is-invalid': newNoteErrors.content,
+              'is-disabled': loading
+            }"
+          ></div>
+          <p v-if="editorLoading && !newEditorView" class="field-helper">Loading editor...</p>
+          <p v-if="editorLoadError" class="field-helper field-helper--error">{{ editorLoadError }}</p>
+          <p v-if="newNoteErrors.content" class="field-helper field-helper--error">{{ newNoteErrors.content }}</p>
+        </div>
+    <template #actions>
+        <ActionRow>
+          <button type="button" @click="cancelCapture" :disabled="loading" class="btn btn-secondary">
+            Cancel
+          </button>
+          <button
+            type="button"
+            @click="submitNewNote"
+            :disabled="loading || editorLoading || Boolean(editorLoadError) || Boolean(editingId)"
+            class="btn btn-primary"
+          >
+            {{ loading ? 'Saving...' : 'Add Note' }}
+          </button>
+        </ActionRow>
+    </template>
+  </CollectionCaptureSurface>
 
-  <CardCollection>
+  <CardCollection class="notes-collection" embedded>
     <template #title>
       Notes ({{ notes.length }})
+    </template>
+    <template #command>
+      <button
+        type="button"
+        class="btn btn-primary btn-sm note-create-command"
+        aria-label="New note"
+        :disabled="Boolean(editingId)"
+        @click="openCapture"
+      >
+        <span aria-hidden="true">+</span>
+        <span>New</span>
+      </button>
     </template>
     <template #control>
       <SegmentedControl
@@ -398,13 +546,15 @@ async function updateNote(note: NoteDto): Promise<void> {
           </div>
           <div class="field-stack">
             <div
-              :ref="el => bindEditEditor(el, note)"
+              :ref="el => { void bindEditEditor(el, note) }"
               class="codemirror-editor"
               :class="{
                 'is-invalid': editNoteErrors[note._id]?.content,
                 'is-disabled': loading
               }"
             ></div>
+            <p v-if="editorLoading && !editEditorViews[note._id]" class="field-helper">Loading editor...</p>
+            <p v-if="editorLoadError" class="field-helper field-helper--error">{{ editorLoadError }}</p>
             <p v-if="editNoteErrors[note._id]?.content" class="field-helper field-helper--error">
               {{ editNoteErrors[note._id].content }}
             </p>
@@ -471,23 +621,33 @@ async function updateNote(note: NoteDto): Promise<void> {
 </template>
 
 <style scoped>
-/* Legacy creation form: future hover-icon creation flow will replace this area. */
-.form-section {
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-card);
-  padding: var(--space-lg);
-  background: var(--surface-panel);
-}
-
 .codemirror-editor {
   margin-bottom: 0;
+  min-height: 156px;
 }
 
-.form-section h2 {
-  font-size: var(--font-size-title);
-  margin-top: 0;
-  margin-bottom: var(--space-md);
-  color: var(--text-primary);
+.codemirror-editor:empty {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(90deg, transparent 0, transparent 48%, rgba(66, 184, 131, 0.08) 50%, transparent 52%, transparent 100%),
+    var(--surface-card);
+}
+
+.notes-collection :deep(.card-collection-header) {
+  position: sticky;
+  top: 56px;
+  z-index: 40;
+  padding: var(--space-md);
+  background: color-mix(in srgb, var(--surface-panel) 84%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.note-create-command {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 /* Legacy AI task drafts: parked until AI reveal/list cleanup. */
@@ -561,5 +721,12 @@ async function updateNote(note: NoteDto): Promise<void> {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
+}
+
+@media (max-width: 640px) {
+  .notes-collection :deep(.card-collection-header) {
+    top: 56px;
+  }
+
 }
 </style>

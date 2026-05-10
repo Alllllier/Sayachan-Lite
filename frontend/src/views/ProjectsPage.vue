@@ -4,7 +4,7 @@ import { Panel } from '../components/ui/shell'
 </script>
 
 <template>
-  <Panel title="Projects">
+  <Panel>
     <ProjectsPanel />
   </Panel>
 </template>

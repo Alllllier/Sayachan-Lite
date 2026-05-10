@@ -4,21 +4,28 @@ defineOptions({ inheritAttrs: false })
 withDefaults(defineProps<{
   title?: string
   titleTag?: string
+  embedded?: boolean
 }>(), {
   title: '',
-  titleTag: 'h2'
+  titleTag: 'h2',
+  embedded: false
 })
 </script>
 
 <template>
-  <section class="card-collection" v-bind="$attrs">
+  <section class="card-collection" :class="{ 'card-collection--embedded': embedded }" v-bind="$attrs">
     <header
-      v-if="title || $slots.title || $slots.control"
+      v-if="title || $slots.title || $slots.command || $slots.control"
       class="card-collection-header"
     >
-      <component :is="titleTag" class="card-collection-title">
-        <slot name="title">{{ title }}</slot>
-      </component>
+      <div class="card-collection-leading">
+        <component :is="titleTag" class="card-collection-title">
+          <slot name="title">{{ title }}</slot>
+        </component>
+        <div v-if="$slots.command" class="card-collection-command">
+          <slot name="command" />
+        </div>
+      </div>
       <div v-if="$slots.control" class="card-collection-control">
         <slot name="control" />
       </div>
@@ -37,12 +44,26 @@ withDefaults(defineProps<{
   background: var(--surface-panel);
 }
 
+.card-collection--embedded {
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
 .card-collection-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--space-md);
   margin-bottom: var(--space-md);
+}
+
+.card-collection-leading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
 
 .card-collection-title {
@@ -52,6 +73,7 @@ withDefaults(defineProps<{
   color: var(--text-primary);
 }
 
+.card-collection-command,
 .card-collection-control {
   flex-shrink: 0;
 }

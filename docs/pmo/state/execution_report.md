@@ -2,7 +2,7 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-05-07`
+- Last updated: `2026-05-10`
 
 ## Current State
 
@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Route State Accessors And Middleware Folder Split`
+- Sprint: `Collection Page Flush Layout Baseline`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/route-state-accessors-and-middleware-folder-split.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/collection-page-flush-layout-baseline.md`
 
 ## Next Use
 

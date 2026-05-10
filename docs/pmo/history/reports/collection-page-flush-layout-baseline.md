@@ -1,0 +1,58 @@
+# Collection Page Flush Layout Baseline
+
+- Archived date: `2026-05-10`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Collection Page Flush Layout Baseline`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Removed the first-pass `Panel flush` prop/class after PMO/human correction.
+  - Restored Notes and Projects pages to standard base `<Panel>` usage.
+  - Kept the explicit `CardCollection embedded` mode as the final solution for the extra framed/padded collection section.
+    - Default `CardCollection` behavior remains framed/padded for unrelated consumers.
+    - `embedded` removes only the CardCollection root border, radius, padding, and panel background.
+    - Title, command, controls, and body semantics remain unchanged.
+  - Applied `CardCollection embedded` only to Notes and Projects.
+  - Kept Notes/Projects collection-header negative margin and extra padding compensation removed, since the embedded collection root no longer needs that local offset.
+  - Polished the Notes/Projects embedded collection headers so they read as lightweight sticky page-level toolbars:
+    - Removed the local rounded card-cap header styling.
+    - Used `var(--space-md)` padding for readable title/command/control alignment.
+    - Used a translucent `var(--surface-panel)` background via `color-mix(in srgb, var(--surface-panel) 84%, transparent)`.
+    - Kept backdrop blur for the translucent sticky toolbar treatment.
+    - Removed the previous bottom border and did not keep a shadow.
+    - Removed Notes/Projects-only mobile wrapping overrides so embedded collection headers stay on one row on mobile.
+  - Result: Notes and Projects now use `base Panel -> embedded CardCollection -> cards`, rather than `Panel body -> framed CardCollection section -> cards`.
+  - Preserved CardCollection command/control layout, Notes/Projects `+ New` commands, segmented controls, shared `CollectionCaptureSurface`, create capture flows, validation, editor loading, archive/active switching, and card/list behavior.
+  - Refreshed focused Notes and Projects UI review screenshots.
+  - Explicit out-of-scope confirmation: no global Panel padding removal, no global CardCollection visual change, no card/list visual redesign, no global hover icon behavior change, no capture modal/bottom-sheet behavior change, no broad layout framework, and no backend/API behavior change was implemented.
+- Validation summary:
+  - `npm --prefix frontend run typecheck` passed.
+  - `npm --prefix frontend run lint` passed.
+  - `npm --prefix frontend run build` passed.
+  - `npm --prefix frontend run test:ui-review -- --grep "Notes UI review|Projects UI review"` passed: 4 focused UI review tests.
+  - `rg` check over the affected frontend source found no remaining `flush` / `panel--flush` references and no remaining local rounded card-cap header rule for Notes/Projects.
+- Project-specific review summary:
+  - Required for this sprint: `yes`
+  - Performed: `yes`
+  - Reviewed surfaces or states:
+    - Notes desktop active collection layout with base Panel, embedded CardCollection, sticky collection header, `+ New` command, and segmented control.
+    - Projects desktop active collection layout with base Panel, embedded CardCollection, sticky collection header, `+ New` command, and segmented control.
+    - Notes mobile active view with bottom-sheet capture and global Chat button behind the overlay.
+    - Projects mobile active view with bottom-sheet capture and global Chat button behind the overlay.
+    - Refreshed Notes and Projects mobile screenshots were manually reviewed to confirm the collection title, `+ New` command, and segmented control remain on one row.
+    - Refreshed Notes and Projects desktop default screenshots were manually reviewed for the final header polish; headers now show a flat sticky toolbar treatment with `var(--space-md)` padding, translucent panel-token background, no rounded card-cap styling, no bottom border, and no shadow.
+    - Existing Notes create validation/create/cancel, edit/archive/AI review states through focused UI review.
+    - Existing Projects create validation/create/cancel, task preview/task capture/AI/archive review states through focused UI review.
+  - Screenshots refreshed by focused UI review under:
+    - `frontend/tests/ui-review/notes/screenshots/*.png`
+    - `frontend/tests/ui-review/projects/screenshots/*.png`
+- Unverified areas:
+  - Full root `npm run check` was not run. The handoff-requested frontend typecheck, lint, build, and focused Notes/Projects UI review were completed.
+  - Broad UI review was not run as a single suite because this sprint only changes Notes/Projects page-shell and collection framing.
+  - Backend/API behavior was not revalidated because this sprint intentionally did not change backend behavior.
+- Residual risks or escalations:
+  - `CardCollection embedded` is opt-in. Future collection pages will need explicit adoption if they should share this layout baseline.
+  - Notes/Projects passed focused UI review, and other CardCollection consumers keep default framed behavior. Residual visual risk is limited to this opt-in embedded variant.
+- Documentation-sync outcome: `reviewed, no update needed`
+- Follow-up routing:
+  - No architecture escalation is needed for this sprint.
+  - PMO may decide later whether additional collection pages should adopt `CardCollection embedded`.

@@ -30,6 +30,19 @@
 
 ## Active Entries
 
+### `Broad UI Review Residual Failures`
+
+- Type: `cleanup`
+- Source: `execution report`
+- Source reference: `CardCollection Command Slot And Notes Capture Modal closeout on 2026-05-10`
+- Problem / Opportunity: `During Notes capture-modal validation, an attempted broad UI review run executed unrelated suites and surfaced two non-Notes failures: Chat desktop shell waiting for .chat-popup after opening chat, and Dashboard desktop saved-task review waiting for the Show less button. The selected Notes UI review path passed, so these failures did not block the Notes sprint, but they should not remain only inside the archived execution report.`
+- Why now: `Broad UI review reliability affects future confidence when UI changes need cross-surface validation, even when focused surface review can pass through grep filtering.`
+- Current status: `parked`
+- Dependencies: `A later validation/tooling cleanup window or a future sprint that touches Chat, Dashboard, or broad UI review invocation behavior.`
+- Risks / unknowns: `The failures may be fixture/timing/script-targeting issues rather than product regressions. Fixing them casually during an unrelated product sprint could create screenshot churn or mask the real cause.`
+- Suggested next action: `Later, run a narrow UI review maintenance pass that reproduces the Chat and Dashboard failures, decides whether they are test timing, fixture drift, or real UI behavior changes, and repairs only the affected review paths.`
+- Reopen trigger: `A future broad UI review run still fails on Chat or Dashboard, a sprint needs full UI review confidence, or Chat/Dashboard work touches the failing states.`
+
 ### `Backend Test Harness And Route Suite Cleanup`
 
 - Type: `cleanup`

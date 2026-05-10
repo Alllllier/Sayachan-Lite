@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, nextTick } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import type { AuthStore } from '../stores/auth'
 import { useProjectsFeature } from '../features/projects/useProjectsFeature.js'
@@ -19,7 +19,7 @@ import {
   ActionRow,
   ObjectActionArea
 } from './ui/surfaces'
-import { CardCollection } from './ui/shell'
+import { CardCollection, CollectionCaptureSurface } from './ui/shell'
 import Toast from './ui/Toast.vue'
 import EmptyState from './ui/EmptyState.vue'
 import OverflowMenu from './ui/OverflowMenu.vue'
@@ -42,6 +42,8 @@ type StatusLabelMap = Record<ProjectStatus, string>
 type StatusClassMap = Record<ProjectStatus, string>
 
 const menuOpenProjectId = ref<string | null>(null)
+const projectCaptureOpen = ref(false)
+const newProjectNameRef = ref<HTMLInputElement | null>(null)
 const auth = useAuthStore() as AuthStore
 const accountCacheKey = computed(() => auth.currentUser?._id || auth.currentUser?.email || 'anonymous')
 
@@ -322,6 +324,32 @@ async function setProjectFocusTask(project: ProjectDto, task: TaskApiTask): Prom
   await setTaskAsFocus(editableProject(project), task)
 }
 
+function openProjectCapture(): void {
+  projectCaptureOpen.value = true
+  void nextTick(() => {
+    newProjectNameRef.value?.focus()
+  })
+}
+
+function closeProjectCapture({ reset = false } = {}): void {
+  projectCaptureOpen.value = false
+  if (reset) {
+    projectForm.value = { name: '', summary: '', status: 'pending' }
+    projectFormErrors.value = { name: '', summary: '' }
+  }
+}
+
+function cancelProjectCapture(): void {
+  closeProjectCapture({ reset: true })
+}
+
+async function submitProjectCapture(): Promise<void> {
+  await createProject()
+  if (!projectFormErrors.value.name && !projectFormErrors.value.summary && !projectForm.value.name && !projectForm.value.summary) {
+    closeProjectCapture()
+  }
+}
+
 </script>
 
 <template>
@@ -330,9 +358,73 @@ async function setProjectFocusTask(project: ProjectDto, task: TaskApiTask): Prom
 
   <div v-if="error" class="error">{{ error }}</div>
 
-  <CardCollection>
+  <CollectionCaptureSurface
+    :open="projectCaptureOpen"
+    title="New Project"
+    title-id="project-capture-title"
+    close-label="Close new project"
+    @close="cancelProjectCapture"
+  >
+        <div class="field-stack">
+          <input
+            ref="newProjectNameRef"
+            v-model="projectForm.name"
+            placeholder="Project name"
+            class="input"
+            :class="{ 'is-invalid': projectFormErrors.name }"
+            :disabled="loading"
+            :aria-invalid="Boolean(projectFormErrors.name)"
+            @input="updateProjectFieldError('new', 'name', projectForm.name)"
+          />
+          <p v-if="projectFormErrors.name" class="field-helper field-helper--error">{{ projectFormErrors.name }}</p>
+        </div>
+        <div class="field-stack">
+          <textarea
+            v-model="projectForm.summary"
+            placeholder="Summary"
+            rows="2"
+            class="textarea"
+            :class="{ 'is-invalid': projectFormErrors.summary }"
+            :disabled="loading"
+            :aria-invalid="Boolean(projectFormErrors.summary)"
+            @input="updateProjectFieldError('new', 'summary', projectForm.summary)"
+          ></textarea>
+          <p v-if="projectFormErrors.summary" class="field-helper field-helper--error">{{ projectFormErrors.summary }}</p>
+        </div>
+        <div class="field-stack">
+          <select v-model="projectForm.status" class="input" :disabled="loading" aria-label="Project status">
+            <option value="pending">Pending</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="on_hold">On Hold</option>
+          </select>
+        </div>
+    <template #actions>
+        <ActionRow>
+          <button type="button" @click="cancelProjectCapture" :disabled="loading" class="btn btn-secondary">
+            Cancel
+          </button>
+          <button type="button" @click="submitProjectCapture" :disabled="loading" class="btn btn-primary">
+            {{ loading ? 'Saving...' : 'Add Project' }}
+          </button>
+        </ActionRow>
+    </template>
+  </CollectionCaptureSurface>
+
+  <CardCollection class="projects-collection" embedded>
     <template #title>
       Projects ({{ projects.length }})
+    </template>
+    <template #command>
+      <button
+        type="button"
+        class="btn btn-primary btn-sm project-create-command"
+        aria-label="New project"
+        @click="openProjectCapture"
+      >
+        <span aria-hidden="true">+</span>
+        <span>New</span>
+      </button>
     </template>
     <template #control>
       <SegmentedControl
@@ -648,63 +740,23 @@ async function setProjectFocusTask(project: ProjectDto, task: TaskApiTask): Prom
       </template>
     </Card>
   </CardCollection>
-
-  <div class="form-section project-form">
-    <h2>New Project</h2>
-    <div class="field-stack">
-      <input
-        v-model="projectForm.name"
-        placeholder="Project name"
-        class="input"
-        :class="{ 'is-invalid': projectFormErrors.name }"
-        :disabled="loading"
-        :aria-invalid="Boolean(projectFormErrors.name)"
-        @input="updateProjectFieldError('new', 'name', projectForm.name)"
-      />
-      <p v-if="projectFormErrors.name" class="field-helper field-helper--error">{{ projectFormErrors.name }}</p>
-    </div>
-    <div class="field-stack">
-      <textarea
-        v-model="projectForm.summary"
-        placeholder="Summary"
-        rows="2"
-        class="textarea"
-        :class="{ 'is-invalid': projectFormErrors.summary }"
-        :disabled="loading"
-        :aria-invalid="Boolean(projectFormErrors.summary)"
-        @input="updateProjectFieldError('new', 'summary', projectForm.summary)"
-      ></textarea>
-      <p v-if="projectFormErrors.summary" class="field-helper field-helper--error">{{ projectFormErrors.summary }}</p>
-    </div>
-    <div class="field-stack">
-      <select v-model="projectForm.status" class="input" :disabled="loading">
-        <option value="pending">Pending</option>
-        <option value="in_progress">In Progress</option>
-        <option value="completed">Completed</option>
-        <option value="on_hold">On Hold</option>
-      </select>
-    </div>
-    <ActionRow>
-      <button @click="createProject" :disabled="loading" class="btn btn-primary">Add Project</button>
-    </ActionRow>
-  </div>
 </template>
 
 <style scoped>
-/* Legacy creation form: future hover-icon creation flow will replace this area. */
-.project-form {
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-card);
-  padding: var(--space-lg);
-  background: var(--surface-panel);
-  margin-bottom: var(--space-lg);
+.projects-collection :deep(.card-collection-header) {
+  position: sticky;
+  top: 56px;
+  z-index: 40;
+  padding: var(--space-md);
+  background: color-mix(in srgb, var(--surface-panel) 84%, transparent);
+  backdrop-filter: blur(12px);
 }
 
-.project-form h2 {
-  font-size: var(--font-size-title);
-  margin-top: 0;
-  margin-bottom: var(--space-md);
-  color: var(--text-primary);
+.project-create-command {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 /* Project focus */
@@ -941,6 +993,13 @@ async function setProjectFocusTask(project: ProjectDto, task: TaskApiTask): Prom
   :deep(.list-item--current) .focus-badge {
     display: none;
   }
+}
+
+@media (max-width: 640px) {
+  .projects-collection :deep(.card-collection-header) {
+    top: 56px;
+  }
+
 }
 
 .project-edit-form {

@@ -11,7 +11,7 @@ const screenshotDir = path.join(__dirname, 'screenshots')
 export async function openNotesReview(page: Page): Promise<void> {
   await installNotesReviewApiMocks(page)
   await page.goto('/notes')
-  await expect(page.getByRole('heading', { name: 'Notes', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Notes \(\d+\)/ })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Pinned planning note' })).toBeVisible()
 }
 

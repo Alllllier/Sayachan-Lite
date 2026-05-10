@@ -11,7 +11,7 @@ const screenshotDir = path.join(__dirname, 'screenshots')
 export async function openProjectsReview(page: Page): Promise<void> {
   await installProjectsReviewApiMocks(page)
   await page.goto('/projects')
-  await expect(page.getByRole('heading', { name: 'Projects', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Projects \(\d+\)/ })).toBeVisible()
   await expect(projectCard(page, 'Pinned launch project')).toBeVisible()
 }
 

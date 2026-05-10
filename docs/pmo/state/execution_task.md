@@ -2,7 +2,7 @@
 
 - Status: `idle`
 - Sprint: `idle`
-- Last updated: `2026-05-07`
+- Last updated: `2026-05-10`
 
 ## Current State
 
@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Route State Accessors And Middleware Folder Split`
+- Sprint: `Collection Page Flush Layout Baseline`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/route-state-accessors-and-middleware-folder-split.md`
+- Report surface: `docs/pmo/history/reports/collection-page-flush-layout-baseline.md`
 
 ## Next Activation Rule
 

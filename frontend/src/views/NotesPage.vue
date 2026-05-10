@@ -4,7 +4,7 @@ import { Panel } from '../components/ui/shell'
 </script>
 
 <template>
-  <Panel title="Notes">
+  <Panel>
     <NotesPanel />
   </Panel>
 </template>
