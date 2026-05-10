@@ -15,13 +15,13 @@
 
 ## Last Closed Sprint
 
-- Sprint: `Collection Page Flush Layout Baseline`
+- Sprint: `Frontend Chinese UI Copy Baseline`
 - Closeout date: `2026-05-10`
 - Delivery status: `completed and validated`
-- Commit state: `not committed in this closeout`
+- Commit state: `pending repository commit`
 - Documentation sync outcome: `reviewed, no update needed`
-- Residual note: `none`
-- Report surface: `docs/pmo/history/reports/collection-page-flush-layout-baseline.md`
+- Residual note: `future Settings language switch / persistence remains in discussion_batch_020; Chinese-first broad UI review screenshot refresh is parked as validation follow-up`
+- Report surface: `docs/pmo/history/reports/frontend-chinese-ui-copy-baseline.md`
 
 ## Next PMO Action
 

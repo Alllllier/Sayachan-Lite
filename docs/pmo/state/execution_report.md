@@ -10,9 +10,9 @@ There is no active execution report waiting for PMO review right now.
 
 ## Last Closed Report Summary
 
-- Sprint: `Collection Page Flush Layout Baseline`
+- Sprint: `Frontend Chinese UI Copy Baseline`
 - Report outcome: `completed and validated`
-- PMO read result: `accepted and archived to docs/pmo/history/reports/collection-page-flush-layout-baseline.md`
+- PMO read result: `accepted and archived to docs/pmo/history/reports/frontend-chinese-ui-copy-baseline.md`
 
 ## Next Use
 

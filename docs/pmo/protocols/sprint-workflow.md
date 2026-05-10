@@ -207,5 +207,7 @@ Commit and closeout are related but not identical:
 - a sprint may be implementation-complete before commit happens
 - PMO closeout records delivery status in the PMO state machine
 - git commit is a separate repository action
+- the normal closeout-before-commit state is `pending repository commit`
+- if a commit already exists before closeout, record `committed before closeout: <hash>`
 
-When commit has not happened yet, the PMO state should say so explicitly instead of hiding it behind a generic `closed` label.
+Do not reopen PMO state only to replace `pending repository commit` after the closeout commit lands. Git history is the source of truth for the eventual repository action; PMO state should avoid chasing a commit hash that is created by the same closing batch of changes.

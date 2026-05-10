@@ -3,6 +3,7 @@ import { ref, nextTick, watch } from 'vue'
 import avatarUrl from '../assets/avatar/sayachan-avatar.jpg'
 import { useChatFeature } from '../features/chat/useChatFeature.js'
 import { renderMarkdown } from '../utils/markdown.js'
+import { t } from '../i18n/productLocale'
 
 type PersonalityBaselineOption = 'warm' | 'strict' | 'haraguro'
 type ConvergenceModeOption = 'explore' | 'guided' | 'decisive'
@@ -63,7 +64,7 @@ function sendCurrentMessage(): Promise<void> {
       class="chat-float-btn"
       :style="{ backgroundImage: `url(${avatarUrl})` }"
       @click="openPopup"
-      aria-label="Open chat"
+      :aria-label="t('chat.open')"
       title="Sayachan"
     ></button>
 
@@ -74,25 +75,25 @@ function sendCurrentMessage(): Promise<void> {
         <div class="chat-header">
           <span class="chat-title">Sayachan</span>
           <div class="chat-header-actions">
-            <button class="chat-gear-btn" @click="togglePanel" aria-label="Runtime controls" title="Runtime controls">
+            <button class="chat-gear-btn" @click="togglePanel" :aria-label="t('chat.runtimeControls')" :title="t('chat.runtimeControls')">
               <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
               </svg>
             </button>
-            <button class="chat-close-btn" @click="closePopup" aria-label="Close chat">&times;</button>
+            <button class="chat-close-btn" @click="closePopup" :aria-label="t('chat.close')">&times;</button>
           </div>
         </div>
 
         <!-- Body -->
         <div ref="messageListRef" class="chat-body">
           <div v-if="chatStore.messages.length === 0" class="chat-empty-invite">
-            从一句话开始。
+            {{ t('chat.emptyInvite') }}
           </div>
           <div class="chat-chips">
-            <button class="chip" :disabled="chatInputDisabled" @click="handleSend('帮我聚焦')">帮我聚焦</button>
-            <button class="chip" :disabled="chatInputDisabled" @click="handleSend('拆下一步')">拆下一步</button>
-            <button class="chip" :disabled="chatInputDisabled" @click="handleSend('今天总结')">今天总结</button>
+            <button class="chip" :disabled="chatInputDisabled" @click="handleSend(t('chat.presetFocus'))">{{ t('chat.presetFocus') }}</button>
+            <button class="chip" :disabled="chatInputDisabled" @click="handleSend(t('chat.presetNextStep'))">{{ t('chat.presetNextStep') }}</button>
+            <button class="chip" :disabled="chatInputDisabled" @click="handleSend(t('chat.presetSummary'))">{{ t('chat.presetSummary') }}</button>
           </div>
           <div
             v-for="(msg, idx) in chatStore.messages"
@@ -108,10 +109,10 @@ function sendCurrentMessage(): Promise<void> {
             <div v-else class="chat-bubble">{{ msg.content }}</div>
           </div>
           <div v-if="isHydrating" class="chat-message assistant">
-            <div class="chat-bubble chat-bubble--thinking">正在同步当前工作上下文...</div>
+            <div class="chat-bubble chat-bubble--thinking">{{ t('chat.syncingContext') }}</div>
           </div>
           <div v-if="chatStore.isSending" class="chat-message assistant">
-            <div class="chat-bubble chat-bubble--thinking">{{ runtimeControls.personalityConfig.toneLabel }} &middot; Thinking</div>
+            <div class="chat-bubble chat-bubble--thinking">{{ runtimeControls.personalityConfig.toneLabel }} &middot; {{ t('chat.thinking') }}</div>
           </div>
         </div>
 
@@ -120,7 +121,7 @@ function sendCurrentMessage(): Promise<void> {
           <input
             v-model="inputValue"
             class="chat-input"
-            placeholder="说点什么&hellip;"
+            :placeholder="t('chat.placeholder')"
             :disabled="chatInputDisabled"
             @keydown="handleKeydown"
           />
@@ -133,13 +134,13 @@ function sendCurrentMessage(): Promise<void> {
       <!-- Runtime Controls Mini Panel -->
       <div class="runtime-panel" :class="{ open: isPanelOpen }">
         <div class="runtime-panel-header">
-          <span class="runtime-panel-title">Runtime Controls</span>
-          <button class="runtime-panel-close" @click="isPanelOpen = false" aria-label="Close panel">&times;</button>
+          <span class="runtime-panel-title">{{ t('chat.runtimeControls') }}</span>
+          <button class="runtime-panel-close" @click="isPanelOpen = false" :aria-label="t('chat.closePanel')">&times;</button>
         </div>
 
         <div class="runtime-panel-body">
           <div class="runtime-section">
-            <div class="runtime-section-title">人格基线</div>
+            <div class="runtime-section-title">{{ t('chat.personalityBaseline') }}</div>
             <div class="runtime-radio-list">
               <label
                 v-for="key in personalityBaselineOptions"
@@ -155,7 +156,7 @@ function sendCurrentMessage(): Promise<void> {
                   @change="runtimeControls.setBaseline(key)"
                 />
                 <span class="runtime-radio-label">
-                  {{ key === 'warm' ? '温暖' : key === 'strict' ? '干练' : '腹黑' }}
+                  {{ key === 'warm' ? t('chat.baselineWarm') : key === 'strict' ? t('chat.baselineStrict') : t('chat.baselineHaraguro') }}
                 </span>
                 <span v-if="runtimeControls.personalityBaseline === key" class="runtime-radio-check">&check;</span>
               </label>
@@ -163,11 +164,11 @@ function sendCurrentMessage(): Promise<void> {
           </div>
 
           <div class="runtime-section">
-            <div class="runtime-section-title">特质调整</div>
+            <div class="runtime-section-title">{{ t('chat.traitAdjustments') }}</div>
 
             <div class="runtime-trait">
               <div class="runtime-trait-header">
-                <span class="runtime-trait-title">{{ runtimeControls.uiLabels.warmth.title }}</span>
+                <span class="runtime-trait-title">{{ t('stores.runtimeControls.warmthTitle') }}</span>
                 <span class="runtime-trait-value">{{ runtimeControls.futureSlots.warmth }}</span>
               </div>
               <div class="runtime-slider-wrap">
@@ -180,15 +181,15 @@ function sendCurrentMessage(): Promise<void> {
                   @input="updateWarmth"
                 />
                 <div class="runtime-slider-anchors">
-                  <span>{{ runtimeControls.uiLabels.warmth.left }}</span>
-                  <span>{{ runtimeControls.uiLabels.warmth.right }}</span>
+                  <span>{{ t('stores.runtimeControls.warmthLeft') }}</span>
+                  <span>{{ t('stores.runtimeControls.warmthRight') }}</span>
                 </div>
               </div>
             </div>
 
             <div class="runtime-trait">
               <div class="runtime-trait-header">
-                <span class="runtime-trait-title">{{ runtimeControls.uiLabels.convergence.title }}</span>
+                <span class="runtime-trait-title">{{ t('stores.runtimeControls.convergenceTitle') }}</span>
               </div>
               <div class="runtime-segmented">
                 <button
@@ -198,26 +199,26 @@ function sendCurrentMessage(): Promise<void> {
                   :class="{ active: runtimeControls.futureSlots.convergenceMode === opt }"
                   @click="runtimeControls.setConvergenceMode(opt)"
                 >
-                  {{ runtimeControls.uiLabels.convergence.options[opt] }}
+                  {{ t(`stores.runtimeControls.convergence.${opt}`) }}
                 </button>
               </div>
             </div>
           </div>
 
           <div class="runtime-section">
-            <div class="runtime-section-title">Future Controls</div>
+            <div class="runtime-section-title">{{ t('chat.futureControls') }}</div>
             <div class="runtime-future-list">
               <div class="runtime-future-item disabled">
-                <span>Reflection Depth</span>
-                <span class="runtime-badge">coming soon</span>
+                <span>{{ t('chat.reflectionDepth') }}</span>
+                <span class="runtime-badge">{{ t('common.comingSoon') }}</span>
               </div>
               <div class="runtime-future-item disabled">
-                <span>Thinking</span>
-                <span class="runtime-badge">coming soon</span>
+                <span>{{ t('chat.thinkingControl') }}</span>
+                <span class="runtime-badge">{{ t('common.comingSoon') }}</span>
               </div>
               <div class="runtime-future-item disabled">
-                <span>Debug Context</span>
-                <span class="runtime-badge">coming soon</span>
+                <span>{{ t('chat.debugContext') }}</span>
+                <span class="runtime-badge">{{ t('common.comingSoon') }}</span>
               </div>
             </div>
           </div>

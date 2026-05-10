@@ -1,4 +1,5 @@
 import type { ChatContextDto } from '@sayachan/contracts'
+import { t } from '../../i18n/productLocale'
 
 type ChatBaseline = 'warm' | 'strict' | 'haraguro' | (string & {})
 
@@ -58,10 +59,10 @@ export function isChatInputDisabled({ isSending, isHydrating }: ChatBusyState): 
 
 export function getChatSendButtonLabel({ isSending, isHydrating }: ChatBusyState): string {
   if (isHydrating) {
-    return '准备中'
+    return t('chat.preparing')
   }
 
-  return isSending ? 'Thinking' : 'Send'
+  return isSending ? t('chat.thinking') : t('chat.send')
 }
 
 export function getChatFallbackReply(baseline: ChatBaseline): string {

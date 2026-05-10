@@ -35,27 +35,27 @@ describe('projects rules locks', () => {
 
   it('validates required project form fields', () => {
     expect(validateProjectFields({ name: '', summary: 'Summary' })).toEqual({
-      name: 'Enter a project name.',
+      name: '请输入项目名称。',
       summary: ''
     })
     expect(validateProjectFields({ name: '   ', summary: 'Summary' })).toEqual({
-      name: 'Enter a project name.',
+      name: '请输入项目名称。',
       summary: ''
     })
     expect(validateProjectFields({ name: 'Project', summary: '' })).toEqual({
       name: '',
-      summary: 'Enter a short summary.'
+      summary: '请输入简短摘要。'
     })
     expect(validateProjectFields({ name: 'Project', summary: '   ' })).toEqual({
       name: '',
-      summary: 'Enter a short summary.'
+      summary: '请输入简短摘要。'
     })
     expect(validateProjectFields({ name: 'Project', summary: 'Summary' })).toEqual(createEmptyProjectErrors())
   })
 
   it('only treats name or summary failures as project form errors', () => {
-    expect(hasProjectErrors({ name: 'Enter a project name.', summary: '' })).toBe(true)
-    expect(hasProjectErrors({ name: '', summary: 'Enter a short summary.' })).toBe(true)
+    expect(hasProjectErrors({ name: '请输入项目名称。', summary: '' })).toBe(true)
+    expect(hasProjectErrors({ name: '', summary: '请输入简短摘要。' })).toBe(true)
     expect(hasProjectErrors({ name: '', summary: '' })).toBe(false)
     const serverErrors = { name: '', summary: '', unrelated: 'Server warning' }
     expect(hasProjectErrors(serverErrors)).toBe(false)
@@ -96,15 +96,15 @@ describe('projects rules locks', () => {
   })
 
   it('validates single task capture titles', () => {
-    expect(validateSingleTaskCapture('')).toBe('Enter a task title.')
-    expect(validateSingleTaskCapture('   ')).toBe('Enter a task title.')
+    expect(validateSingleTaskCapture('')).toBe('请输入任务标题。')
+    expect(validateSingleTaskCapture('   ')).toBe('请输入任务标题。')
     expect(validateSingleTaskCapture('Write brief')).toBe('')
   })
 
   it('parses and validates batch task capture titles', () => {
     expect(parseBatchTaskTitles('  One\n\nTwo  \n   \nThree')).toEqual(['One', 'Two', 'Three'])
-    expect(validateBatchTaskCapture('')).toBe('Enter at least one task title.')
-    expect(validateBatchTaskCapture('   \n  ')).toBe('Enter at least one task title.')
+    expect(validateBatchTaskCapture('')).toBe('请至少输入一个任务标题。')
+    expect(validateBatchTaskCapture('   \n  ')).toBe('请至少输入一个任务标题。')
     expect(validateBatchTaskCapture('One\nTwo')).toBe('')
   })
 

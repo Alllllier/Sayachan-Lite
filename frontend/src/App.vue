@@ -4,6 +4,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import Chat from './components/Chat.vue'
 import { useAuthStore } from './stores/auth'
 import type { AuthStore } from './stores/auth'
+import { t } from './i18n/productLocale'
 
 const auth = useAuthStore() as AuthStore
 const route = useRoute()
@@ -25,20 +26,20 @@ async function logout(): Promise<void> {
         <span>{{ currentUserEmail }}</span>
       </div>
       <div class="top-shell__actions">
-        <RouterLink v-if="auth.isOwner" to="/owner" class="btn btn-secondary btn-sm">Owner</RouterLink>
-        <button class="btn btn-secondary btn-sm" type="button" @click="logout">Logout</button>
+        <RouterLink v-if="auth.isOwner" to="/owner" class="btn btn-secondary btn-sm">{{ t('app.owner') }}</RouterLink>
+        <button class="btn btn-secondary btn-sm" type="button" @click="logout">{{ t('app.logout') }}</button>
       </div>
     </header>
     <router-view />
     <nav v-if="!isPublicAuthRoute && auth.isAuthenticated" class="bottom-nav">
       <router-link to="/notes" class="nav-item">
-        <span class="nav-icon">Notes</span>
+        <span class="nav-icon">{{ t('nav.notes') }}</span>
       </router-link>
       <router-link to="/dashboard" class="nav-item">
-        <span class="nav-icon">Dashboard</span>
+        <span class="nav-icon">{{ t('nav.dashboard') }}</span>
       </router-link>
       <router-link to="/projects" class="nav-item">
-        <span class="nav-icon">Projects</span>
+        <span class="nav-icon">{{ t('nav.projects') }}</span>
       </router-link>
     </nav>
     <Chat v-if="!isPublicAuthRoute && auth.isAuthenticated" />

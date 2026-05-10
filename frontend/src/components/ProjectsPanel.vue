@@ -33,6 +33,7 @@ import {
 } from './ui/list'
 import type { ProjectDto, ProjectStatus } from '@sayachan/contracts'
 import type { TaskApiTask } from '../services/tasks/task.rules'
+import { t } from '../i18n/productLocale'
 
 type ToastType = 'success' | 'error'
 type PreviewFilter = 'active' | 'completed'
@@ -57,20 +58,20 @@ const toast = ref(false)
 const toastMessage = ref('')
 const toastType = ref<ToastType>('success')
 
-const archiveViewOptions = [
-  { value: 'active', label: 'Active' },
-  { value: 'archived', label: 'Archived' }
-]
+const archiveViewOptions = computed(() => [
+  { value: 'active', label: t('common.active') },
+  { value: 'archived', label: t('common.archived') }
+])
 
-const previewFilterOptions = [
-  { value: 'active', label: 'Active' },
-  { value: 'completed', label: 'Completed' }
-]
+const previewFilterOptions = computed(() => [
+  { value: 'active', label: t('common.active') },
+  { value: 'completed', label: t('common.completed') }
+])
 
-const taskCaptureModeOptions = [
-  { value: 'single', label: 'Single' },
-  { value: 'batch', label: 'Batch' }
-]
+const taskCaptureModeOptions = computed(() => [
+  { value: 'single', label: t('projects.single') },
+  { value: 'batch', label: t('projects.batch') }
+])
 
 function normalizeToastType(type: string | undefined): ToastType {
   return type === 'error' ? 'error' : 'success'
@@ -164,10 +165,10 @@ function closeProjectMenu(): void {
 // Status mapping: internal enum → user-friendly language and color
 function formatStatus(status: ProjectStatus): string {
   const statusMap: StatusLabelMap = {
-    pending: 'Planning',
-    in_progress: 'In Progress',
-    completed: 'Completed',
-    on_hold: 'Paused'
+    pending: t('projects.statusPending'),
+    in_progress: t('projects.statusInProgress'),
+    completed: t('projects.statusCompleted'),
+    on_hold: t('projects.statusOnHold')
   }
   return statusMap[status]
 }
@@ -222,9 +223,9 @@ function getArchivedPreviewTaskTotal(id: string): number {
 
 function getProjectPreviewToggleLabel(isExpanded: boolean, total: number): string {
   if (isExpanded) {
-    return '收起'
+    return t('common.showLess')
   }
-  return total > PROJECT_TASK_PREVIEW_LIMIT ? `展开全部 (${total})` : '展开详情'
+  return total > PROJECT_TASK_PREVIEW_LIMIT ? t('common.showAll', { total }) : t('common.expandDetails')
 }
 
 function getPrimaryPreviewTasks(id: string): TaskApiTask[] {
@@ -277,7 +278,7 @@ function isFocusTask(project: ProjectDto, task: TaskApiTask): boolean {
 }
 
 function getArchivedSectionTitle(project: ProjectDto): string {
-  return project?.archived ? 'Archived Tasks' : 'Archived'
+  return project?.archived ? t('projects.archivedTasks') : t('projects.archivedShort')
 }
 
 async function updateEditableProject(project: ProjectDto): Promise<void> {
@@ -360,16 +361,16 @@ async function submitProjectCapture(): Promise<void> {
 
   <CollectionCaptureSurface
     :open="projectCaptureOpen"
-    title="New Project"
+    :title="t('projects.newTitle')"
     title-id="project-capture-title"
-    close-label="Close new project"
+    :close-label="t('projects.closeNew')"
     @close="cancelProjectCapture"
   >
         <div class="field-stack">
           <input
             ref="newProjectNameRef"
             v-model="projectForm.name"
-            placeholder="Project name"
+            :placeholder="t('projects.namePlaceholder')"
             class="input"
             :class="{ 'is-invalid': projectFormErrors.name }"
             :disabled="loading"
@@ -381,7 +382,7 @@ async function submitProjectCapture(): Promise<void> {
         <div class="field-stack">
           <textarea
             v-model="projectForm.summary"
-            placeholder="Summary"
+            :placeholder="t('projects.summaryPlaceholder')"
             rows="2"
             class="textarea"
             :class="{ 'is-invalid': projectFormErrors.summary }"
@@ -392,20 +393,20 @@ async function submitProjectCapture(): Promise<void> {
           <p v-if="projectFormErrors.summary" class="field-helper field-helper--error">{{ projectFormErrors.summary }}</p>
         </div>
         <div class="field-stack">
-          <select v-model="projectForm.status" class="input" :disabled="loading" aria-label="Project status">
-            <option value="pending">Pending</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="on_hold">On Hold</option>
+          <select v-model="projectForm.status" class="input" :disabled="loading" :aria-label="t('projects.statusLabel')">
+            <option value="pending">{{ t('projects.statusPending') }}</option>
+            <option value="in_progress">{{ t('projects.statusInProgress') }}</option>
+            <option value="completed">{{ t('projects.statusCompleted') }}</option>
+            <option value="on_hold">{{ t('projects.statusOnHold') }}</option>
           </select>
         </div>
     <template #actions>
         <ActionRow>
           <button type="button" @click="cancelProjectCapture" :disabled="loading" class="btn btn-secondary">
-            Cancel
+            {{ t('common.cancel') }}
           </button>
           <button type="button" @click="submitProjectCapture" :disabled="loading" class="btn btn-primary">
-            {{ loading ? 'Saving...' : 'Add Project' }}
+            {{ loading ? t('common.saving') : t('projects.addProject') }}
           </button>
         </ActionRow>
     </template>
@@ -413,17 +414,17 @@ async function submitProjectCapture(): Promise<void> {
 
   <CardCollection class="projects-collection" embedded>
     <template #title>
-      Projects ({{ projects.length }})
+      {{ t('projects.title', { count: projects.length }) }}
     </template>
     <template #command>
       <button
         type="button"
         class="btn btn-primary btn-sm project-create-command"
-        aria-label="New project"
+        :aria-label="t('projects.createLabel')"
         @click="openProjectCapture"
       >
         <span aria-hidden="true">+</span>
-        <span>New</span>
+        <span>{{ t('common.new') }}</span>
       </button>
     </template>
     <template #control>
@@ -431,11 +432,11 @@ async function submitProjectCapture(): Promise<void> {
         :model-value="showArchived ? 'archived' : 'active'"
         :options="archiveViewOptions"
         variant="page"
-        aria-label="Projects archive view"
+        :aria-label="t('projects.archiveViewLabel')"
         @update:model-value="setProjectArchiveView"
       />
     </template>
-    <EmptyState v-if="projects.length === 0" :title="showArchived ? 'No archived projects' : 'No projects yet'" />
+    <EmptyState v-if="projects.length === 0" :title="showArchived ? t('projects.emptyArchivedTitle') : t('projects.emptyActiveTitle')" />
     <Card
       v-for="project in projects"
       :key="project._id"
@@ -450,7 +451,7 @@ async function submitProjectCapture(): Promise<void> {
             @click.stop="project.isPinned ? unpinEditableProject(project) : pinEditableProject(project)"
             class="panel-surface-icon-btn"
             :class="{ pinned: project.isPinned }"
-            :title="project.isPinned ? 'Unpin project' : 'Pin project'"
+            :title="project.isPinned ? t('projects.unpin') : t('projects.pin')"
           >
             <svg v-if="project.isPinned" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
@@ -475,7 +476,7 @@ async function submitProjectCapture(): Promise<void> {
           <div class="field-stack">
             <input
               v-model="project.name"
-              placeholder="Project name"
+              :placeholder="t('projects.namePlaceholder')"
               class="input"
               :class="{ 'is-invalid': editProjectErrors[project._id]?.name }"
               :disabled="loading"
@@ -489,7 +490,7 @@ async function submitProjectCapture(): Promise<void> {
           <div class="field-stack">
             <textarea
               v-model="project.summary"
-              placeholder="Summary"
+              :placeholder="t('projects.summaryPlaceholder')"
               rows="2"
               class="textarea"
               :class="{ 'is-invalid': editProjectErrors[project._id]?.summary }"
@@ -503,10 +504,10 @@ async function submitProjectCapture(): Promise<void> {
           </div>
           <div class="field-stack">
             <select v-model="project.status" class="input" :disabled="loading">
-              <option value="pending">Pending</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="on_hold">On Hold</option>
+              <option value="pending">{{ t('projects.statusPending') }}</option>
+              <option value="in_progress">{{ t('projects.statusInProgress') }}</option>
+              <option value="completed">{{ t('projects.statusCompleted') }}</option>
+              <option value="on_hold">{{ t('projects.statusOnHold') }}</option>
             </select>
           </div>
         </div>
@@ -516,8 +517,8 @@ async function submitProjectCapture(): Promise<void> {
           <DirectiveBlock>
             <div class="focus-section">
               <div class="focus-main">
-                <span class="focus-label">Current Focus</span>
-                <span class="focus-value">{{ getCurrentFocusDisplay(project) || 'No active focus' }}</span>
+                <span class="focus-label">{{ t('projects.currentFocus') }}</span>
+                <span class="focus-value">{{ getCurrentFocusDisplay(project) || t('projects.noActiveFocus') }}</span>
               </div>
             </div>
           </DirectiveBlock>
@@ -532,16 +533,16 @@ async function submitProjectCapture(): Promise<void> {
                   v-if="!project.archived && hasPrimaryTaskSection(project._id)"
                   class="project-task-section"
                   :class="{ 'is-expanded': expandedPrimaryPreviewProjects.has(project._id) }"
-                  :aria-label="`Tasks (${getPreviewFilter(project._id)})`"
+                  :aria-label="t('projects.tasksAria', { filter: getPreviewFilter(project._id) })"
                 >
                   <template #title>
                     <div class="project-task-section-heading">
-                      <span class="project-task-section-heading-text">Tasks</span>
+                      <span class="project-task-section-heading-text">{{ t('projects.tasks') }}</span>
                       <SegmentedControl
                         :model-value="getPreviewFilter(project._id)"
                         :options="previewFilterOptions"
                         variant="inline"
-                        aria-label="Task preview filter"
+                        :aria-label="t('projects.taskPreviewFilterLabel')"
                         @update:model-value="setPreviewFilterValue(project._id, $event)"
                       />
                     </div>
@@ -568,7 +569,7 @@ async function submitProjectCapture(): Promise<void> {
                   >
                     <ItemContent :text="task.title" />
                     <ItemMeta v-if="isFocusTask(project, task)">
-                      <span class="focus-badge">Current Focus</span>
+                      <span class="focus-badge">{{ t('projects.currentFocus') }}</span>
                     </ItemMeta>
                   </ListItem>
                 </ListSection>
@@ -607,9 +608,9 @@ async function submitProjectCapture(): Promise<void> {
                         class="task-preview-state-chip"
                         :class="task.status === 'completed' ? 'state-completed' : 'state-active'"
                       >
-                        {{ task.status === 'completed' ? 'Completed' : 'Active' }}
+                          {{ task.status === 'completed' ? t('common.completed') : t('common.active') }}
                       </span>
-                      <span v-if="isFocusTask(project, task)" class="focus-badge">Current Focus</span>
+                      <span v-if="isFocusTask(project, task)" class="focus-badge">{{ t('projects.currentFocus') }}</span>
                     </ItemMeta>
                   </ListItem>
                 </ListSection>
@@ -621,8 +622,8 @@ async function submitProjectCapture(): Promise<void> {
 
       <template #actions v-if="editingProjectId === project._id && !project.archived">
         <ActionRow>
-          <button @click="cancelEditableProject(project)" :disabled="loading" class="btn btn-secondary">Cancel</button>
-          <button @click="updateEditableProject(project)" :disabled="loading" class="btn btn-primary">Save</button>
+          <button @click="cancelEditableProject(project)" :disabled="loading" class="btn btn-secondary">{{ t('common.cancel') }}</button>
+          <button @click="updateEditableProject(project)" :disabled="loading" class="btn btn-primary">{{ t('common.save') }}</button>
         </ActionRow>
       </template>
 
@@ -631,8 +632,8 @@ async function submitProjectCapture(): Promise<void> {
           v-if="!project.archived"
           variant="primary"
           :state="taskCaptureOpen.has(project._id) ? 'active' : 'idle'"
-          idle-label="+ Add Task"
-          active-label="Cancel"
+          :idle-label="t('projects.addTask')"
+          :active-label="t('common.cancel')"
           :button-class="'add-task-btn'"
           @activate="openTaskCapture(project._id)"
           @cancel="closeTaskCapture(project._id)"
@@ -643,7 +644,7 @@ async function submitProjectCapture(): Promise<void> {
               :model-value="taskCaptureMode[project._id]"
               :options="taskCaptureModeOptions"
               variant="mode"
-              aria-label="Task capture mode"
+              :aria-label="t('projects.taskCaptureModeLabel')"
               @update:model-value="setTaskCaptureMode(project._id, $event)"
             />
 
@@ -651,7 +652,7 @@ async function submitProjectCapture(): Promise<void> {
               <div class="field-stack">
                 <input
                   v-model="manualTaskInputs[project._id]"
-                  placeholder="Task title..."
+                  :placeholder="t('projects.taskTitlePlaceholder')"
                   @keyup.enter="addManualProjectTask(project)"
                   :disabled="addingManualTasks.has(project._id)"
                   class="input"
@@ -665,7 +666,7 @@ async function submitProjectCapture(): Promise<void> {
               </div>
               <div class="manual-task-actions">
                 <button @click="addManualProjectTask(project)" class="btn btn-primary btn-sm" :disabled="addingManualTasks.has(project._id)">
-                  {{ addingManualTasks.has(project._id) ? 'Saving...' : 'Save' }}
+                  {{ addingManualTasks.has(project._id) ? t('common.saving') : t('common.save') }}
                 </button>
               </div>
             </div>
@@ -674,7 +675,7 @@ async function submitProjectCapture(): Promise<void> {
               <div class="field-stack">
                 <textarea
                   v-model="batchTaskInputs[project._id]"
-                  placeholder="One task per line..."
+                  :placeholder="t('projects.batchTaskPlaceholder')"
                   :disabled="addingBatchTasks.has(project._id)"
                   class="textarea"
                   :class="{ 'is-invalid': taskCaptureErrors[project._id]?.batch }"
@@ -688,7 +689,7 @@ async function submitProjectCapture(): Promise<void> {
               </div>
               <div class="batch-task-actions">
                 <button @click="addBatchProjectTasks(project)" class="btn btn-primary btn-sm" :disabled="addingBatchTasks.has(project._id)">
-                  {{ addingBatchTasks.has(project._id) ? 'Saving...' : 'Save All' }}
+                  {{ addingBatchTasks.has(project._id) ? t('common.saving') : t('projects.saveAll') }}
                 </button>
               </div>
             </div>
@@ -697,8 +698,8 @@ async function submitProjectCapture(): Promise<void> {
 
         <template v-if="project.archived">
           <ActionRow>
-            <button @click="restoreEditableProject(project)" class="btn btn-secondary">Restore</button>
-            <button @click="deleteProject(project._id)" class="btn btn-danger">Delete</button>
+            <button @click="restoreEditableProject(project)" class="btn btn-secondary">{{ t('common.restore') }}</button>
+            <button @click="deleteProject(project._id)" class="btn btn-danger">{{ t('common.delete') }}</button>
           </ActionRow>
         </template>
         <ObjectActionArea
@@ -715,23 +716,23 @@ async function submitProjectCapture(): Promise<void> {
           <template #trailing>
             <OverflowMenu
               :open="menuOpenProjectId === project._id"
-              title="Actions"
+              :title="t('common.actions')"
               @toggle="toggleProjectMenu(project._id)"
             >
-              <button @click="startEditableProject(project)" class="btn btn-menu-item btn-secondary">Edit</button>
-              <button @click="archiveEditableProject(project)" class="btn btn-menu-item btn-archive">Archive</button>
-              <button @click="deleteProject(project._id)" class="btn btn-menu-item btn-danger">Delete</button>
+              <button @click="startEditableProject(project)" class="btn btn-menu-item btn-secondary">{{ t('common.edit') }}</button>
+              <button @click="archiveEditableProject(project)" class="btn btn-menu-item btn-archive">{{ t('common.archive') }}</button>
+              <button @click="deleteProject(project._id)" class="btn btn-menu-item btn-danger">{{ t('common.delete') }}</button>
             </OverflowMenu>
           </template>
           <SectionBlock v-if="aiSuggestions[project._id] && aiSuggestions[project._id].length > 0" class="ai-suggestions project-ai-suggestions">
             <div class="ai-suggestions-header">
-              <strong>AI Suggestions ({{ aiSuggestions[project._id].length }})</strong>
+              <strong>{{ t('projects.aiSuggestionsTitle', { count: aiSuggestions[project._id].length }) }}</strong>
             </div>
             <div v-for="(suggestion, idx) in aiSuggestions[project._id]" :key="idx" class="ai-suggestion-item">
               <div class="suggestion-content">{{ suggestion }}</div>
               <div class="suggestion-actions">
                 <button @click="saveSuggestionAsTask(project._id, suggestion)" class="btn btn-secondary btn-sm" :disabled="savedSuggestions.has(suggestion)">
-                  {{ savedSuggestions.has(suggestion) ? 'Saved' : 'Save as Task' }}
+                  {{ savedSuggestions.has(suggestion) ? t('common.saved') : t('notes.saveAsTask') }}
                 </button>
               </div>
             </div>

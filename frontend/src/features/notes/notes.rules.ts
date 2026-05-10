@@ -1,3 +1,5 @@
+import { t } from '../../i18n/productLocale'
+
 export type NoteFieldErrors = {
   title: string
   content: string
@@ -33,11 +35,11 @@ export function validateNoteFields(noteLike: NoteLike | null | undefined): NoteF
   const errors = createEmptyNoteErrors()
 
   if (!noteLike?.title?.trim()) {
-    errors.title = 'Enter a note title.'
+    errors.title = t('notes.validationTitle')
   }
 
   if (!noteLike?.content?.trim()) {
-    errors.content = 'Enter note content.'
+    errors.content = t('notes.validationContent')
   }
 
   return errors

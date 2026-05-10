@@ -33,8 +33,10 @@ node docs/pmo/tools/pmo.mjs activate --micro-fix "Fix Name" --goal "One sentence
 Close out a sprint:
 
 ```bash
-node docs/pmo/tools/pmo.mjs closeout --sprint "Sprint Name" --delivery-status "completed and validated" --doc-sync "reviewed, no update needed" --commit-state "not committed in this closeout" --date "2026-05-07" --dry-run
+node docs/pmo/tools/pmo.mjs closeout --sprint "Sprint Name" --delivery-status "completed and validated" --doc-sync "reviewed, no update needed" --commit-state "pending repository commit" --date "2026-05-07" --dry-run
 ```
+
+Use `pending repository commit` for the normal PMO flow where closeout is accepted before the repository commit is created. If the work was already committed before closeout, record `committed before closeout: <hash>`. Do not update PMO state only to replace a pending value after the closeout commit; git history is the source of truth for the eventual repository action.
 
 Reset runtime state when archives already exist:
 

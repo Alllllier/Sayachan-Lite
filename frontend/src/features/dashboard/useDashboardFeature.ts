@@ -20,6 +20,7 @@ import {
   getVisibleDashboardTasks,
   removeDashboardTask
 } from './dashboard.rules'
+import { t } from '../../i18n/productLocale'
 
 const noop = () => {}
 const DASHBOARD_TASKS_CACHE_RESOURCE = 'dashboard-tasks'
@@ -92,9 +93,9 @@ export function useDashboardFeature(options: DashboardFeatureOptions = {}) {
       cacheCurrentTasks()
     } catch (error) {
       if (hydratedFromCache) {
-        notify('Showing cached tasks. Refresh failed.', 'error')
+        notify(t('dashboard.toastCachedTasks'), 'error')
       } else {
-        notify('Failed to load tasks', 'error')
+        notify(t('dashboard.toastLoadFailed'), 'error')
       }
     }
     return savedTasks.value
@@ -129,11 +130,11 @@ export function useDashboardFeature(options: DashboardFeatureOptions = {}) {
       const newTask = await saveTask(title, 'manual', 'dashboard', null)
       if (newTask) {
         cacheCurrentTasks()
-        notify('Task added')
+        notify(t('dashboard.toastTaskAdded'))
         quickAddInput.value = ''
       }
     } catch (e) {
-      notify('Failed to add', 'error')
+      notify(t('dashboard.toastAddFailed'), 'error')
     } finally {
       isQuickAdding.value = false
     }
@@ -147,10 +148,10 @@ export function useDashboardFeature(options: DashboardFeatureOptions = {}) {
       savedTasks.value = applyDashboardTaskUpdate(savedTasks.value, updated)
       syncTaskIntoActiveSnapshot(updated)
       cacheCurrentTasks()
-      notify(payload.status === 'completed' ? 'Task completed' : 'Task reactivated')
+      notify(payload.status === 'completed' ? t('dashboard.toastTaskCompleted') : t('dashboard.toastTaskReactivated'))
       onRefreshed()
     } catch (e) {
-      notify('Failed to update task', 'error')
+      notify(t('dashboard.toastUpdateFailed'), 'error')
     }
   }
 
@@ -165,14 +166,14 @@ export function useDashboardFeature(options: DashboardFeatureOptions = {}) {
       if (taskMenuOpen.value === task._id) {
         taskMenuOpen.value = null
       }
-      notify(updated.archived ? 'Task archived' : 'Task restored')
+      notify(updated.archived ? t('dashboard.toastTaskArchived') : t('dashboard.toastTaskRestored'))
     } catch (e) {
-      notify('Failed to archive task', 'error')
+      notify(t('dashboard.toastArchiveFailed'), 'error')
     }
   }
 
   async function handleTaskDelete(task: DashboardTaskWithId): Promise<void> {
-    if (!confirm('Delete this task? This cannot be undone.')) {
+    if (!confirm(t('dashboard.confirmDeleteTask'))) {
       return
     }
 
@@ -184,9 +185,9 @@ export function useDashboardFeature(options: DashboardFeatureOptions = {}) {
       if (taskMenuOpen.value === task._id) {
         taskMenuOpen.value = null
       }
-      notify('Task deleted')
+      notify(t('dashboard.toastTaskDeleted'))
     } catch (e) {
-      notify('Failed to delete task', 'error')
+      notify(t('dashboard.toastDeleteFailed'), 'error')
     }
   }
 

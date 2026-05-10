@@ -37,8 +37,8 @@ describe('chat rules locks', () => {
     expect(isChatInputDisabled({ isSending: true, isHydrating: false })).toBe(true)
     expect(isChatInputDisabled({ isSending: false, isHydrating: true })).toBe(true)
 
-    expect(getChatSendButtonLabel({ isSending: false, isHydrating: false })).toBe('Send')
-    expect(getChatSendButtonLabel({ isSending: true, isHydrating: false })).toBe('Thinking')
+    expect(getChatSendButtonLabel({ isSending: false, isHydrating: false })).toBe('发送')
+    expect(getChatSendButtonLabel({ isSending: true, isHydrating: false })).toBe('思考中')
     expect(getChatSendButtonLabel({ isSending: true, isHydrating: true })).toBe('准备中')
   })
 

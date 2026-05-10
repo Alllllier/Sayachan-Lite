@@ -1,0 +1,40 @@
+# Frontend Chinese UI Copy Baseline
+
+- Archived date: `2026-05-10`
+- PMO closeout result: `completed and validated`
+- Source sprint: `Frontend Chinese UI Copy Baseline`
+- Source report: `state/execution_report.md`
+- Delivered summary:
+  - Added a lightweight frontend product-locale boundary with `zh` and `en` dictionaries, `t(key, params)`, `setLocale`, `getCurrentLocale`, `locale`, and supported-locale checking.
+  - Defaulted converted product UI chrome to Chinese while keeping English entries for the converted keys.
+  - Converted core static UI copy across Dashboard, Notes, Projects, Chat shell, app navigation, and Dashboard page title.
+  - Converted obvious frontend-owned validation, toast, confirm, placeholder, button, empty-state, segment-label, title, and aria/title labels in the touched surfaces.
+  - Added focused copy-boundary tests for default locale, locale switching, fallback behavior, and supported-locale checks.
+  - Added a focused UI-copy smoke script/spec for mocked Dashboard, Notes, Projects, and Chat Chinese chrome on desktop plus Dashboard mobile-width coverage.
+- Validation summary:
+  - `npm --prefix frontend run typecheck` - passed
+  - `npm --prefix frontend run build` - passed
+  - `npm --prefix frontend run test -- productLocale` - passed after the runtime-boundary rename
+  - `npm --prefix frontend run test` - passed, 22 files / 132 tests
+  - `npm --prefix frontend run test:ui-copy-smoke` - passed, 4 mocked browser smoke tests
+- Project-specific review summary:
+  - Required for this sprint: `yes`
+  - Performed: `yes`
+  - Reviewed surfaces or states:
+    - Dashboard mocked desktop and mobile-width chrome: Chinese page title, quick-add placeholder, archive segmented control aria label, expand button, bottom nav/chat entry.
+    - Notes mocked desktop chrome: Chinese collection title, new-note command aria label, archive segmented control aria label, new-note dialog title/close/action labels.
+    - Projects mocked desktop chrome: Chinese collection title, new-project command aria label, archive segmented control aria label, focus label, add-task control.
+    - Chat mocked shell/runtime panel: Chinese open-chat aria label, empty invite, preset chips, input placeholder, send label, runtime panel labels.
+  - If skipped, why skipping was acceptable: `n/a`
+- Unverified areas:
+  - Full `npm run check` from the repo root was not run.
+  - Existing broad screenshot-oriented `npm --prefix frontend run test:ui-review` was not run end-to-end; a focused no-screenshot UI-copy smoke spec was added and run to avoid large screenshot-baseline churn in this sprint.
+  - Login, Register, and Owner admin surfaces were not converted because they were outside the named core conversion targets.
+- Residual risks or escalations:
+  - The copy dictionary is intentionally small and static; future Settings language switching should reuse `setLocale` but still needs product decisions for persistence and UI placement.
+  - Existing screenshot files under `frontend/tests/ui-review/**/screenshots` still reflect the prior English chrome and may need a separate PMO-approved screenshot baseline refresh if those artifacts are treated as review truth.
+  - Some lower-level API error strings remain English by design because backend validation/error i18n was out of scope.
+- Documentation-sync outcome: `reviewed, no update needed`
+- Follow-up routing:
+  - PMO/human should decide whether a follow-up slice should refresh the broader UI review screenshot/assertion baseline for Chinese-first chrome.
+  - PMO/human should decide later how Settings will expose language selection and whether it should persist locally, per account, or remain session-only.

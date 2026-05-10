@@ -20,6 +20,7 @@ import OverflowMenu from './ui/OverflowMenu.vue'
 import SegmentedControl from './ui/SegmentedControl.vue'
 import { useAuthStore } from '../stores/auth'
 import type { AuthStore } from '../stores/auth'
+import { t } from '../i18n/productLocale'
 
 type EditableNote = NoteDto & { _id: string }
 type ToastType = 'success' | 'error'
@@ -57,10 +58,10 @@ const toast = ref(false)
 const toastMessage = ref('')
 const toastType = ref<ToastType>('success')
 
-const archiveViewOptions = [
-  { value: 'active', label: 'Active' },
-  { value: 'archived', label: 'Archived' }
-]
+const archiveViewOptions = computed(() => [
+  { value: 'active', label: t('common.active') },
+  { value: 'archived', label: t('common.archived') }
+])
 
 function noteId(note: NoteDto): string {
   return String(note._id)
@@ -302,7 +303,7 @@ async function mountNewEditor(): Promise<void> {
     newEditorView.value = editor
   } catch {
     editorBundlePromise = null
-    editorLoadError.value = 'Editor failed to load. Please try again.'
+    editorLoadError.value = t('common.editorLoadFailed')
   } finally {
     editorLoading.value = false
   }
@@ -358,7 +359,7 @@ async function bindEditEditor(el: unknown, note: NoteDto): Promise<void> {
     editEditorViews[id] = editor
   } catch {
     editorBundlePromise = null
-    editorLoadError.value = 'Editor failed to load. Please try again.'
+    editorLoadError.value = t('common.editorLoadFailed')
   } finally {
     editorLoading.value = false
   }
@@ -421,16 +422,16 @@ async function updateNote(note: NoteDto): Promise<void> {
 
   <CollectionCaptureSurface
     :open="captureOpen"
-    title="New Note"
+    :title="t('notes.newTitle')"
     title-id="note-capture-title"
-    close-label="Close new note"
+    :close-label="t('notes.closeNew')"
     @close="cancelCapture"
   >
         <div class="field-stack">
           <input
             ref="newTitleRef"
             v-model="form.title"
-            placeholder="Title"
+            :placeholder="t('notes.titlePlaceholder')"
             class="input"
             :class="{ 'is-invalid': newNoteErrors.title }"
             :disabled="loading"
@@ -448,14 +449,14 @@ async function updateNote(note: NoteDto): Promise<void> {
               'is-disabled': loading
             }"
           ></div>
-          <p v-if="editorLoading && !newEditorView" class="field-helper">Loading editor...</p>
+          <p v-if="editorLoading && !newEditorView" class="field-helper">{{ t('common.loadingEditor') }}</p>
           <p v-if="editorLoadError" class="field-helper field-helper--error">{{ editorLoadError }}</p>
           <p v-if="newNoteErrors.content" class="field-helper field-helper--error">{{ newNoteErrors.content }}</p>
         </div>
     <template #actions>
         <ActionRow>
           <button type="button" @click="cancelCapture" :disabled="loading" class="btn btn-secondary">
-            Cancel
+            {{ t('common.cancel') }}
           </button>
           <button
             type="button"
@@ -463,7 +464,7 @@ async function updateNote(note: NoteDto): Promise<void> {
             :disabled="loading || editorLoading || Boolean(editorLoadError) || Boolean(editingId)"
             class="btn btn-primary"
           >
-            {{ loading ? 'Saving...' : 'Add Note' }}
+            {{ loading ? t('common.saving') : t('notes.addNote') }}
           </button>
         </ActionRow>
     </template>
@@ -471,18 +472,18 @@ async function updateNote(note: NoteDto): Promise<void> {
 
   <CardCollection class="notes-collection" embedded>
     <template #title>
-      Notes ({{ notes.length }})
+      {{ t('notes.title', { count: notes.length }) }}
     </template>
     <template #command>
       <button
         type="button"
         class="btn btn-primary btn-sm note-create-command"
-        aria-label="New note"
+        :aria-label="t('notes.createLabel')"
         :disabled="Boolean(editingId)"
         @click="openCapture"
       >
         <span aria-hidden="true">+</span>
-        <span>New</span>
+        <span>{{ t('common.new') }}</span>
       </button>
     </template>
     <template #control>
@@ -490,11 +491,11 @@ async function updateNote(note: NoteDto): Promise<void> {
         :model-value="showArchived ? 'archived' : 'active'"
         :options="archiveViewOptions"
         variant="page"
-        aria-label="Notes archive view"
+        :aria-label="t('notes.archiveViewLabel')"
         @update:model-value="setArchiveView"
       />
     </template>
-    <EmptyState v-if="notes.length === 0" :title="showArchived ? 'No archived notes' : 'No notes yet'" />
+    <EmptyState v-if="notes.length === 0" :title="showArchived ? t('notes.emptyArchivedTitle') : t('notes.emptyActiveTitle')" />
     <Card
       v-for="note in notes"
       :key="note._id"
@@ -509,7 +510,7 @@ async function updateNote(note: NoteDto): Promise<void> {
             @click.stop="note.isPinned ? unpinEditableNote(note) : pinEditableNote(note)"
             class="panel-surface-icon-btn"
             :class="{ pinned: note.isPinned }"
-            :title="note.isPinned ? 'Unpin note' : 'Pin note'"
+            :title="note.isPinned ? t('notes.unpin') : t('notes.pin')"
           >
             <svg v-if="note.isPinned" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
@@ -533,7 +534,7 @@ async function updateNote(note: NoteDto): Promise<void> {
           <div class="field-stack">
             <input
               v-model="note.title"
-              placeholder="Title"
+              :placeholder="t('notes.titlePlaceholder')"
               class="input"
               :class="{ 'is-invalid': editNoteErrors[note._id]?.title }"
               :disabled="loading"
@@ -553,7 +554,7 @@ async function updateNote(note: NoteDto): Promise<void> {
                 'is-disabled': loading
               }"
             ></div>
-            <p v-if="editorLoading && !editEditorViews[note._id]" class="field-helper">Loading editor...</p>
+            <p v-if="editorLoading && !editEditorViews[note._id]" class="field-helper">{{ t('common.loadingEditor') }}</p>
             <p v-if="editorLoadError" class="field-helper field-helper--error">{{ editorLoadError }}</p>
             <p v-if="editNoteErrors[note._id]?.content" class="field-helper field-helper--error">
               {{ editNoteErrors[note._id].content }}
@@ -567,16 +568,16 @@ async function updateNote(note: NoteDto): Promise<void> {
 
       <template #actions v-if="editingId === note._id && !note.archived">
         <ActionRow>
-          <button @click="cancelEdit(note)" :disabled="loading" class="btn btn-secondary">Cancel</button>
-          <button @click="updateNote(note)" :disabled="loading" class="btn btn-primary">Save</button>
+          <button @click="cancelEdit(note)" :disabled="loading" class="btn btn-secondary">{{ t('common.cancel') }}</button>
+          <button @click="updateNote(note)" :disabled="loading" class="btn btn-primary">{{ t('common.save') }}</button>
         </ActionRow>
       </template>
 
       <template #actions v-else>
         <template v-if="canUseNoteAction(note, 'canRestore')">
           <ActionRow>
-            <button @click="restoreEditableNote(note)" class="btn btn-secondary">Restore</button>
-            <button v-if="canUseNoteAction(note, 'canDelete')" @click="deleteNote(note._id)" class="btn btn-danger">Delete</button>
+            <button @click="restoreEditableNote(note)" class="btn btn-secondary">{{ t('common.restore') }}</button>
+            <button v-if="canUseNoteAction(note, 'canDelete')" @click="deleteNote(note._id)" class="btn btn-danger">{{ t('common.delete') }}</button>
           </ActionRow>
         </template>
         <ObjectActionArea
@@ -593,23 +594,23 @@ async function updateNote(note: NoteDto): Promise<void> {
           <template #trailing>
             <OverflowMenu
               :open="menuOpenNoteId === note._id"
-              title="Actions"
+              :title="t('common.actions')"
               @toggle="toggleNoteMenu(note._id)"
             >
-              <button v-if="canUseNoteAction(note, 'canEdit')" @click="startEditing(note)" class="btn btn-menu-item btn-secondary">Edit</button>
-              <button v-if="canUseNoteAction(note, 'canArchive')" @click="archiveEditableNote(note)" class="btn btn-menu-item btn-archive">Archive</button>
-              <button v-if="canUseNoteAction(note, 'canDelete')" @click="deleteNote(note._id)" class="btn btn-menu-item btn-danger">Delete</button>
+              <button v-if="canUseNoteAction(note, 'canEdit')" @click="startEditing(note)" class="btn btn-menu-item btn-secondary">{{ t('common.edit') }}</button>
+              <button v-if="canUseNoteAction(note, 'canArchive')" @click="archiveEditableNote(note)" class="btn btn-menu-item btn-archive">{{ t('common.archive') }}</button>
+              <button v-if="canUseNoteAction(note, 'canDelete')" @click="deleteNote(note._id)" class="btn btn-menu-item btn-danger">{{ t('common.delete') }}</button>
             </OverflowMenu>
           </template>
           <SectionBlock v-if="aiTasksByNote[note._id] && aiTasksByNote[note._id].length > 0" class="note-ai-tasks">
             <div class="ai-tasks-header">
-              <strong>AI Tasks ({{ aiTasksByNote[note._id].length }})</strong>
+              <strong>{{ t('notes.aiTasksTitle', { count: aiTasksByNote[note._id].length }) }}</strong>
             </div>
             <div v-for="(draft, idx) in aiTasksByNote[note._id]" :key="idx" class="ai-task-item">
               <div class="task-content">{{ draft }}</div>
               <div class="task-actions">
                 <button @click="saveNoteTaskDraft(note._id, draft)" class="btn btn-secondary btn-sm" :disabled="savedTaskDrafts.has(draft)">
-                  {{ savedTaskDrafts.has(draft) ? 'Saved' : 'Save as Task' }}
+                  {{ savedTaskDrafts.has(draft) ? t('common.saved') : t('notes.saveAsTask') }}
                 </button>
               </div>
             </div>

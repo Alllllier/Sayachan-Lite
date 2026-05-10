@@ -81,7 +81,7 @@ describe('useProjectsFeature orchestration', () => {
     expect(feature.projectForm.value).toEqual({ name: '', summary: '', status: 'pending' })
     expect(feature.projectTasks.value['project-1']).toEqual([])
     expect(onRefreshed).toHaveBeenCalledWith(feature.projects.value)
-    expect(notify).toHaveBeenCalledWith('Project created')
+    expect(notify).toHaveBeenCalledWith('项目已创建')
   })
 
   it('updates projects through the API and keeps pinned projects sorted first', async () => {
@@ -106,7 +106,7 @@ describe('useProjectsFeature orchestration', () => {
     expect(updateProject).toHaveBeenCalledWith('project-1', updatedProject)
     expect(feature.projects.value.map(project => project._id)).toEqual(['project-1', 'project-2'])
     expect(feature.editingProjectId.value).toBe(null)
-    expect(notify).toHaveBeenCalledWith('Project updated')
+    expect(notify).toHaveBeenCalledWith('项目已更新')
   })
 
   it('archives through the project API before refreshing the list', async () => {
@@ -120,7 +120,7 @@ describe('useProjectsFeature orchestration', () => {
     expect(archiveProject).toHaveBeenCalledWith('project-1')
     expect(fetchProjects).toHaveBeenCalledWith({ archived: false })
     expect(feature.projects.value).toEqual([{ _id: 'project-2', name: 'Remaining', summary: 'Open', status: 'pending', updatedAt: PROJECT_UPDATED_AT }])
-    expect(notify).toHaveBeenCalledWith('Project archived')
+    expect(notify).toHaveBeenCalledWith('项目已归档')
   })
 
   it('clears a stale load error when projects are fetched again', async () => {
@@ -130,7 +130,7 @@ describe('useProjectsFeature orchestration', () => {
       .mockResolvedValueOnce([{ _id: 'project-1', name: 'Recovered', summary: 'Ready', status: 'pending', updatedAt: PROJECT_UPDATED_AT }])
 
     await feature.fetchProjects()
-    expect(feature.error.value).toBe('Failed to load projects')
+    expect(feature.error.value).toBe('项目加载失败')
 
     await feature.fetchProjects()
     expect(feature.error.value).toBe(null)
@@ -147,7 +147,7 @@ describe('useProjectsFeature orchestration', () => {
 
     expect(feature.projects.value).toEqual([{ _id: 'project-cached', name: 'Cached', summary: 'Snapshot', status: 'pending', updatedAt: PROJECT_UPDATED_AT }])
     expect(feature.error.value).toBe(null)
-    expect(notify).toHaveBeenCalledWith('Showing cached projects. Refresh failed.', 'error')
+    expect(notify).toHaveBeenCalledWith('正在显示缓存项目，刷新失败。', 'error')
   })
 
   it('hydrates cached project card tasks immediately with cached projects', async () => {
@@ -192,7 +192,7 @@ describe('useProjectsFeature orchestration', () => {
     expect(saveTask).toHaveBeenCalledWith('Draft', 'ai', 'project', 'project-1')
     expect(fetchProjectCardTasks).toHaveBeenCalledWith('project-1', false)
     expect(feature.projectTasks.value['project-1']).toEqual([{ _id: 'task-1', title: 'Draft' }])
-    expect(notify).toHaveBeenCalledWith('Saved as task')
+    expect(notify).toHaveBeenCalledWith('已保存为任务')
   })
 
   it('generates project AI suggestions from the current project id', async () => {
@@ -221,7 +221,7 @@ describe('useProjectsFeature orchestration', () => {
     expect(saveTask).toHaveBeenCalledWith('Draft', 'manual', 'project', 'project-1')
     expect(feature.taskCaptureOpen.value.has(project._id)).toBe(false)
     expect(feature.projectTasks.value[project._id]).toEqual([{ _id: 'task-1', title: 'Draft' }])
-    expect(notify).toHaveBeenCalledWith('Task added')
+    expect(notify).toHaveBeenCalledWith('任务已添加')
   })
 
   it('adds batch project tasks, closes capture, and refreshes card tasks', async () => {
@@ -241,6 +241,6 @@ describe('useProjectsFeature orchestration', () => {
     expect(saveTask).toHaveBeenNthCalledWith(2, 'Second', 'manual', 'project', 'project-1')
     expect(feature.taskCaptureOpen.value.has(project._id)).toBe(false)
     expect(feature.projectTasks.value[project._id]).toEqual([{ _id: 'task-1', title: 'First' }])
-    expect(notify).toHaveBeenCalledWith('Added 2 task(s)')
+    expect(notify).toHaveBeenCalledWith('已添加 2 个任务')
   })
 })

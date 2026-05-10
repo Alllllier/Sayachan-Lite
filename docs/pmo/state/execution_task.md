@@ -12,9 +12,9 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 ## Last Closed Sprint
 
-- Sprint: `Collection Page Flush Layout Baseline`
+- Sprint: `Frontend Chinese UI Copy Baseline`
 - Outcome: `completed and validated`
-- Report surface: `docs/pmo/history/reports/collection-page-flush-layout-baseline.md`
+- Report surface: `docs/pmo/history/reports/frontend-chinese-ui-copy-baseline.md`
 
 ## Next Activation Rule
 

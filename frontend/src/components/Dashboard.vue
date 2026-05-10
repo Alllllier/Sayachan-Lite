@@ -5,8 +5,7 @@ import type { AuthStore } from '../stores/auth'
 import type { TaskApiTask } from '../services/tasks/task.rules'
 import {
   deriveDashboardTaskProvenance,
-  deriveDashboardTaskRowState,
-  getDashboardTaskActions
+  deriveDashboardTaskRowState
 } from '../features/dashboard/dashboard.rules'
 import { useDashboardFeature } from '../features/dashboard/useDashboardFeature.js'
 import EmptyState from './ui/EmptyState.vue'
@@ -14,6 +13,7 @@ import OverflowMenu from './ui/OverflowMenu.vue'
 import SegmentedControl from './ui/SegmentedControl.vue'
 import Toast from './ui/Toast.vue'
 import { List, ListSection, ListItem, ItemContent, ItemMeta } from './ui/list'
+import { t } from '../i18n/productLocale'
 
 // Toast notifications
 const toast = ref(false)
@@ -48,10 +48,10 @@ function showToast(message: string, type?: string): void {
   }, 3000)
 }
 
-const archiveViewOptions = [
-  { value: 'active', label: 'Active' },
-  { value: 'archived', label: 'Archived' }
-]
+const archiveViewOptions = computed(() => [
+  { value: 'active', label: t('common.active') },
+  { value: 'archived', label: t('common.archived') }
+])
 
 const {
   savedTasks,
@@ -60,7 +60,6 @@ const {
   quickAddInput,
   isQuickAdding,
   showArchived,
-  savedTaskToggleLabel,
   visibleSavedTasks,
   savedTaskListMode,
   loadSavedTasks,
@@ -77,6 +76,29 @@ const {
   notify: showToast
 })
 
+const savedTaskToggleCopy = computed(() => {
+  if (isSavedTaskListExpanded.value) {
+    return t('common.showLess')
+  }
+  return savedTasks.value.length > 5
+    ? t('common.showAll', { total: savedTasks.value.length })
+    : t('common.expandDetails')
+})
+
+const dashboardTaskActionLabels = computed(() => [
+  showArchived.value ? t('common.restore') : t('common.archive'),
+  t('common.delete')
+])
+
+function getTaskProvenanceTooltip(task: TaskApiTask): string {
+  const provenance = deriveDashboardTaskProvenance(task)
+  if (provenance.tooltip === 'AI generated') return t('dashboard.taskTooltipAi')
+  if (task.originModule === 'dashboard') return t('dashboard.taskTooltipQuickAdd')
+  if (task.originModule === 'note') return t('dashboard.taskTooltipNote')
+  if (task.originModule === 'project') return t('dashboard.taskTooltipProject')
+  return t('dashboard.taskTooltipManual')
+}
+
 onMounted(loadSavedTasks)
 </script>
 
@@ -87,7 +109,7 @@ onMounted(loadSavedTasks)
     <div class="dashboard-quick-add">
       <input
         v-model="quickAddInput"
-        placeholder="Quick add task... (e.g., 去拿快递)"
+        :placeholder="t('dashboard.quickAddPlaceholder')"
         @keyup.enter="handleQuickAddTask"
         :disabled="isQuickAdding"
         class="input"
@@ -98,15 +120,15 @@ onMounted(loadSavedTasks)
       :mode="savedTaskListMode"
       @click="closeTaskMenu"
     >
-      <ListSection :aria-label="showArchived ? 'Archived saved tasks' : 'Active saved tasks'">
+      <ListSection :aria-label="showArchived ? t('dashboard.archivedSavedTasks') : t('dashboard.activeSavedTasks')">
         <template #title>
           <div class="dashboard-list-heading">
-            <span class="dashboard-list-heading-text">Saved Tasks</span>
+            <span class="dashboard-list-heading-text">{{ t('dashboard.savedTasks') }}</span>
             <SegmentedControl
               :model-value="showArchived ? 'archived' : 'active'"
               :options="archiveViewOptions"
               variant="page"
-              aria-label="Dashboard task archive view"
+              :aria-label="t('dashboard.archiveViewLabel')"
               @update:model-value="setArchiveView"
             />
           </div>
@@ -119,7 +141,7 @@ onMounted(loadSavedTasks)
             :aria-expanded="isSavedTaskListExpanded"
             @click.stop="toggleSavedTaskListExpanded"
           >
-            {{ savedTaskToggleLabel }}
+            {{ savedTaskToggleCopy }}
           </button>
         </template>
 
@@ -143,20 +165,20 @@ onMounted(loadSavedTasks)
             <span
               class="source-dot"
               :class="deriveDashboardTaskProvenance(task).className"
-              :title="deriveDashboardTaskProvenance(task).tooltip"
+              :title="getTaskProvenanceTooltip(task)"
             >{{ deriveDashboardTaskProvenance(task).letter }}</span>
             <OverflowMenu
               :open="taskMenuOpen === task._id"
-              title="Actions"
+              :title="t('common.actions')"
               @toggle="toggleTaskMenu(taskId(task))"
             >
-              <button @click="handleTaskArchive(taskForMutation(task))" class="btn btn-menu-item btn-archive">{{ getDashboardTaskActions(showArchived)[0] }}</button>
-              <button @click="handleTaskDelete(taskForMutation(task))" class="btn btn-menu-item btn-danger">{{ getDashboardTaskActions(showArchived)[1] }}</button>
+              <button @click="handleTaskArchive(taskForMutation(task))" class="btn btn-menu-item btn-archive">{{ dashboardTaskActionLabels[0] }}</button>
+              <button @click="handleTaskDelete(taskForMutation(task))" class="btn btn-menu-item btn-danger">{{ dashboardTaskActionLabels[1] }}</button>
             </OverflowMenu>
           </ItemMeta>
         </ListItem>
         <li v-if="savedTasks.length === 0" class="dashboard-list-empty">
-          <EmptyState :title="showArchived ? 'No archived tasks' : 'No saved tasks yet'" :description="showArchived ? 'Archive tasks to see them here' : 'Add tasks from quick add above'" />
+          <EmptyState :title="showArchived ? t('dashboard.emptyArchivedTitle') : t('dashboard.emptyActiveTitle')" :description="showArchived ? t('dashboard.emptyArchivedDescription') : t('dashboard.emptyActiveDescription')" />
         </li>
       </ListSection>
     </List>

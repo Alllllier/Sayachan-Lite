@@ -65,7 +65,7 @@ describe('useDashboardFeature orchestration', () => {
 
     expect(saveTask).toHaveBeenCalledWith('Write handoff', 'manual', 'dashboard', null)
     expect(feature.quickAddInput.value).toBe('')
-    expect(notify).toHaveBeenCalledWith('Task added')
+    expect(notify).toHaveBeenCalledWith('任务已添加')
   })
 
   it('completes tasks through the shared task API and refreshes parent data', async () => {
@@ -81,7 +81,7 @@ describe('useDashboardFeature orchestration', () => {
     expect(tasksRef.value[0]).toMatchObject({ _id: 'task-1', status: 'completed', completed: true })
     expect(syncTaskIntoActiveSnapshot).toHaveBeenCalledWith(tasksRef.value[0])
     expect(onRefreshed).toHaveBeenCalled()
-    expect(notify).toHaveBeenCalledWith('Task completed')
+    expect(notify).toHaveBeenCalledWith('任务已完成')
   })
 
   it('archives tasks through the shared task API and removes them from the current tab', async () => {
@@ -103,7 +103,7 @@ describe('useDashboardFeature orchestration', () => {
       completed: false
     })
     expect(feature.taskMenuOpen.value).toBe(null)
-    expect(notify).toHaveBeenCalledWith('Task archived')
+    expect(notify).toHaveBeenCalledWith('任务已归档')
   })
 
   it('deletes tasks through the shared task API and clears active snapshots', async () => {
@@ -119,7 +119,7 @@ describe('useDashboardFeature orchestration', () => {
     expect(tasksRef.value).toEqual([])
     expect(removeTaskFromActiveSnapshot).toHaveBeenCalledWith('task-1')
     expect(feature.taskMenuOpen.value).toBe(null)
-    expect(notify).toHaveBeenCalledWith('Task deleted')
+    expect(notify).toHaveBeenCalledWith('任务已删除')
   })
 
   it('switches archive view by resetting preview state and refetching tasks', async () => {
@@ -145,6 +145,6 @@ describe('useDashboardFeature orchestration', () => {
     await feature.loadSavedTasks()
 
     expect(feature.savedTasks.value).toEqual([{ _id: 'task-cached', title: 'Cached' }])
-    expect(notify).toHaveBeenCalledWith('Showing cached tasks. Refresh failed.', 'error')
+    expect(notify).toHaveBeenCalledWith('正在显示缓存任务，刷新失败。', 'error')
   })
 })

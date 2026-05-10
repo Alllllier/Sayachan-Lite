@@ -1,4 +1,5 @@
 import type { TaskStatus } from '@sayachan/contracts'
+import { t } from '../../i18n/productLocale'
 
 type ProjectTaskFilter = 'active' | 'completed'
 type TaskCaptureMode = 'single' | 'batch'
@@ -56,11 +57,11 @@ export function validateProjectFields(projectLike: ProjectLike | null | undefine
   const errors = createEmptyProjectErrors()
 
   if (!projectLike?.name?.trim()) {
-    errors.name = 'Enter a project name.'
+    errors.name = t('projects.validationName')
   }
 
   if (!projectLike?.summary?.trim()) {
-    errors.summary = 'Enter a short summary.'
+    errors.summary = t('projects.validationSummary')
   }
 
   return errors
@@ -107,7 +108,7 @@ export function getNextTaskCaptureModeState(
 }
 
 export function validateSingleTaskCapture(value: string | null | undefined): string {
-  return value?.trim() ? '' : 'Enter a task title.'
+  return value?.trim() ? '' : t('projects.validationTaskTitle')
 }
 
 export function parseBatchTaskTitles(value: string | null | undefined): string[] {
@@ -120,7 +121,7 @@ export function parseBatchTaskTitles(value: string | null | undefined): string[]
 export function validateBatchTaskCapture(value: string | null | undefined): string {
   return parseBatchTaskTitles(value).length > 0
     ? ''
-    : 'Enter at least one task title.'
+    : t('projects.validationBatchTasks')
 }
 
 export function getProjectTaskBuckets(tasks: ProjectTask[] | null | undefined): ProjectTaskBuckets {

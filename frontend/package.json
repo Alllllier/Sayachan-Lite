@@ -16,6 +16,7 @@
     "typecheck": "vue-tsc -p tsconfig.json --noEmit",
     "test:watch": "vitest --exclude tests/ui-review/**",
     "test:ui-review": "playwright test tests/ui-review --reporter=line",
+    "test:ui-copy-smoke": "playwright test tests/ui-review/ui-copy-smoke.spec.ts --reporter=line",
     "test:ui-review:headed": "playwright test tests/ui-review --headed --reporter=line"
   },
   "dependencies": {

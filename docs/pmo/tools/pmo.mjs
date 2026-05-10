@@ -14,7 +14,7 @@ Usage:
   node docs/pmo/tools/pmo.mjs --help
   node docs/pmo/tools/pmo.mjs activate --sprint "<name>" --selected-by "Human|Codex" --date YYYY-MM-DD [--dry-run]
   node docs/pmo/tools/pmo.mjs activate --micro-fix "<name>" --goal "<goal>" --date YYYY-MM-DD [--dry-run]
-  node docs/pmo/tools/pmo.mjs closeout --sprint "<name>" --delivery-status "<status>" --doc-sync "<outcome>" --commit-state "<state>" --date YYYY-MM-DD [--residual-note "..."] [--dry-run]
+  node docs/pmo/tools/pmo.mjs closeout --sprint "<name>" --delivery-status "<status>" --doc-sync "<outcome>" --commit-state "pending repository commit" --date YYYY-MM-DD [--residual-note "..."] [--dry-run]
   node docs/pmo/tools/pmo.mjs idle-reset --last-sprint "<name>" --delivery-status "<status>" --report-surface "<path>" --date YYYY-MM-DD [--dry-run]
 
 Options:

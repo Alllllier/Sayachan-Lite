@@ -76,7 +76,7 @@ flowchart TD
     AF -- "update required" --> AH["更新 canonical docs<br/>然后记录结果"]
 
     S --> AI{"Human 现在要执行 repository action 吗？"}
-    AI -- "是" --> AJ["准备 commit / 将 commit 作为独立动作执行"]
+    AI -- "是" --> AJ["准备 repository commit<br/>通常 closeout 先记录 pending repository commit"]
     AI -- "否" --> AK["在 PMO closeout 里明确写出 commit state"]
 
     AG --> AL["更新 current_sprint.md 的 closeout summary"]

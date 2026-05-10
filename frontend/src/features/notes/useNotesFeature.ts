@@ -23,6 +23,7 @@ import {
   restoreNoteFromSnapshot,
   validateNoteFields
 } from './notes.rules'
+import { t } from '../../i18n/productLocale'
 import type { NoteFieldErrors } from './notes.rules'
 
 const noop = () => {}
@@ -170,9 +171,9 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
       emitRefreshed()
     } catch (e) {
       if (hydratedFromCache) {
-        notify('Showing cached notes. Refresh failed.', 'error')
+        notify(t('notes.toastCached'), 'error')
       } else {
-        error.value = 'Failed to load notes'
+        error.value = t('notes.toastLoadFailed')
       }
     } finally {
       loading.value = false
@@ -194,9 +195,9 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
       newNoteErrors.value = createEmptyNoteErrors()
       onNoteCreated()
       emitRefreshed()
-      notify('Note saved')
+      notify(t('notes.toastSaved'))
     } catch (e) {
-      notify('Failed to save note. Please try again.', 'error')
+      notify(t('notes.toastSaveFailed'), 'error')
       drafts.value[Date.now()] = { ...form.value }
       saveDraft()
     } finally {
@@ -221,16 +222,16 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
       clearEditNoteErrors(note._id)
       editingId.value = null
       emitRefreshed()
-      notify('Note updated')
+      notify(t('notes.toastUpdated'))
     } catch (e) {
-      notify('Failed to update note. Please try again.', 'error')
+      notify(t('notes.toastUpdateFailed'), 'error')
     } finally {
       loading.value = false
     }
   }
 
   async function deleteNote(id: string): Promise<void> {
-    if (!confirm('Delete this note?')) return
+    if (!confirm(t('notes.confirmDelete'))) return
 
     loading.value = true
     error.value = null
@@ -239,26 +240,26 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
       notes.value = notes.value.filter(n => n._id !== id)
       cacheCurrentNotes()
       emitRefreshed()
-      notify('Note deleted')
+      notify(t('notes.toastDeleted'))
     } catch (e) {
-      notify('Failed to delete note. Please try again.', 'error')
+      notify(t('notes.toastDeleteFailed'), 'error')
     } finally {
       loading.value = false
     }
   }
 
   async function archiveNote(note: EditableNote): Promise<void> {
-    if (!confirm(`Archive "${note.title}"? All tasks from this note will be archived too.`)) return
+    if (!confirm(t('notes.confirmArchive', { title: note.title }))) return
 
     loading.value = true
     error.value = null
     try {
       await archiveNoteRequest(note._id)
       await fetchNotes()
-      notify('Note archived')
+      notify(t('notes.toastArchived'))
       emitRefreshed()
     } catch (e) {
-      notify('Failed to archive note. Please try again.', 'error')
+      notify(t('notes.toastArchiveFailed'), 'error')
     } finally {
       loading.value = false
     }
@@ -270,10 +271,10 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
     try {
       await restoreNoteRequest(note._id)
       await fetchNotes()
-      notify('Note restored')
+      notify(t('notes.toastRestored'))
       emitRefreshed()
     } catch (e) {
-      notify('Failed to restore note. Please try again.', 'error')
+      notify(t('notes.toastRestoreFailed'), 'error')
     } finally {
       loading.value = false
     }
@@ -284,9 +285,9 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
     try {
       await pinNoteRequest(note._id)
       await fetchNotes()
-      notify('Note pinned')
+      notify(t('notes.toastPinned'))
     } catch (e) {
-      notify('Failed to pin note', 'error')
+      notify(t('notes.toastPinFailed'), 'error')
     } finally {
       loading.value = false
     }
@@ -297,9 +298,9 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
     try {
       await unpinNoteRequest(note._id)
       await fetchNotes()
-      notify('Note unpinned')
+      notify(t('notes.toastUnpinned'))
     } catch (e) {
-      notify('Failed to unpin note', 'error')
+      notify(t('notes.toastUnpinFailed'), 'error')
     } finally {
       loading.value = false
     }
@@ -375,7 +376,7 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
       noteId
     )
     if (newTask) {
-      notify('Task saved')
+      notify(t('notes.toastTaskSaved'))
     } else {
       savedTaskDrafts.value.delete(draft)
     }

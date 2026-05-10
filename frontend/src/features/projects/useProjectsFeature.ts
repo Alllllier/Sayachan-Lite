@@ -29,6 +29,7 @@ import {
   updateProject as updateProjectRequest,
   updateProjectFocus
 } from './projects.api.js'
+import { t } from '../../i18n/productLocale'
 
 const noop = () => {}
 const PROJECTS_CACHE_RESOURCE = 'projects'
@@ -181,9 +182,9 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
       emitRefreshed()
     } catch (e) {
       if (hydratedFromCache) {
-        notify('Showing cached projects. Refresh failed.', 'error')
+        notify(t('projects.toastCached'), 'error')
       } else {
-        error.value = 'Failed to load projects'
+        error.value = t('projects.toastLoadFailed')
       }
     } finally {
       loading.value = false
@@ -205,9 +206,9 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
       projectFormErrors.value = createEmptyProjectErrors()
       projectTasks.value[project._id] = []
       emitRefreshed()
-      notify('Project created')
+      notify(t('projects.toastCreated'))
     } catch (e) {
-      notify('Failed to create project. Please try again.', 'error')
+      notify(t('projects.toastCreateFailed'), 'error')
     } finally {
       loading.value = false
     }
@@ -229,16 +230,16 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
       editingProjectId.value = null
       clearEditProjectErrors(project._id)
       emitRefreshed()
-      notify('Project updated')
+      notify(t('projects.toastUpdated'))
     } catch (e) {
-      notify('Failed to update project. Please try again.', 'error')
+      notify(t('projects.toastUpdateFailed'), 'error')
     } finally {
       loading.value = false
     }
   }
 
   async function deleteProject(id: string): Promise<void> {
-    if (!confirm('Delete this project?')) return
+    if (!confirm(t('projects.confirmDelete'))) return
 
     loading.value = true
     error.value = null
@@ -247,26 +248,26 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
       projects.value = projects.value.filter(p => p._id !== id)
       cacheCurrentProjects()
       emitRefreshed()
-      notify('Project deleted')
+      notify(t('projects.toastDeleted'))
     } catch (e) {
-      notify('Failed to delete project. Please try again.', 'error')
+      notify(t('projects.toastDeleteFailed'), 'error')
     } finally {
       loading.value = false
     }
   }
 
   async function archiveProject(project: ProjectWithId): Promise<void> {
-    if (!confirm(`Archive "${project.name}"? All related tasks will be archived too.`)) return
+    if (!confirm(t('projects.confirmArchive', { name: project.name }))) return
 
     loading.value = true
     error.value = null
     try {
       await archiveProjectRequest(project._id)
       await fetchProjects()
-      notify('Project archived')
+      notify(t('projects.toastArchived'))
       emitRefreshed()
     } catch (e) {
-      notify('Failed to archive project. Please try again.', 'error')
+      notify(t('projects.toastArchiveFailed'), 'error')
     } finally {
       loading.value = false
     }
@@ -279,10 +280,10 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
       await restoreProjectRequest(project._id)
       await fetchProjects()
       await fetchProjectTasksForCard(project._id)
-      notify('Project restored')
+      notify(t('projects.toastRestored'))
       emitRefreshed()
     } catch (e) {
-      notify('Failed to restore project. Please try again.', 'error')
+      notify(t('projects.toastRestoreFailed'), 'error')
     } finally {
       loading.value = false
     }
@@ -293,9 +294,9 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     try {
       await pinProjectRequest(project._id)
       await fetchProjects()
-      notify('Project pinned')
+      notify(t('projects.toastPinned'))
     } catch (e) {
-      notify('Failed to pin project', 'error')
+      notify(t('projects.toastPinFailed'), 'error')
     } finally {
       loading.value = false
     }
@@ -306,9 +307,9 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     try {
       await unpinProjectRequest(project._id)
       await fetchProjects()
-      notify('Project unpinned')
+      notify(t('projects.toastUnpinned'))
     } catch (e) {
-      notify('Failed to unpin project', 'error')
+      notify(t('projects.toastUnpinFailed'), 'error')
     } finally {
       loading.value = false
     }
@@ -457,12 +458,12 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
         project._id
       )
       if (newTask) {
-        notify('Task added')
+        notify(t('projects.toastTaskAdded'))
         closeTaskCapture(project._id)
         await fetchProjectTasksForCard(project._id)
       }
     } catch (e) {
-      error.value = 'Failed to add task'
+      error.value = t('projects.toastAddTaskFailed')
     } finally {
       addingManualTasks.value.delete(project._id)
     }
@@ -492,11 +493,11 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
         if (newTask) successCount++
       }
 
-      notify(`Added ${successCount} task(s)`)
+      notify(t('projects.toastTasksAdded', { count: successCount }))
       closeTaskCapture(project._id)
       await fetchProjectTasksForCard(project._id)
     } catch (e) {
-      error.value = 'Failed to add tasks'
+      error.value = t('projects.toastAddTasksFailed')
     } finally {
       addingBatchTasks.value.delete(project._id)
     }
@@ -542,7 +543,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     )
 
     if (newTask) {
-      notify('Saved as task')
+      notify(t('projects.toastSavedAsTask'))
       await fetchProjectTasksForCard(projectId)
     } else {
       savedSuggestions.value.delete(suggestion)
@@ -561,7 +562,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
       }
       emitRefreshed()
     } catch (e) {
-      error.value = 'Failed to set focus'
+      error.value = t('projects.toastSetFocusFailed')
     }
   }
 

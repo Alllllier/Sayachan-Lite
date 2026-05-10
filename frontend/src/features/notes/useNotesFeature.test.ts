@@ -75,7 +75,7 @@ describe('useNotesFeature orchestration', () => {
     expect(feature.form.value).toEqual({ title: '', content: '' })
     expect(onNoteCreated).toHaveBeenCalled()
     expect(onRefreshed).toHaveBeenCalledWith(feature.notes.value)
-    expect(notify).toHaveBeenCalledWith('Note saved')
+    expect(notify).toHaveBeenCalledWith('笔记已保存')
   })
 
   it('persists a local draft when note creation fails', async () => {
@@ -90,7 +90,7 @@ describe('useNotesFeature orchestration', () => {
       'sayachan_note_drafts:user-1',
       expect.stringContaining('"title":"PMO"')
     )
-    expect(notify).toHaveBeenCalledWith('Failed to save note. Please try again.', 'error')
+    expect(notify).toHaveBeenCalledWith('笔记保存失败，请再试一次。', 'error')
   })
 
   it('uses the current draft storage key after an account switch', async () => {
@@ -143,7 +143,7 @@ describe('useNotesFeature orchestration', () => {
     expect(feature.notes.value.map(note => note._id)).toEqual(['note-1', 'note-2'])
     expect(feature.editingId.value).toBe(null)
     expect(onNoteUpdated).toHaveBeenCalledWith('note-1')
-    expect(notify).toHaveBeenCalledWith('Note updated')
+    expect(notify).toHaveBeenCalledWith('笔记已更新')
   })
 
   it('archives through the note API before refreshing the list', async () => {
@@ -157,7 +157,7 @@ describe('useNotesFeature orchestration', () => {
     expect(archiveNote).toHaveBeenCalledWith('note-1')
     expect(fetchNotes).toHaveBeenCalledWith({ archived: false })
     expect(feature.notes.value).toEqual([{ _id: 'note-2', title: 'Remaining', content: 'Open', updatedAt: NOTE_UPDATED_AT }])
-    expect(notify).toHaveBeenCalledWith('Note archived')
+    expect(notify).toHaveBeenCalledWith('笔记已归档')
   })
 
   it('clears a stale load error when notes are fetched again', async () => {
@@ -167,7 +167,7 @@ describe('useNotesFeature orchestration', () => {
       .mockResolvedValueOnce([{ _id: 'note-1', title: 'Recovered', content: 'Ready', updatedAt: NOTE_UPDATED_AT }])
 
     await feature.fetchNotes()
-    expect(feature.error.value).toBe('Failed to load notes')
+    expect(feature.error.value).toBe('笔记加载失败')
 
     await feature.fetchNotes()
     expect(feature.error.value).toBe(null)
@@ -184,7 +184,7 @@ describe('useNotesFeature orchestration', () => {
 
     expect(feature.notes.value).toEqual([{ _id: 'note-cached', title: 'Cached', content: 'Snapshot', updatedAt: NOTE_UPDATED_AT }])
     expect(feature.error.value).toBe(null)
-    expect(notify).toHaveBeenCalledWith('Showing cached notes. Refresh failed.', 'error')
+    expect(notify).toHaveBeenCalledWith('正在显示缓存笔记，刷新失败。', 'error')
   })
 
   it('generates and saves note task drafts through feature boundaries', async () => {
@@ -200,6 +200,6 @@ describe('useNotesFeature orchestration', () => {
     expect(fetchNoteTaskDrafts).toHaveBeenCalledWith(note._id)
     expect(feature.aiTasksByNote[note._id]).toEqual(['Write handoff'])
     expect(saveTask).toHaveBeenCalledWith('Write handoff', 'ai', 'note', 'note-1')
-    expect(notify).toHaveBeenCalledWith('Task saved')
+    expect(notify).toHaveBeenCalledWith('任务已保存')
   })
 })

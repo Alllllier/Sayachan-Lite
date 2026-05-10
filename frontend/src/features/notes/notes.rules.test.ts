@@ -12,11 +12,11 @@ import {
 describe('notes rules locks', () => {
   it('returns a title error for empty or whitespace-only titles', () => {
     expect(validateNoteFields({ title: '', content: 'Body' })).toEqual({
-      title: 'Enter a note title.',
+      title: '请输入笔记标题。',
       content: ''
     })
     expect(validateNoteFields({ title: '   ', content: 'Body' })).toEqual({
-      title: 'Enter a note title.',
+      title: '请输入笔记标题。',
       content: ''
     })
   })
@@ -24,11 +24,11 @@ describe('notes rules locks', () => {
   it('returns a content error for empty or whitespace-only content', () => {
     expect(validateNoteFields({ title: 'Title', content: '' })).toEqual({
       title: '',
-      content: 'Enter note content.'
+      content: '请输入笔记内容。'
     })
     expect(validateNoteFields({ title: 'Title', content: '   ' })).toEqual({
       title: '',
-      content: 'Enter note content.'
+      content: '请输入笔记内容。'
     })
   })
 
@@ -37,8 +37,8 @@ describe('notes rules locks', () => {
   })
 
   it('only treats title or content errors as note errors', () => {
-    expect(hasNoteErrors({ title: 'Enter a note title.', content: '' })).toBe(true)
-    expect(hasNoteErrors({ title: '', content: 'Enter note content.' })).toBe(true)
+    expect(hasNoteErrors({ title: '请输入笔记标题。', content: '' })).toBe(true)
+    expect(hasNoteErrors({ title: '', content: '请输入笔记内容。' })).toBe(true)
     expect(hasNoteErrors({ title: '', content: '' })).toBe(false)
     const serverErrors = { title: '', content: '', unrelated: 'Server warning' }
     expect(hasNoteErrors(serverErrors)).toBe(false)

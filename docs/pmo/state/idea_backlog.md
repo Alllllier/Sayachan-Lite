@@ -79,9 +79,9 @@ Product-facing ideas and UI surface consistency topics that may become user-visi
 - Problem / Opportunity: `The current top user bar is intentionally minimal and now feels a little rough after the auth flow became usable. The product likely wants a lightweight account/settings surface where logout, account identity, role/status, and later account controls can live without making the main app header carry too much UI weight.`
 - Why now: `Auth is now functional enough that repeated use exposes the navigation and account-management polish gap, but the main login/session chain is already working and should not be reopened just to beautify the header.`
 - Current status: `parked`
-- Dependencies: `A later small product/UI slice that decides the minimal settings scope, whether owner management links belong inside settings or remain as a separate owner route, and how much of the top user bar should collapse into an account menu.`
+- Dependencies: `A later small product/UI slice that decides the minimal settings scope, whether owner management links belong inside settings or remain as a separate owner route, how much of the top user bar should collapse into an account menu, and whether language preference should be local-only, account-persisted, or staged from the pre-auth locale.`
 - Risks / unknowns: `If scoped too broadly, this could sprawl into password changes, email verification, session management, and admin settings before those capabilities are needed. If ignored too long, logout/account identity will keep feeling like scaffolding instead of product UI.`
-- Suggested next action: `Later, shape a narrow Account Settings / user-menu polish sprint: create a settings/account page for identity and logout, move the top bar toward a cleaner account menu, and leave password/email/session-management expansion as explicit future scope.`
+- Suggested next action: `Later, shape a narrow Account Settings / user-menu polish sprint: create a settings/account page for identity, logout, and language preference; move the top bar toward a cleaner account menu; and leave password/email/session-management expansion as explicit future scope.`
 - Reopen trigger: `A human wants to polish auth/account UI, user testing shows logout/account identity confusion, or future auth capabilities need a natural settings home.`
 
 ### Lane: Engineering Cleanup
@@ -191,11 +191,12 @@ Validation reliability, browser-specific defects, test harness shape, and comman
 - Source: `execution report`
 - Source reference: `CardCollection Command Slot And Notes Capture Modal closeout on 2026-05-10`
 - Problem / Opportunity: `During Notes capture-modal validation, an attempted broad UI review run executed unrelated suites and surfaced two non-Notes failures: Chat desktop shell waiting for .chat-popup after opening chat, and Dashboard desktop saved-task review waiting for the Show less button. The selected Notes UI review path passed, so these failures did not block the Notes sprint, but they should not remain only inside the archived execution report.`
+- Additional note: `Frontend Chinese UI Copy Baseline later added a focused no-screenshot UI-copy smoke path and intentionally skipped the broad screenshot-oriented UI review to avoid screenshot churn. Existing screenshot artifacts may still reflect older English chrome and should be refreshed only in a deliberate validation slice.`
 - Why now: `Broad UI review reliability affects future confidence when UI changes need cross-surface validation, even when focused surface review can pass through grep filtering.`
 - Current status: `parked`
 - Dependencies: `A later validation/tooling cleanup window or a future sprint that touches Chat, Dashboard, or broad UI review invocation behavior.`
 - Risks / unknowns: `The failures may be fixture/timing/script-targeting issues rather than product regressions. Fixing them casually during an unrelated product sprint could create screenshot churn or mask the real cause.`
-- Suggested next action: `Later, run a narrow UI review maintenance pass that reproduces the Chat and Dashboard failures, decides whether they are test timing, fixture drift, or real UI behavior changes, and repairs only the affected review paths.`
+- Suggested next action: `Later, run a narrow UI review maintenance pass that reproduces the Chat and Dashboard failures, decides whether they are test timing, fixture drift, or real UI behavior changes, refreshes Chinese-first screenshot/assertion baselines if PMO still treats those artifacts as review truth, and repairs only the affected review paths.`
 - Reopen trigger: `A future broad UI review run still fails on Chat or Dashboard, a sprint needs full UI review confidence, or Chat/Dashboard work touches the failing states.`
 
 ### `Reusable UI Review Harness Helpers`
