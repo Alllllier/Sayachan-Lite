@@ -16,13 +16,23 @@ This file is intentionally narrower than the old PMO manual.
 
 ## Layer Model
 
-`Sayachan PMO v2` is organized into five layers:
+`Sayachan PMO v2` is split across the product repository and the embedded PMO runtime repository.
 
-- `state/`
+The product repository keeps stable PMO assets:
+
 - `protocols/`
 - `policies/`
 - `baselines/`
-- `history/`
+- `operator-guides/`
+- `tools/`
+- `state/templates/`
+
+The embedded runtime repository at `.pmo_runtime/` keeps frequently changing PMO assets:
+
+- `.pmo_runtime/state/`
+- `.pmo_runtime/history/`
+
+See `docs/pmo/RUNTIME_LOCATION.md` for the ownership boundary.
 
 In addition, `operator-guides/` may hold human-facing system explanations and operator navigation aids.
 It is a companion layer, not a canonical contract layer.
@@ -31,14 +41,16 @@ It is a companion layer, not a canonical contract layer.
 
 ### Runtime State
 
-Use this layer for active PMO state:
+Use `.pmo_runtime/state/` for active PMO state:
 
-- `state/current_sprint.md`
-- `state/sprint_candidates.md`
-- `state/idea_backlog.md`
-- `state/decision_log.md`
-- `state/execution_task.md`
-- `state/execution_report.md`
+- `.pmo_runtime/state/current_sprint.md`
+- `.pmo_runtime/state/sprint_candidates.md`
+- `.pmo_runtime/state/idea_backlog.md`
+- `.pmo_runtime/state/decision_log.md`
+- `.pmo_runtime/state/execution_task.md`
+- `.pmo_runtime/state/execution_report.md`
+- `.pmo_runtime/state/discussion_index.md`
+- `.pmo_runtime/state/discussions/**`
 
 ### Protocols
 
@@ -82,12 +94,14 @@ Use this layer for system truth and PMO truth:
 
 ### History
 
-Use this layer for historical explanation and legacy transition:
+Use `.pmo_runtime/history/` for PMO execution and candidate archives. Stable historical references that are product-repo truth should move into baselines, policies, or another stable docs home before being removed from runtime history.
 
-- `history/reference/legacy-transition-notes.md`
-- `history/candidates/README.md`
-- `history/reports/README.md`
-- `history/templates/`
+Legacy transition reference remains in runtime history unless promoted into stable PMO docs:
+
+- `.pmo_runtime/history/reference/legacy-transition-notes.md`
+- `.pmo_runtime/history/candidates/README.md`
+- `.pmo_runtime/history/reports/README.md`
+- `docs/pmo/history/templates/`
 
 ### Tools
 
@@ -100,37 +114,37 @@ Use this layer for PMO-local automation:
 
 When operating the active PMO loop, the minimum runtime set is:
 
-- `state/current_sprint.md`
-- `state/sprint_candidates.md`
-- `state/idea_backlog.md`
-- `state/decision_log.md`
-- `state/execution_task.md`
-- `state/execution_report.md`
+- `.pmo_runtime/state/current_sprint.md`
+- `.pmo_runtime/state/sprint_candidates.md`
+- `.pmo_runtime/state/idea_backlog.md`
+- `.pmo_runtime/state/decision_log.md`
+- `.pmo_runtime/state/execution_task.md`
+- `.pmo_runtime/state/execution_report.md`
 
-These are the files that should reflect current PMO state, not the old PMO files.
+These are the files that should reflect current PMO state. They are not tracked by the product repository.
 
-`tools/pmo.mjs` may write the mechanical transitions between these files after PMO has selected the sprint, validation status, documentation-sync outcome, commit state, and follow-up routing.
+`tools/pmo.mjs` writes these mechanical transitions to `.pmo_runtime/` by default after PMO has selected the sprint, validation status, documentation-sync outcome, commit state, and follow-up routing.
 
 ## Intake And Routing Map
 
 Use this routing map when a new idea, bugfix discussion, or future architecture concept enters PMO.
 
-1. Capture the discussion entry in `state/discussion_index.md` and the active batch under `state/discussions/`.
+1. Capture the discussion entry in `.pmo_runtime/state/discussion_index.md` and the active batch under `.pmo_runtime/state/discussions/`.
 2. Keep the topic in discussion while the shape, boundary, and likely slice are still unstable.
 3. If a slice inside an active batch grows into its own durable planning conversation, PMO may split that slice into a new `follow-up` discussion batch rather than forcing it to remain nested indefinitely.
 4. When the result stabilizes, promote it by intent:
-   - `state/idea_backlog.md` for retained work that is worth keeping visible but is not ready to start
-   - `state/sprint_candidates.md` for bounded slices that are ready for human comparison
-   - `state/decision_log.md` for durable decisions, explicit deferrals, or rejected paths
-5. After explicit human sprint selection, activate the selected sprint in `state/current_sprint.md` from `state/templates/current-sprint.active.template.md` and write the active execution contract into `state/execution_task.md` from `state/templates/execution-task.template.md`.
-6. The selected candidate may remain visible in `state/sprint_candidates.md` only as selected-source context while the sprint is active, then should be archived into `history/candidates/` with `history/templates/candidate-archive.template.md` and removed from the candidate surface during closeout.
-7. Execution returns into `state/execution_report.md`, then PMO closes out the sprint and syncs any durable decision or deferred follow-up back into the formal state files.
-8. After PMO reads a detailed execution report, archive that report into `history/reports/` with `history/templates/execution-report-archive.template.md` before resetting `state/execution_report.md` to idle.
+   - `.pmo_runtime/state/idea_backlog.md` for retained work that is worth keeping visible but is not ready to start
+   - `.pmo_runtime/state/sprint_candidates.md` for bounded slices that are ready for human comparison
+   - `.pmo_runtime/state/decision_log.md` for durable PMO decisions, explicit deferrals, or rejected paths
+5. After explicit human sprint selection, activate the selected sprint in `.pmo_runtime/state/current_sprint.md` from `docs/pmo/state/templates/current-sprint.active.template.md` and write the active execution contract into `.pmo_runtime/state/execution_task.md` from `docs/pmo/state/templates/execution-task.template.md`.
+6. The selected candidate may remain visible in `.pmo_runtime/state/sprint_candidates.md` only as selected-source context while the sprint is active, then should be archived into `.pmo_runtime/history/candidates/` and removed from the candidate surface during closeout.
+7. Execution returns into `.pmo_runtime/state/execution_report.md`, then PMO closes out the sprint and syncs any durable decision or deferred follow-up back into the formal runtime state files.
+8. After PMO reads a detailed execution report, archive that report into `.pmo_runtime/history/reports/` before resetting `.pmo_runtime/state/execution_report.md` to idle.
 9. Parked future work must not live only inside the handoff or the report:
-   - if it is stable enough to keep for later, record it in `state/idea_backlog.md` with status `parked`
-   - if it is a durable deferral or rejected path, record it in `state/decision_log.md`
+   - if it is stable enough to keep for later, record it in `.pmo_runtime/state/idea_backlog.md` with status `parked`
+   - if it is a durable deferral or rejected path, record it in `.pmo_runtime/state/decision_log.md`
    - if it is still too raw for formal state, keep it in the discussion batch with explicit `parked` status and next review trigger
-10. When work retained in `state/idea_backlog.md` is later completed through execution, remove the finished work item from backlog unless it still represents unfinished future work. Keep durable conclusions in `state/decision_log.md` and rely on `history/reports/` for the execution history.
+10. When work retained in `.pmo_runtime/state/idea_backlog.md` is later completed through execution, remove the finished work item from backlog unless it still represents unfinished future work. Keep durable PMO conclusions in `.pmo_runtime/state/decision_log.md` and rely on `.pmo_runtime/history/reports/` for the execution history.
 
 For activation, closeout, archive, and idle-reset file writes, prefer `tools/pmo.mjs` once PMO judgment is settled.
 
@@ -155,28 +169,28 @@ Use it only when the issue is already concrete, the scope is small, and no new d
 
 Read in this order:
 
-1. `state/current_sprint.md`
-2. `state/sprint_candidates.md`
-3. `state/idea_backlog.md`
-4. `state/decision_log.md`
+1. `.pmo_runtime/state/current_sprint.md`
+2. `.pmo_runtime/state/sprint_candidates.md`
+3. `.pmo_runtime/state/idea_backlog.md`
+4. `.pmo_runtime/state/decision_log.md`
 
 ### When triaging new intake
 
 Read in this order:
 
-1. `state/discussion_index.md`
-2. the active batch under `state/discussions/`
-3. `state/idea_backlog.md`
-4. `state/sprint_candidates.md`
-5. `state/decision_log.md`
+1. `.pmo_runtime/state/discussion_index.md`
+2. the active batch under `.pmo_runtime/state/discussions/`
+3. `.pmo_runtime/state/idea_backlog.md`
+4. `.pmo_runtime/state/sprint_candidates.md`
+5. `.pmo_runtime/state/decision_log.md`
 
 ### When operating an active sprint
 
 Read in this order:
 
-1. `state/current_sprint.md`
-2. `state/execution_task.md`
-3. `state/execution_report.md`
+1. `.pmo_runtime/state/current_sprint.md`
+2. `.pmo_runtime/state/execution_task.md`
+3. `.pmo_runtime/state/execution_report.md`
 4. `protocols/sprint-workflow.md`
 5. `protocols/execution-handoff-protocol.md`
 
@@ -184,8 +198,8 @@ Read in this order:
 
 Read in this order:
 
-1. `state/current_sprint.md`
-2. `state/execution_task.md`
+1. `.pmo_runtime/state/current_sprint.md`
+2. `.pmo_runtime/state/execution_task.md`
 3. `protocols/sprint-workflow.md`
 4. only the additional docs needed for the bounded fix
 
@@ -211,7 +225,7 @@ It means:
 
 Current reference surface for that reminder:
 
-- `history/reference/legacy-transition-notes.md`
+- `.pmo_runtime/history/reference/legacy-transition-notes.md`
 
 Default behavior:
 
@@ -264,7 +278,7 @@ The execution worker owns:
 - writing structured execution results back into `execution_report.md`
 
 The execution worker does not become PMO by reading this manual.
-Any execution worker variant, including delegated or sub-agent workers, should default to `state/execution_task.md` as the canonical execution source. Later direct instructions should stay narrow and clarify or correct the active loop rather than replacing the handoff contract silently.
+Any execution worker variant, including delegated or sub-agent workers, should default to `.pmo_runtime/state/execution_task.md` as the canonical execution source. Later direct instructions should stay narrow and clarify or correct the active loop rather than replacing the handoff contract silently.
 
 ## Core Operating Rules
 

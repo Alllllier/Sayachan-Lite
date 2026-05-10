@@ -50,7 +50,7 @@ Use one of these modes when opening a batch:
 
 ## Standard Sequence
 
-1. Record the discussion in `state/discussion_index.md` and the active batch file under `state/discussions/`.
+1. Record the discussion in `.pmo_runtime/state/discussion_index.md` and the active batch file under `.pmo_runtime/state/discussions/`.
 2. Choose whether this batch is `exploration` or `follow-up`.
 3. Cluster related themes lightly instead of over-normalizing them when the batch is broad enough to need clustering.
 4. When a theme still contains multiple plausible execution directions, preserve them under `Possible Slices`.
@@ -68,7 +68,7 @@ Use one of these modes when opening a batch:
 
 ## `discussion_index.md` Update Rule
 
-Treat `state/discussion_index.md` as a lifecycle index rather than a step-by-step discussion log.
+Treat `.pmo_runtime/state/discussion_index.md` as a lifecycle index rather than a step-by-step discussion log.
 
 Update the index when:
 

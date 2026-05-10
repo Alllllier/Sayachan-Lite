@@ -41,3 +41,6 @@ faceup
 faceup-v2
 knowledge
 .codex/skills/bjd-pastel-advisor
+
+# PMO runtime state/history lives in an embedded independent git repo.
+.pmo_runtime/

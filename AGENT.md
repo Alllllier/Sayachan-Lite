@@ -17,9 +17,9 @@ This file is not the canonical architecture or PMO source. Canonical sources liv
 
 ## Immediate Rule
 
-If the human explicitly says to execute the current sprint or active PMO task, read `docs/pmo/state/execution_task.md` first and treat it as the execution contract.
+If the human explicitly says to execute the current sprint or active PMO task, read `.pmo_runtime/state/execution_task.md` first and treat it as the execution contract.
 
-Write the result into `docs/pmo/state/execution_report.md`.
+Write the result into `.pmo_runtime/state/execution_report.md`.
 
 Do not start with broad repo exploration when the active handoff already defines the task.
 
@@ -66,8 +66,8 @@ Current stack:
 
 When executing the current sprint:
 
-1. `docs/pmo/state/execution_task.md`
-2. `docs/pmo/state/current_sprint.md`
+1. `.pmo_runtime/state/execution_task.md`
+2. `.pmo_runtime/state/current_sprint.md`
 3. `docs/pmo/baselines/system-baseline.md`
 4. only the additional docs needed for the assigned slice
 
@@ -85,9 +85,9 @@ Core references:
 
 ## Execution Rules
 
-- `docs/pmo/state/execution_task.md` is the canonical worker contract.
-- `docs/pmo/state/current_sprint.md` is PMO runtime context, not a substitute for the active task.
-- `docs/pmo/state/execution_report.md` is the mutable completion report surface until PMO closeout.
+- `.pmo_runtime/state/execution_task.md` is the canonical worker contract.
+- `.pmo_runtime/state/current_sprint.md` is PMO runtime context, not a substitute for the active task.
+- `.pmo_runtime/state/execution_report.md` is the mutable completion report surface until PMO closeout.
 - Same-scope human-review fixes should stay inside the current execution loop; update the same report instead of starting a new PMO cycle yourself.
 - If a human-review request slightly exceeds the original handoff wording but is still clearly same-scope and directly instructed, you may implement it and must mark that deviation explicitly in `execution_report.md`.
 
@@ -168,7 +168,7 @@ Avoid:
 
 ## Report Contract
 
-Before reporting sprint completion, write or update `docs/pmo/state/execution_report.md` with:
+Before reporting sprint completion, write or update `.pmo_runtime/state/execution_report.md` with:
 
 - what changed
 - what validation was run

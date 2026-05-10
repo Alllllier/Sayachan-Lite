@@ -5,7 +5,9 @@ import { dirname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-const defaultPmoRoot = resolve(scriptDir, '..');
+const productPmoRoot = resolve(scriptDir, '..');
+const productRepoRoot = resolve(productPmoRoot, '..', '..');
+const defaultRuntimeRoot = resolve(productRepoRoot, '.pmo_runtime');
 
 function usage() {
   return `PMO helper
@@ -18,8 +20,9 @@ Usage:
   node docs/pmo/tools/pmo.mjs idle-reset --last-sprint "<name>" --delivery-status "<status>" --report-surface "<path>" --date YYYY-MM-DD [--dry-run]
 
 Options:
-  --dry-run              Print planned writes without changing files.
-  --pmo-root "<path>"    Use a different PMO root for tests or fixtures.
+  --dry-run                 Print planned writes without changing files.
+  --runtime-root "<path>"   Use a different PMO runtime root for tests or fixtures.
+  --pmo-root "<path>"       Backward-compatible alias for --runtime-root.
 `;
 }
 
@@ -223,8 +226,8 @@ function activeCurrentSprint({ sprint, date, selectedBy, type, goal, source, can
 - Type: \`${type}\`
 - Goal: \`${goal}\`
 - Source: \`${source}\`
-- Active handoff: \`docs/pmo/state/execution_task.md\`
-- Execution report target: \`docs/pmo/state/execution_report.md\`
+- Active handoff: \`.pmo_runtime/state/execution_task.md\`
+- Execution report target: \`.pmo_runtime/state/execution_report.md\`
 
 ## Activation Snapshot
 
@@ -235,13 +238,13 @@ function activeCurrentSprint({ sprint, date, selectedBy, type, goal, source, can
 
 ## PMO Boundary
 
-- Detailed worker scope lives in \`execution_task.md\`
-- Candidate comparison details remain in \`sprint_candidates.md\` when applicable
+- Detailed worker scope lives in \`.pmo_runtime/state/execution_task.md\`
+- Candidate comparison details remain in \`.pmo_runtime/state/sprint_candidates.md\` when applicable
 - This file should stay a lightweight runtime card, not a second execution brief
 
 ## Next PMO Action
 
-- wait for execution return in \`execution_report.md\`
+- wait for execution return in \`.pmo_runtime/state/execution_report.md\`
 - close out, route follow-up, and reset runtime state when execution is accepted
 `;
 }
@@ -260,7 +263,7 @@ function executionTaskFromCandidate({ sprint, date, fields }) {
 
 - Before executing, read \`AGENT.md\` as the repository execution entrypoint.
 - Then read this file as the canonical active execution contract.
-- Do not plan from \`sprint_candidates.md\`, \`idea_backlog.md\`, or broader PMO docs unless this handoff explicitly asks for that context.
+- Do not plan from \`.pmo_runtime/state/sprint_candidates.md\`, \`.pmo_runtime/state/idea_backlog.md\`, or broader PMO docs unless this handoff explicitly asks for that context.
 
 ## Source Trace
 
@@ -293,7 +296,7 @@ ${bulletBlock(fields['Out of scope'], 'Do not expand beyond the selected candida
 ## Deferred Or Parked Follow-Up
 
 - Keep any out-of-scope future work out of this sprint.
-- PMO should route durable follow-up into \`idea_backlog.md\` or \`decision_log.md\` during closeout when needed.
+- PMO should route durable follow-up into \`.pmo_runtime/state/idea_backlog.md\` or \`.pmo_runtime/state/decision_log.md\` during closeout when needed.
 
 ## Acceptance Checks
 
@@ -326,7 +329,7 @@ ${bulletBlock(fields['Escalation triggers'], 'No candidate-specific escalation t
 
 ## Completion Report Contract
 
-Write the execution report to \`docs/pmo/state/execution_report.md\`.
+Write the execution report to \`.pmo_runtime/state/execution_report.md\`.
 
 Use \`docs/pmo/state/templates/execution-report.template.md\` as the report shape unless PMO explicitly narrows the contract for this sprint.
 
@@ -351,7 +354,7 @@ function executionTaskForMicroFix({ sprint, goal, date }) {
 
 - Before executing, read \`AGENT.md\` as the repository execution entrypoint.
 - Then read this file as the canonical active execution contract.
-- Do not plan from \`sprint_candidates.md\`, \`idea_backlog.md\`, or broader PMO docs unless this handoff explicitly asks for that context.
+- Do not plan from \`.pmo_runtime/state/sprint_candidates.md\`, \`.pmo_runtime/state/idea_backlog.md\`, or broader PMO docs unless this handoff explicitly asks for that context.
 
 ## Source Trace
 
@@ -407,7 +410,7 @@ function executionTaskForMicroFix({ sprint, goal, date }) {
 
 ## Completion Report Contract
 
-Write the execution report to \`docs/pmo/state/execution_report.md\`.
+Write the execution report to \`.pmo_runtime/state/execution_report.md\`.
 
 Use \`docs/pmo/state/templates/execution-report.template.md\` as the report shape unless PMO explicitly narrows the contract for this sprint.
 
@@ -674,7 +677,7 @@ function closeout(args, root) {
     fail(`state/execution_report.md does not appear to describe sprint "${sprint}"`);
   }
 
-  const reportSurface = `docs/pmo/history/reports/${slugify(sprint)}.md`;
+  const reportSurface = `.pmo_runtime/history/reports/${slugify(sprint)}.md`;
   const reportArchivePath = `history/reports/${slugify(sprint)}.md`;
   if (!args['dry-run'] && existsSync(pathFor(root, reportArchivePath))) {
     fail(`Report archive already exists: ${reportArchivePath}`);
@@ -732,7 +735,7 @@ if (args.help || args._[0] === 'help' || !args._[0]) {
   process.exit(0);
 }
 
-const root = resolve(args['pmo-root'] || defaultPmoRoot);
+const root = resolve(args['runtime-root'] || args['pmo-root'] || defaultRuntimeRoot);
 const command = args._[0];
 
 if (command === 'activate') {

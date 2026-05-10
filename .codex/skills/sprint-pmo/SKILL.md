@@ -29,18 +29,18 @@ Default to the smallest useful PMO output. When closing or planning a sprint, us
 2. PMO reply and worker handoff
 3. Next sprint proposal
 
-Prefer repository-native handoff. Use `docs/pmo/state/execution_task.md` as the worker contract and `docs/pmo/state/execution_report.md` as the return surface before falling back to chat copy-paste.
+Prefer repository-native handoff. Use `.pmo_runtime/state/execution_task.md` as the worker contract and `.pmo_runtime/state/execution_report.md` as the return surface before falling back to chat copy-paste.
 
 Use `docs/pmo/tools/pmo.mjs` as the mechanical apply layer once PMO judgment is settled. The tool may write activation, closeout, archive, and idle-reset file changes, but it does not choose sprint selection, validation status, documentation-sync outcome, commit state, residual risk, or follow-up routing.
 
-Default PMO runtime set:
+Default PMO runtime set lives in the embedded independent git repo `.pmo_runtime/`:
 
-- `docs/pmo/state/current_sprint.md`
-- `docs/pmo/state/sprint_candidates.md`
-- `docs/pmo/state/idea_backlog.md`
-- `docs/pmo/state/decision_log.md`
-- `docs/pmo/state/execution_task.md`
-- `docs/pmo/state/execution_report.md`
+- `.pmo_runtime/state/current_sprint.md`
+- `.pmo_runtime/state/sprint_candidates.md`
+- `.pmo_runtime/state/idea_backlog.md`
+- `.pmo_runtime/state/decision_log.md`
+- `.pmo_runtime/state/execution_task.md`
+- `.pmo_runtime/state/execution_report.md`
 
 Default PMO automation surface:
 
@@ -64,10 +64,10 @@ Avoid replaying the full project history. Compress aggressively.
 Default reading order:
 
 1. `docs/pmo/PMO_OPERATING_MANUAL.md`
-2. `docs/pmo/state/current_sprint.md`
-3. `docs/pmo/state/sprint_candidates.md`
-4. `docs/pmo/state/idea_backlog.md`
-5. `docs/pmo/state/decision_log.md`
+2. `.pmo_runtime/state/current_sprint.md`
+3. `.pmo_runtime/state/sprint_candidates.md`
+4. `.pmo_runtime/state/idea_backlog.md`
+5. `.pmo_runtime/state/decision_log.md`
 6. `docs/pmo/protocols/sprint-workflow.md`
 7. `docs/pmo/protocols/execution-handoff-protocol.md`
 8. `docs/pmo/tools/README.md` when activation, closeout, archive, or idle reset is needed
@@ -116,7 +116,7 @@ Translate the current state into a worker contract that another agent can execut
 
 Keep the handoff operational and bounded. Do not duplicate the full sprint summary inside it.
 
-If `docs/pmo/state/execution_task.md` exists, prefer updating that file as the canonical worker handoff. If `docs/pmo/state/current_sprint.md` exists, update sprint state only as a lightweight runtime card.
+If `.pmo_runtime/state/execution_task.md` exists, prefer updating that file as the canonical worker handoff. If `.pmo_runtime/state/current_sprint.md` exists, update sprint state only as a lightweight runtime card.
 
 Use [references/pmo-handoff-template.md](references/pmo-handoff-template.md) for the full structure.
 
@@ -138,7 +138,7 @@ Track only the risks that can change sequencing, architecture safety, or deliver
 
 Use [references/risk-debt-checklist.md](references/risk-debt-checklist.md) when preparing status, handoff, or next-sprint planning.
 
-If `docs/pmo/state/execution_report.md` exists, read it before writing PMO closeout or next-sprint planning.
+If `.pmo_runtime/state/execution_report.md` exists, read it before writing PMO closeout or next-sprint planning.
 
 ## Communication Rules
 

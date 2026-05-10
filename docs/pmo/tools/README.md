@@ -4,7 +4,9 @@ These tools are the mechanical apply layer for PMO runtime state.
 
 PMO still decides sprint selection, validation status, documentation-sync outcome, commit state, residual risk, and follow-up routing. The tool only writes the resulting state transitions.
 
-Activation also writes a handoff skeleton into `state/execution_task.md`.
+Runtime state and history live in the embedded independent git repository at `.pmo_runtime/` by default. Stable PMO templates and process docs stay in the product repository under `docs/pmo/**`.
+
+Activation also writes a handoff skeleton into `.pmo_runtime/state/execution_task.md`.
 
 The skeleton intentionally includes PMO sharpening slots such as execution slices, boundary notes, acceptance checks, validation expectations, and out-of-scope confirmation. The tool does not fill those with judgment-heavy content. PMO should review and replace or extend the slots before treating the handoff as ready for execution.
 
@@ -17,6 +19,8 @@ node docs/pmo/tools/pmo.mjs --help
 ```
 
 All state-writing commands require an explicit `--date YYYY-MM-DD`. PMO owns the date from the working context; the tool should not infer it from the local machine clock.
+
+Use `--runtime-root "<path>"` only for tests or alternate runtime fixtures. `--pmo-root` remains as a backward-compatible alias for `--runtime-root`.
 
 Activate a selected candidate:
 
@@ -41,7 +45,7 @@ Use `pending repository commit` for the normal PMO flow where closeout is accept
 Reset runtime state when archives already exist:
 
 ```bash
-node docs/pmo/tools/pmo.mjs idle-reset --last-sprint "Sprint Name" --delivery-status "completed and validated" --report-surface "docs/pmo/history/reports/sprint-name.md" --date "2026-05-07" --dry-run
+node docs/pmo/tools/pmo.mjs idle-reset --last-sprint "Sprint Name" --delivery-status "completed and validated" --report-surface ".pmo_runtime/history/reports/sprint-name.md" --date "2026-05-07" --dry-run
 ```
 
 Remove `--dry-run` only after the PMO judgment is settled.

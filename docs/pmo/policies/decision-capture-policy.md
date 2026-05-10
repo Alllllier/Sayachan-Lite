@@ -1,6 +1,6 @@
 # Decision Capture Policy
 
-> Use this policy to decide when a discussion result, sprint result, or planning outcome must be written into `state/decision_log.md`.
+> Use this policy to decide when a discussion result, sprint result, or planning outcome must be written into `.pmo_runtime/state/decision_log.md`.
 
 ## Purpose
 
@@ -13,7 +13,7 @@ This policy prevents durable PMO conclusions from being trapped only inside:
 
 ## Core Rule
 
-Write an entry into `state/decision_log.md` when the main outcome is a durable planning conclusion that future PMO work should not have to rediscover.
+Write an entry into `.pmo_runtime/state/decision_log.md` when the main outcome is a durable planning conclusion that future PMO work should not have to rediscover.
 
 ## Decision Types
 
@@ -63,8 +63,8 @@ When a discussion or closeout produces both:
 
 default to a split capture:
 
-- write the durable planning conclusion into `state/decision_log.md`
-- write the future work item into `state/idea_backlog.md` if PMO should be able to rediscover it without rereading the original discussion
+- write the durable planning conclusion into `.pmo_runtime/state/decision_log.md`
+- write the future work item into `.pmo_runtime/state/idea_backlog.md` if PMO should be able to rediscover it without rereading the original discussion
 
 Use this split when the decision and the future work are related but not identical. `decision_log.md` remembers the rule or deferral. `idea_backlog.md` remembers the work.
 

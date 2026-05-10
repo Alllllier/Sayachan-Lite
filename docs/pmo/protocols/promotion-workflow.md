@@ -6,9 +6,9 @@
 
 This workflow decides whether a stabilized result belongs in:
 
-- `idea_backlog.md`
-- `sprint_candidates.md`
-- `decision_log.md`
+- `.pmo_runtime/state/idea_backlog.md`
+- `.pmo_runtime/state/sprint_candidates.md`
+- `.pmo_runtime/state/decision_log.md`
 
 Its job is to prevent discussion notes from becoming the only source of truth and to prevent premature sprint promotion.
 
@@ -18,7 +18,7 @@ Use this workflow when a theme or discussion result is stable enough that it sho
 
 ## Promotion Targets
 
-### `idea_backlog.md`
+### `.pmo_runtime/state/idea_backlog.md`
 
 Use for:
 
@@ -26,7 +26,7 @@ Use for:
 - issues that still need shaping, dependency clarification, or boundary clarification
 - parked future work that should stay visible without pretending it is ready soon
 
-### `sprint_candidates.md`
+### `.pmo_runtime/state/sprint_candidates.md`
 
 Use for:
 
@@ -40,7 +40,7 @@ Hard rules:
 - candidate drafting does not equal candidate confirmation
 - sprint activation still requires explicit human selection
 
-### `decision_log.md`
+### `.pmo_runtime/state/decision_log.md`
 
 Use for:
 
@@ -57,28 +57,27 @@ Use for:
    - candidate-ready
    - a durable decision
 3. Write the normalized result into the correct PMO state file.
-4. If a durable decision was produced, ensure it is written into `decision_log.md` rather than left only in discussion records.
+4. If a durable decision was produced, ensure it is written into `.pmo_runtime/state/decision_log.md` rather than left only in discussion records.
 5. If the topic is being parked, record the parking location explicitly:
-   - `idea_backlog.md` when it remains future work worth revisiting
-   - `decision_log.md` when the parking outcome is actually a durable deferral or rejection
+   - `.pmo_runtime/state/idea_backlog.md` when it remains future work worth revisiting
+   - `.pmo_runtime/state/decision_log.md` when the parking outcome is actually a durable deferral or rejection
    - the discussion batch only when the material is still too raw for normalized PMO state
 6. If the same result produces both a durable deferral and a future work direction worth keeping visible:
-   - write the deferral or scope rule into `decision_log.md`
-   - write the future work item into `idea_backlog.md`
+   - write the deferral or scope rule into `.pmo_runtime/state/decision_log.md`
+   - write the future work item into `.pmo_runtime/state/idea_backlog.md`
    - do not force PMO to choose only one container when the decision and the retained work serve different purposes
 
 ## Working Rules
 
-- keep `idea_backlog.md` useful, not a dumping ground
-- do not keep completed work items in `idea_backlog.md` just to preserve history; once the work itself is done, remove it from backlog unless it still represents unfinished future work
-- when completed backlog-origin work leaves behind a durable planning conclusion, capture that conclusion in `decision_log.md` and rely on `history/reports/` for execution history
-- do not promote into `sprint_candidates.md` before the slice is genuinely bounded
+- keep `.pmo_runtime/state/idea_backlog.md` useful, not a dumping ground
+- do not keep completed work items in `.pmo_runtime/state/idea_backlog.md` just to preserve history; once the work itself is done, remove it from backlog unless it still represents unfinished future work
+- when completed backlog-origin work leaves behind a durable planning conclusion, capture that conclusion in `.pmo_runtime/state/decision_log.md` and rely on `.pmo_runtime/history/reports/` for execution history
+- do not promote into `.pmo_runtime/state/sprint_candidates.md` before the slice is genuinely bounded
 - do not treat generic momentum or implied urgency as human authorization to activate a sprint
 - do not hide parked follow-up inside candidate notes or handoff prose without also routing it into its durable home
-- when a topic is deferred out of the current slice but still matters later, treat `decision_log.md` as the memory of the decision and `idea_backlog.md` as the memory of the work
-- `sprint_candidates.md` is the comparison surface for selectable options; do not keep completed entries there after closeout
-- when a selected candidate closes, archive it into `../history/candidates/` during closeout and remove it from `sprint_candidates.md`
-- when archiving a completed candidate, follow `../history/templates/candidate-archive.template.md`
+- when a topic is deferred out of the current slice but still matters later, treat `.pmo_runtime/state/decision_log.md` as the memory of the decision and `.pmo_runtime/state/idea_backlog.md` as the memory of the work
+- `.pmo_runtime/state/sprint_candidates.md` is the comparison surface for selectable options; do not keep completed entries there after closeout
+- when a selected candidate closes, archive it into `.pmo_runtime/history/candidates/` during closeout and remove it from `.pmo_runtime/state/sprint_candidates.md`
 
 ## Policy Touchpoints
 

@@ -14,17 +14,19 @@ This file is intentionally narrower than the full sprint workflow.
 
 ## Canonical Files
 
-- `state/current_sprint.md`
-- `state/execution_task.md`
-- `state/execution_report.md`
-- `state/decision_log.md`
+- `.pmo_runtime/state/current_sprint.md`
+- `.pmo_runtime/state/execution_task.md`
+- `.pmo_runtime/state/execution_report.md`
+- `.pmo_runtime/state/decision_log.md`
+
+Runtime files live in the embedded independent git repository at `.pmo_runtime/`. Stable handoff rules and templates remain in the product repository under `docs/pmo/**`.
 
 ## File Roles
 
-- `state/sprint_candidates.md` is the selection and comparison surface before activation. It can remain visible as source trace, but it is not the active execution brief.
-- `state/current_sprint.md` is the lightweight PMO runtime card. It records the active sprint, phase, handoff path, report target, and next PMO action.
-- `state/execution_task.md` is the canonical worker execution contract. It owns detailed scope, safe touch zones, non-goals, validation expectations, escalation points, and report expectations.
-- `state/execution_report.md` is the execution return surface. It owns delivered outcome, validation evidence, unresolved areas, residual risk, and escalation return.
+- `.pmo_runtime/state/sprint_candidates.md` is the selection and comparison surface before activation. It can remain visible as source trace, but it is not the active execution brief.
+- `.pmo_runtime/state/current_sprint.md` is the lightweight PMO runtime card. It records the active sprint, phase, handoff path, report target, and next PMO action.
+- `.pmo_runtime/state/execution_task.md` is the canonical worker execution contract. It owns detailed scope, safe touch zones, non-goals, validation expectations, escalation points, and report expectations.
+- `.pmo_runtime/state/execution_report.md` is the execution return surface. It owns delivered outcome, validation evidence, unresolved areas, residual risk, and escalation return.
 
 ## Role Lock
 
@@ -37,13 +39,13 @@ Reading this protocol does not give the execution worker PMO selection authority
 ## Handoff Sequence
 
 1. Human explicitly selects a sprint.
-2. Codex updates `current_sprint.md` from `../state/templates/current-sprint.active.template.md`.
-3. Codex writes the bounded active task into `execution_task.md` from `../state/templates/execution-task.template.md`.
-4. If the sprint came from `sprint_candidates.md`, Codex may mark the selected entry `active` but must not expand it into a worker brief.
-5. The execution worker reads root `AGENT.md` as the repository execution entrypoint, then treats `execution_task.md` as the active execution source.
-6. The execution worker writes outcomes, validation, unresolved items, and escalations into `execution_report.md`.
-7. Codex reads `execution_report.md` and decides whether the sprint is ready for closeout, needs follow-up, or must remain active.
-8. Any deferred or parked follow-up that should survive the sprint must be routed back into `idea_backlog.md` or `decision_log.md` during closeout rather than left only in the report.
+2. Codex updates `.pmo_runtime/state/current_sprint.md` using the stable templates in `docs/pmo/state/templates/`.
+3. Codex writes the bounded active task into `.pmo_runtime/state/execution_task.md` using the stable templates in `docs/pmo/state/templates/`.
+4. If the sprint came from `.pmo_runtime/state/sprint_candidates.md`, Codex may mark the selected entry `active` but must not expand it into a worker brief.
+5. The execution worker reads root `AGENT.md` as the repository execution entrypoint, then treats `.pmo_runtime/state/execution_task.md` as the active execution source.
+6. The execution worker writes outcomes, validation, unresolved items, and escalations into `.pmo_runtime/state/execution_report.md`.
+7. Codex reads `.pmo_runtime/state/execution_report.md` and decides whether the sprint is ready for closeout, needs follow-up, or must remain active.
+8. Any deferred or parked follow-up that should survive the sprint must be routed back into `.pmo_runtime/state/idea_backlog.md` or `.pmo_runtime/state/decision_log.md` during closeout rather than left only in the report.
 
 After the human/PMO selection is clear, `../tools/pmo.mjs` may perform the mechanical file writes for steps 2-4. The execution contract remains a PMO-authored contract, not a tool-selected plan.
 

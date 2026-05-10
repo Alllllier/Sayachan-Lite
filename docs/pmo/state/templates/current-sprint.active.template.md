@@ -12,9 +12,9 @@
 
 - Type: `candidate-selected | micro-fix`
 - Goal:
-- Source: `sprint_candidates.md | micro-fix direct activation`
-- Active handoff: `docs/pmo/state/execution_task.md`
-- Execution report target: `docs/pmo/state/execution_report.md`
+- Source: `.pmo_runtime/state/sprint_candidates.md | micro-fix direct activation`
+- Active handoff: `.pmo_runtime/state/execution_task.md`
+- Execution report target: `.pmo_runtime/state/execution_report.md`
 
 ## Activation Snapshot
 
@@ -25,12 +25,12 @@
 
 ## PMO Boundary
 
-- Detailed worker scope lives in `execution_task.md`
-- Candidate comparison details remain in `sprint_candidates.md` when applicable
+- Detailed worker scope lives in `.pmo_runtime/state/execution_task.md`
+- Candidate comparison details remain in `.pmo_runtime/state/sprint_candidates.md` when applicable
 - This file should stay a lightweight runtime card, not a second execution brief
 
 ## Next PMO Action
 
-- write or confirm the active handoff in `execution_task.md`
-- wait for execution return in `execution_report.md`
+- write or confirm the active handoff in `.pmo_runtime/state/execution_task.md`
+- wait for execution return in `.pmo_runtime/state/execution_report.md`
 - close out, route follow-up, and reset runtime state when execution is accepted

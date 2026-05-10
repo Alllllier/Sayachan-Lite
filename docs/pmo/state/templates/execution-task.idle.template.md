@@ -14,7 +14,7 @@ This file should be overwritten only when a new sprint or micro-fix is explicitl
 
 - Sprint:
 - Outcome:
-- Report surface: `docs/pmo/state/execution_report.md`
+- Report surface: `.pmo_runtime/state/execution_report.md`
 
 ## Next Activation Rule
 

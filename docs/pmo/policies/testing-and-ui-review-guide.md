@@ -32,12 +32,12 @@ Known current gaps:
 - Dashboard now has first-class repo-native browser/UI review coverage for the current saved-task surface.
 - Screenshot artifact retention and closeout reporting language now have a v1 rule below, but should be revisited if screenshot churn becomes noisy.
 - Reusable UI review harness helpers remain intentionally small; surface-local fixtures and mocks are still the default until more duplication proves worth extracting.
-- Worker fallback rules for broken repo-native validation commands are not fully settled; see `Npx Validation Fallback Rules` in `docs/pmo/state/idea_backlog.md`.
+- Worker fallback rules for broken repo-native validation commands are not fully settled; see `Npx Validation Fallback Rules` in `.pmo_runtime/state/idea_backlog.md`.
 - Temporary UI validation should still be reported explicitly as temporary unless it is promoted into a durable repo-native spec.
 
 Active shaping home:
 
-- `docs/pmo/state/discussions/discussion_batch_015.md`
+- `.pmo_runtime/state/discussions/discussion_batch_015.md`
 
 ### Logic And Smoke Validation
 

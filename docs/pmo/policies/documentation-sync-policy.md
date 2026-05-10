@@ -114,4 +114,4 @@ For `docs/pmo/operator-guides/**`, that means:
 
 Reference:
 
-- `docs/pmo/history/reference/legacy-transition-notes.md`
+- `.pmo_runtime/history/reference/legacy-transition-notes.md`

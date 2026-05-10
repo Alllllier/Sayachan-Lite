@@ -8,7 +8,7 @@
 
 - Before executing, read `AGENT.md` as the repository execution entrypoint.
 - Then read this file as the canonical active execution contract.
-- Do not plan from `sprint_candidates.md`, `idea_backlog.md`, or broader PMO docs unless this handoff explicitly asks for that context.
+- Do not plan from `.pmo_runtime/state/sprint_candidates.md`, `.pmo_runtime/state/idea_backlog.md`, or broader PMO docs unless this handoff explicitly asks for that context.
 
 ## Source Trace
 
@@ -41,7 +41,7 @@
 ## Deferred Or Parked Follow-Up
 
 - explicitly note future work that should stay out of this sprint
-- state whether PMO should route it back to `idea_backlog.md` or `decision_log.md` after closeout
+- state whether PMO should route it back to `.pmo_runtime/state/idea_backlog.md` or `.pmo_runtime/state/decision_log.md` after closeout
 
 ## Acceptance Checks
 
@@ -72,7 +72,7 @@
 
 ## Completion Report Contract
 
-Write the execution report to `docs/pmo/state/execution_report.md`.
+Write the execution report to `.pmo_runtime/state/execution_report.md`.
 
 Use `docs/pmo/state/templates/execution-report.template.md` as the report shape unless PMO explicitly narrows the contract for this sprint.
 

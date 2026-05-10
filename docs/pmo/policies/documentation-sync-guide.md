@@ -53,7 +53,7 @@ Check first:
 
 - `AGENT.md`
 - `docs/pmo/protocols/execution-handoff-protocol.md`
-- `docs/pmo/state/execution_task.md` or `docs/pmo/state/execution_report.md` only when canonical runtime semantics changed
+- `.pmo_runtime/state/execution_task.md` or `.pmo_runtime/state/execution_report.md` only when canonical runtime semantics changed
 
 Then do a weak companion check:
 
@@ -80,8 +80,8 @@ When documentation sync is triggered:
 
 Record that outcome in the active PMO closeout surface:
 
-- normally in `docs/pmo/state/current_sprint.md`
-- and in `docs/pmo/state/execution_report.md` when the execution return should carry the review result or pending follow-up for PMO closeout
+- normally in `.pmo_runtime/state/current_sprint.md`
+- and in `.pmo_runtime/state/execution_report.md` when the execution return should carry the review result or pending follow-up for PMO closeout
 
 If `docs/pmo/operator-guides/**` was part of the review, it should usually be treated as a weak companion outcome inside the same documentation-sync pass, not as a separate blocking sync regime.
 
@@ -91,6 +91,6 @@ Do not widen the review scope just because older docs mention similar material.
 
 If the current change touches legacy path handling, deferred governance issues, or old PMO residue, do a weak reminder check here:
 
-- `docs/pmo/history/reference/legacy-transition-notes.md`
+- `.pmo_runtime/history/reference/legacy-transition-notes.md`
 
 That check should remain lightweight unless the legacy note changes current safety, scope, or canonical ownership.

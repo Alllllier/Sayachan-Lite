@@ -31,10 +31,10 @@ Primary PMO references:
 Default planning and handoff files:
 
 - discussion batches: `docs/pmo/state/discussion_batches/index.md`
-- idea backlog: `docs/pmo/state/idea_backlog.md`
-- sprint candidates: `docs/pmo/state/sprint_candidates.md`
-- state: `docs/pmo/state/current_sprint.md`
-- decision log: `docs/pmo/state/decision_log.md`
+- idea backlog: `.pmo_runtime/state/idea_backlog.md`
+- sprint candidates: `.pmo_runtime/state/sprint_candidates.md`
+- state: `.pmo_runtime/state/current_sprint.md`
+- decision log: `.pmo_runtime/state/decision_log.md`
 - outbox: `docs/pmo/outbox/execution_task.md`
 - outbox archive: `docs/pmo/outbox/archive/`
 - inbox: `docs/pmo/inbox/execution_report.md`
