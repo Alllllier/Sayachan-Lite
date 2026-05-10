@@ -1,8 +1,8 @@
 # Discussion Batch `discussion_batch_019`
 
 - Topic: `Notes and Projects creation entry redesign`
-- Last updated: `2026-05-09`
-- Status: `promoted`
+- Last updated: `2026-05-10`
+- Status: `stable`
 - Discussion mode: `follow-up`
 
 ## Intake Record
@@ -35,8 +35,8 @@
 
 - Summary: `Notes may want a collection-first page layout where the CardCollection header becomes the sticky command surface for title, archive switch, and creation entry.`
 - Why grouped: `Changing the creation entry is likely to change the surrounding layout: the current page-level Panel header may become redundant if Notes is effectively one browsable collection whose own header owns the visible command row.`
-- Current focus: `yes`
-- Status: `promoted`
+- Current focus: `no`
+- Status: `completed`
 - For follow-up mode, the concrete issue exposed was: `The human proposed removing the visible Notes panel header, leaving the panel body as a single CardCollection, and making the CardCollection header sticky with title text, active/archived segmented control, and new-note entry.`
 - Emerging component requirement: `CardCollection may need a baseline command slot that sits beside the title on the left side of the header, while the existing control slot remains right-aligned. For Notes, this command slot could hold a compact + icon for new-note capture.`
 - Emerging creation-surface preference: `Opening the new-note editor as a popup/modal-style surface may better preserve the user's current browsing position than expanding a form inline inside the list.`
@@ -51,7 +51,7 @@
 - Likely target: `sprint_candidates | idea_backlog`
 - Parking trigger: `Park if the desired interaction model remains unclear or if a broader product surface takes priority before this creation-entry friction becomes blocking.`
 - Reopen signal: `Human selects the preferred creation-entry direction, repeated usage makes the legacy forms feel heavy, or adjacent Notes/Projects UI work touches the same area.`
-- Promotion note: `The Notes side of this slice was narrowed and promoted as CardCollection Command Slot And Notes Capture Modal. Projects creation-entry redesign remains parked until Notes proves the collection command pattern.`
+- Promotion note: `The Notes side of this slice was narrowed and promoted as CardCollection Command Slot And Notes Capture Modal. Later follow-up sprints completed Projects alignment, shared capture extraction, and embedded collection layout.`
 
 ### `slice-002`
 
@@ -99,5 +99,18 @@
 
 ## Promotion Outcome
 
-- Promoted to `docs/pmo/state/sprint_candidates.md` as `CardCollection Command Slot And Notes Capture Modal`.
-- Projects creation-entry redesign remains in discussion/backlog context as a future follow-up, not part of the promoted candidate.
+- Initially promoted to `docs/pmo/state/sprint_candidates.md` as `CardCollection Command Slot And Notes Capture Modal`.
+- The original Notes-first promotion was followed by three bounded follow-up sprints:
+  - `Projects Collection Command And Capture Alignment`
+  - `Shared Collection Capture Surface`
+  - `Collection Page Flush Layout Baseline`
+
+## Completion Update
+
+- Status on `2026-05-10`: `completed as scoped`
+- Notes now use a collection-owned `+ New` command, shared capture surface, lazy CodeMirror loading for create/edit, and embedded collection layout.
+- Projects now use the same collection-owned `+ New` command, shared capture surface, and embedded collection layout while keeping project-specific fields and validation local.
+- `CardCollection` now supports the required command slot and explicit embedded mode.
+- `CollectionCaptureSurface` now owns the shared overlay/modal/bottom-sheet shell while feature state and business logic remain local.
+- The original right-edge hover-icon idea is resolved for this slice by choosing collection-header ownership instead of adding another global/right-side floating action.
+- Residual broader work remains outside discussion 19: Dashboard quick add, AI reveal/list cleanup, Format note, task-list density/visibility, and any future global chat/module hover rail rules.
