@@ -4,7 +4,7 @@
 - Archive reason: `completed-and-displaced`
 - Exit status: `completed`
 - Candidate status at selection: `active`
-- Original source reference: `docs/pmo/state/backend_dist_runtime_cutover_plan.md#phase-7-dist-runtime-human-cutover-gate`, `docs/pmo/history/reports/schema-island-unified-build-inclusion-v1.md`, `docs/pmo/history/reports/notes-route-unified-build-inclusion-v1.md`
+- Original source reference: `docs/pmo/history/reference/backend-runtime-boundary-reference.md`, `docs/pmo/history/reports/schema-island-unified-build-inclusion-v1.md`, `docs/pmo/history/reports/notes-route-unified-build-inclusion-v1.md`
 - Why it mattered: Schema TS now participates in the unified dist build, while Notes route inclusion exposed that further scaffold cleanup should wait for a dist-runtime cutover path. Before asking for the runtime cutover decision, PMO needs a concrete readiness gate that proves source and dist runtime graphs can both load under mocks and states what remains before changing start/dev.
 - Expected outcome: Add a backend-local dist runtime readiness check that validates build, dist boundary, source runtime smoke, dist runtime smoke, and package/script guardrails without switching runtime or deleting scaffolding.
 - In scope:

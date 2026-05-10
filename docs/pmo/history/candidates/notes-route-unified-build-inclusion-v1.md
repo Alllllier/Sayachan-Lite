@@ -4,7 +4,7 @@
 - Archive reason: `completed-and-displaced`
 - Exit status: `completed`
 - Candidate status at selection: `active`
-- Original source reference: `docs/pmo/history/reports/schema-island-unified-build-inclusion-v1.md`, `docs/pmo/state/backend_dist_runtime_cutover_plan.md#phase-4-notes-route-island-retirement-prep`
+- Original source reference: `docs/pmo/history/reports/schema-island-unified-build-inclusion-v1.md`, `docs/pmo/history/reference/backend-runtime-boundary-reference.md`
 - Why it mattered: Schema TS now participates in the unified backend build while source-runtime facades remain intact. The next repeatable step is to make the Notes typed route source live at its normal route path for unified dist output, while preserving the current JS facade and generated guardrails.
 - Expected outcome: Move the Notes TS route source to backend/src/routes/notesRoutes.ts and include it in the unified backend build so dist/routes/notesRoutes.js is emitted from TS, while source runtime still consumes backend/src/routes/notesRoutes.js facade.
 - In scope:

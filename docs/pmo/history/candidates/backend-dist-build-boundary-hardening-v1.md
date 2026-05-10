@@ -4,7 +4,7 @@
 - Archive reason: `completed-and-displaced`
 - Exit status: `completed`
 - Candidate status at selection: `active`
-- Original source reference: `docs/pmo/state/backend_dist_runtime_cutover_plan.md#phase-1-dist-build-boundary-hardening`, `docs/pmo/history/reports/backend-dist-runtime-cutover-plan-v1.md`
+- Original source reference: `docs/pmo/history/reference/backend-runtime-boundary-reference.md`, `docs/pmo/history/reports/backend-dist-runtime-cutover-plan-v1.md`
 - Why it mattered: The backend now has a unified tsc dry-run and a PMO cutover battle map. Before route migration or runtime smoke work continues, the build boundary should be made explicit enough that private_core cannot be pulled in accidentally and the current noResolve guard is either justified as temporary or replaced with a clearer boundary.
 - Expected outcome: Strengthen the backend dist build dry-run boundary while keeping source runtime unchanged. The sprint should make check:backend-build prove the intended dist artifact layout and runtime-script guardrails without switching start/dev to dist or expanding root check.
 - In scope:

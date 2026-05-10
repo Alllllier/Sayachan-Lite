@@ -4,7 +4,7 @@
 - Archive reason: `completed-and-displaced`
 - Exit status: `completed`
 - Candidate status at selection: `active`
-- Original source reference: `docs/pmo/state/backend_dist_runtime_cutover_plan.md#phase-3-schema-island-retirement-prep`, `docs/pmo/history/reports/backend-dist-runtime-smoke-harness-v1.md`
+- Original source reference: `docs/pmo/history/reference/backend-runtime-boundary-reference.md`, `docs/pmo/history/reports/backend-dist-runtime-smoke-harness-v1.md`
 - Why it mattered: The backend dist build boundary and smoke harness are now stable. The next low-risk step is to prepare the schema typed island for eventual retirement by checking whether the unified backend build can include or account for the schema TS source without deleting the current generated/facade runtime path.
 - Expected outcome: Clarify and, if safe, implement the smallest build/check adjustment that prepares backend/src/routes/schemas/mutations.ts for eventual unified tsc ownership while preserving the existing source runtime facade and generated artifact guardrails.
 - In scope:

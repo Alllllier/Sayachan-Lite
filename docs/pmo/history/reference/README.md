@@ -23,3 +23,8 @@
 - `ai-core-migration-record.md`
 - `pmo-v2-transition-audit-summary.md`
 - `autonomous-micro-fix-flow-assessment-2026-04-21.md`
+- `product-response-field-boundary-reference.md`
+- `ai-product-payload-boundary-reference.md`
+- `backend-runtime-boundary-reference.md`
+- `typescript_target_architecture_mapping.md`
+- `typescript_target_architecture_mapping.zh.md`

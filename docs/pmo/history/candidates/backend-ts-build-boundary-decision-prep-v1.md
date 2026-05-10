@@ -4,7 +4,7 @@
 - Archive reason: `completed-and-displaced`
 - Exit status: `completed`
 - Candidate status at selection: `active`
-- Original source reference: `docs/pmo/history/reports/schema-island-unified-build-inclusion-prep-v1.md`, `docs/pmo/state/backend_dist_runtime_cutover_plan.md`
+- Original source reference: `docs/pmo/history/reports/schema-island-unified-build-inclusion-prep-v1.md`, `docs/pmo/history/reference/backend-runtime-boundary-reference.md`
 - Why it mattered: Schema unified-build inclusion exposed the real architecture gate: adding TS sources to the unified backend build either collides with JS facade outputs or requires changing the noResolve/private_core build boundary. Before more route or island migration work, PMO should prepare the decision surface without making the decision.
 - Expected outcome: Create a concise PMO state decision-prep note that explains the current noResolve/private_core blocker, lists viable options, states tradeoffs, and recommends the next human decision question without changing backend runtime or build behavior.
 - In scope:

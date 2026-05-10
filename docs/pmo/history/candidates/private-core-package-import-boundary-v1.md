@@ -4,7 +4,7 @@
 - Archive reason: `completed-and-displaced`
 - Exit status: `completed`
 - Candidate status at selection: `active`
-- Original source reference: `docs/pmo/state/backend_ts_build_boundary_decision_prep.md`, human decision in chat on 2026-05-06`
+- Original source reference: `docs/pmo/history/reference/backend-runtime-boundary-reference.md`, human decision in chat on 2026-05-06`
 - Why it mattered: The human confirmed the private core should be consumed as its existing independent package/sub-repo rather than as a relative source path. This resolves the next backend TS build-boundary step without absorbing private_core into backend dist.
 - Expected outcome: Make backend import @allier/sayachan-ai-core through a backend-local file dependency and package resolver, while preserving source runtime, CommonJS, private_core exclusion from dist, and current API behavior.
 - In scope:

@@ -4,7 +4,7 @@
 - Archive reason: `completed-and-displaced`
 - Exit status: `completed`
 - Candidate status at selection: `active`
-- Original source reference: `docs/pmo/state/backend_dist_runtime_cutover_plan.md#phase-2-pre-cutover-dist-runtime-smoke-harness`, `docs/pmo/history/reports/backend-dist-build-boundary-hardening-v1.md`
+- Original source reference: `docs/pmo/history/reference/backend-runtime-boundary-reference.md`, `docs/pmo/history/reports/backend-dist-build-boundary-hardening-v1.md`
 - Why it mattered: The backend dist build boundary now has guardrails. Before more route TS migration or island retirement work, PMO needs a clearer pre-cutover dist runtime smoke entrypoint that can validate dist/server.js without making dist the default runtime.
 - Expected outcome: Create or clarify a dist-only smoke harness/command that builds backend and verifies the compiled dist runtime can be imported or started in isolation, while keeping start/dev and root check unchanged.
 - In scope:

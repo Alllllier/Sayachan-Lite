@@ -69,7 +69,7 @@
 - Likely target: `sprint_candidates | idea_backlog`
 - Parking trigger: `Park until root validation commands and linting are stable enough that type errors do not become a noisy second gate.`
 - Reopen signal: `Quality Gate V1 lands, API/service payload bugs appear, or the human wants a TypeScript migration audit.`
-- Source input after audit: `docs/pmo/state/typescript_target_architecture_mapping.md` and `docs/pmo/state/typescript_target_architecture_mapping.zh.md`
+- Source input after audit: `docs/pmo/history/reference/typescript_target_architecture_mapping.md` and `docs/pmo/history/reference/typescript_target_architecture_mapping.zh.md`
 - Construction note: `Do not shape this as full TypeScript migration. If promoted, it should start as a bounded implementation slice that adds type feedback or typed boundary scaffolding around a small, high-signal area identified by the target architecture mapping.`
 - Proposed pilot: `Type-Aware JS Pilot: Shared Task Boundary`
 - Why shared task service first: `frontend/src/services/tasks/ already has a clean API/rules/runtime split, is imported by Notes/Projects/Dashboard through the approved package entrypoint, and has focused tests for payload construction, normalization, API calls, and active snapshot behavior. It is cross-feature enough to prove type feedback value, but smaller and less architecture-sensitive than chat/AI or auth.`
@@ -160,7 +160,7 @@
 - Reopen signal: `Human wants to start TypeScript planning, no-type scaffolding deletion feels unclear, or a TS migration candidate needs a target architecture before implementation can be scoped.`
 - Expected output: `A target TypeScript architecture map with rows like target responsibility -> current JS modules/files -> migration action. Actions should include keep, merge, replace, split, defer, and delete-candidate.`
 - Boundary note: `This slice should produce planning artifacts, not perform the migration. It should define which responsibilities belong in typed contracts, runtime schema, feature API/rules/composable layers, backend DTO/service boundaries, shared services, tests, and PMO/runtime documentation.`
-- Completed output: `docs/pmo/state/typescript_target_architecture_mapping.md` and Chinese companion `docs/pmo/state/typescript_target_architecture_mapping.zh.md`
+- Completed output: `docs/pmo/history/reference/typescript_target_architecture_mapping.md` and Chinese companion `docs/pmo/history/reference/typescript_target_architecture_mapping.zh.md`
 - PMO readback: `The audit confirms TypeScript migration is a large staged architecture program, not a simple per-file conversion. Its main value is to define target contract boundaries, then use those boundaries to decide which JavaScript-era scaffolding can later be merged, replaced, split, deferred, or deleted.`
 - Return path: `Use the completed mapping as the source artifact for future concrete implementation slices, especially slice-002 Type-Aware JavaScript Baseline and later typed-boundary pilots.`
 
@@ -389,8 +389,8 @@ The Backend TS Quality Gate Cleanup sprint briefly tried `typescript-eslint` typ
 - `slice-002` has been promoted to `docs/pmo/state/sprint_candidates.md` as `Type-Aware JS Pilot: Shared Task Boundary`.
 - Follow-up candidate created from slice-002 execution: `Type-Aware JS Pilot Phase 2: Shared Frontend Support Boundary`.
 - `slice-008` was promoted to `docs/pmo/state/sprint_candidates.md` as `TypeScript Target Architecture Mapping`, executed, and accepted for closeout.
-- Completed audit artifact: `docs/pmo/state/typescript_target_architecture_mapping.md`
-- Completed Chinese companion: `docs/pmo/state/typescript_target_architecture_mapping.zh.md`
+- Completed audit artifact: `docs/pmo/history/reference/typescript_target_architecture_mapping.md`
+- Completed Chinese companion: `docs/pmo/history/reference/typescript_target_architecture_mapping.zh.md`
 - `slice-003` was promoted to `docs/pmo/state/sprint_candidates.md` as `Task Mutation Zod Schema Pilot`, executed, validated through focused backend tests, full backend tests, and root `npm run check`, and accepted for closeout.
 - Completed runtime-schema pilot report: `docs/pmo/history/reports/task-mutation-zod-schema-pilot.md`
 - Follow-up candidate created from slice-003 execution: `Validation Error Shape V1`, executed, validated through focused backend tests, full backend tests, and root `npm run check`, and accepted for closeout.
