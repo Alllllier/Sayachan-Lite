@@ -15,7 +15,7 @@ test.describe('Auth and Owner UI review', () => {
 
     await openLoginReview(page)
 
-    await expect(page.getByText('Sayachan Lite')).toBeVisible()
+    await expect(page.getByText('Sayachan')).toBeVisible()
     await expect(page.getByLabel('Email')).toBeVisible()
     await expect(page.getByLabel('Password')).toBeVisible()
     await expect(page.getByRole('link', { name: 'Create tester account' })).toBeVisible()

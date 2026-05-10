@@ -65,7 +65,7 @@ function sendCurrentMessage(): Promise<void> {
       :style="{ backgroundImage: `url(${avatarUrl})` }"
       @click="openPopup"
       :aria-label="t('chat.open')"
-      title="Sayachan"
+      :title="t('chat.assistantName')"
     ></button>
 
     <!-- Popup Window -->
@@ -73,7 +73,7 @@ function sendCurrentMessage(): Promise<void> {
       <div class="chat-popup-inner">
         <!-- Header -->
         <div class="chat-header">
-          <span class="chat-title">Sayachan</span>
+          <span class="chat-title">{{ t('chat.assistantName') }}</span>
           <div class="chat-header-actions">
             <button class="chat-gear-btn" @click="togglePanel" :aria-label="t('chat.runtimeControls')" :title="t('chat.runtimeControls')">
               <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">

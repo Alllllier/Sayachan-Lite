@@ -1,4 +1,4 @@
-# Sayachan Lite - Agent Execution Entrypoint
+# Sayachan - Agent Execution Entrypoint
 
 ## Purpose
 
@@ -40,7 +40,7 @@ If `execution_task.md` is idle or missing a real task, stop and ask PMO/Codex fo
 
 ## Current Project Shape
 
-Sayachan Lite is a lightweight personal operating system centered on:
+Sayachan is a lightweight personal operating system centered on:
 
 `Focus -> Task -> Completion -> Memory -> Next Focus`
 

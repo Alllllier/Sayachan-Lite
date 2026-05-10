@@ -171,6 +171,7 @@ const zh: CopyDictionary = {
   'projects.validationBatchTasks': '请至少输入一个任务标题。',
 
   'chat.open': '打开聊天',
+  'chat.assistantName': '沙耶酱',
   'chat.runtimeControls': '运行控制',
   'chat.close': '关闭聊天',
   'chat.emptyInvite': '从一句话开始。',
@@ -365,6 +366,7 @@ const en: CopyDictionary = {
   'projects.validationBatchTasks': 'Enter at least one task title.',
 
   'chat.open': 'Open chat',
+  'chat.assistantName': 'Sayachan',
   'chat.runtimeControls': 'Runtime controls',
   'chat.close': 'Close chat',
   'chat.emptyInvite': 'Start with one sentence.',

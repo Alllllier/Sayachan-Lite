@@ -50,6 +50,7 @@ test.describe('Chinese UI copy smoke', () => {
     await page.goto('/dashboard')
 
     await page.getByRole('button', { name: '打开聊天' }).click()
+    await expect(page.locator('.chat-popup').getByText('沙耶酱')).toBeVisible()
     await expect(page.locator('.chat-popup').getByText('从一句话开始。')).toBeVisible()
     await expect(page.locator('.chat-popup').getByRole('button', { name: '帮我聚焦' })).toBeVisible()
     await expect(page.getByPlaceholder('说点什么...')).toBeVisible()

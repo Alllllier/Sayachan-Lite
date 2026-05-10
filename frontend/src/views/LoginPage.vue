@@ -30,7 +30,7 @@ async function submit(): Promise<void> {
   <main class="auth-page">
     <form class="card auth-card" @submit.prevent="submit">
       <div class="auth-card__header">
-        <p class="card-meta">Sayachan Lite</p>
+        <p class="card-meta">Sayachan</p>
         <h1 class="card-title">Log in</h1>
       </div>
 

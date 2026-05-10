@@ -10,7 +10,7 @@ It is a truth baseline for PMO v2, not a workflow manual and not a policy file.
 
 ## Current System Shape
 
-Sayachan Lite is currently a frontend-backend monorepo with a public product runtime and a private AI core boundary.
+Sayachan is currently a frontend-backend monorepo with a public product runtime and a private AI core boundary.
 
 Primary public runtime surfaces:
 

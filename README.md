@@ -1,10 +1,10 @@
-# Sayachan Lite
+# Sayachan
 
 一个轻量级个人操作系统，聚焦 Focus → Task → Completion → Memory → Next Focus 核心工作流。
 
 ## 项目定位
 
-Sayachan Lite 是 Sayachan 的轻量级版本，一款极简个人生产力工具，帮助用户通过清晰的工作流管理 Notes、Projects 和 Tasks。核心功能围绕"聚焦-执行-回顾"闭环设计，不追求功能全，只抓核心工作流的有效落地。
+Sayachan 是一款极简个人生产力工具，帮助用户通过清晰的工作流管理 Notes、Projects 和 Tasks。核心功能围绕"聚焦-执行-回顾"闭环设计，不追求功能全，只抓核心工作流的有效落地。
 
 ## 核心能力
 
