@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import authService from '../dist/services/authService.js';
+import aiService from '../dist/services/aiService.js';
 import { allowedOrigins, createApp } from '../dist/server.js';
 
 function listen(app) {
@@ -120,5 +121,171 @@ test('createApp returns stable JSON 404 for unmatched routes', async () => {
 
     assert.equal(response.status, 404);
     assert.deepEqual(body, { error: 'Not Found' });
+  });
+});
+
+test('authenticated /ai/chat reaches controlled private-core chat path and returns reply shape', async () => {
+  const app = createApp({
+    corsOrigins: ['http://localhost:5173'],
+    trustProxy: false
+  });
+  let loadedToken;
+  let capturedChatCall;
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'loadUserForSession',
+      value: async (token) => {
+        loadedToken = token;
+        return { _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' };
+      }
+    }
+  ], async () => {
+    const restoreProviderReady = aiService.__test__.setChatProviderKeyCheckForTest(() => true);
+    const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async (messages, context, options) => {
+      capturedChatCall = { messages, context, options };
+      return { reply: 'authenticated smoke ok' };
+    });
+
+    try {
+      const response = await requestKoaApp(app, '/ai/chat', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer route-smoke-session',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'hello from route smoke' }],
+          context: { activeTask: 'smoke-task' },
+          runtimeControls: {
+            personalityBaseline: 'warm',
+            lastUserMessage: 'hello from route smoke'
+          }
+        })
+      });
+      const body = await response.json();
+
+      assert.equal(loadedToken, 'route-smoke-session');
+      assert.equal(response.status, 200);
+      assert.deepEqual(body, { reply: 'authenticated smoke ok' });
+      assert.deepEqual(capturedChatCall.messages, [{ role: 'user', content: 'hello from route smoke' }]);
+      assert.deepEqual(capturedChatCall.context, { activeTask: 'smoke-task' });
+      assert.deepEqual(capturedChatCall.options, {
+        runtimeControls: {
+          personalityBaseline: 'warm',
+          lastUserMessage: 'hello from route smoke'
+        }
+      });
+    } finally {
+      restoreChatRunner();
+      restoreProviderReady();
+    }
+  });
+});
+
+test('authenticated /ai/chat returns fallback without calling chat runner when provider is unavailable', async () => {
+  const app = createApp({
+    corsOrigins: ['http://localhost:5173'],
+    trustProxy: false
+  });
+  let loadedToken;
+  let chatRunnerCalled = false;
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'loadUserForSession',
+      value: async (token) => {
+        loadedToken = token;
+        return { _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' };
+      }
+    }
+  ], async () => {
+    const restoreProviderReady = aiService.__test__.setChatProviderKeyCheckForTest(() => false);
+    const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async () => {
+      chatRunnerCalled = true;
+      throw new Error('chat runner should not be called when provider is unavailable');
+    });
+
+    try {
+      const response = await requestKoaApp(app, '/ai/chat', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer route-fallback-session',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'hello fallback route' }],
+          context: { activeTask: 'fallback-smoke-task' },
+          runtimeControls: {
+            personalityBaseline: 'warm',
+            lastUserMessage: 'hello fallback route'
+          }
+        })
+      });
+      const body = await response.json();
+
+      assert.equal(loadedToken, 'route-fallback-session');
+      assert.equal(response.status, 200);
+      assert.deepEqual(body, { reply: '我在这，我们先把当前最重要的一步理清楚。' });
+      assert.equal(chatRunnerCalled, false);
+    } finally {
+      restoreChatRunner();
+      restoreProviderReady();
+    }
+  });
+});
+
+test('authenticated /ai/chat returns fallback when controlled chat runner throws', async () => {
+  const app = createApp({
+    corsOrigins: ['http://localhost:5173'],
+    trustProxy: false
+  });
+  let loadedToken;
+  let chatRunnerCalled = false;
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'loadUserForSession',
+      value: async (token) => {
+        loadedToken = token;
+        return { _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' };
+      }
+    }
+  ], async () => {
+    const restoreProviderReady = aiService.__test__.setChatProviderKeyCheckForTest(() => true);
+    const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async () => {
+      chatRunnerCalled = true;
+      throw new Error('controlled chat runner failure');
+    });
+
+    try {
+      const response = await requestKoaApp(app, '/ai/chat', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer route-runner-error-session',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'hello runner error route' }],
+          context: { activeTask: 'runner-error-smoke-task' },
+          runtimeControls: {
+            personalityBaseline: 'warm',
+            lastUserMessage: 'hello runner error route'
+          }
+        })
+      });
+      const body = await response.json();
+
+      assert.equal(loadedToken, 'route-runner-error-session');
+      assert.equal(response.status, 200);
+      assert.deepEqual(body, { reply: '我在这，我们先把当前最重要的一步理清楚。' });
+      assert.equal(chatRunnerCalled, true);
+    } finally {
+      restoreChatRunner();
+      restoreProviderReady();
+    }
   });
 });

@@ -18,6 +18,22 @@
 
 - `docs/pmo/RUNTIME_LOCATION.md`
 
+### Private AI-Core Runtime
+
+AI-core replacement / persona-core 施工使用自己的 PMO runtime：
+
+```text
+backend/private_core/sayachan-ai-core/.pmo_runtime/
+```
+
+主 PMO 只保留摘要、路由和 public/private 边界记录。AI-core 的候选、active sprint、execution handoff、report 和 history 都由它自己的 runtime 管理。
+
+AI-core runtime 复用本目录下的稳定模板和工具，通过 `--runtime-root` 指向自己的 runtime：
+
+```bash
+node docs/pmo/tools/pmo.mjs activate --sprint "AI Core v2 Replacement Plan" --selected-by "Human" --date "2026-05-11" --runtime-root "backend/private_core/sayachan-ai-core/.pmo_runtime" --dry-run
+```
+
 ## 分层
 
 - `protocols/`

@@ -61,6 +61,8 @@ cp frontend/.env.local.example frontend/.env.local
 | `FRONTEND_ORIGIN` | Backend | CORS 允许的前端地址 | `http://localhost:5173` |
 | `GLM_API_KEY` | Backend | GLM API Key（用于 Notes/Projects AI） | - |
 | `KIMI_API_KEY` | Backend | 可选的 Kimi API Key | - |
+| `OPENAI_API_KEY` | Backend | 可选的 OpenAI API Key（用于 AI-core v2 / GPT 测试 provider） | - |
+| `OPENAI_MODEL` | Backend | 可选的 OpenAI 模型名覆盖 | - |
 | `VITE_API_BASE_URL` | Frontend | 前端请求的后端地址 | `http://localhost:3001` |
 
 **AI 调用说明**：

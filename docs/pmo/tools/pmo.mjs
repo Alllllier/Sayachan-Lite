@@ -196,18 +196,81 @@ function markCandidateActive(block) {
 }
 
 function bulletBlock(value, fallback) {
-  const text = (value || fallback || '').trim();
+  const text = normalizeFieldBlock(value || fallback || '');
   if (!text) {
     return '- none specified';
   }
-  if (text.startsWith('- ') || text.includes('\n  - ')) {
+  if (isMarkdownList(text)) {
     return text;
   }
-  return `- ${text}`;
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => `- ${line}`)
+    .join('\n');
 }
 
 function inline(value, fallback = '') {
   return (value || fallback || '').replace(/^`|`$/g, '').trim();
+}
+
+function normalizeFieldBlock(value) {
+  const text = (value || '').trim();
+  if (!text) {
+    return '';
+  }
+
+  return text
+    .split(/\r?\n/)
+    .map((line, index) => {
+      if (index > 0 && /^ {2,}([-*+]|\d+\.)\s+/.test(line)) {
+        return line.replace(/^ {2}/, '');
+      }
+      return line;
+    })
+    .join('\n')
+    .trim();
+}
+
+function isMultiline(value) {
+  return /\r?\n/.test(normalizeFieldBlock(value));
+}
+
+function isMarkdownList(value) {
+  return /^(\s*)([-*+]|\d+\.)\s+/m.test(value);
+}
+
+function indentMarkdownBlock(value, spaces = 2) {
+  const indent = ' '.repeat(spaces);
+  return normalizeFieldBlock(value)
+    .split(/\r?\n/)
+    .map((line) => (line.trim() ? `${indent}${line}` : ''))
+    .join('\n');
+}
+
+function markdownField(label, value, fallback = 'none specified') {
+  const text = normalizeFieldBlock(value || fallback);
+  if (!text) {
+    return `- ${label}: \`${fallback}\``;
+  }
+  if (!isMultiline(text) && !isMarkdownList(text)) {
+    return `- ${label}: \`${inline(text, fallback)}\``;
+  }
+  return `- ${label}:\n${indentMarkdownBlock(text)}`;
+}
+
+function filterMarkdownLines(value, predicate, fallback = 'none specified') {
+  const text = normalizeFieldBlock(value);
+  if (!text) {
+    return fallback;
+  }
+  const matches = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => predicate(line.replace(/^[-*+]\s+/, '')));
+  return matches.length ? matches.join('\n') : fallback;
 }
 
 function activeCurrentSprint({ sprint, date, selectedBy, type, goal, source, candidateSource, related }) {
@@ -233,8 +296,8 @@ function activeCurrentSprint({ sprint, date, selectedBy, type, goal, source, can
 
 - Selected by: \`${selectedBy}\`
 - Selection date: \`${date}\`
-- Candidate source: \`${candidateSource || 'none'}\`
-- Related discussion, backlog, or decision entries: \`${related || 'none'}\`
+${markdownField('Candidate source', candidateSource, 'none')}
+${markdownField('Related discussion, backlog, or decision entries', related, 'none')}
 
 ## PMO Boundary
 
@@ -250,8 +313,10 @@ function activeCurrentSprint({ sprint, date, selectedBy, type, goal, source, can
 }
 
 function executionTaskFromCandidate({ sprint, date, fields }) {
-  const source = inline(fields['Source reference'], 'none');
+  const source = normalizeFieldBlock(fields['Source reference'] || 'none');
   const expectedOutcome = inline(fields['Expected outcome'], 'Deliver the selected sprint outcome.');
+  const discussionSource = filterMarkdownLines(source, (line) => /discussion/i.test(line));
+  const backlogDecisionSource = filterMarkdownLines(source, (line) => /decision|backlog/i.test(line));
 
   return `# Execution Task
 
@@ -267,9 +332,9 @@ function executionTaskFromCandidate({ sprint, date, fields }) {
 
 ## Source Trace
 
-- Candidate source: \`${source}\`
-- Related discussion batch: \`${source.includes('discussion') ? source : 'none specified'}\`
-- Related backlog or decision entries: \`${source.includes('decision') || source.includes('backlog') ? source : 'none specified'}\`
+${markdownField('Candidate source', source, 'none')}
+${markdownField('Related discussion batch', discussionSource, 'none specified')}
+${markdownField('Related backlog or decision entries', backlogDecisionSource, 'none specified')}
 
 ## Objective
 
@@ -308,8 +373,7 @@ ${bulletBlock(fields['Out of scope'], 'Do not expand beyond the selected candida
 ## Validation Expectations
 
 - Run validation appropriate to the selected candidate risk level: \`${inline(fields['Risk level'], 'not specified')}\`.
-- Candidate validation expectation:
-${bulletBlock(fields['Validation expectation'], 'No candidate-specific validation expectation was stated.')}
+${markdownField('Candidate validation expectation', fields['Validation expectation'], 'No candidate-specific validation expectation was stated.')}
 - PMO sharpening slot: replace or extend this with concrete commands, target test files, browser review surfaces, or intentionally skipped validation.
 - Report project-specific review expectations and whether they were performed.
 - If browser validation or UI review is relevant, state the reviewed surfaces or page states.
@@ -322,10 +386,9 @@ ${bulletBlock(fields['Validation expectation'], 'No candidate-specific validatio
 ## Escalation Points
 
 - Stop and return to PMO/human review if execution would cross an explicit non-goal.
-- Stop and return to PMO/human review if dependencies are missing: \`${inline(fields['Dependencies'], 'none specified')}\`.
-- Stop and return to PMO/human review if the candidate readiness no longer holds: \`${inline(fields['Readiness'], 'not specified')}\`.
-- Candidate-specific escalation triggers:
-${bulletBlock(fields['Escalation triggers'], 'No candidate-specific escalation triggers were stated.')}
+${markdownField('Stop and return to PMO/human review if dependencies are missing', fields['Dependencies'], 'none specified')}
+${markdownField('Stop and return to PMO/human review if the candidate readiness no longer holds', fields['Readiness'], 'not specified')}
+${markdownField('Candidate-specific escalation triggers', fields['Escalation triggers'], 'No candidate-specific escalation triggers were stated.')}
 
 ## Completion Report Contract
 
@@ -632,8 +695,8 @@ function activate(args, root) {
       type: 'candidate-selected',
       goal: inline(fields['Expected outcome'], 'Selected candidate execution.'),
       source: 'sprint_candidates.md',
-      candidateSource: inline(fields['Source reference'], 'state/sprint_candidates.md'),
-      related: inline(fields['Source reference'], 'none'),
+      candidateSource: fields['Source reference'] || 'state/sprint_candidates.md',
+      related: fields['Source reference'] || 'none',
     })));
     writes.push(writePlan('state/execution_task.md', executionTaskFromCandidate({ sprint, date, fields })));
     applyWrites(root, writes, args['dry-run']);

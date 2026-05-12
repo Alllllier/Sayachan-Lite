@@ -6,6 +6,14 @@ PMO still decides sprint selection, validation status, documentation-sync outcom
 
 Runtime state and history live in the embedded independent git repository at `.pmo_runtime/` by default. Stable PMO templates and process docs stay in the product repository under `docs/pmo/**`.
 
+For private AI-core work, reuse the same tool with the private-core runtime root:
+
+```bash
+node docs/pmo/tools/pmo.mjs activate --sprint "AI Core v2 Replacement Plan" --selected-by "Human" --date "2026-05-11" --runtime-root "backend/private_core/sayachan-ai-core/.pmo_runtime" --dry-run
+```
+
+Do not copy the PMO automation script into the private core. The private core owns runtime state; the product repo owns stable PMO templates and tools.
+
 Activation also writes a handoff skeleton into `.pmo_runtime/state/execution_task.md`.
 
 The skeleton intentionally includes PMO sharpening slots such as execution slices, boundary notes, acceptance checks, validation expectations, and out-of-scope confirmation. The tool does not fill those with judgment-heavy content. PMO should review and replace or extend the slots before treating the handoff as ready for execution.
@@ -20,7 +28,13 @@ node docs/pmo/tools/pmo.mjs --help
 
 All state-writing commands require an explicit `--date YYYY-MM-DD`. PMO owns the date from the working context; the tool should not infer it from the local machine clock.
 
-Use `--runtime-root "<path>"` only for tests or alternate runtime fixtures. `--pmo-root` remains as a backward-compatible alias for `--runtime-root`.
+Use `--runtime-root "<path>"` for tests, alternate runtime fixtures, or approved independent PMO runtimes such as the private AI-core runtime. `--pmo-root` remains as a backward-compatible alias for `--runtime-root`.
+
+For AI-core PMO, `--runtime-root` is the normal path:
+
+```text
+backend/private_core/sayachan-ai-core/.pmo_runtime
+```
 
 Activate a selected candidate:
 

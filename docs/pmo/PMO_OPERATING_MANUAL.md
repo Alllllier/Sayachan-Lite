@@ -34,6 +34,18 @@ The embedded runtime repository at `.pmo_runtime/` keeps frequently changing PMO
 
 See `docs/pmo/RUNTIME_LOCATION.md` for the ownership boundary.
 
+### Private AI-Core PMO Runtime
+
+The private AI core owns an independent PMO runtime at:
+
+- `backend/private_core/sayachan-ai-core/.pmo_runtime/`
+
+Use that runtime for AI-core replacement planning, persona-core construction, provider/runtime migration, private-core sprint candidates, and private-core execution handoffs.
+
+The product-level `.pmo_runtime/` may keep discussion summaries and boundary references, but it should not own active AI-core sprint state once a topic is confirmed as private-core-owned.
+
+AI-core PMO should reuse the product PMO's stable templates and automation by running `docs/pmo/tools/pmo.mjs` with `--runtime-root "backend/private_core/sayachan-ai-core/.pmo_runtime"`.
+
 In addition, `operator-guides/` may hold human-facing system explanations and operator navigation aids.
 It is a companion layer, not a canonical contract layer.
 
@@ -109,6 +121,8 @@ Use this layer for PMO-local automation:
 
 - `tools/pmo.mjs`
 - `tools/README.md`
+
+The same tool may operate alternate PMO runtimes, including the private AI-core runtime, through `--runtime-root`.
 
 ## Canonical Runtime Set
 

@@ -6,7 +6,7 @@ import {
   projectNextActionsResponseSchema
 } from '@sayachan/contracts';
 import { type ObjectId, toObjectId } from '../domain/objectIds.js';
-import { chat as runChat } from '../privateCore/bridge.js';
+import { chat as privateCoreChat } from '../privateCore/bridge.js';
 import Note from '../models/Note.js';
 import Project from '../models/Project.js';
 import Task from '../models/Task.js';
@@ -41,6 +41,11 @@ type AiBodyResult<TBody> = {
 type AiNotFoundResult = {
   found: false;
 };
+type ChatRunner = typeof privateCoreChat;
+type ChatProviderKeyCheck = () => boolean;
+
+let runChat: ChatRunner = privateCoreChat;
+let chatProviderKeyCheck: ChatProviderKeyCheck = defaultOpenAIChatProviderKeyCheck;
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -104,6 +109,14 @@ function projectNextActionFallback(project: AiPayload | null): { suggestions: st
 
 function chatFallback() {
   return chatResponseSchema.parse({ reply: '我在这，我们先把当前最重要的一步理清楚。' });
+}
+
+function defaultOpenAIChatProviderKeyCheck(): boolean {
+  return Boolean(process.env.OPENAI_API_KEY);
+}
+
+function hasOpenAIChatProviderKey(): boolean {
+  return chatProviderKeyCheck();
 }
 
 function normalizeDoc(doc: AiPayload | null): AiPayload | null {
@@ -294,16 +307,15 @@ export async function suggestProjectNextActions(
 }
 
 export async function chat({ messages, context, runtimeControls }: AiChatRequestDto) {
-  const KIMI_KEY = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
-  if (!KIMI_KEY) {
-    console.warn('[AI Route] KIMI_API_KEY not found, using fallback');
+  if (!hasOpenAIChatProviderKey()) {
+    console.warn('[AI Route] OPENAI_API_KEY not found, using fallback');
     return chatFallback();
   }
 
   try {
     // TODO: extract options (e.g. thinkingEnabled) from request body when strategy is ready
     const { reply } = await runChat(messages, context, { runtimeControls });
-    console.log('[AI Route] Kimi chat reply generated, length:', reply?.length);
+    console.log('[AI Route] Private-core v2 chat reply generated, length:', reply?.length);
     return chatResponseSchema.parse({ reply });
   } catch (error) {
     console.error('[AI Route] Chat service error:', errorMessage(error));
@@ -315,7 +327,22 @@ export async function chat({ messages, context, runtimeControls }: AiChatRequest
 export const __test__ = {
   getProjectFocusContext,
   resolveOwnedNotePayload,
-  resolveOwnedProjectPayload
+  resolveOwnedProjectPayload,
+  hasOpenAIChatProviderKey,
+  setChatProviderKeyCheckForTest(check: ChatProviderKeyCheck) {
+    const previous = chatProviderKeyCheck;
+    chatProviderKeyCheck = check;
+    return () => {
+      chatProviderKeyCheck = previous;
+    };
+  },
+  setChatRunnerForTest(runner: ChatRunner) {
+    const previous = runChat;
+    runChat = runner;
+    return () => {
+      runChat = previous;
+    };
+  }
 };
 
 export default {

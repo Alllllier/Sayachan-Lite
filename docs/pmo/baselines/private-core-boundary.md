@@ -76,6 +76,8 @@ When a topic is confirmed as `private-core-owned`:
 - detailed design, internal rationale, and implementation-facing architecture notes belong in the private repo documentation set
 - the public repo may keep a short summary, boundary implication, and reference to the private-core-owned topic
 - public PMO discussion files may keep the trail, but should mark the topic as `private-core-owned`
+- active PMO sprint candidates, current sprint state, execution tasks, and execution reports should move to the private-core PMO runtime at `backend/private_core/sayachan-ai-core/.pmo_runtime/`
+- the private-core PMO runtime should reuse product PMO templates and `docs/pmo/tools/pmo.mjs` through `--runtime-root`, rather than forking a separate PMO toolchain
 
 ## What This Is Not
 
@@ -85,3 +87,26 @@ The private core currently happens to be delivered through a submodule path, but
 
 The public repo should document only the boundary-level facts needed for safe coordination.
 Private-core implementation details should be maintained only in the private repo.
+
+## Private-Core Baseline Ownership
+
+The private core owns its own system baseline:
+
+- `backend/private_core/sayachan-ai-core/docs/architecture/system-baseline.md`
+
+The public PMO baseline should not duplicate or replace that file.
+
+Use this public boundary document for:
+
+- bridge ownership
+- package dependency boundary
+- public/private responsibility split
+- references to private-core-owned planning tracks
+
+Use the private-core baseline for:
+
+- private runtime internals
+- prompt-kernel and prompt-source ownership
+- provider internals
+- persona-core v2 architecture
+- private-core hook and documentation-sync rules

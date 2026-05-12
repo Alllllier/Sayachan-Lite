@@ -505,3 +505,63 @@ test('AI chat validation strips unknown message fields before bridge handoff', a
     });
   });
 });
+
+test('AI chat provider gate follows OpenAI key ownership', async () => {
+  const originalOpenAI = process.env.OPENAI_API_KEY;
+  const originalKimi = process.env.KIMI_API_KEY;
+  const originalMoonshot = process.env.MOONSHOT_API_KEY;
+
+  try {
+    delete process.env.OPENAI_API_KEY;
+    process.env.KIMI_API_KEY = 'legacy-kimi-key';
+    process.env.MOONSHOT_API_KEY = 'legacy-moonshot-key';
+
+    assert.equal(aiService.__test__.hasOpenAIChatProviderKey(), false);
+
+    process.env.OPENAI_API_KEY = 'openai-key';
+    delete process.env.KIMI_API_KEY;
+    delete process.env.MOONSHOT_API_KEY;
+
+    assert.equal(aiService.__test__.hasOpenAIChatProviderKey(), true);
+  } finally {
+    if (originalOpenAI === undefined) {
+      delete process.env.OPENAI_API_KEY;
+    } else {
+      process.env.OPENAI_API_KEY = originalOpenAI;
+    }
+
+    if (originalKimi === undefined) {
+      delete process.env.KIMI_API_KEY;
+    } else {
+      process.env.KIMI_API_KEY = originalKimi;
+    }
+
+    if (originalMoonshot === undefined) {
+      delete process.env.MOONSHOT_API_KEY;
+    } else {
+      process.env.MOONSHOT_API_KEY = originalMoonshot;
+    }
+  }
+});
+
+test('AI chat falls back when OpenAI key is missing', async () => {
+  const originalOpenAI = process.env.OPENAI_API_KEY;
+
+  try {
+    delete process.env.OPENAI_API_KEY;
+
+    const result = await aiService.chat({
+      messages: [{ role: 'user', content: 'hello' }],
+      context: {},
+      runtimeControls: { personalityBaseline: 'warm' }
+    });
+
+    assert.deepEqual(result, { reply: '我在这，我们先把当前最重要的一步理清楚。' });
+  } finally {
+    if (originalOpenAI === undefined) {
+      delete process.env.OPENAI_API_KEY;
+    } else {
+      process.env.OPENAI_API_KEY = originalOpenAI;
+    }
+  }
+});
