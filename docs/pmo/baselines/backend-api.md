@@ -293,6 +293,7 @@ Current behavior truth:
 - ad hoc AI note/project payloads without `_id` remain accepted for existing non-persisted frontend behavior
 - note and project AI currently use `GLM_API_KEY`
 - chat uses the private-core bridge; `/ai/chat` returns a normal JSON `{ reply }` response, while `/ai/chat/stream` preserves the same request body and returns Server-Sent Events for `text_delta`, `completed`, and `error`
+- chat requests may include `runtimeControls.providerState`; OpenAI Responses state returns as optional `providerState` on normal chat responses or completed stream events
 - all current AI routes still have fallback responses
 
 ## Current Contract Notes That Matter

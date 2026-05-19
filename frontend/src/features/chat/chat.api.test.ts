@@ -118,10 +118,11 @@ describe('chat api boundary', () => {
 
   it('streams chat events from the streaming endpoint', async () => {
     const deltas: string[] = []
+    let completedProviderState: unknown
     mockedFetch().mockResolvedValue(streamResponse([
       'event: text_delta\ndata: {"type":"text_delta","delta":"Hel","text":"Hel"}\n\n',
       'event: text_delta\ndata: {"type":"text_delta","delta":"lo","text":"Hello"}\n\n',
-      'event: completed\ndata: {"type":"completed","text":"Hello","output":{"reply":"Hello"}}\n\n'
+      'event: completed\ndata: {"type":"completed","text":"Hello","output":{"reply":"Hello"},"providerState":{"strategy":"previous_response","lastResponseId":"resp-1","status":"active"}}\n\n'
     ]))
 
     await expect(streamChat(
@@ -129,9 +130,19 @@ describe('chat api boundary', () => {
       emptyContext,
       { personalityBaseline: 'warm' },
       {
-        onDelta: delta => deltas.push(delta)
+        onDelta: delta => deltas.push(delta),
+        onCompleted: (_reply, event) => {
+          completedProviderState = event.providerState
+        }
       }
-    )).resolves.toEqual({ reply: 'Hello' })
+    )).resolves.toEqual({
+      reply: 'Hello',
+      providerState: {
+        strategy: 'previous_response',
+        lastResponseId: 'resp-1',
+        status: 'active'
+      }
+    })
 
     expect(fetch).toHaveBeenCalledWith('http://localhost:3001/ai/chat/stream', {
       method: 'POST',
@@ -141,6 +152,11 @@ describe('chat api boundary', () => {
         'Content-Type': 'application/json'
       },
       body: expect.any(String)
+    })
+    expect(completedProviderState).toEqual({
+      strategy: 'previous_response',
+      lastResponseId: 'resp-1',
+      status: 'active'
     })
     expect(deltas).toEqual(['Hel', 'lo'])
     expect(JSON.parse(String(mockedFetch().mock.calls[0][1]?.body))).toEqual({

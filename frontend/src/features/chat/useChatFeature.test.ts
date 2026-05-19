@@ -76,6 +76,10 @@ function createChatStore() {
         content
       }
     }),
+    providerState: undefined as unknown,
+    setProviderState: vi.fn((value: unknown) => {
+      store.providerState = value
+    }),
     setSending: vi.fn((value: boolean) => {
       store.isSending = value
     })
@@ -184,7 +188,16 @@ describe('useChatFeature orchestration', () => {
     streamChatMock.mockImplementation(async (_messages, _context, _controls, handlers) => {
       handlers?.onDelta?.('Hel', { type: 'text_delta', delta: 'Hel' })
       handlers?.onDelta?.('lo', { type: 'text_delta', delta: 'lo' })
-      handlers?.onCompleted?.('Hello', { type: 'completed', text: 'Hello', output: { reply: 'Hello' } })
+      handlers?.onCompleted?.('Hello', {
+        type: 'completed',
+        text: 'Hello',
+        output: { reply: 'Hello' },
+        providerState: {
+          strategy: 'previous_response',
+          lastResponseId: 'resp-ui-1',
+          status: 'active'
+        }
+      })
       return { reply: 'Hello' }
     })
     const feature = useChatFeature()
@@ -195,6 +208,11 @@ describe('useChatFeature orchestration', () => {
     expect(chatStore.appendMessage).toHaveBeenNthCalledWith(2, { role: 'assistant', content: '' })
     expect(chatStore.updateMessageContent).toHaveBeenCalledWith(1, 'Hel')
     expect(chatStore.updateMessageContent).toHaveBeenCalledWith(1, 'Hello')
+    expect(chatStore.setProviderState).toHaveBeenCalledWith({
+      strategy: 'previous_response',
+      lastResponseId: 'resp-ui-1',
+      status: 'active'
+    })
     expect(feature.isStreamingReply.value).toBe(false)
   })
 

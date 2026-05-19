@@ -20,6 +20,7 @@ export type ChatStreamEvent = {
   delta?: string
   text?: string
   output?: ChatResponseDto
+  providerState?: ChatProviderState
   error?: {
     code?: string
     message?: string
@@ -27,6 +28,8 @@ export type ChatStreamEvent = {
     status?: number
   }
 }
+
+export type ChatProviderState = NonNullable<ChatRuntimeControlsDto['providerState']>
 
 type StreamChatHandlers = {
   onDelta?: (delta: string, event: ChatStreamEvent) => void
@@ -70,7 +73,9 @@ export async function sendChat(
   } catch {
     throw new Error('Empty or invalid reply from server')
   }
-  return { reply: data.reply }
+  return data.providerState
+    ? { reply: data.reply, providerState: data.providerState }
+    : { reply: data.reply }
 }
 
 function parseSseBlock(block: string): ChatStreamEvent | null {
@@ -138,7 +143,9 @@ export async function streamChat(
         const reply = event.output?.reply || event.text || completedReply
         const data = assertApiResponse({ reply }, chatResponseSchema, 'chat stream')
         handlers.onCompleted?.(data.reply, event)
-        return { reply: data.reply }
+        return event.providerState
+          ? { reply: data.reply, providerState: event.providerState }
+          : { reply: data.reply }
       }
 
       if (event.type === 'error') {

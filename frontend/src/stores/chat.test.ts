@@ -49,17 +49,35 @@ describe('chat store behavior locks', () => {
     expect(store.isSending).toBe(false)
   })
 
+  it('tracks provider state for stateful OpenAI turns', () => {
+    const store = useChatStore()
+
+    store.setProviderState({
+      strategy: 'previous_response',
+      lastResponseId: 'resp-1',
+      status: 'active'
+    })
+
+    expect(store.providerState).toEqual({
+      strategy: 'previous_response',
+      lastResponseId: 'resp-1',
+      status: 'active'
+    })
+  })
+
   it('resets open state, messages, and sending state together', () => {
     const store = useChatStore()
 
     store.openChat()
     store.appendMessage({ role: 'user', content: 'hello' })
     store.setSending(true)
+    store.setProviderState({ strategy: 'previous_response', lastResponseId: 'resp-1' })
 
     store.resetChat()
 
     expect(store.isOpen).toBe(false)
     expect(store.messages).toEqual([])
     expect(store.isSending).toBe(false)
+    expect(store.providerState).toBeUndefined()
   })
 })

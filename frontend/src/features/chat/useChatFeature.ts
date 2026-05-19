@@ -31,7 +31,9 @@ type ChatStoreLike = {
   closeChat: () => void
   appendMessage: (message: ChatMessageDto) => void
   updateMessageContent: (index: number, content: string) => void
+  setProviderState: (value: unknown) => void
   setSending: (value: boolean) => void
+  providerState?: unknown
 }
 
 type CockpitSignalsLike = {
@@ -129,6 +131,9 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           convergenceMode: runtimeControls.futureSlots.convergenceMode
         }
       }
+      const controlsWithState = chatStore.providerState
+        ? { ...controls, providerState: chatStore.providerState }
+        : controls
 
       if (runtimeControls.chatStreamingEnabled) {
         let assistantMessageIndex: number | null = null
@@ -141,16 +146,17 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           }
         }
 
-        const { reply } = await streamChat(chatStore.messages, chatContext, controls, {
+        const { reply } = await streamChat(chatStore.messages, chatContext, controlsWithState, {
           onDelta: (delta) => {
             streamedReply += delta
             ensureAssistantMessage()
             chatStore.updateMessageContent(assistantMessageIndex as number, streamedReply)
             scrollToBottom()
           },
-          onCompleted: (reply) => {
+          onCompleted: (reply, event) => {
             ensureAssistantMessage()
             chatStore.updateMessageContent(assistantMessageIndex as number, reply)
+            chatStore.setProviderState(event.providerState)
             scrollToBottom()
           }
         })
@@ -160,8 +166,9 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           chatStore.appendMessage({ role: 'assistant', content: reply })
         }
       } else {
-        const { reply } = await sendChat(chatStore.messages, chatContext, controls)
+        const { reply, providerState } = await sendChat(chatStore.messages, chatContext, controlsWithState)
         chatStore.appendMessage({ role: 'assistant', content: reply })
+        chatStore.setProviderState(providerState)
       }
     } catch (error) {
       onSendError(error)

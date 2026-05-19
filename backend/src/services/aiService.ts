@@ -160,10 +160,17 @@ function isChatProviderReady(provider: ChatProvider = selectedChatProvider()): b
 }
 
 function privateCoreRuntimeControls(runtimeControls: AiChatRequestDto['runtimeControls'], provider: ChatProvider) {
-  return {
+  const controls = {
     ...(runtimeControls || {}),
     provider
   };
+  if (runtimeControls?.providerState) {
+    return {
+      ...controls,
+      providerState: runtimeControls.providerState
+    };
+  }
+  return controls;
 }
 
 function normalizeDoc(doc: AiPayload | null): AiPayload | null {
@@ -363,11 +370,11 @@ export async function chat({ messages, context, runtimeControls }: AiChatRequest
 
   try {
     // TODO: extract options (e.g. thinkingEnabled) from request body when strategy is ready
-    const { reply } = await runChat(messages, context, {
+    const { reply, providerState } = await runChat(messages, context, {
       runtimeControls: privateCoreRuntimeControls(runtimeControls, provider)
     });
     console.log('[AI Route] Private-core v3 chat reply generated, length:', reply?.length);
-    return chatResponseSchema.parse({ reply });
+    return chatResponseSchema.parse(providerState ? { reply, providerState } : { reply });
   } catch (error) {
     console.error('[AI Route] Chat service error:', errorMessage(error));
     console.error('[AI Route] Stack:', errorStack(error) || 'no stack');

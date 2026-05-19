@@ -7,11 +7,28 @@ declare module '@allier/sayachan-ai-core' {
   export type SayachanAiCoreChatContext = Record<string, unknown> | null | undefined;
 
   export type SayachanAiCoreChatOptions = {
-    runtimeControls?: unknown;
+    runtimeControls?: {
+      provider?: 'mock' | 'openai' | 'kimi';
+      providerState?: {
+        strategy?: 'caller_managed' | 'previous_response';
+        source?: 'auto' | 'env' | 'runtime_control';
+        previousResponseId?: string;
+        lastResponseId?: string;
+        status?: 'active' | 'fallback' | 'unavailable';
+      };
+      [key: string]: unknown;
+    };
   };
 
   export type SayachanAiCoreChatResult = {
     reply?: string;
+    providerState?: {
+      strategy?: 'caller_managed' | 'previous_response';
+      source?: 'auto' | 'env' | 'runtime_control';
+      previousResponseId?: string;
+      lastResponseId?: string;
+      status?: 'active' | 'fallback' | 'unavailable';
+    };
   };
 
   export type SayachanAiCoreChatStreamError = {
@@ -28,6 +45,13 @@ declare module '@allier/sayachan-ai-core' {
     delta?: string;
     text?: string;
     output?: SayachanAiCoreChatResult;
+    providerState?: {
+      strategy?: 'caller_managed' | 'previous_response';
+      source?: 'auto' | 'env' | 'runtime_control';
+      previousResponseId?: string;
+      lastResponseId?: string;
+      status?: 'active' | 'fallback' | 'unavailable';
+    };
     error?: SayachanAiCoreChatStreamError;
   };
 
