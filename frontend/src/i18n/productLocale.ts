@@ -47,7 +47,7 @@ const zh: CopyDictionary = {
 
   'dashboard.title': '看板',
   'dashboard.quickAddPlaceholder': '快速添加任务...（例如：去拿快递）',
-  'dashboard.savedTasks': '已保存任务',
+  'dashboard.savedTasks': '任务',
   'dashboard.archiveViewLabel': '看板任务归档视图',
   'dashboard.activeSavedTasks': '进行中的已保存任务',
   'dashboard.archivedSavedTasks': '已归档的已保存任务',
@@ -244,7 +244,7 @@ const en: CopyDictionary = {
 
   'dashboard.title': 'Dashboard',
   'dashboard.quickAddPlaceholder': 'Quick add task... (e.g., 去拿快递)',
-  'dashboard.savedTasks': 'Saved Tasks',
+  'dashboard.savedTasks': 'Tasks',
   'dashboard.archiveViewLabel': 'Dashboard task archive view',
   'dashboard.activeSavedTasks': 'Active saved tasks',
   'dashboard.archivedSavedTasks': 'Archived saved tasks',

@@ -127,7 +127,7 @@ onMounted(loadSavedTasks)
             <SegmentedControl
               :model-value="showArchived ? 'archived' : 'active'"
               :options="archiveViewOptions"
-              variant="page"
+              variant="inline"
               :aria-label="t('dashboard.archiveViewLabel')"
               @update:model-value="setArchiveView"
             />

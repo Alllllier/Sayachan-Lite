@@ -475,6 +475,15 @@ async function updateNote(note: NoteDto): Promise<void> {
       {{ t('notes.title', { count: notes.length }) }}
     </template>
     <template #command>
+      <SegmentedControl
+        :model-value="showArchived ? 'archived' : 'active'"
+        :options="archiveViewOptions"
+        variant="page"
+        :aria-label="t('notes.archiveViewLabel')"
+        @update:model-value="setArchiveView"
+      />
+    </template>
+    <template #control>
       <button
         type="button"
         class="btn btn-primary btn-sm note-create-command"
@@ -485,15 +494,6 @@ async function updateNote(note: NoteDto): Promise<void> {
         <span aria-hidden="true">+</span>
         <span>{{ t('common.new') }}</span>
       </button>
-    </template>
-    <template #control>
-      <SegmentedControl
-        :model-value="showArchived ? 'archived' : 'active'"
-        :options="archiveViewOptions"
-        variant="page"
-        :aria-label="t('notes.archiveViewLabel')"
-        @update:model-value="setArchiveView"
-      />
     </template>
     <EmptyState v-if="notes.length === 0" :title="showArchived ? t('notes.emptyArchivedTitle') : t('notes.emptyActiveTitle')" />
     <Card

@@ -417,6 +417,15 @@ async function submitProjectCapture(): Promise<void> {
       {{ t('projects.title', { count: projects.length }) }}
     </template>
     <template #command>
+      <SegmentedControl
+        :model-value="showArchived ? 'archived' : 'active'"
+        :options="archiveViewOptions"
+        variant="page"
+        :aria-label="t('projects.archiveViewLabel')"
+        @update:model-value="setProjectArchiveView"
+      />
+    </template>
+    <template #control>
       <button
         type="button"
         class="btn btn-primary btn-sm project-create-command"
@@ -426,15 +435,6 @@ async function submitProjectCapture(): Promise<void> {
         <span aria-hidden="true">+</span>
         <span>{{ t('common.new') }}</span>
       </button>
-    </template>
-    <template #control>
-      <SegmentedControl
-        :model-value="showArchived ? 'archived' : 'active'"
-        :options="archiveViewOptions"
-        variant="page"
-        :aria-label="t('projects.archiveViewLabel')"
-        @update:model-value="setProjectArchiveView"
-      />
     </template>
     <EmptyState v-if="projects.length === 0" :title="showArchived ? t('projects.emptyArchivedTitle') : t('projects.emptyActiveTitle')" />
     <Card

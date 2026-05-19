@@ -121,8 +121,12 @@ async function logout(): Promise<void> {
 
 @media (max-width: 560px) {
   .settings-card--row {
-    align-items: stretch;
+    align-items: flex-start;
     flex-direction: column;
+  }
+
+  .settings-card--row .segmented-control {
+    align-self: flex-start;
   }
 
   .settings-actions {
