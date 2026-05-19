@@ -19,6 +19,15 @@ export const useChatStore = defineStore('chat', () => {
     messages.value.push(message)
   }
 
+  function updateMessageContent(index: number, content: string): void {
+    if (messages.value[index]) {
+      messages.value[index] = {
+        ...messages.value[index],
+        content
+      }
+    }
+  }
+
   function setSending(value: boolean): void {
     isSending.value = value
   }
@@ -36,6 +45,7 @@ export const useChatStore = defineStore('chat', () => {
     openChat,
     closeChat,
     appendMessage,
+    updateMessageContent,
     setSending,
     resetChat
   }

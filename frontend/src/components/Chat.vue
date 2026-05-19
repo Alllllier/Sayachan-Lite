@@ -27,6 +27,7 @@ const {
   inputValue,
   isPanelOpen,
   isHydrating,
+  isStreamingReply,
   chatInputDisabled,
   chatSendButtonLabel,
   openPopup,
@@ -111,7 +112,7 @@ function sendCurrentMessage(): Promise<void> {
           <div v-if="isHydrating" class="chat-message assistant">
             <div class="chat-bubble chat-bubble--thinking">{{ t('chat.syncingContext') }}</div>
           </div>
-          <div v-if="chatStore.isSending" class="chat-message assistant">
+          <div v-if="chatStore.isSending && !isStreamingReply" class="chat-message assistant">
             <div class="chat-bubble chat-bubble--thinking">{{ runtimeControls.personalityConfig.toneLabel }} &middot; {{ t('chat.thinking') }}</div>
           </div>
         </div>
@@ -139,6 +140,25 @@ function sendCurrentMessage(): Promise<void> {
         </div>
 
         <div class="runtime-panel-body">
+          <div class="runtime-section">
+            <div class="runtime-toggle-row">
+              <div>
+                <div class="runtime-section-title runtime-section-title--inline">{{ t('chat.streamingMode') }}</div>
+                <div class="runtime-toggle-caption">{{ t('chat.streamingModeCaption') }}</div>
+              </div>
+              <button
+                class="runtime-toggle"
+                :class="{ active: runtimeControls.chatStreamingEnabled }"
+                type="button"
+                role="switch"
+                :aria-checked="runtimeControls.chatStreamingEnabled"
+                @click="runtimeControls.setChatStreamingEnabled(!runtimeControls.chatStreamingEnabled)"
+              >
+                <span class="runtime-toggle-thumb"></span>
+              </button>
+            </div>
+          </div>
+
           <div class="runtime-section">
             <div class="runtime-section-title">{{ t('chat.personalityBaseline') }}</div>
             <div class="runtime-radio-list">
@@ -545,6 +565,54 @@ function sendCurrentMessage(): Promise<void> {
   text-transform: uppercase;
   letter-spacing: 0.3px;
   margin-bottom: var(--space-sm);
+}
+
+.runtime-section-title--inline {
+  margin-bottom: 2px;
+}
+
+.runtime-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.runtime-toggle-caption {
+  font-size: var(--font-size-xs);
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.runtime-toggle {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 24px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  background: var(--surface-panel);
+  padding: 2px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.runtime-toggle.active {
+  background: var(--action-primary);
+  border-color: var(--action-primary);
+}
+
+.runtime-toggle-thumb {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease;
+}
+
+.runtime-toggle.active .runtime-toggle-thumb {
+  transform: translateX(18px);
 }
 
 .runtime-radio-list {

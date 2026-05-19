@@ -5,6 +5,7 @@ import { useRuntimeControls } from './runtimeControls.js'
 const LS_BASELINE_KEY = 'sayachan.personalityBaseline'
 const LS_WARMTH_KEY = 'sayachan.warmth'
 const LS_CONVERGENCE_KEY = 'sayachan.convergenceMode'
+const LS_STREAMING_KEY = 'sayachan.chatStreamingEnabled'
 
 function createLocalStorageMock(initialValues = {}) {
   const store = new Map(Object.entries(initialValues))
@@ -32,16 +33,18 @@ describe('runtimeControls store behavior locks', () => {
     const store = createRuntimeStore({
       [LS_BASELINE_KEY]: 'strict',
       [LS_WARMTH_KEY]: '7',
-      [LS_CONVERGENCE_KEY]: 'explore'
+      [LS_CONVERGENCE_KEY]: 'explore',
+      [LS_STREAMING_KEY]: 'false'
     })
 
     expect(store.personalityBaseline).toBe('strict')
     expect(store.futureSlots.warmth).toBe(7)
     expect(store.futureSlots.convergenceMode).toBe('explore')
+    expect(store.chatStreamingEnabled).toBe(false)
     expect(store.personalityConfig.label).toBe('干练')
   })
 
-  it('falls back to warm and guided when saved enum values are invalid', () => {
+  it('falls back to warm, guided, and streaming enabled when saved values are invalid or absent', () => {
     const store = createRuntimeStore({
       [LS_BASELINE_KEY]: 'chaos',
       [LS_CONVERGENCE_KEY]: 'random'
@@ -49,6 +52,7 @@ describe('runtimeControls store behavior locks', () => {
 
     expect(store.personalityBaseline).toBe('warm')
     expect(store.futureSlots.convergenceMode).toBe('guided')
+    expect(store.chatStreamingEnabled).toBe(true)
     expect(store.personalityConfig.label).toBe('温暖')
   })
 
@@ -90,5 +94,18 @@ describe('runtimeControls store behavior locks', () => {
 
     store.setConvergenceMode('random')
     expect(store.futureSlots.convergenceMode).toBe('decisive')
+  })
+
+  it('updates and persists chat streaming mode', () => {
+    const store = createRuntimeStore()
+
+    expect(store.chatStreamingEnabled).toBe(true)
+    store.setChatStreamingEnabled(false)
+    expect(store.chatStreamingEnabled).toBe(false)
+    expect(localStorage.setItem).toHaveBeenCalledWith(LS_STREAMING_KEY, 'false')
+
+    store.setChatStreamingEnabled(true)
+    expect(store.chatStreamingEnabled).toBe(true)
+    expect(localStorage.setItem).toHaveBeenCalledWith(LS_STREAMING_KEY, 'true')
   })
 })

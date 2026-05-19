@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChatFeature } from './useChatFeature.js'
 import { refreshCockpitContext } from '../../services/cockpitContextService'
-import { sendChat } from './chat.api.js'
+import { sendChat, streamChat } from './chat.api.js'
 import type { ChatMessageDto } from '@sayachan/contracts'
 
 const storeMocks = vi.hoisted(() => ({
@@ -23,7 +23,8 @@ vi.mock('../../stores/runtimeControls', () => ({
 }))
 
 vi.mock('./chat.api.js', () => ({
-  sendChat: vi.fn()
+  sendChat: vi.fn(),
+  streamChat: vi.fn()
 }))
 
 vi.mock('../../services/cockpitContextService', () => ({
@@ -32,6 +33,7 @@ vi.mock('../../services/cockpitContextService', () => ({
 
 const refreshCockpitContextMock = vi.mocked(refreshCockpitContext)
 const sendChatMock = vi.mocked(sendChat)
+const streamChatMock = vi.mocked(streamChat)
 
 type ChatStoreMock = ReturnType<typeof createChatStore>
 type CockpitSignalsMock = {
@@ -43,6 +45,7 @@ type CockpitSignalsMock = {
 }
 type RuntimeControlsMock = {
   personalityBaseline: 'warm'
+  chatStreamingEnabled: boolean
   futureSlots: {
     warmth: number
     convergenceMode: 'guided'
@@ -50,6 +53,7 @@ type RuntimeControlsMock = {
   personalityConfig: {
     toneLabel: string
   }
+  setChatStreamingEnabled: (value: boolean) => void
 }
 
 function createChatStore() {
@@ -65,6 +69,12 @@ function createChatStore() {
     }),
     appendMessage: vi.fn((message: ChatMessageDto) => {
       store.messages.push(message)
+    }),
+    updateMessageContent: vi.fn((index: number, content: string) => {
+      store.messages[index] = {
+        ...store.messages[index],
+        content
+      }
     }),
     setSending: vi.fn((value: boolean) => {
       store.isSending = value
@@ -90,19 +100,22 @@ describe('useChatFeature orchestration', () => {
     }
     runtimeControls = {
       personalityBaseline: 'warm',
+      chatStreamingEnabled: true,
       futureSlots: {
         warmth: 7,
         convergenceMode: 'guided'
       },
       personalityConfig: {
         toneLabel: 'Warm'
-      }
+      },
+      setChatStreamingEnabled: vi.fn()
     }
 
     storeMocks.chatStore = chatStore
     storeMocks.cockpitSignals = cockpitSignals
     storeMocks.runtimeControls = runtimeControls
     sendChatMock.mockResolvedValue({ reply: 'Done' })
+    streamChatMock.mockResolvedValue({ reply: 'Done' })
   })
 
   it('opens and closes the chat while keeping the runtime panel state local', () => {
@@ -130,7 +143,7 @@ describe('useChatFeature orchestration', () => {
     expect(chatStore.appendMessage).toHaveBeenNthCalledWith(1, { role: 'user', content: 'hello' })
     expect(feature.inputValue.value).toBe('')
     expect(refreshCockpitContext).not.toHaveBeenCalled()
-    expect(sendChat).toHaveBeenCalledWith(
+    expect(streamChat).toHaveBeenCalledWith(
       chatStore.messages,
       {
         activeProjectsCount: 1,
@@ -144,10 +157,45 @@ describe('useChatFeature orchestration', () => {
           warmth: 7,
           convergenceMode: 'guided'
         }
-      }
+      },
+      expect.objectContaining({
+        onDelta: expect.any(Function),
+        onCompleted: expect.any(Function)
+      })
     )
+    expect(sendChat).not.toHaveBeenCalled()
     expect(chatStore.appendMessage).toHaveBeenLastCalledWith({ role: 'assistant', content: 'Done' })
     expect(chatStore.setSending).toHaveBeenLastCalledWith(false)
+  })
+
+  it('can send through the non-streaming endpoint when streaming is disabled', async () => {
+    runtimeControls.chatStreamingEnabled = false
+    const feature = useChatFeature()
+    feature.inputValue.value = 'hello'
+
+    await feature.handleSend()
+
+    expect(sendChat).toHaveBeenCalled()
+    expect(streamChat).not.toHaveBeenCalled()
+    expect(chatStore.appendMessage).toHaveBeenLastCalledWith({ role: 'assistant', content: 'Done' })
+  })
+
+  it('updates the assistant message as stream deltas arrive', async () => {
+    streamChatMock.mockImplementation(async (_messages, _context, _controls, handlers) => {
+      handlers?.onDelta?.('Hel', { type: 'text_delta', delta: 'Hel' })
+      handlers?.onDelta?.('lo', { type: 'text_delta', delta: 'lo' })
+      handlers?.onCompleted?.('Hello', { type: 'completed', text: 'Hello', output: { reply: 'Hello' } })
+      return { reply: 'Hello' }
+    })
+    const feature = useChatFeature()
+    feature.inputValue.value = 'hello'
+
+    await feature.handleSend()
+
+    expect(chatStore.appendMessage).toHaveBeenNthCalledWith(2, { role: 'assistant', content: '' })
+    expect(chatStore.updateMessageContent).toHaveBeenCalledWith(1, 'Hel')
+    expect(chatStore.updateMessageContent).toHaveBeenCalledWith(1, 'Hello')
+    expect(feature.isStreamingReply.value).toBe(false)
   })
 
   it('hydrates cockpit context before sending when signals are cold', async () => {
@@ -163,7 +211,7 @@ describe('useChatFeature orchestration', () => {
     await feature.handleSend('帮我聚焦')
 
     expect(refreshCockpitContext).toHaveBeenCalled()
-    expect(sendChat).toHaveBeenCalledWith(
+    expect(streamChat).toHaveBeenCalledWith(
       chatStore.messages,
       {
         activeProjectsCount: 1,
@@ -177,14 +225,15 @@ describe('useChatFeature orchestration', () => {
           warmth: 7,
           convergenceMode: 'guided'
         }
-      }
+      },
+      expect.any(Object)
     )
     expect(feature.isHydrating.value).toBe(false)
   })
 
   it('uses the local fallback reply when sendChat fails', async () => {
     const onSendError = vi.fn()
-    sendChatMock.mockRejectedValue(new Error('offline'))
+    streamChatMock.mockRejectedValue(new Error('offline'))
     const feature = useChatFeature({ onSendError })
     feature.inputValue.value = 'hello'
 

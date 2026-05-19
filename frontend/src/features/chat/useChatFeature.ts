@@ -1,10 +1,10 @@
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import type { ChatContextDto, ChatMessageDto } from '@sayachan/contracts'
 import { useChatStore } from '../../stores/chat'
 import { useCockpitSignals } from '../../stores/cockpitSignals'
 import { useRuntimeControls } from '../../stores/runtimeControls'
 import { refreshCockpitContext } from '../../services/cockpitContextService'
-import { sendChat } from './chat.api.js'
+import { sendChat, streamChat } from './chat.api.js'
 import {
   canSendChatMessage,
   getChatFallbackReply,
@@ -30,6 +30,7 @@ type ChatStoreLike = {
   openChat: () => void
   closeChat: () => void
   appendMessage: (message: ChatMessageDto) => void
+  updateMessageContent: (index: number, content: string) => void
   setSending: (value: boolean) => void
 }
 
@@ -55,6 +56,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
   const inputValue = ref('')
   const isPanelOpen = ref(false)
   const isHydrating = ref(false)
+  const isStreamingReply = ref(false)
 
   const context = computed<ChatContextDto>(() => ({
     activeProjectsCount: cockpitSignals.activeProjectsCount,
@@ -118,15 +120,49 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     }
 
     chatStore.setSending(true)
+    isStreamingReply.value = false
     try {
-      const { reply } = await sendChat(chatStore.messages, chatContext, {
+      const controls = {
         personalityBaseline: runtimeControls.personalityBaseline,
         futureSlots: {
           warmth: runtimeControls.futureSlots.warmth,
           convergenceMode: runtimeControls.futureSlots.convergenceMode
         }
-      })
-      chatStore.appendMessage({ role: 'assistant', content: reply })
+      }
+
+      if (runtimeControls.chatStreamingEnabled) {
+        let assistantMessageIndex: number | null = null
+        let streamedReply = ''
+        const ensureAssistantMessage = () => {
+          if (assistantMessageIndex === null) {
+            assistantMessageIndex = chatStore.messages.length
+            chatStore.appendMessage({ role: 'assistant', content: '' })
+            isStreamingReply.value = true
+          }
+        }
+
+        const { reply } = await streamChat(chatStore.messages, chatContext, controls, {
+          onDelta: (delta) => {
+            streamedReply += delta
+            ensureAssistantMessage()
+            chatStore.updateMessageContent(assistantMessageIndex as number, streamedReply)
+            scrollToBottom()
+          },
+          onCompleted: (reply) => {
+            ensureAssistantMessage()
+            chatStore.updateMessageContent(assistantMessageIndex as number, reply)
+            scrollToBottom()
+          }
+        })
+
+        if (assistantMessageIndex === null) {
+          await nextTick()
+          chatStore.appendMessage({ role: 'assistant', content: reply })
+        }
+      } else {
+        const { reply } = await sendChat(chatStore.messages, chatContext, controls)
+        chatStore.appendMessage({ role: 'assistant', content: reply })
+      }
     } catch (error) {
       onSendError(error)
       chatStore.appendMessage({
@@ -134,6 +170,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
         content: getChatFallbackReply(runtimeControls.personalityBaseline)
       })
     } finally {
+      isStreamingReply.value = false
       chatStore.setSending(false)
     }
   }
@@ -151,6 +188,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     inputValue,
     isPanelOpen,
     isHydrating,
+    isStreamingReply,
     chatInputDisabled,
     chatSendButtonLabel,
     openPopup,

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildChatRuntimePayload, sendChat } from './chat.api.js'
+import { buildChatRuntimePayload, sendChat, streamChat } from './chat.api.js'
 import type { ChatContextDto } from '@sayachan/contracts'
 
 const emptyContext: ChatContextDto = {
@@ -17,6 +17,21 @@ function jsonResponse(body: unknown, ok = true, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status: ok ? status : status || 500,
     headers: { 'Content-Type': 'application/json' }
+  })
+}
+
+function streamResponse(chunks: string[], ok = true, status = 200): Response {
+  return new Response(new ReadableStream({
+    start(controller) {
+      const encoder = new TextEncoder()
+      for (const chunk of chunks) {
+        controller.enqueue(encoder.encode(chunk))
+      }
+      controller.close()
+    }
+  }), {
+    status: ok ? status : status || 500,
+    headers: { 'Content-Type': 'text/event-stream' }
   })
 }
 
@@ -99,5 +114,60 @@ describe('chat api boundary', () => {
     await expect(sendChat([{ role: 'user', content: 'hello' }], emptyContext, {}))
       .rejects
       .toThrow('Empty or invalid reply from server')
+  })
+
+  it('streams chat events from the streaming endpoint', async () => {
+    const deltas: string[] = []
+    mockedFetch().mockResolvedValue(streamResponse([
+      'event: text_delta\ndata: {"type":"text_delta","delta":"Hel","text":"Hel"}\n\n',
+      'event: text_delta\ndata: {"type":"text_delta","delta":"lo","text":"Hello"}\n\n',
+      'event: completed\ndata: {"type":"completed","text":"Hello","output":{"reply":"Hello"}}\n\n'
+    ]))
+
+    await expect(streamChat(
+      [{ role: 'user', content: 'latest' }],
+      emptyContext,
+      { personalityBaseline: 'warm' },
+      {
+        onDelta: delta => deltas.push(delta)
+      }
+    )).resolves.toEqual({ reply: 'Hello' })
+
+    expect(fetch).toHaveBeenCalledWith('http://localhost:3001/ai/chat/stream', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        Accept: 'text/event-stream',
+        'Content-Type': 'application/json'
+      },
+      body: expect.any(String)
+    })
+    expect(deltas).toEqual(['Hel', 'lo'])
+    expect(JSON.parse(String(mockedFetch().mock.calls[0][1]?.body))).toEqual({
+      messages: [{ role: 'user', content: 'latest' }],
+      context: emptyContext,
+      runtimeControls: {
+        personalityBaseline: 'warm',
+        lastUserMessage: 'latest'
+      }
+    })
+  })
+
+  it('throws when the streaming endpoint emits an error or ends early', async () => {
+    mockedFetch().mockResolvedValue(streamResponse([
+      'event: error\ndata: {"type":"error","error":{"message":"stream failed"}}\n\n'
+    ]))
+
+    await expect(streamChat([{ role: 'user', content: 'hello' }], emptyContext, {}))
+      .rejects
+      .toThrow('stream failed')
+
+    mockedFetch().mockResolvedValue(streamResponse([
+      'event: text_delta\ndata: {"type":"text_delta","delta":"partial"}\n\n'
+    ]))
+
+    await expect(streamChat([{ role: 'user', content: 'hello' }], emptyContext, {}))
+      .rejects
+      .toThrow('Chat stream ended before completion')
   })
 })

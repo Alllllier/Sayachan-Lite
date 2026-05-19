@@ -11,6 +11,28 @@ import type {
   ChatRuntimePayloadDto
 } from '@sayachan/contracts'
 
+type ChatStreamEventType = 'text_delta' | 'completed' | 'error'
+
+export type ChatStreamEvent = {
+  packetType?: 'chat_stream_event'
+  version?: number
+  type: ChatStreamEventType
+  delta?: string
+  text?: string
+  output?: ChatResponseDto
+  error?: {
+    code?: string
+    message?: string
+    provider?: string
+    status?: number
+  }
+}
+
+type StreamChatHandlers = {
+  onDelta?: (delta: string, event: ChatStreamEvent) => void
+  onCompleted?: (reply: string, event: ChatStreamEvent) => void
+}
+
 export function buildChatRuntimePayload(
   messages: ChatMessageDto[],
   runtimeControls: ChatRuntimeControlsDto = {}
@@ -49,4 +71,85 @@ export async function sendChat(
     throw new Error('Empty or invalid reply from server')
   }
   return { reply: data.reply }
+}
+
+function parseSseBlock(block: string): ChatStreamEvent | null {
+  const dataLines = block
+    .split('\n')
+    .filter(line => line.startsWith('data: '))
+    .map(line => line.slice('data: '.length))
+
+  if (dataLines.length === 0) {
+    return null
+  }
+
+  return JSON.parse(dataLines.join('\n')) as ChatStreamEvent
+}
+
+export async function streamChat(
+  messages: ChatMessageDto[],
+  context: ChatContextDto,
+  runtimeControls: ChatRuntimeControlsDto = {},
+  handlers: StreamChatHandlers = {}
+): Promise<ChatResponseDto> {
+  const res = await apiFetch(`${API_BASE}/ai/chat/stream`, {
+    method: 'POST',
+    headers: {
+      Accept: 'text/event-stream',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      messages,
+      context,
+      runtimeControls: buildChatRuntimePayload(messages, runtimeControls)
+    })
+  })
+
+  if (!res.ok) {
+    throw new Error(`Chat stream request failed: ${res.status}`)
+  }
+
+  if (!res.body) {
+    throw new Error('Chat stream response did not include a readable body')
+  }
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let completedReply = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    buffer += decoder.decode(value, { stream: !done })
+    const blocks = buffer.split('\n\n')
+    buffer = blocks.pop() || ''
+
+    for (const block of blocks) {
+      const event = parseSseBlock(block.trim())
+      if (!event) continue
+
+      if (event.type === 'text_delta' && typeof event.delta === 'string') {
+        completedReply += event.delta
+        handlers.onDelta?.(event.delta, event)
+        continue
+      }
+
+      if (event.type === 'completed') {
+        const reply = event.output?.reply || event.text || completedReply
+        const data = assertApiResponse({ reply }, chatResponseSchema, 'chat stream')
+        handlers.onCompleted?.(data.reply, event)
+        return { reply: data.reply }
+      }
+
+      if (event.type === 'error') {
+        throw new Error(event.error?.message || 'Chat stream failed')
+      }
+    }
+
+    if (done) {
+      break
+    }
+  }
+
+  throw new Error('Chat stream ended before completion')
 }

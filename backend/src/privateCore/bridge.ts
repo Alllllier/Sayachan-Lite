@@ -2,7 +2,8 @@
 import aiCore from '@allier/sayachan-ai-core';
 
 const { chat } = aiCore;
+const { chatStream } = aiCore;
 
-export { chat };
+export { chat, chatStream };
 
-export default { chat };
+export default { chat, chatStream };

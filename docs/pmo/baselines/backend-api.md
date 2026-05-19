@@ -281,6 +281,7 @@ Current behavior truth:
 - `POST /ai/notes/tasks`
 - `POST /ai/projects/next-action`
 - `POST /ai/chat`
+- `POST /ai/chat/stream`
 
 Current behavior truth:
 
@@ -291,12 +292,13 @@ Current behavior truth:
 - missing or cross-account persisted note/project ids return `404`
 - ad hoc AI note/project payloads without `_id` remain accepted for existing non-persisted frontend behavior
 - note and project AI currently use `GLM_API_KEY`
-- chat currently uses `KIMI_API_KEY` or `MOONSHOT_API_KEY`
+- chat uses the private-core bridge; `/ai/chat` returns a normal JSON `{ reply }` response, while `/ai/chat/stream` preserves the same request body and returns Server-Sent Events for `text_delta`, `completed`, and `error`
 - all current AI routes still have fallback responses
 
 ## Current Contract Notes That Matter
 
 - `/ai/chat` is the public API entrypoint into private-core chat execution
+- `/ai/chat/stream` is the parallel streaming entrypoint; keep `/ai/chat` stable so frontend can choose streaming with a UI control instead of changing the default request path
 - task-project coupling now lives mainly in first-pass backend service modules under `backend/src/services/`, while `backend/src/routes/index.ts` acts as the non-AI route aggregator for health, notes, projects, and tasks route modules
 - changing archive semantics, focus-clearing behavior, or bridge usage should be treated as architecture-sensitive work
 - semantic task provenance fields are the canonical read and write path

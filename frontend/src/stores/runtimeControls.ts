@@ -5,6 +5,7 @@ import type { ChatConvergenceMode, ChatPersonalityBaseline } from '@sayachan/con
 const LS_BASELINE_KEY = 'sayachan.personalityBaseline'
 const LS_WARMTH_KEY = 'sayachan.warmth'
 const LS_CONVERGENCE_KEY = 'sayachan.convergenceMode'
+const LS_STREAMING_KEY = 'sayachan.chatStreamingEnabled'
 
 export const useRuntimeControls = defineStore('runtimeControls', () => {
   const savedBaseline = localStorage.getItem(LS_BASELINE_KEY)
@@ -13,6 +14,8 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
     : 'warm'
 
   const personalityBaseline = ref(initialBaseline)
+  const savedStreaming = localStorage.getItem(LS_STREAMING_KEY)
+  const chatStreamingEnabled = ref(savedStreaming === null ? true : savedStreaming !== 'false')
 
   const savedWarmth = localStorage.getItem(LS_WARMTH_KEY)
   const initialWarmth = savedWarmth !== null ? Number(savedWarmth) : 5
@@ -90,13 +93,20 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
     }
   }
 
+  function setChatStreamingEnabled(value: unknown): void {
+    chatStreamingEnabled.value = value === true
+    localStorage.setItem(LS_STREAMING_KEY, String(chatStreamingEnabled.value))
+  }
+
   return {
     personalityBaseline,
+    chatStreamingEnabled,
     futureSlots,
     personalityConfig,
     uiLabels,
     setBaseline,
     setWarmth,
-    setConvergenceMode
+    setConvergenceMode,
+    setChatStreamingEnabled
   }
 })

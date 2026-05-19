@@ -2,13 +2,14 @@ import { z } from 'zod'
 
 export const chatPersonalityBaselineValues = ['warm', 'strict', 'haraguro'] as const
 export const chatConvergenceModeValues = ['explore', 'guided', 'decisive'] as const
+export const chatMessageRoleValues = ['user', 'assistant'] as const
 
 export const aiResourceRequestSchema = z.object({
   _id: z.string().min(1)
 }).strict()
 
 export const chatMessageSchema = z.object({
-  role: z.string().optional(),
+  role: z.enum(chatMessageRoleValues).optional(),
   content: z.string().optional()
 })
 
@@ -52,6 +53,7 @@ export const chatResponseSchema = z.object({
 export type AiResourceRequestDto = z.infer<typeof aiResourceRequestSchema>
 export type ChatPersonalityBaseline = (typeof chatPersonalityBaselineValues)[number]
 export type ChatConvergenceMode = (typeof chatConvergenceModeValues)[number]
+export type ChatMessageRole = (typeof chatMessageRoleValues)[number]
 export type ChatMessageDto = z.infer<typeof chatMessageSchema>
 export type ChatContextDto = z.infer<typeof chatContextSchema>
 export type ChatRuntimeControlsDto = z.infer<typeof chatRuntimeControlsSchema>

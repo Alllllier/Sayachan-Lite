@@ -29,6 +29,17 @@ describe('chat store behavior locks', () => {
     ])
   })
 
+  it('updates an existing message content without changing its role', () => {
+    const store = useChatStore()
+
+    store.appendMessage({ role: 'assistant', content: 'Hel' })
+    store.updateMessageContent(0, 'Hello')
+
+    expect(store.messages).toEqual([
+      { role: 'assistant', content: 'Hello' }
+    ])
+  })
+
   it('tracks sending state', () => {
     const store = useChatStore()
 

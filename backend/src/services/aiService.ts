@@ -6,7 +6,7 @@ import {
   projectNextActionsResponseSchema
 } from '@sayachan/contracts';
 import { type ObjectId, toObjectId } from '../domain/objectIds.js';
-import { chat as privateCoreChat } from '../privateCore/bridge.js';
+import { chat as privateCoreChat, chatStream as privateCoreChatStream } from '../privateCore/bridge.js';
 import Note from '../models/Note.js';
 import Project from '../models/Project.js';
 import Task from '../models/Task.js';
@@ -42,10 +42,13 @@ type AiNotFoundResult = {
   found: false;
 };
 type ChatRunner = typeof privateCoreChat;
+type ChatStreamRunner = typeof privateCoreChatStream;
 type ChatProvider = 'mock' | 'openai';
 type ChatProviderReadinessCheck = (provider: ChatProvider) => boolean;
+type ChatStreamEvent = Awaited<ReturnType<ChatStreamRunner>> extends AsyncIterable<infer TEvent> ? TEvent : never;
 
 let runChat: ChatRunner = privateCoreChat;
+let runChatStream: ChatStreamRunner = privateCoreChatStream;
 let chatProviderReadinessCheck: ChatProviderReadinessCheck = defaultChatProviderReadinessCheck;
 
 function errorMessage(error: unknown): string {
@@ -110,6 +113,25 @@ function projectNextActionFallback(project: AiPayload | null): { suggestions: st
 
 function chatFallback() {
   return chatResponseSchema.parse({ reply: '我在这，我们先把当前最重要的一步理清楚。' });
+}
+
+async function* chatFallbackStream(): AsyncIterable<ChatStreamEvent> {
+  await Promise.resolve();
+  const fallback = chatFallback();
+  yield {
+    packetType: 'chat_stream_event',
+    version: 1,
+    type: 'text_delta',
+    delta: fallback.reply,
+    text: fallback.reply
+  };
+  yield {
+    packetType: 'chat_stream_event',
+    version: 1,
+    type: 'completed',
+    text: fallback.reply,
+    output: fallback
+  };
 }
 
 function normalizeChatProvider(value: unknown): ChatProvider | null {
@@ -353,6 +375,26 @@ export async function chat({ messages, context, runtimeControls }: AiChatRequest
   }
 }
 
+export async function* chatStream({ messages, context, runtimeControls }: AiChatRequestDto): AsyncIterable<ChatStreamEvent> {
+  const provider = selectedChatProvider();
+
+  if (!isChatProviderReady(provider)) {
+    console.warn(`[AI Route] ${provider} provider is not ready, using streaming fallback`);
+    yield* chatFallbackStream();
+    return;
+  }
+
+  try {
+    yield* runChatStream(messages, context, {
+      runtimeControls: privateCoreRuntimeControls(runtimeControls, provider)
+    });
+  } catch (error) {
+    console.error('[AI Route] Chat stream service error:', errorMessage(error));
+    console.error('[AI Route] Stack:', errorStack(error) || 'no stack');
+    yield* chatFallbackStream();
+  }
+}
+
 export const __test__ = {
   getProjectFocusContext,
   resolveOwnedNotePayload,
@@ -379,11 +421,19 @@ export const __test__ = {
     return () => {
       runChat = previous;
     };
+  },
+  setChatStreamRunnerForTest(runner: ChatStreamRunner) {
+    const previous = runChatStream;
+    runChatStream = runner;
+    return () => {
+      runChatStream = previous;
+    };
   }
 };
 
 export default {
   chat,
+  chatStream,
   generateNoteTaskDrafts,
   suggestProjectNextActions,
   __test__

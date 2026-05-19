@@ -36,6 +36,21 @@ async function requestKoaApp(app, path, options = {}) {
   }
 }
 
+function parseSseEvents(text) {
+  return text
+    .trim()
+    .split(/\n\n/)
+    .filter(Boolean)
+    .map((block) => {
+      const eventLine = block.split('\n').find((line) => line.startsWith('event: '));
+      const dataLine = block.split('\n').find((line) => line.startsWith('data: '));
+      return {
+        event: eventLine?.slice('event: '.length),
+        data: dataLine ? JSON.parse(dataLine.slice('data: '.length)) : null
+      };
+    });
+}
+
 function withPatchedMethods(patches, run) {
   const originals = patches.map(({ target, key }) => ({ target, key, value: target[key] }));
 
@@ -188,6 +203,130 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
       } else {
         process.env.SAYACHAN_AI_PROVIDER = originalProvider;
       }
+    }
+  });
+});
+
+test('authenticated /ai/chat/stream reaches controlled private-core stream path and returns SSE events', async () => {
+  const app = createApp({
+    corsOrigins: ['http://localhost:5173'],
+    trustProxy: false
+  });
+  const originalProvider = process.env.SAYACHAN_AI_PROVIDER;
+  let loadedToken;
+  let capturedStreamCall;
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'loadUserForSession',
+      value: async (token) => {
+        loadedToken = token;
+        return { _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' };
+      }
+    }
+  ], async () => {
+    process.env.SAYACHAN_AI_PROVIDER = 'openai';
+    const restoreProviderReady = aiService.__test__.setChatProviderKeyCheckForTest(() => true);
+    const restoreChatStreamRunner = aiService.__test__.setChatStreamRunnerForTest(async function* (messages, context, options) {
+      capturedStreamCall = { messages, context, options };
+      yield { packetType: 'chat_stream_event', version: 1, type: 'text_delta', delta: 'hello ', text: 'hello ' };
+      yield { packetType: 'chat_stream_event', version: 1, type: 'text_delta', delta: 'stream', text: 'hello stream' };
+      yield { packetType: 'chat_stream_event', version: 1, type: 'completed', text: 'hello stream', output: { reply: 'hello stream' } };
+    });
+
+    try {
+      const response = await requestKoaApp(app, '/ai/chat/stream', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer route-stream-session',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'hello from stream route' }],
+          context: { activeTask: 'stream-smoke-task' },
+          runtimeControls: {
+            personalityBaseline: 'warm',
+            lastUserMessage: 'hello from stream route'
+          }
+        })
+      });
+      const events = parseSseEvents(await response.text());
+
+      assert.equal(loadedToken, 'route-stream-session');
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get('content-type'), 'text/event-stream; charset=utf-8');
+      assert.deepEqual(events.map((event) => event.event), ['text_delta', 'text_delta', 'completed']);
+      assert.deepEqual(events.map((event) => event.data.type), ['text_delta', 'text_delta', 'completed']);
+      assert.equal(events[0].data.delta, 'hello ');
+      assert.equal(events[1].data.delta, 'stream');
+      assert.deepEqual(events[2].data.output, { reply: 'hello stream' });
+      assert.deepEqual(capturedStreamCall.messages, [{ role: 'user', content: 'hello from stream route' }]);
+      assert.deepEqual(capturedStreamCall.context, { activeTask: 'stream-smoke-task' });
+      assert.deepEqual(capturedStreamCall.options, {
+        runtimeControls: {
+          personalityBaseline: 'warm',
+          lastUserMessage: 'hello from stream route',
+          provider: 'openai'
+        }
+      });
+    } finally {
+      restoreChatStreamRunner();
+      restoreProviderReady();
+      if (originalProvider === undefined) {
+        delete process.env.SAYACHAN_AI_PROVIDER;
+      } else {
+        process.env.SAYACHAN_AI_PROVIDER = originalProvider;
+      }
+    }
+  });
+});
+
+test('authenticated /ai/chat/stream returns streaming fallback without calling runner when provider is unavailable', async () => {
+  const app = createApp({
+    corsOrigins: ['http://localhost:5173'],
+    trustProxy: false
+  });
+  let streamRunnerCalled = false;
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'loadUserForSession',
+      value: async () => ({ _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' })
+    }
+  ], async () => {
+    const restoreProviderReady = aiService.__test__.setChatProviderKeyCheckForTest(() => false);
+    const restoreChatStreamRunner = aiService.__test__.setChatStreamRunnerForTest(async function* () {
+      streamRunnerCalled = true;
+      yield { packetType: 'chat_stream_event', version: 1, type: 'completed', text: 'unexpected', output: { reply: 'unexpected' } };
+    });
+
+    try {
+      const response = await requestKoaApp(app, '/ai/chat/stream', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer route-stream-fallback-session',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'hello stream fallback route' }],
+          context: { activeTask: 'stream-fallback-smoke-task' },
+          runtimeControls: {
+            personalityBaseline: 'warm',
+            lastUserMessage: 'hello stream fallback route'
+          }
+        })
+      });
+      const events = parseSseEvents(await response.text());
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(events.map((event) => event.event), ['text_delta', 'completed']);
+      assert.equal(events.at(-1).data.output.reply, '我在这，我们先把当前最重要的一步理清楚。');
+      assert.equal(streamRunnerCalled, false);
+    } finally {
+      restoreChatStreamRunner();
+      restoreProviderReady();
     }
   });
 });
