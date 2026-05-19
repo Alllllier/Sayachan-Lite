@@ -6,9 +6,9 @@ import dotenv from 'dotenv';
 import cors from '@koa/cors';
 import { bodyParser } from '@koa/bodyparser';
 import { authMiddleware } from './middleware/app/auth.js';
-import { pathToFileURL } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
-dotenv.config();
+dotenv.config({ path: fileURLToPath(new URL('../.env', import.meta.url)) });
 
 type CreateAppOptions = {
   corsOrigins?: string[];
