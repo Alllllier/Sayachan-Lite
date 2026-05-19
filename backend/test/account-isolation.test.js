@@ -506,24 +506,37 @@ test('AI chat validation strips unknown message fields before bridge handoff', a
   });
 });
 
-test('AI chat provider gate follows OpenAI key ownership', async () => {
+test('AI chat provider selection defaults to mock and explicit OpenAI follows key ownership', async () => {
+  const originalProvider = process.env.SAYACHAN_AI_PROVIDER;
   const originalOpenAI = process.env.OPENAI_API_KEY;
   const originalKimi = process.env.KIMI_API_KEY;
   const originalMoonshot = process.env.MOONSHOT_API_KEY;
 
   try {
+    delete process.env.SAYACHAN_AI_PROVIDER;
     delete process.env.OPENAI_API_KEY;
     process.env.KIMI_API_KEY = 'legacy-kimi-key';
     process.env.MOONSHOT_API_KEY = 'legacy-moonshot-key';
 
-    assert.equal(aiService.__test__.hasOpenAIChatProviderKey(), false);
+    assert.equal(aiService.__test__.selectedChatProvider(), 'mock');
+    assert.equal(aiService.__test__.isChatProviderReady(), true);
+
+    process.env.SAYACHAN_AI_PROVIDER = 'openai';
+    assert.equal(aiService.__test__.selectedChatProvider(), 'openai');
+    assert.equal(aiService.__test__.isChatProviderReady(), false);
 
     process.env.OPENAI_API_KEY = 'openai-key';
     delete process.env.KIMI_API_KEY;
     delete process.env.MOONSHOT_API_KEY;
 
-    assert.equal(aiService.__test__.hasOpenAIChatProviderKey(), true);
+    assert.equal(aiService.__test__.isChatProviderReady(), true);
   } finally {
+    if (originalProvider === undefined) {
+      delete process.env.SAYACHAN_AI_PROVIDER;
+    } else {
+      process.env.SAYACHAN_AI_PROVIDER = originalProvider;
+    }
+
     if (originalOpenAI === undefined) {
       delete process.env.OPENAI_API_KEY;
     } else {
@@ -544,10 +557,62 @@ test('AI chat provider gate follows OpenAI key ownership', async () => {
   }
 });
 
-test('AI chat falls back when OpenAI key is missing', async () => {
+test('AI chat defaults to mock provider and passes provider runtime control to private core', async () => {
+  const originalProvider = process.env.SAYACHAN_AI_PROVIDER;
+  const originalOpenAI = process.env.OPENAI_API_KEY;
+  let capturedCall = null;
+
+  try {
+    delete process.env.SAYACHAN_AI_PROVIDER;
+    delete process.env.OPENAI_API_KEY;
+
+    const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async (messages, context, options) => {
+      capturedCall = { messages, context, options };
+      return { reply: 'mock bridge ok' };
+    });
+
+    try {
+      const result = await aiService.chat({
+        messages: [{ role: 'user', content: 'hello mock bridge' }],
+        context: { activeTask: 'bridge' },
+        runtimeControls: { personalityBaseline: 'warm' }
+      });
+
+      assert.deepEqual(result, { reply: 'mock bridge ok' });
+      assert.deepEqual(capturedCall, {
+        messages: [{ role: 'user', content: 'hello mock bridge' }],
+        context: { activeTask: 'bridge' },
+        options: {
+          runtimeControls: {
+            personalityBaseline: 'warm',
+            provider: 'mock'
+          }
+        }
+      });
+    } finally {
+      restoreChatRunner();
+    }
+  } finally {
+    if (originalProvider === undefined) {
+      delete process.env.SAYACHAN_AI_PROVIDER;
+    } else {
+      process.env.SAYACHAN_AI_PROVIDER = originalProvider;
+    }
+
+    if (originalOpenAI === undefined) {
+      delete process.env.OPENAI_API_KEY;
+    } else {
+      process.env.OPENAI_API_KEY = originalOpenAI;
+    }
+  }
+});
+
+test('AI chat falls back when explicit OpenAI provider is missing a key', async () => {
+  const originalProvider = process.env.SAYACHAN_AI_PROVIDER;
   const originalOpenAI = process.env.OPENAI_API_KEY;
 
   try {
+    process.env.SAYACHAN_AI_PROVIDER = 'openai';
     delete process.env.OPENAI_API_KEY;
 
     const result = await aiService.chat({
@@ -558,6 +623,62 @@ test('AI chat falls back when OpenAI key is missing', async () => {
 
     assert.deepEqual(result, { reply: '我在这，我们先把当前最重要的一步理清楚。' });
   } finally {
+    if (originalProvider === undefined) {
+      delete process.env.SAYACHAN_AI_PROVIDER;
+    } else {
+      process.env.SAYACHAN_AI_PROVIDER = originalProvider;
+    }
+
+    if (originalOpenAI === undefined) {
+      delete process.env.OPENAI_API_KEY;
+    } else {
+      process.env.OPENAI_API_KEY = originalOpenAI;
+    }
+  }
+});
+
+test('AI chat passes explicit OpenAI provider to private core when key is present', async () => {
+  const originalProvider = process.env.SAYACHAN_AI_PROVIDER;
+  const originalOpenAI = process.env.OPENAI_API_KEY;
+  let capturedCall = null;
+
+  try {
+    process.env.SAYACHAN_AI_PROVIDER = 'openai';
+    process.env.OPENAI_API_KEY = 'openai-key';
+
+    const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async (messages, context, options) => {
+      capturedCall = { messages, context, options };
+      return { reply: 'openai bridge ok' };
+    });
+
+    try {
+      const result = await aiService.chat({
+        messages: [{ role: 'user', content: 'hello openai bridge' }],
+        context: { activeTask: 'openai-bridge' },
+        runtimeControls: { personalityBaseline: 'strict' }
+      });
+
+      assert.deepEqual(result, { reply: 'openai bridge ok' });
+      assert.deepEqual(capturedCall, {
+        messages: [{ role: 'user', content: 'hello openai bridge' }],
+        context: { activeTask: 'openai-bridge' },
+        options: {
+          runtimeControls: {
+            personalityBaseline: 'strict',
+            provider: 'openai'
+          }
+        }
+      });
+    } finally {
+      restoreChatRunner();
+    }
+  } finally {
+    if (originalProvider === undefined) {
+      delete process.env.SAYACHAN_AI_PROVIDER;
+    } else {
+      process.env.SAYACHAN_AI_PROVIDER = originalProvider;
+    }
+
     if (originalOpenAI === undefined) {
       delete process.env.OPENAI_API_KEY;
     } else {

@@ -42,10 +42,11 @@ type AiNotFoundResult = {
   found: false;
 };
 type ChatRunner = typeof privateCoreChat;
-type ChatProviderKeyCheck = () => boolean;
+type ChatProvider = 'mock' | 'openai';
+type ChatProviderReadinessCheck = (provider: ChatProvider) => boolean;
 
 let runChat: ChatRunner = privateCoreChat;
-let chatProviderKeyCheck: ChatProviderKeyCheck = defaultOpenAIChatProviderKeyCheck;
+let chatProviderReadinessCheck: ChatProviderReadinessCheck = defaultChatProviderReadinessCheck;
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -111,12 +112,36 @@ function chatFallback() {
   return chatResponseSchema.parse({ reply: '我在这，我们先把当前最重要的一步理清楚。' });
 }
 
-function defaultOpenAIChatProviderKeyCheck(): boolean {
+function normalizeChatProvider(value: unknown): ChatProvider | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return normalized === 'mock' || normalized === 'openai' ? normalized : null;
+}
+
+function selectedChatProvider(): ChatProvider {
+  return normalizeChatProvider(process.env.SAYACHAN_AI_PROVIDER) || 'mock';
+}
+
+function defaultChatProviderReadinessCheck(provider: ChatProvider): boolean {
+  if (provider === 'mock') {
+    return true;
+  }
+
   return Boolean(process.env.OPENAI_API_KEY);
 }
 
-function hasOpenAIChatProviderKey(): boolean {
-  return chatProviderKeyCheck();
+function isChatProviderReady(provider: ChatProvider = selectedChatProvider()): boolean {
+  return chatProviderReadinessCheck(provider);
+}
+
+function privateCoreRuntimeControls(runtimeControls: AiChatRequestDto['runtimeControls'], provider: ChatProvider) {
+  return {
+    ...(runtimeControls || {}),
+    provider
+  };
 }
 
 function normalizeDoc(doc: AiPayload | null): AiPayload | null {
@@ -307,15 +332,19 @@ export async function suggestProjectNextActions(
 }
 
 export async function chat({ messages, context, runtimeControls }: AiChatRequestDto) {
-  if (!hasOpenAIChatProviderKey()) {
-    console.warn('[AI Route] OPENAI_API_KEY not found, using fallback');
+  const provider = selectedChatProvider();
+
+  if (!isChatProviderReady(provider)) {
+    console.warn(`[AI Route] ${provider} provider is not ready, using fallback`);
     return chatFallback();
   }
 
   try {
     // TODO: extract options (e.g. thinkingEnabled) from request body when strategy is ready
-    const { reply } = await runChat(messages, context, { runtimeControls });
-    console.log('[AI Route] Private-core v2 chat reply generated, length:', reply?.length);
+    const { reply } = await runChat(messages, context, {
+      runtimeControls: privateCoreRuntimeControls(runtimeControls, provider)
+    });
+    console.log('[AI Route] Private-core v3 chat reply generated, length:', reply?.length);
     return chatResponseSchema.parse({ reply });
   } catch (error) {
     console.error('[AI Route] Chat service error:', errorMessage(error));
@@ -328,12 +357,20 @@ export const __test__ = {
   getProjectFocusContext,
   resolveOwnedNotePayload,
   resolveOwnedProjectPayload,
-  hasOpenAIChatProviderKey,
-  setChatProviderKeyCheckForTest(check: ChatProviderKeyCheck) {
-    const previous = chatProviderKeyCheck;
-    chatProviderKeyCheck = check;
+  isChatProviderReady,
+  selectedChatProvider,
+  setChatProviderReadinessCheckForTest(check: ChatProviderReadinessCheck) {
+    const previous = chatProviderReadinessCheck;
+    chatProviderReadinessCheck = check;
     return () => {
-      chatProviderKeyCheck = previous;
+      chatProviderReadinessCheck = previous;
+    };
+  },
+  setChatProviderKeyCheckForTest(check: ChatProviderReadinessCheck) {
+    const previous = chatProviderReadinessCheck;
+    chatProviderReadinessCheck = check;
+    return () => {
+      chatProviderReadinessCheck = previous;
     };
   },
   setChatRunnerForTest(runner: ChatRunner) {

@@ -129,6 +129,7 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
     corsOrigins: ['http://localhost:5173'],
     trustProxy: false
   });
+  const originalProvider = process.env.SAYACHAN_AI_PROVIDER;
   let loadedToken;
   let capturedChatCall;
 
@@ -142,6 +143,7 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
       }
     }
   ], async () => {
+    process.env.SAYACHAN_AI_PROVIDER = 'openai';
     const restoreProviderReady = aiService.__test__.setChatProviderKeyCheckForTest(() => true);
     const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async (messages, context, options) => {
       capturedChatCall = { messages, context, options };
@@ -174,12 +176,18 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
       assert.deepEqual(capturedChatCall.options, {
         runtimeControls: {
           personalityBaseline: 'warm',
-          lastUserMessage: 'hello from route smoke'
+          lastUserMessage: 'hello from route smoke',
+          provider: 'openai'
         }
       });
     } finally {
       restoreChatRunner();
       restoreProviderReady();
+      if (originalProvider === undefined) {
+        delete process.env.SAYACHAN_AI_PROVIDER;
+      } else {
+        process.env.SAYACHAN_AI_PROVIDER = originalProvider;
+      }
     }
   });
 });
