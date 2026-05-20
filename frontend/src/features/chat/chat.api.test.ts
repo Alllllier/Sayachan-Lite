@@ -99,6 +99,14 @@ describe('chat api boundary', () => {
       reply: 'Ready.',
       sourceReceipts: [{ type: 'project', title: 'Sayachan AI Core' }],
       debugTrace: {
+        mode: {
+          source: 'context',
+          requestedMode: 'guide/core_modules',
+          selectedMode: 'guide/core_modules',
+          fallbackApplied: false,
+          confidence: 1,
+          reasonCodes: ['explicit_context_mode']
+        },
         tools: {
           executed: [{ name: 'getProjectContext', status: 'completed', round: 1 }]
         }
@@ -111,6 +119,14 @@ describe('chat api boundary', () => {
         reply: 'Ready.',
         sourceReceipts: [{ type: 'project', title: 'Sayachan AI Core' }],
         debugTrace: {
+          mode: {
+            source: 'context',
+            requestedMode: 'guide/core_modules',
+            selectedMode: 'guide/core_modules',
+            fallbackApplied: false,
+            confidence: 1,
+            reasonCodes: ['explicit_context_mode']
+          },
           tools: {
             executed: [{ name: 'getProjectContext', status: 'completed', round: 1 }]
           }

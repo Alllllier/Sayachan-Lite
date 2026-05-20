@@ -6,6 +6,7 @@ export const chatMessageRoleValues = ['user', 'assistant'] as const
 export const chatProviderStateStrategyValues = ['caller_managed', 'previous_response'] as const
 export const chatProviderStateSourceValues = ['auto', 'env', 'runtime_control'] as const
 export const chatModeValues = ['chat/general', 'guide/core_modules'] as const
+export const chatModeDecisionSourceValues = ['input', 'runtime_control', 'context', 'default'] as const
 export const chatFocusTypeValues = ['note', 'project'] as const
 
 export const aiResourceRequestSchema = z.object({
@@ -66,7 +67,17 @@ export const chatDebugTraceRangeSchema = z.object({
   endChar: z.number()
 }).strict()
 
+export const chatDebugModeTraceSchema = z.object({
+  source: z.enum(chatModeDecisionSourceValues),
+  requestedMode: z.string().min(1),
+  selectedMode: z.enum(chatModeValues),
+  fallbackApplied: z.boolean(),
+  confidence: z.number(),
+  reasonCodes: z.array(z.string())
+}).strict()
+
 export const chatDebugTraceSchema = z.object({
+  mode: chatDebugModeTraceSchema.optional(),
   tools: z.object({
     limits: z.object({
       maxToolCallsPerTurn: z.number().optional(),
@@ -125,6 +136,7 @@ export type ChatPersonalityBaseline = (typeof chatPersonalityBaselineValues)[num
 export type ChatConvergenceMode = (typeof chatConvergenceModeValues)[number]
 export type ChatMessageRole = (typeof chatMessageRoleValues)[number]
 export type ChatModeDto = (typeof chatModeValues)[number]
+export type ChatModeDecisionSource = (typeof chatModeDecisionSourceValues)[number]
 export type ChatFocusDto = z.infer<typeof chatFocusSchema>
 export type ChatProviderStateStrategy = (typeof chatProviderStateStrategyValues)[number]
 export type ChatProviderStateSource = (typeof chatProviderStateSourceValues)[number]

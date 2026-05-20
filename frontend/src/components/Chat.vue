@@ -10,6 +10,7 @@ import { t } from '../i18n/productLocale'
 type PersonalityBaselineOption = 'warm' | 'strict' | 'haraguro'
 type ConvergenceModeOption = 'explore' | 'guided' | 'decisive'
 type DebugTraceTools = NonNullable<ChatDebugTraceDto['tools']>
+type DebugModeDecision = NonNullable<ChatDebugTraceDto['mode']>
 
 const messageListRef = ref<HTMLElement | null>(null)
 const personalityBaselineOptions: PersonalityBaselineOption[] = ['warm', 'strict', 'haraguro']
@@ -77,6 +78,8 @@ const debugRequestedTools = computed(() => debugTraceTools.value.requested || []
 const debugExecutedTools = computed(() => debugTraceTools.value.executed || [])
 const debugSourceReceipts = computed(() => runtimeControls.latestDebugTrace?.sourceReceipts || [])
 const debugToolLimits = computed(() => debugTraceTools.value.limits || {})
+const debugModeDecision = computed<DebugModeDecision | null>(() => runtimeControls.latestDebugTrace?.mode || null)
+const debugModeHistory = computed<DebugModeDecision[]>(() => runtimeControls.modeDecisionHistory || [])
 
 function sendCurrentMessage(): Promise<void> {
   return handleSend()
@@ -330,6 +333,34 @@ function sourceTypeLabel(type: string): string {
             </div>
 
             <div v-if="runtimeControls.debugTraceEnabled" class="runtime-debug-console">
+              <div class="runtime-debug-block">
+                <div class="runtime-debug-title">{{ t('chat.debugMode') }}</div>
+                <div v-if="!debugModeDecision && debugModeHistory.length === 0" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
+                <template v-else>
+                  <div v-if="debugModeDecision" class="runtime-debug-line">
+                    <span>{{ t('chat.debugModeCurrent') }}</span>
+                    <span>{{ debugModeDecision.selectedMode }} · {{ debugModeDecision.source }}</span>
+                  </div>
+                  <div v-if="debugModeDecision" class="runtime-debug-line">
+                    <span>{{ t('chat.debugModeRequested') }}</span>
+                    <span>{{ debugModeDecision.requestedMode }}<template v-if="debugModeDecision.fallbackApplied"> · {{ t('chat.debugModeFallback') }}</template></span>
+                  </div>
+                  <div v-if="debugModeDecision?.reasonCodes?.length" class="runtime-debug-line">
+                    <span>{{ t('chat.debugModeReasons') }}</span>
+                    <span>{{ debugModeDecision.reasonCodes.join(', ') }}</span>
+                  </div>
+                  <div v-if="debugModeHistory.length > 0" class="runtime-debug-meta">
+                    <span>{{ t('chat.debugModeHistory') }}</span>
+                    <span
+                      v-for="(decision, index) in debugModeHistory"
+                      :key="`mode-history-${index}`"
+                    >
+                      {{ decision.selectedMode }} · {{ decision.source }}<template v-if="decision.fallbackApplied"> · {{ t('chat.debugModeFallback') }}</template>
+                    </span>
+                  </div>
+                </template>
+              </div>
+
               <div class="runtime-debug-block">
                 <div class="runtime-debug-title">{{ t('chat.debugTools') }}</div>
                 <div class="runtime-debug-line">

@@ -2,11 +2,14 @@ import { defineStore } from 'pinia'
 import { ref, reactive, computed } from 'vue'
 import type { ChatConvergenceMode, ChatDebugTraceDto, ChatPersonalityBaseline } from '@sayachan/contracts'
 
+type ChatDebugModeTrace = NonNullable<ChatDebugTraceDto['mode']>
+
 const LS_BASELINE_KEY = 'sayachan.personalityBaseline'
 const LS_WARMTH_KEY = 'sayachan.warmth'
 const LS_CONVERGENCE_KEY = 'sayachan.convergenceMode'
 const LS_STREAMING_KEY = 'sayachan.chatStreamingEnabled'
 const LS_DEBUG_TRACE_KEY = 'sayachan.chatDebugTraceEnabled'
+const MODE_DECISION_HISTORY_LIMIT = 6
 
 export const useRuntimeControls = defineStore('runtimeControls', () => {
   const savedBaseline = localStorage.getItem(LS_BASELINE_KEY)
@@ -20,6 +23,7 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
   const savedDebugTrace = localStorage.getItem(LS_DEBUG_TRACE_KEY)
   const debugTraceEnabled = ref(savedDebugTrace === null ? true : savedDebugTrace !== 'false')
   const latestDebugTrace = ref<ChatDebugTraceDto | null>(null)
+  const modeDecisionHistory = ref<ChatDebugModeTrace[]>([])
 
   const savedWarmth = localStorage.getItem(LS_WARMTH_KEY)
   const initialWarmth = savedWarmth !== null ? Number(savedWarmth) : 5
@@ -109,6 +113,12 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
 
   function setLatestDebugTrace(value: ChatDebugTraceDto | null | undefined): void {
     latestDebugTrace.value = value || null
+    if (value?.mode) {
+      modeDecisionHistory.value = [
+        value.mode,
+        ...modeDecisionHistory.value
+      ].slice(0, MODE_DECISION_HISTORY_LIMIT)
+    }
   }
 
   function clearLatestDebugTrace(): void {
@@ -120,6 +130,7 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
     chatStreamingEnabled,
     debugTraceEnabled,
     latestDebugTrace,
+    modeDecisionHistory,
     futureSlots,
     personalityConfig,
     uiLabels,

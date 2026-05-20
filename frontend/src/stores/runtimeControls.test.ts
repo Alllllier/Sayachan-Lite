@@ -121,10 +121,39 @@ describe('runtimeControls store behavior locks', () => {
     expect(store.debugTraceEnabled).toBe(false)
     expect(localStorage.setItem).toHaveBeenCalledWith(LS_DEBUG_TRACE_KEY, 'false')
 
-    store.setLatestDebugTrace({ tools: { exposed: ['getNoteContent'] } })
-    expect(store.latestDebugTrace).toEqual({ tools: { exposed: ['getNoteContent'] } })
+    store.setLatestDebugTrace({
+      mode: {
+        source: 'context',
+        requestedMode: 'guide/core_modules',
+        selectedMode: 'guide/core_modules',
+        fallbackApplied: false,
+        confidence: 1,
+        reasonCodes: ['explicit_context_mode']
+      },
+      tools: { exposed: ['getNoteContent'] }
+    })
+    expect(store.latestDebugTrace).toEqual({
+      mode: {
+        source: 'context',
+        requestedMode: 'guide/core_modules',
+        selectedMode: 'guide/core_modules',
+        fallbackApplied: false,
+        confidence: 1,
+        reasonCodes: ['explicit_context_mode']
+      },
+      tools: { exposed: ['getNoteContent'] }
+    })
+    expect(store.modeDecisionHistory).toEqual([{
+      source: 'context',
+      requestedMode: 'guide/core_modules',
+      selectedMode: 'guide/core_modules',
+      fallbackApplied: false,
+      confidence: 1,
+      reasonCodes: ['explicit_context_mode']
+    }])
 
     store.clearLatestDebugTrace()
     expect(store.latestDebugTrace).toBeNull()
+    expect(store.modeDecisionHistory).toHaveLength(1)
   })
 })

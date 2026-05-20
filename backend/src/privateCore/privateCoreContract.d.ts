@@ -36,6 +36,14 @@ declare module '@allier/sayachan-ai-core' {
   };
 
   export type SayachanAiCoreDebugTrace = {
+    mode?: {
+      source: 'input' | 'runtime_control' | 'context' | 'default';
+      requestedMode: string;
+      selectedMode: 'chat/general' | 'guide/core_modules';
+      fallbackApplied: boolean;
+      confidence: number;
+      reasonCodes: string[];
+    };
     tools?: {
       limits?: {
         maxToolCallsPerTurn?: number;
