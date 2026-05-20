@@ -1,5 +1,5 @@
 import { computed, nextTick, ref } from 'vue'
-import type { ChatContextDto, ChatMessageDto } from '@sayachan/contracts'
+import type { ChatContextDto, ChatFocusDto, ChatMessageDto } from '@sayachan/contracts'
 import { useChatStore } from '../../stores/chat'
 import { useCockpitSignals } from '../../stores/cockpitSignals'
 import { useRuntimeControls } from '../../stores/runtimeControls'
@@ -34,6 +34,8 @@ type ChatStoreLike = {
   setProviderState: (value: unknown) => void
   setSending: (value: boolean) => void
   providerState?: unknown
+  activeFocus?: ChatFocusDto
+  clearFocus?: () => void
 }
 
 type CockpitSignalsLike = {
@@ -91,6 +93,18 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     isPanelOpen.value = !isPanelOpen.value
   }
 
+  function contextWithActiveFocus(baseContext: ChatContextDto): ChatContextDto {
+    if (!chatStore.activeFocus || !baseContext || typeof baseContext !== 'object' || Array.isArray(baseContext)) {
+      return baseContext
+    }
+
+    return {
+      ...baseContext,
+      mode: 'guide/core_modules',
+      chatFocus: chatStore.activeFocus
+    }
+  }
+
   async function handleSend(presetText?: string | null) {
     const text = getChatSendText({
       presetText,
@@ -120,6 +134,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
       })
       isHydrating.value = false
     }
+    chatContext = contextWithActiveFocus(chatContext)
 
     chatStore.setSending(true)
     isStreamingReply.value = false

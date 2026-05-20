@@ -33,6 +33,7 @@ import {
 } from './ui/list'
 import type { ProjectDto, ProjectStatus } from '@sayachan/contracts'
 import type { TaskApiTask } from '../services/tasks/task.rules'
+import { useChatStore } from '../stores/chat'
 import { t } from '../i18n/productLocale'
 
 type ToastType = 'success' | 'error'
@@ -46,6 +47,7 @@ const menuOpenProjectId = ref<string | null>(null)
 const projectCaptureOpen = ref(false)
 const newProjectNameRef = ref<HTMLInputElement | null>(null)
 const auth = useAuthStore() as AuthStore
+const chatStore = useChatStore()
 const accountCacheKey = computed(() => auth.currentUser?._id || auth.currentUser?.email || 'anonymous')
 
 // Project task preview expansion and filter state
@@ -97,8 +99,6 @@ const {
   loading,
   error,
   showArchived,
-  aiSuggestions,
-  savedSuggestions,
   addingManualTasks,
   manualTaskInputs,
   taskCaptureOpen,
@@ -127,10 +127,6 @@ const {
   setTaskCaptureMode,
   addManualTask,
   addBatchTasks,
-  closeAISuggestions,
-  getProjectAIState,
-  handleAISuggest,
-  saveSuggestionAsTask,
   setTaskAsFocus,
   setProjectArchiveView
 } = useProjectsFeature({
@@ -317,12 +313,41 @@ async function addBatchProjectTasks(project: ProjectDto): Promise<void> {
   await addBatchTasks(editableProject(project))
 }
 
-async function suggestProjectNextActions(project: ProjectDto): Promise<void> {
-  await handleAISuggest(editableProject(project))
-}
-
 async function setProjectFocusTask(project: ProjectDto, task: TaskApiTask): Promise<void> {
   await setTaskAsFocus(editableProject(project), task)
+}
+
+function compactFocusText(value: string | null | undefined, maxChars = 280): string | undefined {
+  const normalized = (value || '').replace(/\s+/g, ' ').trim()
+  if (!normalized) return undefined
+  return normalized.length <= maxChars ? normalized : `${normalized.slice(0, Math.max(0, maxChars - 1)).trimEnd()}…`
+}
+
+function projectChatFocusState(id: string): 'active' | 'idle' {
+  const focus = chatStore.activeFocus
+  return focus?.type === 'project' && focus.id === id ? 'active' : 'idle'
+}
+
+function focusProjectInChat(project: ProjectDto): void {
+  const id = projectId(project)
+  const currentFocusTaskTitle = compactFocusText(getCurrentFocusDisplay(project), 160)
+  chatStore.setFocus({
+    type: 'project',
+    id,
+    title: project.name || t('projects.namePlaceholder'),
+    summary: compactFocusText(project.summary),
+    status: project.status,
+    ...(currentFocusTaskTitle ? { currentFocusTaskTitle } : {}),
+    source: 'user_focus_button'
+  })
+  chatStore.openChat()
+  closeProjectMenu()
+}
+
+function clearProjectChatFocus(id: string): void {
+  if (projectChatFocusState(id) === 'active') {
+    chatStore.clearFocus()
+  }
 }
 
 function openProjectCapture(): void {
@@ -706,9 +731,9 @@ async function submitProjectCapture(): Promise<void> {
           v-else
           variant="ai"
           active-kind="icon"
-          :state="getProjectAIState(project._id)"
-          @activate="suggestProjectNextActions(project)"
-          @cancel="closeAISuggestions(project._id)"
+          :state="projectChatFocusState(project._id)"
+          @activate="focusProjectInChat(project)"
+          @cancel="clearProjectChatFocus(project._id)"
         >
           <template #idle-icon>
             <svg class="icon-stroke" viewBox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
@@ -724,19 +749,6 @@ async function submitProjectCapture(): Promise<void> {
               <button @click="deleteProject(project._id)" class="btn btn-menu-item btn-danger">{{ t('common.delete') }}</button>
             </OverflowMenu>
           </template>
-          <SectionBlock v-if="aiSuggestions[project._id] && aiSuggestions[project._id].length > 0" class="ai-suggestions project-ai-suggestions">
-            <div class="ai-suggestions-header">
-              <strong>{{ t('projects.aiSuggestionsTitle', { count: aiSuggestions[project._id].length }) }}</strong>
-            </div>
-            <div v-for="(suggestion, idx) in aiSuggestions[project._id]" :key="idx" class="ai-suggestion-item">
-              <div class="suggestion-content">{{ suggestion }}</div>
-              <div class="suggestion-actions">
-                <button @click="saveSuggestionAsTask(project._id, suggestion)" class="btn btn-secondary btn-sm" :disabled="savedSuggestions.has(suggestion)">
-                  {{ savedSuggestions.has(suggestion) ? t('common.saved') : t('notes.saveAsTask') }}
-                </button>
-              </div>
-            </div>
-          </SectionBlock>
         </ObjectActionArea>
       </template>
     </Card>

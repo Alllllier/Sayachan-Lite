@@ -6,6 +6,11 @@ import {
   buildArchiveFilter,
   combineFilters
 } from './queryFilters.js';
+import {
+  deriveProjectLifecycleStatus,
+  deriveTaskLifecycleStatus,
+  isArchivedEntity
+} from '../domain/lifecycle.js';
 
 export type ProductContextStatus = 'available' | 'empty' | 'blocked';
 
@@ -21,6 +26,7 @@ export type ProductContextProject = {
   name: string;
   summary: string;
   status: string;
+  archived: boolean;
   isPinned: boolean;
   currentFocusTaskTitle: string | null;
   updatedAt: string | null;
@@ -30,6 +36,7 @@ export type ProductContextTask = {
   id: string;
   title: string;
   status: string;
+  archived: boolean;
   originModule: string;
   originId: string | null;
   updatedAt: string | null;
@@ -39,6 +46,7 @@ export type ProductContextNote = {
   id: string;
   title: string;
   excerpt: string;
+  archived: boolean;
   isPinned: boolean;
   updatedAt: string | null;
 };
@@ -221,7 +229,8 @@ function projectItem(project: RuntimeDocument, focusTaskMap: Map<string, string>
     id: stringValue(normalized._id),
     name: stringValue(normalized.name),
     summary: stringValue(normalized.summary),
-    status: stringValue(normalized.status, 'pending'),
+    status: deriveProjectLifecycleStatus(normalized),
+    archived: isArchivedEntity(normalized),
     isPinned: normalized.isPinned === true,
     currentFocusTaskTitle: focusTaskId ? focusTaskMap.get(focusTaskId) || null : null,
     updatedAt: isoString(normalized.updatedAt)
@@ -234,7 +243,8 @@ function taskItem(task: RuntimeDocument): ProductContextTask {
   return {
     id: stringValue(normalized._id),
     title: stringValue(normalized.title),
-    status: stringValue(normalized.status, 'active'),
+    status: deriveTaskLifecycleStatus(normalized),
+    archived: isArchivedEntity(normalized),
     originModule: stringValue(normalized.originModule),
     originId: nullableStringValue(normalized.originId),
     updatedAt: isoString(normalized.updatedAt)
@@ -248,6 +258,7 @@ function noteItem(note: RuntimeDocument, limits: ProductContextLimits): ProductC
     id: stringValue(normalized._id),
     title: stringValue(normalized.title),
     excerpt: excerpt(normalized.content, limits.noteExcerptChars),
+    archived: isArchivedEntity(normalized),
     isPinned: normalized.isPinned === true,
     updatedAt: isoString(normalized.updatedAt)
   };

@@ -9,7 +9,6 @@ import {
   Card,
   CardHeaderRow,
   CardMetaRow,
-  SectionBlock,
   ActionRow,
   ObjectActionArea
 } from './ui/surfaces'
@@ -20,6 +19,7 @@ import OverflowMenu from './ui/OverflowMenu.vue'
 import SegmentedControl from './ui/SegmentedControl.vue'
 import { useAuthStore } from '../stores/auth'
 import type { AuthStore } from '../stores/auth'
+import { useChatStore } from '../stores/chat'
 import { t } from '../i18n/productLocale'
 
 type EditableNote = NoteDto & { _id: string }
@@ -39,6 +39,7 @@ let editorBundlePromise: Promise<CodeMirrorBundle> | null = null
 
 const menuOpenNoteId = ref<string | null>(null)
 const auth = useAuthStore() as AuthStore
+const chatStore = useChatStore()
 const noteDraftStorageKey = computed(() => (
   `sayachan_note_drafts:${auth.currentUser?._id || auth.currentUser?.email || 'anonymous'}`
 ))
@@ -131,8 +132,6 @@ const {
   loading,
   error,
   showArchived,
-  aiTasksByNote,
-  savedTaskDrafts,
   newNoteErrors,
   editNoteErrors,
   fetchNotes,
@@ -147,12 +146,8 @@ const {
   cancelEdit: cancelEditFeature,
   updateNewNoteError,
   updateEditNoteError,
-  closeAITasks,
-  getNoteAIState,
   canUseNoteAction,
   setArchiveView,
-  handleAIGenerateTasks,
-  saveNoteTaskDraft,
   reloadDrafts
 } = useNotesFeature({
   draftStorageKey: noteDraftStorageKey,
@@ -395,8 +390,34 @@ function restoreEditableNote(note: NoteDto): Promise<void> {
   return restoreNote(editableNote(note))
 }
 
-function generateNoteTasks(note: NoteDto): Promise<void> {
-  return handleAIGenerateTasks(editableNote(note))
+function compactFocusText(value: string | null | undefined, maxChars = 280): string | undefined {
+  const normalized = (value || '').replace(/\s+/g, ' ').trim()
+  if (!normalized) return undefined
+  return normalized.length <= maxChars ? normalized : `${normalized.slice(0, Math.max(0, maxChars - 1)).trimEnd()}…`
+}
+
+function noteChatFocusState(id: string): 'active' | 'idle' {
+  const focus = chatStore.activeFocus
+  return focus?.type === 'note' && focus.id === id ? 'active' : 'idle'
+}
+
+function focusNoteInChat(note: NoteDto): void {
+  const id = noteId(note)
+  chatStore.setFocus({
+    type: 'note',
+    id,
+    title: note.title || t('notes.titlePlaceholder'),
+    excerpt: compactFocusText(note.content),
+    source: 'user_focus_button'
+  })
+  chatStore.openChat()
+  closeNoteMenu()
+}
+
+function clearNoteChatFocus(id: string): void {
+  if (noteChatFocusState(id) === 'active') {
+    chatStore.clearFocus()
+  }
 }
 
 onMounted(() => {
@@ -584,9 +605,9 @@ async function updateNote(note: NoteDto): Promise<void> {
           v-else-if="canUseNoteAction(note, 'canGenerateAITasks')"
           variant="ai"
           active-kind="icon"
-          :state="getNoteAIState(note._id)"
-          @activate="generateNoteTasks(note)"
-          @cancel="closeAITasks(note._id)"
+          :state="noteChatFocusState(note._id)"
+          @activate="focusNoteInChat(note)"
+          @cancel="clearNoteChatFocus(note._id)"
         >
           <template #idle-icon>
             <svg class="icon-stroke" viewBox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
@@ -602,19 +623,6 @@ async function updateNote(note: NoteDto): Promise<void> {
               <button v-if="canUseNoteAction(note, 'canDelete')" @click="deleteNote(note._id)" class="btn btn-menu-item btn-danger">{{ t('common.delete') }}</button>
             </OverflowMenu>
           </template>
-          <SectionBlock v-if="aiTasksByNote[note._id] && aiTasksByNote[note._id].length > 0" class="note-ai-tasks">
-            <div class="ai-tasks-header">
-              <strong>{{ t('notes.aiTasksTitle', { count: aiTasksByNote[note._id].length }) }}</strong>
-            </div>
-            <div v-for="(draft, idx) in aiTasksByNote[note._id]" :key="idx" class="ai-task-item">
-              <div class="task-content">{{ draft }}</div>
-              <div class="task-actions">
-                <button @click="saveNoteTaskDraft(note._id, draft)" class="btn btn-secondary btn-sm" :disabled="savedTaskDrafts.has(draft)">
-                  {{ savedTaskDrafts.has(draft) ? t('common.saved') : t('notes.saveAsTask') }}
-                </button>
-              </div>
-            </div>
-          </SectionBlock>
         </ObjectActionArea>
       </template>
     </Card>

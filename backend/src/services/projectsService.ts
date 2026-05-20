@@ -15,7 +15,6 @@ import {
 import {
   toProjectDto
 } from './responses/productResponses.js';
-import { deriveProjectLifecycleStatus } from '../domain/lifecycle.js';
 import Project from '../models/Project.js';
 import Task from '../models/Task.js';
 
@@ -132,9 +131,7 @@ export async function archiveProject(id: ObjectId, { userId }: ServiceOptions) {
 }
 
 export async function restoreProject(id: ObjectId, { userId }: ServiceOptions) {
-  const existingProject = await Project.findOne({ _id: id, userId });
-
-  const project = await Project.findOneAndUpdate({ _id: id, userId }, { archived: false, status: deriveProjectLifecycleStatus(existingProject) }, { new: true, runValidators: true });
+  const project = await Project.findOneAndUpdate({ _id: id, userId }, { archived: false }, { new: true, runValidators: true });
 
   if (!project) {
     return null;

@@ -5,6 +5,8 @@ export const chatConvergenceModeValues = ['explore', 'guided', 'decisive'] as co
 export const chatMessageRoleValues = ['user', 'assistant'] as const
 export const chatProviderStateStrategyValues = ['caller_managed', 'previous_response'] as const
 export const chatProviderStateSourceValues = ['auto', 'env', 'runtime_control'] as const
+export const chatModeValues = ['chat/general', 'guide/core_modules'] as const
+export const chatFocusTypeValues = ['note', 'project'] as const
 
 export const aiResourceRequestSchema = z.object({
   _id: z.string().min(1)
@@ -15,13 +17,26 @@ export const chatMessageSchema = z.object({
   content: z.string().optional()
 })
 
+export const chatFocusSchema = z.object({
+  type: z.enum(chatFocusTypeValues),
+  id: z.string().min(1),
+  title: z.string().min(1),
+  summary: z.string().optional(),
+  excerpt: z.string().optional(),
+  status: z.string().optional(),
+  currentFocusTaskTitle: z.string().optional(),
+  source: z.literal('user_focus_button')
+}).strict()
+
 export const chatContextSchema = z.union([
   z.object({
-    activeProjectsCount: z.number(),
-    activeTasksCount: z.number(),
-    pinnedProjectName: z.string(),
-    currentNextAction: z.string()
-  }),
+    activeProjectsCount: z.number().optional(),
+    activeTasksCount: z.number().optional(),
+    pinnedProjectName: z.string().optional(),
+    currentNextAction: z.string().optional(),
+    mode: z.enum(chatModeValues).optional(),
+    chatFocus: chatFocusSchema.optional()
+  }).strict(),
   z.null()
 ])
 
@@ -66,6 +81,8 @@ export type AiResourceRequestDto = z.infer<typeof aiResourceRequestSchema>
 export type ChatPersonalityBaseline = (typeof chatPersonalityBaselineValues)[number]
 export type ChatConvergenceMode = (typeof chatConvergenceModeValues)[number]
 export type ChatMessageRole = (typeof chatMessageRoleValues)[number]
+export type ChatModeDto = (typeof chatModeValues)[number]
+export type ChatFocusDto = z.infer<typeof chatFocusSchema>
 export type ChatProviderStateStrategy = (typeof chatProviderStateStrategyValues)[number]
 export type ChatProviderStateSource = (typeof chatProviderStateSourceValues)[number]
 export type ChatMessageDto = z.infer<typeof chatMessageSchema>

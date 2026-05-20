@@ -93,10 +93,43 @@ npm run dev
 
 ### 4. 验证
 
+验证流程分三层记录：
+
+- `README.md`：本地最常用的验证命令和手动冒烟入口。
+- `docs/pmo/policies/validation-floor-policy.md`：PMO closeout 的最低验证要求。
+- `docs/pmo/policies/testing-and-ui-review-guide.md`：什么时候跑 logic tests、browser validation、UI review，以及怎么报告验证缺口。
+
+常用命令：
+
+```bash
+# 聚合测试
+npm run test
+
+# 前端测试 + 类型检查
+npm --prefix frontend run test
+npm --prefix frontend run typecheck
+
+# 后端测试，会先构建 backend/dist
+npm --prefix backend run test
+
+# private-core 测试
+cd backend/private_core/sayachan-ai-core
+npm test
+```
+
 访问 `http://localhost:5173`，检查：
 - 页面能正常加载
 - Dashboard 可以快速新增并管理 Saved Tasks
 - 可以创建 Notes 和 Projects
+
+需要真实登录产品做手动/浏览器冒烟时，使用 `backend/.env` 中的专用测试账号变量：
+
+- `SAYACHAN_UI_SMOKE_EMAIL`
+- `SAYACHAN_UI_SMOKE_PASSWORD`
+
+本地真实登录 smoke 默认访问 `http://localhost:5173`。不要随手改成 `http://127.0.0.1:5173`，除非 `backend/.env` 的 CORS origin 也明确允许这个地址；否则浏览器会因为 origin 不匹配而出现 `Failed to fetch`。
+
+不要把真实邮箱、密码或其他 secret 写进仓库文档；提交文档时只记录变量名和使用场景。
 
 ## 部署结构说明
 

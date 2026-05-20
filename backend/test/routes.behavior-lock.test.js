@@ -304,27 +304,18 @@ test('project archive uses canonical project provenance and clears focus', async
   );
 });
 
-test('project restore restores archived canonical project tasks while keeping lifecycle state', async () => {
+test('project restore restores archived canonical project tasks without rewriting lifecycle state', async () => {
   const restoreHandler = getRouteHandler('PUT', '/projects/:id/restore');
   const ctx = createCtx({ params: { id: '000000000000000000000201' } });
   let bulkOps = null;
-  let findProjectCalls = 0;
 
   await withPatchedMethods([
-    {
-      target: Project,
-      key: 'findOne',
-      value: async () => {
-        findProjectCalls += 1;
-        return createDoc({ _id: '000000000000000000000201', name: 'Alpha', status: 'completed', archived: true });
-      }
-    },
     {
       target: Project,
       key: 'findOneAndUpdate',
       value: async (query, update) => {
         assert.deepEqual(normalizeIds(query), { _id: '000000000000000000000201', userId: '000000000000000000000001' });
-        assert.deepEqual(update, { archived: false, status: 'completed' });
+        assert.deepEqual(update, { archived: false });
         return createDoc({ _id: '000000000000000000000201', name: 'Alpha', status: 'completed', archived: false });
       }
     },
@@ -359,7 +350,6 @@ test('project restore restores archived canonical project tasks while keeping li
     await restoreHandler(ctx, async () => {});
   });
 
-  assert.equal(findProjectCalls, 1);
   assert.equal(ctx.body.archived, false);
   assert.equal(ctx.body.status, 'completed');
   assert.deepEqual(

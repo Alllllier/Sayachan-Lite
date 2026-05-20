@@ -65,6 +65,28 @@ describe('chat store behavior locks', () => {
     })
   })
 
+  it('tracks a user-selected chat focus until it is cleared or reset', () => {
+    const store = useChatStore()
+
+    store.setFocus({
+      type: 'note',
+      id: 'note-1',
+      title: 'Architecture map',
+      excerpt: 'Context bridge notes',
+      source: 'user_focus_button'
+    })
+    expect(store.activeFocus).toEqual({
+      type: 'note',
+      id: 'note-1',
+      title: 'Architecture map',
+      excerpt: 'Context bridge notes',
+      source: 'user_focus_button'
+    })
+
+    store.clearFocus()
+    expect(store.activeFocus).toBeUndefined()
+  })
+
   it('resets open state, messages, and sending state together', () => {
     const store = useChatStore()
 
@@ -72,6 +94,12 @@ describe('chat store behavior locks', () => {
     store.appendMessage({ role: 'user', content: 'hello' })
     store.setSending(true)
     store.setProviderState({ strategy: 'previous_response', lastResponseId: 'resp-1' })
+    store.setFocus({
+      type: 'project',
+      id: 'project-1',
+      title: 'Sayachan',
+      source: 'user_focus_button'
+    })
 
     store.resetChat()
 
@@ -79,5 +107,6 @@ describe('chat store behavior locks', () => {
     expect(store.messages).toEqual([])
     expect(store.isSending).toBe(false)
     expect(store.providerState).toBeUndefined()
+    expect(store.activeFocus).toBeUndefined()
   })
 })

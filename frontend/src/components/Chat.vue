@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, watch } from 'vue'
+import { computed, ref, nextTick, watch } from 'vue'
 import avatarUrl from '../assets/avatar/sayachan-avatar.jpg'
 import { useChatFeature } from '../features/chat/useChatFeature.js'
 import { renderMarkdown } from '../utils/markdown.js'
@@ -51,6 +51,13 @@ function updateWarmth(event: Event): void {
     runtimeControls.setWarmth(Number(target.value))
   }
 }
+
+const activeFocusLabel = computed(() => {
+  const focus = chatStore.activeFocus
+  if (!focus) return ''
+  const typeLabel = focus.type === 'project' ? t('chat.focusProject') : t('chat.focusNote')
+  return `${typeLabel} · ${focus.title}`
+})
 
 function sendCurrentMessage(): Promise<void> {
   return handleSend()
@@ -119,16 +126,33 @@ function sendCurrentMessage(): Promise<void> {
 
         <!-- Footer -->
         <div class="chat-footer">
-          <input
-            v-model="inputValue"
-            class="chat-input"
-            :placeholder="t('chat.placeholder')"
-            :disabled="chatInputDisabled"
-            @keydown="handleKeydown"
-          />
-          <button class="btn btn-primary chat-send-btn" :disabled="chatInputDisabled" @click="sendCurrentMessage">
-            {{ chatSendButtonLabel }}
-          </button>
+          <div v-if="chatStore.activeFocus" class="chat-focus-chip" role="status">
+            <div class="chat-focus-copy">
+              <span class="chat-focus-label">{{ t('chat.focusActive') }}</span>
+              <span class="chat-focus-title">{{ activeFocusLabel }}</span>
+            </div>
+            <button
+              type="button"
+              class="chat-focus-clear"
+              :aria-label="t('chat.clearFocus')"
+              :title="t('chat.clearFocus')"
+              @click="chatStore.clearFocus?.()"
+            >
+              &times;
+            </button>
+          </div>
+          <div class="chat-input-row">
+            <input
+              v-model="inputValue"
+              class="chat-input"
+              :placeholder="t('chat.placeholder')"
+              :disabled="chatInputDisabled"
+              @keydown="handleKeydown"
+            />
+            <button class="btn btn-primary chat-send-btn" :disabled="chatInputDisabled" @click="sendCurrentMessage">
+              {{ chatSendButtonLabel }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -456,15 +480,75 @@ function sendCurrentMessage(): Promise<void> {
 /* Footer */
 .chat-footer {
   display: flex;
-  align-items: center;
-  gap: var(--space-sm);
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-xs);
   padding: var(--space-sm) var(--space-lg) var(--space-md);
   border-top: 1px solid #eeeeee;
   background: var(--surface-card);
 }
 
+.chat-focus-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--action-primary) 34%, var(--border-default));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--action-primary) 8%, var(--surface-card));
+}
+
+.chat-focus-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.chat-focus-label {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.2;
+}
+
+.chat-focus-title {
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-focus-clear {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.chat-focus-clear:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.chat-input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
 .chat-input {
   flex: 1;
+  min-width: 0;
   padding: 10px 14px;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);

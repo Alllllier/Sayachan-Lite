@@ -16,11 +16,19 @@ function createDoc(data) {
   };
 }
 
+function createTaskDoc(data = {}) {
+  return createDoc({
+    status: 'active',
+    ...data
+  });
+}
+
 function createProjectDoc(data = {}) {
   return createDoc({
     _id: 'project-1',
     name: 'Backend hardening',
     summary: 'Make current DTO behavior explicit',
+    status: 'pending',
     updatedAt: new Date('2026-04-02T00:00:00.000Z'),
     ...data
   });
@@ -49,7 +57,7 @@ function assertAbsent(actual, fields) {
 const basePrivateFields = ['userId', '__v', 'createdAt', 'pinnedAt'];
 const compatibilityFields = ['legacyId', 'legacyStatus', 'ownerId', 'source'];
 
-test('task DTO returns only the approved public contract while normalizing lifecycle fields', () => {
+test('task DTO returns only the approved public contract while preserving valid lifecycle fields', () => {
   const createdAt = new Date('2026-03-01T00:00:00.000Z');
   const updatedAt = new Date('2026-03-02T00:00:00.000Z');
   const task = createDoc({
@@ -69,7 +77,7 @@ test('task DTO returns only the approved public contract while normalizing lifec
     source: 'compat',
     archived: 1,
     completed: 1,
-    status: 'done'
+    status: 'active'
   });
 
   const dto = toTaskDto(task);
@@ -98,26 +106,26 @@ test('task DTO returns only the approved public contract while normalizing lifec
 });
 
 test('task DTO normalizes archived and completed only from strict true values', () => {
-  assert.equal(toTaskDto(createDoc({ archived: true, completed: true }))?.archived, true);
-  assert.equal(toTaskDto(createDoc({ archived: true, completed: true }))?.completed, true);
-  assert.equal(toTaskDto(createDoc({ archived: false, completed: false }))?.archived, false);
-  assert.equal(toTaskDto(createDoc({ archived: false, completed: false }))?.completed, false);
-  assert.equal(toTaskDto(createDoc({ archived: 'true', completed: 'true' }))?.archived, false);
-  assert.equal(toTaskDto(createDoc({ archived: 'true', completed: 'true' }))?.completed, false);
-  assert.equal(toTaskDto(createDoc({}))?.archived, false);
-  assert.equal(toTaskDto(createDoc({}))?.completed, false);
+  assert.equal(toTaskDto(createTaskDoc({ archived: true, completed: true }))?.archived, true);
+  assert.equal(toTaskDto(createTaskDoc({ archived: true, completed: true }))?.completed, true);
+  assert.equal(toTaskDto(createTaskDoc({ archived: false, completed: false }))?.archived, false);
+  assert.equal(toTaskDto(createTaskDoc({ archived: false, completed: false }))?.completed, false);
+  assert.equal(toTaskDto(createTaskDoc({ archived: 'true', completed: 'true' }))?.archived, false);
+  assert.equal(toTaskDto(createTaskDoc({ archived: 'true', completed: 'true' }))?.completed, false);
+  assert.equal(toTaskDto(createTaskDoc({}))?.archived, false);
+  assert.equal(toTaskDto(createTaskDoc({}))?.completed, false);
 });
 
-test('task DTO status falls back to active unless the current status is completed', () => {
-  assert.equal(toTaskDto(createDoc({ status: 'completed', completed: false }))?.status, 'completed');
-  assert.equal(toTaskDto(createDoc({ status: 'active', completed: true }))?.status, 'active');
-  assert.equal(toTaskDto(createDoc({ status: 'in_progress' }))?.status, 'active');
-  assert.equal(toTaskDto(createDoc({}))?.status, 'active');
+test('task DTO keeps valid lifecycle status and rejects invalid status', () => {
+  assert.equal(toTaskDto(createTaskDoc({ status: 'completed', completed: false }))?.status, 'completed');
+  assert.equal(toTaskDto(createTaskDoc({ status: 'active', completed: true }))?.status, 'active');
+  assert.throws(() => toTaskDto(createTaskDoc({ status: 'in_progress' })), /Invalid task lifecycle status/);
+  assert.throws(() => toTaskDto(createDoc({})), /Invalid task lifecycle status/);
   assert.equal(toTaskDto(null), null);
   assert.equal(toTaskDto(undefined), undefined);
 });
 
-test('project DTO returns only the approved public contract while normalizing archived and status', () => {
+test('project DTO returns only the approved public contract while preserving valid status', () => {
   const createdAt = new Date('2026-04-01T00:00:00.000Z');
   const updatedAt = new Date('2026-04-02T00:00:00.000Z');
   const project = createDoc({
@@ -136,7 +144,7 @@ test('project DTO returns only the approved public contract while normalizing ar
     ownerId: 'owner-1',
     source: 'compat',
     archived: 'true',
-    status: 'paused'
+    status: 'on_hold'
   });
 
   const dto = toProjectDto(project);
@@ -149,7 +157,7 @@ test('project DTO returns only the approved public contract while normalizing ar
     isPinned: true,
     updatedAt: updatedAt.toISOString(),
     archived: false,
-    status: 'pending'
+    status: 'on_hold'
   });
   assertOnlyKeys(dto, [
     '_id',
@@ -174,8 +182,8 @@ test('project DTO normalizes archived only from strict true and keeps valid stat
     assert.equal(toProjectDto(createProjectDoc({ status }))?.status, status);
   }
 
-  assert.equal(toProjectDto(createProjectDoc({ status: 'active' }))?.status, 'pending');
-  assert.equal(toProjectDto(createProjectDoc({}))?.status, 'pending');
+  assert.throws(() => toProjectDto(createProjectDoc({ status: 'active' })), /Invalid project lifecycle status/);
+  assert.throws(() => toProjectDto(createProjectDoc({ status: undefined })), /Invalid project lifecycle status/);
   assert.equal(toProjectDto(null), null);
   assert.equal(toProjectDto(undefined), undefined);
 });

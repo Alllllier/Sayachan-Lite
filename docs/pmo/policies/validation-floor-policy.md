@@ -36,6 +36,15 @@ Possible validation layers include:
 
 Not every sprint needs the same validation mix.
 
+When manual runtime verification or browser smoke requires a real logged-in product account, use the dedicated local smoke account configured by `backend/.env` variable names:
+
+- `SAYACHAN_UI_SMOKE_EMAIL`
+- `SAYACHAN_UI_SMOKE_PASSWORD`
+
+Use `http://localhost:5173` for local logged-in smoke by default. `http://127.0.0.1:5173` is a different browser origin and should only be used when the backend CORS origin config explicitly allows it.
+
+The credential values are secrets and must not be copied into PMO docs, closeout reports, screenshots, commits, or chat transcripts.
+
 ## Closeout Categories
 
 When reading an execution result, PMO should distinguish:

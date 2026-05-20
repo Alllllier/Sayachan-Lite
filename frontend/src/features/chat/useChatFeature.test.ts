@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChatFeature } from './useChatFeature.js'
 import { refreshCockpitContext } from '../../services/cockpitContextService'
 import { sendChat, streamChat } from './chat.api.js'
-import type { ChatMessageDto } from '@sayachan/contracts'
+import type { ChatFocusDto, ChatMessageDto } from '@sayachan/contracts'
 
 const storeMocks = vi.hoisted(() => ({
   chatStore: undefined as ChatStoreMock | undefined,
@@ -77,8 +77,15 @@ function createChatStore() {
       }
     }),
     providerState: undefined as unknown,
+    activeFocus: undefined as ChatFocusDto | undefined,
     setProviderState: vi.fn((value: unknown) => {
       store.providerState = value
+    }),
+    setFocus: vi.fn((value: ChatFocusDto) => {
+      store.activeFocus = value
+    }),
+    clearFocus: vi.fn(() => {
+      store.activeFocus = undefined
     }),
     setSending: vi.fn((value: boolean) => {
       store.isSending = value
@@ -182,6 +189,50 @@ describe('useChatFeature orchestration', () => {
     expect(sendChat).toHaveBeenCalled()
     expect(streamChat).not.toHaveBeenCalled()
     expect(chatStore.appendMessage).toHaveBeenLastCalledWith({ role: 'assistant', content: 'Done' })
+  })
+
+  it('includes an active chat focus in the send context and routes to core guide mode', async () => {
+    chatStore.activeFocus = {
+      type: 'project',
+      id: 'project-1',
+      title: 'Sayachan AI Core',
+      summary: 'Private-core work',
+      status: 'in_progress',
+      currentFocusTaskTitle: 'Wire chat focus',
+      source: 'user_focus_button'
+    }
+    const feature = useChatFeature()
+    feature.inputValue.value = '下一步呢'
+
+    await feature.handleSend()
+
+    expect(streamChat).toHaveBeenCalledWith(
+      chatStore.messages,
+      {
+        activeProjectsCount: 1,
+        activeTasksCount: 2,
+        pinnedProjectName: 'PMO',
+        currentNextAction: 'Write handoff',
+        mode: 'guide/core_modules',
+        chatFocus: {
+          type: 'project',
+          id: 'project-1',
+          title: 'Sayachan AI Core',
+          summary: 'Private-core work',
+          status: 'in_progress',
+          currentFocusTaskTitle: 'Wire chat focus',
+          source: 'user_focus_button'
+        }
+      },
+      {
+        personalityBaseline: 'warm',
+        futureSlots: {
+          warmth: 7,
+          convergenceMode: 'guided'
+        }
+      },
+      expect.any(Object)
+    )
   })
 
   it('updates the assistant message as stream deltas arrive', async () => {

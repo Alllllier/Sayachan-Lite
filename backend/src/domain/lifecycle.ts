@@ -24,11 +24,11 @@ export function isArchivedEntity(entity: RuntimeDocument | null | undefined): bo
 }
 
 export function deriveTaskLifecycleStatus(task: TaskRuntimeRecord | null | undefined): 'active' | 'completed' {
-  if (task?.status === 'completed') {
+  if (task?.status === 'active' || task?.status === 'completed') {
     return task.status;
   }
 
-  return 'active';
+  throw new Error(`Invalid task lifecycle status: ${String(task?.status)}`);
 }
 
 export function deriveProjectLifecycleStatus(project: ProjectRuntimeRecord | null | undefined): ProjectLifecycleStatus {
@@ -41,5 +41,5 @@ export function deriveProjectLifecycleStatus(project: ProjectRuntimeRecord | nul
     return project.status;
   }
 
-  return 'pending';
+  throw new Error(`Invalid project lifecycle status: ${String(project?.status)}`);
 }

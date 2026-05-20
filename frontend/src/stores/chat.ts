@@ -1,13 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { ChatMessageDto } from '@sayachan/contracts'
+import type { ChatFocusDto, ChatMessageDto } from '@sayachan/contracts'
 import type { ChatProviderState } from '../features/chat/chat.api'
+
+export type ChatFocus = ChatFocusDto
 
 export const useChatStore = defineStore('chat', () => {
   const isOpen = ref(false)
   const messages = ref<ChatMessageDto[]>([])
   const isSending = ref(false)
   const providerState = ref<ChatProviderState | undefined>()
+  const activeFocus = ref<ChatFocus | undefined>()
 
   function openChat() {
     isOpen.value = true
@@ -38,11 +41,20 @@ export const useChatStore = defineStore('chat', () => {
     providerState.value = value
   }
 
+  function setFocus(focus: ChatFocus): void {
+    activeFocus.value = focus
+  }
+
+  function clearFocus(): void {
+    activeFocus.value = undefined
+  }
+
   function resetChat() {
     isOpen.value = false
     messages.value = []
     isSending.value = false
     providerState.value = undefined
+    activeFocus.value = undefined
   }
 
   return {
@@ -50,12 +62,15 @@ export const useChatStore = defineStore('chat', () => {
     messages,
     isSending,
     providerState,
+    activeFocus,
     openChat,
     closeChat,
     appendMessage,
     updateMessageContent,
     setSending,
     setProviderState,
+    setFocus,
+    clearFocus,
     resetChat
   }
 })

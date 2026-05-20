@@ -73,6 +73,21 @@ Current commands:
 
 Browser validation and UI review stay outside the default root `npm run check` path unless a future sprint explicitly expands that scope.
 
+### Real Runtime Smoke Account
+
+When browser validation needs a logged-in product session against the real local backend instead of fixture-backed UI review, use the dedicated smoke account stored in `backend/.env`:
+
+- `SAYACHAN_UI_SMOKE_EMAIL`
+- `SAYACHAN_UI_SMOKE_PASSWORD`
+
+Rules:
+
+- Never commit the actual email or password.
+- Report that the smoke account was used, but do not paste its credentials into closeout notes.
+- Use `http://localhost:5173` for local logged-in smoke by default. Do not switch to `http://127.0.0.1:5173` unless the backend CORS origin config also allows that origin; otherwise the browser may show `Failed to fetch`.
+- Treat this as manual/runtime smoke validation unless the test harness explicitly reads these variables.
+- Keep repo-native UI review specs fixture-backed by default; only promote smoke-account login into durable automation after a sprint explicitly scopes that work.
+
 ### UI Review
 
 Use UI review when the sprint mainly changes:

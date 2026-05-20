@@ -556,6 +556,7 @@ test('AI product context snapshot uses current-user filters and trims product fi
       name: 'Owned project',
       summary: 'Bridge work',
       status: 'in_progress',
+      archived: false,
       isPinned: true,
       currentFocusTaskTitle: 'Focus the bridge',
       updatedAt: '2026-05-20T00:00:00.000Z'
@@ -564,12 +565,61 @@ test('AI product context snapshot uses current-user filters and trims product fi
       id: '000000000000000000000312',
       title: 'Task in snapshot',
       status: 'active',
+      archived: false,
       originModule: 'project',
       originId: '000000000000000000000211',
       updatedAt: '2026-05-20T01:00:00.000Z'
     }]);
     assert.equal(snapshot.notes[0].excerpt, 'This note excerpt…');
     assert.deepEqual(snapshot.omitted.map((item) => item.source), ['projects', 'tasks', 'notes']);
+  });
+});
+
+test('product context snapshot rejects invalid project status before core rendering', async () => {
+  const userId = toObjectId('000000000000000000000017', 'userId');
+  const projectCapture = {};
+
+  await withPatchedMethods([
+    {
+      target: Project,
+      key: 'find',
+      value: (filter) => {
+        projectCapture.filter = filter;
+        return findQuery([
+          createDoc({
+            _id: '000000000000000000000221',
+            name: 'Invalid status project',
+            summary: 'Invalid status must not reach product context.',
+            status: 'invalid_status'
+          })
+        ], projectCapture);
+      }
+    },
+    {
+      target: Task,
+      key: 'find',
+      value: () => findQuery([])
+    },
+    {
+      target: Note,
+      key: 'find',
+      value: () => findQuery([])
+    }
+  ], async () => {
+    await assert.rejects(
+      () => productContextService.buildProductContextSnapshot(userId, {
+        allowDisconnected: true,
+        now: new Date('2026-05-20T03:00:00.000Z')
+      }),
+      /Invalid project lifecycle status/
+    );
+
+    assert.deepEqual(normalizeIds(projectCapture.filter), {
+      $and: [
+        { archived: { $ne: true } },
+        { userId: '000000000000000000000017' }
+      ]
+    });
   });
 });
 
