@@ -16,6 +16,20 @@ declare module '@allier/sayachan-ai-core' {
         lastResponseId?: string;
         status?: 'active' | 'fallback' | 'unavailable';
       };
+      toolExecutor?: (request: {
+        name: string;
+        arguments: Record<string, unknown>;
+        callId?: string;
+        round?: number;
+        context?: Record<string, unknown>;
+      }) => Promise<unknown>;
+      tools?: {
+        enabled?: boolean;
+        maxToolCallsPerTurn?: number;
+        maxToolRounds?: number;
+        toolTimeoutMs?: number;
+        maxToolResultChars?: number;
+      };
       [key: string]: unknown;
     };
   };
@@ -41,9 +55,14 @@ declare module '@allier/sayachan-ai-core' {
   export type SayachanAiCoreChatStreamEvent = {
     packetType?: 'chat_stream_event';
     version?: number;
-    type: 'text_delta' | 'completed' | 'error';
+    type: 'tool_call_started' | 'tool_call_completed' | 'tool_call_failed' | 'text_delta' | 'completed' | 'error';
     delta?: string;
     text?: string;
+    toolName?: string;
+    displayName?: string;
+    callId?: string;
+    status?: string;
+    round?: number;
     output?: SayachanAiCoreChatResult;
     providerState?: {
       strategy?: 'caller_managed' | 'previous_response';

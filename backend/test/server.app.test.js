@@ -223,12 +223,16 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
       assert.deepEqual(body, { reply: 'authenticated smoke ok' });
       assert.deepEqual(capturedChatCall.messages, [{ role: 'user', content: 'hello from route smoke' }]);
       assert.deepEqual(capturedChatCall.context, { activeTask: 'smoke-task', productContext });
-      assert.deepEqual(capturedChatCall.options, {
-        runtimeControls: {
-          personalityBaseline: 'warm',
-          lastUserMessage: 'hello from route smoke',
-          provider: 'openai'
-        }
+      assert.equal(capturedChatCall.options.runtimeControls.personalityBaseline, 'warm');
+      assert.equal(capturedChatCall.options.runtimeControls.lastUserMessage, 'hello from route smoke');
+      assert.equal(capturedChatCall.options.runtimeControls.provider, 'openai');
+      assert.equal(typeof capturedChatCall.options.runtimeControls.toolExecutor, 'function');
+      assert.deepEqual(capturedChatCall.options.runtimeControls.tools, {
+        enabled: true,
+        maxToolCallsPerTurn: 3,
+        maxToolRounds: 2,
+        toolTimeoutMs: 8000,
+        maxToolResultChars: 4000
       });
     } finally {
       restoreChatRunner();
@@ -306,12 +310,16 @@ test('authenticated /ai/chat/stream reaches controlled private-core stream path 
       assert.deepEqual(events[2].data.output, { reply: 'hello stream' });
       assert.deepEqual(capturedStreamCall.messages, [{ role: 'user', content: 'hello from stream route' }]);
       assert.deepEqual(capturedStreamCall.context, { activeTask: 'stream-smoke-task', productContext });
-      assert.deepEqual(capturedStreamCall.options, {
-        runtimeControls: {
-          personalityBaseline: 'warm',
-          lastUserMessage: 'hello from stream route',
-          provider: 'openai'
-        }
+      assert.equal(capturedStreamCall.options.runtimeControls.personalityBaseline, 'warm');
+      assert.equal(capturedStreamCall.options.runtimeControls.lastUserMessage, 'hello from stream route');
+      assert.equal(capturedStreamCall.options.runtimeControls.provider, 'openai');
+      assert.equal(typeof capturedStreamCall.options.runtimeControls.toolExecutor, 'function');
+      assert.deepEqual(capturedStreamCall.options.runtimeControls.tools, {
+        enabled: true,
+        maxToolCallsPerTurn: 3,
+        maxToolRounds: 2,
+        toolTimeoutMs: 8000,
+        maxToolResultChars: 4000
       });
     } finally {
       restoreChatStreamRunner();

@@ -28,6 +28,7 @@ const {
   isPanelOpen,
   isHydrating,
   isStreamingReply,
+  toolStatusText,
   chatInputDisabled,
   chatSendButtonLabel,
   openPopup,
@@ -119,7 +120,10 @@ function sendCurrentMessage(): Promise<void> {
           <div v-if="isHydrating" class="chat-message assistant">
             <div class="chat-bubble chat-bubble--thinking">{{ t('chat.syncingContext') }}</div>
           </div>
-          <div v-if="chatStore.isSending && !isStreamingReply" class="chat-message assistant">
+          <div v-if="toolStatusText" class="chat-message assistant">
+            <div class="chat-bubble chat-bubble--thinking">{{ toolStatusText }}</div>
+          </div>
+          <div v-if="chatStore.isSending && !isStreamingReply && !toolStatusText" class="chat-message assistant">
             <div class="chat-bubble chat-bubble--thinking">{{ runtimeControls.personalityConfig.toneLabel }} &middot; {{ t('chat.thinking') }}</div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { useChatStore } from '../../stores/chat'
 import { useCockpitSignals } from '../../stores/cockpitSignals'
 import { useRuntimeControls } from '../../stores/runtimeControls'
 import { refreshCockpitContext } from '../../services/cockpitContextService'
-import { sendChat, streamChat } from './chat.api.js'
+import { sendChat, streamChat, type ChatStreamEvent } from './chat.api.js'
 import {
   canSendChatMessage,
   getChatFallbackReply,
@@ -61,6 +61,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
   const isPanelOpen = ref(false)
   const isHydrating = ref(false)
   const isStreamingReply = ref(false)
+  const toolStatusText = ref('')
 
   const context = computed<ChatContextDto>(() => ({
     activeProjectsCount: cockpitSignals.activeProjectsCount,
@@ -138,6 +139,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
 
     chatStore.setSending(true)
     isStreamingReply.value = false
+    toolStatusText.value = ''
     try {
       const controls = {
         personalityBaseline: runtimeControls.personalityBaseline,
@@ -164,11 +166,17 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
         const { reply } = await streamChat(chatStore.messages, chatContext, controlsWithState, {
           onDelta: (delta) => {
             streamedReply += delta
+            toolStatusText.value = ''
             ensureAssistantMessage()
             chatStore.updateMessageContent(assistantMessageIndex as number, streamedReply)
             scrollToBottom()
           },
+          onToolStatus: (event: ChatStreamEvent) => {
+            toolStatusText.value = event.displayName || ''
+            scrollToBottom()
+          },
           onCompleted: (reply, event) => {
+            toolStatusText.value = ''
             ensureAssistantMessage()
             chatStore.updateMessageContent(assistantMessageIndex as number, reply)
             chatStore.setProviderState(event.providerState)
@@ -193,6 +201,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
       })
     } finally {
       isStreamingReply.value = false
+      toolStatusText.value = ''
       chatStore.setSending(false)
     }
   }
@@ -211,6 +220,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     isPanelOpen,
     isHydrating,
     isStreamingReply,
+    toolStatusText,
     chatInputDisabled,
     chatSendButtonLabel,
     openPopup,

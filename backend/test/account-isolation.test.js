@@ -6,6 +6,7 @@ import Project from '../dist/models/Project.js';
 import Task from '../dist/models/Task.js';
 import aiService from '../dist/services/aiService.js';
 import productContextService from '../dist/services/aiProductContextService.js';
+import productToolService from '../dist/services/aiProductToolService.js';
 import { errorBoundary } from '../dist/middleware/app/errorBoundary.js';
 import { toObjectId } from '../dist/domain/objectIds.js';
 import routes from '../dist/routes/index.js';
@@ -790,6 +791,114 @@ test('AI chat replaces caller-supplied productContext with backend-built snapsho
     restoreChatRunner();
     restoreProductContextBuilder();
   }
+});
+
+test('AI product read tools enforce ownership, archive filtering, and note content budgets', async () => {
+  const userId = toObjectId('000000000000000000000019', 'test.userId');
+  const seenQueries = [];
+
+  await withPatchedMethods([
+    {
+      target: Note,
+      key: 'findOne',
+      value: async (query) => {
+        seenQueries.push(normalizeIds(query));
+        return createDoc({
+          _id: '000000000000000000000101',
+          title: 'Long note',
+          content: 'x'.repeat(500),
+          archived: false,
+          isPinned: true,
+          updatedAt: new Date('2026-05-20T00:00:00.000Z')
+        });
+      }
+    }
+  ], async () => {
+    const result = await productToolService.executeProductContextTool({
+      name: 'getNoteContent',
+      arguments: {
+        noteId: '000000000000000000000101',
+        purpose: 'summarize',
+        maxChars: 220
+      },
+      userId
+    });
+
+    assert.equal(result.status, 'available');
+    assert.equal(result.returnedChars, 220);
+    assert.equal(result.truncated, true);
+    assert.equal(result.truncationReason, 'maxChars');
+    assert(hasClause(seenQueries[0], clause => clause.userId === '000000000000000000000019'));
+    assert(hasClause(seenQueries[0], clause => clause.archived?.$ne === true));
+  });
+});
+
+test('AI product search tool returns only backend-filtered current-user product candidates', async () => {
+  const userId = toObjectId('000000000000000000000020', 'test.userId');
+  const seen = [];
+
+  await withPatchedMethods([
+    {
+      target: Project,
+      key: 'find',
+      value: (query) => {
+        seen.push({ model: 'Project', query: normalizeIds(query) });
+        return findQuery([createDoc({
+          _id: '000000000000000000000201',
+          name: 'AI Core',
+          summary: 'Tool planning',
+          status: 'in_progress',
+          archived: false
+        })]);
+      }
+    },
+    {
+      target: Note,
+      key: 'find',
+      value: (query) => {
+        seen.push({ model: 'Note', query: normalizeIds(query) });
+        return findQuery([createDoc({
+          _id: '000000000000000000000102',
+          title: 'AI Note',
+          content: 'Tool notes',
+          archived: false
+        })]);
+      }
+    },
+    {
+      target: Task,
+      key: 'find',
+      value: (query) => {
+        seen.push({ model: 'Task', query: normalizeIds(query) });
+        return findQuery([createDoc({
+          _id: '000000000000000000000301',
+          title: 'Wire tools',
+          status: 'active',
+          archived: false,
+          originModule: 'project',
+          originId: '000000000000000000000201'
+        })]);
+      }
+    }
+  ], async () => {
+    const result = await productToolService.executeProductContextTool({
+      name: 'searchProductContext',
+      arguments: {
+        query: 'AI',
+        domains: ['projects', 'notes', 'tasks'],
+        limit: 3
+      },
+      userId
+    });
+
+    assert.equal(result.status, 'available');
+    assert.deepEqual(result.results.map(item => item.type), ['project', 'note', 'task']);
+    assert.equal(seen.length, 3);
+    for (const entry of seen) {
+      assert(hasClause(entry.query, clause => clause.userId === '000000000000000000000020'), `${entry.model} query must include userId`);
+      assert(hasClause(entry.query, clause => clause.archived?.$ne === true), `${entry.model} query must filter archived records`);
+    }
+  });
 });
 
 test('AI chat provider selection defaults to mock and explicit OpenAI follows key ownership', async () => {

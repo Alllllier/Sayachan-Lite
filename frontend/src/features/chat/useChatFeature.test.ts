@@ -237,6 +237,11 @@ describe('useChatFeature orchestration', () => {
 
   it('updates the assistant message as stream deltas arrive', async () => {
     streamChatMock.mockImplementation(async (_messages, _context, _controls, handlers) => {
+      handlers?.onToolStatus?.({
+        type: 'tool_call_started',
+        toolName: 'getProjectContext',
+        displayName: '正在查看相关项目...'
+      })
       handlers?.onDelta?.('Hel', { type: 'text_delta', delta: 'Hel' })
       handlers?.onDelta?.('lo', { type: 'text_delta', delta: 'lo' })
       handlers?.onCompleted?.('Hello', {
@@ -256,6 +261,7 @@ describe('useChatFeature orchestration', () => {
 
     await feature.handleSend()
 
+    expect(feature.toolStatusText.value).toBe('')
     expect(chatStore.appendMessage).toHaveBeenNthCalledWith(2, { role: 'assistant', content: '' })
     expect(chatStore.updateMessageContent).toHaveBeenCalledWith(1, 'Hel')
     expect(chatStore.updateMessageContent).toHaveBeenCalledWith(1, 'Hello')

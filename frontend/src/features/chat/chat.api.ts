@@ -11,7 +11,7 @@ import type {
   ChatRuntimePayloadDto
 } from '@sayachan/contracts'
 
-type ChatStreamEventType = 'text_delta' | 'completed' | 'error'
+type ChatStreamEventType = 'tool_call_started' | 'tool_call_completed' | 'tool_call_failed' | 'text_delta' | 'completed' | 'error'
 
 export type ChatStreamEvent = {
   packetType?: 'chat_stream_event'
@@ -19,6 +19,11 @@ export type ChatStreamEvent = {
   type: ChatStreamEventType
   delta?: string
   text?: string
+  toolName?: string
+  displayName?: string
+  callId?: string
+  status?: string
+  round?: number
   output?: ChatResponseDto
   providerState?: ChatProviderState
   error?: {
@@ -34,6 +39,7 @@ export type ChatProviderState = NonNullable<ChatRuntimeControlsDto['providerStat
 type StreamChatHandlers = {
   onDelta?: (delta: string, event: ChatStreamEvent) => void
   onCompleted?: (reply: string, event: ChatStreamEvent) => void
+  onToolStatus?: (event: ChatStreamEvent) => void
 }
 
 export function buildChatRuntimePayload(
@@ -136,6 +142,11 @@ export async function streamChat(
       if (event.type === 'text_delta' && typeof event.delta === 'string') {
         completedReply += event.delta
         handlers.onDelta?.(event.delta, event)
+        continue
+      }
+
+      if (event.type === 'tool_call_started' || event.type === 'tool_call_completed' || event.type === 'tool_call_failed') {
+        handlers.onToolStatus?.(event)
         continue
       }
 

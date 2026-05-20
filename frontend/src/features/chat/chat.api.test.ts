@@ -118,8 +118,11 @@ describe('chat api boundary', () => {
 
   it('streams chat events from the streaming endpoint', async () => {
     const deltas: string[] = []
+    const toolStatuses: string[] = []
     let completedProviderState: unknown
     mockedFetch().mockResolvedValue(streamResponse([
+      'event: tool_call_started\ndata: {"type":"tool_call_started","toolName":"getProjectContext","displayName":"正在查看相关项目..."}\n\n',
+      'event: tool_call_completed\ndata: {"type":"tool_call_completed","toolName":"getProjectContext","displayName":"正在查看相关项目..."}\n\n',
       'event: text_delta\ndata: {"type":"text_delta","delta":"Hel","text":"Hel"}\n\n',
       'event: text_delta\ndata: {"type":"text_delta","delta":"lo","text":"Hello"}\n\n',
       'event: completed\ndata: {"type":"completed","text":"Hello","output":{"reply":"Hello"},"providerState":{"strategy":"previous_response","lastResponseId":"resp-1","status":"active"}}\n\n'
@@ -131,6 +134,7 @@ describe('chat api boundary', () => {
       { personalityBaseline: 'warm' },
       {
         onDelta: delta => deltas.push(delta),
+        onToolStatus: event => toolStatuses.push(event.displayName || ''),
         onCompleted: (_reply, event) => {
           completedProviderState = event.providerState
         }
@@ -159,6 +163,7 @@ describe('chat api boundary', () => {
       status: 'active'
     })
     expect(deltas).toEqual(['Hel', 'lo'])
+    expect(toolStatuses).toEqual(['正在查看相关项目...', '正在查看相关项目...'])
     expect(JSON.parse(String(mockedFetch().mock.calls[0][1]?.body))).toEqual({
       messages: [{ role: 'user', content: 'latest' }],
       context: emptyContext,

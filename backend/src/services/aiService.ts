@@ -14,6 +14,7 @@ import {
   buildProductContextSnapshot,
   type ProductContextSnapshot
 } from './aiProductContextService.js';
+import { executeProductContextTool } from './aiProductToolService.js';
 
 type AiPayload = {
   _id?: unknown;
@@ -168,11 +169,31 @@ function isChatProviderReady(provider: ChatProvider = selectedChatProvider()): b
   return chatProviderReadinessCheck(provider);
 }
 
-function privateCoreRuntimeControls(runtimeControls: AiChatRequestDto['runtimeControls'], provider: ChatProvider) {
-  const controls = {
+function privateCoreRuntimeControls(
+  runtimeControls: AiChatRequestDto['runtimeControls'],
+  provider: ChatProvider,
+  options: ChatExecutionOptions = {}
+) {
+  const controls: Record<string, unknown> = {
     ...(runtimeControls || {}),
     provider
   };
+
+  if (provider === 'openai' && options.userId) {
+    controls.toolExecutor = (request: { name: string; arguments?: Record<string, unknown> }) => executeProductContextTool({
+      name: request.name,
+      arguments: request.arguments || {},
+      userId: options.userId as ObjectId
+    });
+    controls.tools = {
+      enabled: true,
+      maxToolCallsPerTurn: 3,
+      maxToolRounds: 2,
+      toolTimeoutMs: 8000,
+      maxToolResultChars: 4000
+    };
+  }
+
   if (runtimeControls?.providerState) {
     return {
       ...controls,
@@ -407,7 +428,7 @@ export async function chat({ messages, context, runtimeControls }: AiChatRequest
     // TODO: extract options (e.g. thinkingEnabled) from request body when strategy is ready
     const privateCoreContext = await buildPrivateCoreContext(context, options);
     const { reply, providerState } = await runChat(messages, privateCoreContext, {
-      runtimeControls: privateCoreRuntimeControls(runtimeControls, provider)
+      runtimeControls: privateCoreRuntimeControls(runtimeControls, provider, options)
     });
     console.log('[AI Route] Private-core v3 chat reply generated, length:', reply?.length);
     return chatResponseSchema.parse(providerState ? { reply, providerState } : { reply });
@@ -430,7 +451,7 @@ export async function* chatStream({ messages, context, runtimeControls }: AiChat
   try {
     const privateCoreContext = await buildPrivateCoreContext(context, options);
     yield* runChatStream(messages, privateCoreContext, {
-      runtimeControls: privateCoreRuntimeControls(runtimeControls, provider)
+      runtimeControls: privateCoreRuntimeControls(runtimeControls, provider, options)
     });
   } catch (error) {
     console.error('[AI Route] Chat stream service error:', errorMessage(error));
