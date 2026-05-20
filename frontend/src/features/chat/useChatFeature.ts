@@ -1,5 +1,5 @@
 import { computed, nextTick, ref } from 'vue'
-import type { ChatContextDto, ChatFocusDto, ChatMessageDto } from '@sayachan/contracts'
+import type { ChatContextDto, ChatFocusDto, ChatMessageDto, ChatSourceReceiptDto } from '@sayachan/contracts'
 import { useChatStore } from '../../stores/chat'
 import { useCockpitSignals } from '../../stores/cockpitSignals'
 import { useRuntimeControls } from '../../stores/runtimeControls'
@@ -62,6 +62,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
   const isHydrating = ref(false)
   const isStreamingReply = ref(false)
   const toolStatusText = ref('')
+  const sourceReceiptsByMessageIndex = ref<Record<number, ChatSourceReceiptDto[]>>({})
 
   const context = computed<ChatContextDto>(() => ({
     activeProjectsCount: cockpitSignals.activeProjectsCount,
@@ -106,6 +107,18 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     }
   }
 
+  function setMessageSourceReceipts(index: number | null, receipts?: ChatSourceReceiptDto[]): void {
+    if (index === null || !receipts || receipts.length === 0) return
+    sourceReceiptsByMessageIndex.value = {
+      ...sourceReceiptsByMessageIndex.value,
+      [index]: receipts
+    }
+  }
+
+  function getMessageSourceReceipts(index: number): ChatSourceReceiptDto[] {
+    return sourceReceiptsByMessageIndex.value[index] || []
+  }
+
   async function handleSend(presetText?: string | null) {
     const text = getChatSendText({
       presetText,
@@ -140,13 +153,15 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     chatStore.setSending(true)
     isStreamingReply.value = false
     toolStatusText.value = ''
+    runtimeControls.clearLatestDebugTrace()
     try {
       const controls = {
         personalityBaseline: runtimeControls.personalityBaseline,
         futureSlots: {
           warmth: runtimeControls.futureSlots.warmth,
           convergenceMode: runtimeControls.futureSlots.convergenceMode
-        }
+        },
+        debugTrace: runtimeControls.debugTraceEnabled
       }
       const controlsWithState = chatStore.providerState
         ? { ...controls, providerState: chatStore.providerState }
@@ -179,6 +194,8 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
             toolStatusText.value = ''
             ensureAssistantMessage()
             chatStore.updateMessageContent(assistantMessageIndex as number, reply)
+            setMessageSourceReceipts(assistantMessageIndex, event.output?.sourceReceipts || event.sourceReceipts)
+            runtimeControls.setLatestDebugTrace(event.output?.debugTrace || event.debugTrace)
             chatStore.setProviderState(event.providerState)
             scrollToBottom()
           }
@@ -189,8 +206,11 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           chatStore.appendMessage({ role: 'assistant', content: reply })
         }
       } else {
-        const { reply, providerState } = await sendChat(chatStore.messages, chatContext, controlsWithState)
+        const { reply, providerState, sourceReceipts, debugTrace } = await sendChat(chatStore.messages, chatContext, controlsWithState)
+        const assistantMessageIndex = chatStore.messages.length
         chatStore.appendMessage({ role: 'assistant', content: reply })
+        setMessageSourceReceipts(assistantMessageIndex, sourceReceipts)
+        runtimeControls.setLatestDebugTrace(debugTrace)
         chatStore.setProviderState(providerState)
       }
     } catch (error) {
@@ -221,8 +241,10 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     isHydrating,
     isStreamingReply,
     toolStatusText,
+    sourceReceiptsByMessageIndex,
     chatInputDisabled,
     chatSendButtonLabel,
+    getMessageSourceReceipts,
     openPopup,
     closePopup,
     togglePanel,

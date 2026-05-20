@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, reactive, computed } from 'vue'
-import type { ChatConvergenceMode, ChatPersonalityBaseline } from '@sayachan/contracts'
+import type { ChatConvergenceMode, ChatDebugTraceDto, ChatPersonalityBaseline } from '@sayachan/contracts'
 
 const LS_BASELINE_KEY = 'sayachan.personalityBaseline'
 const LS_WARMTH_KEY = 'sayachan.warmth'
 const LS_CONVERGENCE_KEY = 'sayachan.convergenceMode'
 const LS_STREAMING_KEY = 'sayachan.chatStreamingEnabled'
+const LS_DEBUG_TRACE_KEY = 'sayachan.chatDebugTraceEnabled'
 
 export const useRuntimeControls = defineStore('runtimeControls', () => {
   const savedBaseline = localStorage.getItem(LS_BASELINE_KEY)
@@ -16,6 +17,9 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
   const personalityBaseline = ref(initialBaseline)
   const savedStreaming = localStorage.getItem(LS_STREAMING_KEY)
   const chatStreamingEnabled = ref(savedStreaming === null ? true : savedStreaming !== 'false')
+  const savedDebugTrace = localStorage.getItem(LS_DEBUG_TRACE_KEY)
+  const debugTraceEnabled = ref(savedDebugTrace === null ? true : savedDebugTrace !== 'false')
+  const latestDebugTrace = ref<ChatDebugTraceDto | null>(null)
 
   const savedWarmth = localStorage.getItem(LS_WARMTH_KEY)
   const initialWarmth = savedWarmth !== null ? Number(savedWarmth) : 5
@@ -98,15 +102,33 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
     localStorage.setItem(LS_STREAMING_KEY, String(chatStreamingEnabled.value))
   }
 
+  function setDebugTraceEnabled(value: unknown): void {
+    debugTraceEnabled.value = value === true
+    localStorage.setItem(LS_DEBUG_TRACE_KEY, String(debugTraceEnabled.value))
+  }
+
+  function setLatestDebugTrace(value: ChatDebugTraceDto | null | undefined): void {
+    latestDebugTrace.value = value || null
+  }
+
+  function clearLatestDebugTrace(): void {
+    latestDebugTrace.value = null
+  }
+
   return {
     personalityBaseline,
     chatStreamingEnabled,
+    debugTraceEnabled,
+    latestDebugTrace,
     futureSlots,
     personalityConfig,
     uiLabels,
     setBaseline,
     setWarmth,
     setConvergenceMode,
-    setChatStreamingEnabled
+    setChatStreamingEnabled,
+    setDebugTraceEnabled,
+    setLatestDebugTrace,
+    clearLatestDebugTrace
   }
 })

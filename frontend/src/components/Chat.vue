@@ -1,16 +1,21 @@
 <script setup lang="ts">
 import { computed, ref, nextTick, watch } from 'vue'
+import type { ChatDebugTraceDto } from '@sayachan/contracts'
 import avatarUrl from '../assets/avatar/sayachan-avatar.jpg'
 import { useChatFeature } from '../features/chat/useChatFeature.js'
+import { useAuthStore } from '../stores/auth'
 import { renderMarkdown } from '../utils/markdown.js'
 import { t } from '../i18n/productLocale'
 
 type PersonalityBaselineOption = 'warm' | 'strict' | 'haraguro'
 type ConvergenceModeOption = 'explore' | 'guided' | 'decisive'
+type DebugTraceTools = NonNullable<ChatDebugTraceDto['tools']>
 
 const messageListRef = ref<HTMLElement | null>(null)
 const personalityBaselineOptions: PersonalityBaselineOption[] = ['warm', 'strict', 'haraguro']
 const convergenceModeOptions: ConvergenceModeOption[] = ['explore', 'guided', 'decisive']
+const emptyDebugTools: DebugTraceTools = {}
+const auth = useAuthStore()
 
 function scrollToBottom(): void {
   void nextTick(() => {
@@ -29,6 +34,7 @@ const {
   isHydrating,
   isStreamingReply,
   toolStatusText,
+  getMessageSourceReceipts,
   chatInputDisabled,
   chatSendButtonLabel,
   openPopup,
@@ -60,8 +66,27 @@ const activeFocusLabel = computed(() => {
   return `${typeLabel} · ${focus.title}`
 })
 
+const canUseDebugTrace = computed(() => {
+  const role = auth.currentUser?.role
+  return role === 'owner' || role === 'tester'
+})
+
+const debugTraceTools = computed<DebugTraceTools>(() => runtimeControls.latestDebugTrace?.tools || emptyDebugTools)
+const debugExposedTools = computed(() => debugTraceTools.value.exposed || [])
+const debugRequestedTools = computed(() => debugTraceTools.value.requested || [])
+const debugExecutedTools = computed(() => debugTraceTools.value.executed || [])
+const debugSourceReceipts = computed(() => runtimeControls.latestDebugTrace?.sourceReceipts || [])
+const debugToolLimits = computed(() => debugTraceTools.value.limits || {})
+
 function sendCurrentMessage(): Promise<void> {
   return handleSend()
+}
+
+function sourceTypeLabel(type: string): string {
+  if (type === 'project') return t('chat.sourceProject')
+  if (type === 'note') return t('chat.sourceNote')
+  if (type === 'task') return t('chat.sourceTask')
+  return t('chat.sourceItem')
 }
 </script>
 
@@ -110,11 +135,26 @@ function sendCurrentMessage(): Promise<void> {
             class="chat-message"
             :class="msg.role"
           >
-            <div
-              v-if="msg.role === 'assistant'"
-              class="chat-bubble markdown-body"
-              v-html="renderMarkdown(msg.content)"
-            ></div>
+            <div v-if="msg.role === 'assistant'" class="chat-assistant-stack">
+              <div
+                class="chat-bubble markdown-body"
+                v-html="renderMarkdown(msg.content)"
+              ></div>
+              <div
+                v-if="getMessageSourceReceipts(idx).length > 0"
+                class="chat-source-receipts"
+                :aria-label="t('chat.sourceReceipts')"
+              >
+                <span
+                  v-for="receipt in getMessageSourceReceipts(idx)"
+                  :key="`${receipt.type}:${receipt.title}`"
+                  class="chat-source-receipt"
+                >
+                  <span class="chat-source-type">{{ sourceTypeLabel(receipt.type) }}</span>
+                  <span class="chat-source-title">{{ receipt.title }}</span>
+                </span>
+              </div>
+            </div>
             <div v-else class="chat-bubble">{{ msg.content }}</div>
           </div>
           <div v-if="isHydrating" class="chat-message assistant">
@@ -264,9 +304,79 @@ function sendCurrentMessage(): Promise<void> {
                 <span>{{ t('chat.thinkingControl') }}</span>
                 <span class="runtime-badge">{{ t('common.comingSoon') }}</span>
               </div>
-              <div class="runtime-future-item disabled">
+              <div v-if="!canUseDebugTrace" class="runtime-future-item disabled">
                 <span>{{ t('chat.debugContext') }}</span>
                 <span class="runtime-badge">{{ t('common.comingSoon') }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="canUseDebugTrace" class="runtime-section">
+            <div class="runtime-toggle-row">
+              <div>
+                <div class="runtime-section-title runtime-section-title--inline">{{ t('chat.debugTrace') }}</div>
+                <div class="runtime-toggle-caption">{{ t('chat.debugTraceCaption') }}</div>
+              </div>
+              <button
+                class="runtime-toggle"
+                :class="{ active: runtimeControls.debugTraceEnabled }"
+                type="button"
+                role="switch"
+                :aria-checked="runtimeControls.debugTraceEnabled"
+                @click="runtimeControls.setDebugTraceEnabled(!runtimeControls.debugTraceEnabled)"
+              >
+                <span class="runtime-toggle-thumb"></span>
+              </button>
+            </div>
+
+            <div v-if="runtimeControls.debugTraceEnabled" class="runtime-debug-console">
+              <div class="runtime-debug-block">
+                <div class="runtime-debug-title">{{ t('chat.debugTools') }}</div>
+                <div class="runtime-debug-line">
+                  <span>{{ t('chat.debugLimits') }}</span>
+                  <span>{{ debugToolLimits.maxToolRounds ?? '-' }}r / {{ debugToolLimits.maxToolCallsPerTurn ?? '-' }}c</span>
+                </div>
+                <div class="runtime-debug-line">
+                  <span>{{ t('chat.debugExposed') }}</span>
+                  <span>{{ debugExposedTools.length > 0 ? debugExposedTools.join(', ') : t('chat.debugEmpty') }}</span>
+                </div>
+              </div>
+
+              <div class="runtime-debug-block">
+                <div class="runtime-debug-title">{{ t('chat.debugRequested') }}</div>
+                <div v-if="debugRequestedTools.length === 0" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
+                <div v-for="(tool, index) in debugRequestedTools" :key="`requested-${index}`" class="runtime-debug-line">
+                  <span>{{ tool.round ?? '-' }} · {{ tool.name }}</span>
+                  <span>{{ tool.allowed ? t('chat.debugAllowed') : t('chat.debugBlocked') }}<template v-if="tool.cursorPresent"> · {{ t('chat.debugCursor') }}</template></span>
+                </div>
+              </div>
+
+              <div class="runtime-debug-block">
+                <div class="runtime-debug-title">{{ t('chat.debugExecuted') }}</div>
+                <div v-if="debugExecutedTools.length === 0" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
+                <div v-for="(tool, index) in debugExecutedTools" :key="`executed-${index}`" class="runtime-debug-tool">
+                  <div class="runtime-debug-line">
+                    <span>{{ tool.round ?? '-' }} · {{ tool.name }}</span>
+                    <span>{{ tool.status || t('chat.debugEmpty') }}</span>
+                  </div>
+                  <div class="runtime-debug-meta">
+                    <span v-if="tool.returnedChars !== undefined">{{ t('chat.debugChars') }} {{ tool.returnedChars }} / {{ tool.contentChars ?? '-' }}</span>
+                    <span v-if="tool.range">{{ t('chat.debugRange') }} {{ tool.range.startChar }}-{{ tool.range.endChar }}</span>
+                    <span v-if="tool.hasMore">{{ t('chat.debugHasMore') }}</span>
+                    <span v-if="tool.nextCursorPresent">{{ t('chat.debugCursor') }}</span>
+                    <span v-if="tool.outputTruncated">{{ t('chat.debugClipped') }}</span>
+                    <span v-if="tool.errorCode">{{ tool.errorCode }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="runtime-debug-block">
+                <div class="runtime-debug-title">{{ t('chat.sourceReceipts') }}</div>
+                <div v-if="debugSourceReceipts.length === 0" class="runtime-debug-empty">{{ t('chat.debugEmpty') }}</div>
+                <div v-for="(source, index) in debugSourceReceipts" :key="`debug-source-${index}`" class="runtime-debug-line">
+                  <span>{{ sourceTypeLabel(source.type) }}</span>
+                  <span>{{ source.title }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -428,6 +538,52 @@ function sendCurrentMessage(): Promise<void> {
 .chat-bubble--thinking {
   opacity: 0.7;
   font-style: italic;
+}
+
+.chat-assistant-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 80%;
+  gap: 6px;
+}
+
+.chat-assistant-stack .chat-bubble {
+  max-width: 100%;
+}
+
+.chat-source-receipts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chat-source-receipt {
+  display: inline-flex;
+  align-items: center;
+  max-width: 220px;
+  padding: 3px 7px;
+  border: 1px solid #eeeeee;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.chat-source-type {
+  flex: 0 0 auto;
+  color: var(--text-secondary);
+}
+
+.chat-source-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-source-type::after {
+  content: " · ";
 }
 
 .chat-empty-invite {
@@ -778,6 +934,71 @@ function sendCurrentMessage(): Promise<void> {
   background: var(--surface-panel);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
+}
+
+.runtime-debug-console {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding: var(--space-sm);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: #f8faf8;
+}
+
+.runtime-debug-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.runtime-debug-title {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.runtime-debug-line,
+.runtime-debug-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.runtime-debug-line span:last-child {
+  text-align: right;
+  word-break: break-word;
+}
+
+.runtime-debug-tool {
+  padding: 6px 0;
+  border-top: 1px solid rgba(52, 42, 46, 0.08);
+}
+
+.runtime-debug-tool:first-of-type {
+  border-top: 0;
+}
+
+.runtime-debug-meta {
+  justify-content: flex-start;
+}
+
+.runtime-debug-meta span {
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+}
+
+.runtime-debug-empty {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
 }
 
 /* Trait Controls */

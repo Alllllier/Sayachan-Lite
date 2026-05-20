@@ -768,7 +768,10 @@ test('AI chat replaces caller-supplied productContext with backend-built snapsho
   const restoreProductContextBuilder = aiService.__test__.setProductContextBuilderForTest(async () => trustedProductContext);
   const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async (messages, context, options) => {
     capturedCall = { messages, context, options };
-    return { reply: 'trusted context ok' };
+    return {
+      reply: 'trusted context ok',
+      sourceReceipts: [{ type: 'project', title: 'Trusted project' }]
+    };
   });
 
   try {
@@ -784,9 +787,44 @@ test('AI chat replaces caller-supplied productContext with backend-built snapsho
       runtimeControls: { personalityBaseline: 'warm' }
     }, { userId });
 
-    assert.deepEqual(result, { reply: 'trusted context ok' });
+    assert.deepEqual(result, {
+      reply: 'trusted context ok',
+      sourceReceipts: [{ type: 'project', title: 'Trusted project' }]
+    });
     assert.equal(capturedCall.context.activeTask, 'bridge');
     assert.deepEqual(capturedCall.context.productContext, trustedProductContext);
+  } finally {
+    restoreChatRunner();
+    restoreProductContextBuilder();
+  }
+});
+
+test('AI chat forwards debug trace requests only for owner and tester roles', async () => {
+  const userId = toObjectId('000000000000000000000023', 'test.userId');
+  const capturedCalls = [];
+  const restoreProductContextBuilder = aiService.__test__.setProductContextBuilderForTest(async () => null);
+  const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async (_messages, _context, options) => {
+    capturedCalls.push(options);
+    return options.runtimeControls?.debugTrace === true
+      ? { reply: 'debug ok', debugTrace: { tools: {} } }
+      : { reply: 'debug off' };
+  });
+
+  try {
+    const allowed = await aiService.chat({
+      messages: [{ role: 'user', content: 'trace please' }],
+      runtimeControls: { debugTrace: true }
+    }, { userId, userRole: 'tester' });
+
+    const blocked = await aiService.chat({
+      messages: [{ role: 'user', content: 'trace please' }],
+      runtimeControls: { debugTrace: true }
+    }, { userId, userRole: 'viewer' });
+
+    assert.equal(capturedCalls[0].runtimeControls.debugTrace, true);
+    assert.deepEqual(allowed.debugTrace, { tools: {} });
+    assert.equal(capturedCalls[1].runtimeControls.debugTrace, undefined);
+    assert.equal(blocked.debugTrace, undefined);
   } finally {
     restoreChatRunner();
     restoreProductContextBuilder();
@@ -829,6 +867,98 @@ test('AI product read tools enforce ownership, archive filtering, and note conte
     assert.equal(result.truncated, true);
     assert.equal(result.truncationReason, 'maxChars');
     assert(hasClause(seenQueries[0], clause => clause.userId === '000000000000000000000019'));
+    assert(hasClause(seenQueries[0], clause => clause.archived?.$ne === true));
+  });
+});
+
+test('AI product note content tool supports opaque continuation cursors', async () => {
+  const userId = toObjectId('000000000000000000000021', 'test.userId');
+  const content = '0123456789'.repeat(60);
+
+  await withPatchedMethods([
+    {
+      target: Note,
+      key: 'findOne',
+      value: async () => createDoc({
+        _id: '000000000000000000000111',
+        title: 'Cursor note',
+        content,
+        archived: false,
+        updatedAt: new Date('2026-05-20T00:00:00.000Z')
+      })
+    }
+  ], async () => {
+    const first = await productToolService.executeProductContextTool({
+      name: 'getNoteContent',
+      arguments: {
+        noteId: '000000000000000000000111',
+        purpose: 'summarize',
+        maxChars: 200
+      },
+      userId
+    });
+
+    assert.equal(first.status, 'available');
+    assert.equal(first.content, content.slice(0, 200));
+    assert.deepEqual(first.range, { startChar: 0, endChar: 200 });
+    assert.equal(first.hasMore, true);
+    assert.equal(typeof first.nextCursor, 'string');
+
+    const second = await productToolService.executeProductContextTool({
+      name: 'getNoteContent',
+      arguments: {
+        noteId: '000000000000000000000111',
+        purpose: 'summarize',
+        maxChars: 200,
+        cursor: first.nextCursor
+      },
+      userId
+    });
+
+    assert.equal(second.status, 'available');
+    assert.equal(second.content, content.slice(200, 400));
+    assert.deepEqual(second.range, { startChar: 200, endChar: 400 });
+    assert.equal(second.hasMore, true);
+    assert.equal(typeof second.nextCursor, 'string');
+    assert.notEqual(second.nextCursor, first.nextCursor);
+  });
+});
+
+test('AI product note content cursor mismatches complete safely without leaking content', async () => {
+  const userId = toObjectId('000000000000000000000022', 'test.userId');
+  const seenQueries = [];
+
+  await withPatchedMethods([
+    {
+      target: Note,
+      key: 'findOne',
+      value: async (query) => {
+        seenQueries.push(normalizeIds(query));
+        return createDoc({
+          _id: '000000000000000000000112',
+          title: 'Cursor note',
+          content: 'private content',
+          archived: false,
+          updatedAt: new Date('2026-05-20T00:00:00.000Z')
+        });
+      }
+    }
+  ], async () => {
+    const result = await productToolService.executeProductContextTool({
+      name: 'getNoteContent',
+      arguments: {
+        noteId: '000000000000000000000112',
+        purpose: 'summarize',
+        maxChars: 200,
+        cursor: 'not-a-valid-cursor'
+      },
+      userId
+    });
+
+    assert.equal(result.status, 'not_found');
+    assert.equal(result.reason, 'invalid_cursor');
+    assert.equal(result.content, undefined);
+    assert(hasClause(seenQueries[0], clause => clause.userId === '000000000000000000000022'));
     assert(hasClause(seenQueries[0], clause => clause.archived?.$ne === true));
   });
 });

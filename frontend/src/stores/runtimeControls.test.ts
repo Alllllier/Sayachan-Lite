@@ -6,6 +6,7 @@ const LS_BASELINE_KEY = 'sayachan.personalityBaseline'
 const LS_WARMTH_KEY = 'sayachan.warmth'
 const LS_CONVERGENCE_KEY = 'sayachan.convergenceMode'
 const LS_STREAMING_KEY = 'sayachan.chatStreamingEnabled'
+const LS_DEBUG_TRACE_KEY = 'sayachan.chatDebugTraceEnabled'
 
 function createLocalStorageMock(initialValues = {}) {
   const store = new Map(Object.entries(initialValues))
@@ -34,13 +35,15 @@ describe('runtimeControls store behavior locks', () => {
       [LS_BASELINE_KEY]: 'strict',
       [LS_WARMTH_KEY]: '7',
       [LS_CONVERGENCE_KEY]: 'explore',
-      [LS_STREAMING_KEY]: 'false'
+      [LS_STREAMING_KEY]: 'false',
+      [LS_DEBUG_TRACE_KEY]: 'false'
     })
 
     expect(store.personalityBaseline).toBe('strict')
     expect(store.futureSlots.warmth).toBe(7)
     expect(store.futureSlots.convergenceMode).toBe('explore')
     expect(store.chatStreamingEnabled).toBe(false)
+    expect(store.debugTraceEnabled).toBe(false)
     expect(store.personalityConfig.label).toBe('干练')
   })
 
@@ -53,6 +56,7 @@ describe('runtimeControls store behavior locks', () => {
     expect(store.personalityBaseline).toBe('warm')
     expect(store.futureSlots.convergenceMode).toBe('guided')
     expect(store.chatStreamingEnabled).toBe(true)
+    expect(store.debugTraceEnabled).toBe(true)
     expect(store.personalityConfig.label).toBe('温暖')
   })
 
@@ -107,5 +111,20 @@ describe('runtimeControls store behavior locks', () => {
     store.setChatStreamingEnabled(true)
     expect(store.chatStreamingEnabled).toBe(true)
     expect(localStorage.setItem).toHaveBeenCalledWith(LS_STREAMING_KEY, 'true')
+  })
+
+  it('updates and persists debug trace mode and latest trace', () => {
+    const store = createRuntimeStore()
+
+    expect(store.debugTraceEnabled).toBe(true)
+    store.setDebugTraceEnabled(false)
+    expect(store.debugTraceEnabled).toBe(false)
+    expect(localStorage.setItem).toHaveBeenCalledWith(LS_DEBUG_TRACE_KEY, 'false')
+
+    store.setLatestDebugTrace({ tools: { exposed: ['getNoteContent'] } })
+    expect(store.latestDebugTrace).toEqual({ tools: { exposed: ['getNoteContent'] } })
+
+    store.clearLatestDebugTrace()
+    expect(store.latestDebugTrace).toBeNull()
   })
 })

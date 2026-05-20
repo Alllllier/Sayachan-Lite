@@ -46,6 +46,7 @@ type CockpitSignalsMock = {
 type RuntimeControlsMock = {
   personalityBaseline: 'warm'
   chatStreamingEnabled: boolean
+  debugTraceEnabled: boolean
   futureSlots: {
     warmth: number
     convergenceMode: 'guided'
@@ -54,6 +55,8 @@ type RuntimeControlsMock = {
     toneLabel: string
   }
   setChatStreamingEnabled: (value: boolean) => void
+  setLatestDebugTrace: (value: unknown) => void
+  clearLatestDebugTrace: () => void
 }
 
 function createChatStore() {
@@ -112,6 +115,7 @@ describe('useChatFeature orchestration', () => {
     runtimeControls = {
       personalityBaseline: 'warm',
       chatStreamingEnabled: true,
+      debugTraceEnabled: true,
       futureSlots: {
         warmth: 7,
         convergenceMode: 'guided'
@@ -119,7 +123,9 @@ describe('useChatFeature orchestration', () => {
       personalityConfig: {
         toneLabel: 'Warm'
       },
-      setChatStreamingEnabled: vi.fn()
+      setChatStreamingEnabled: vi.fn(),
+      setLatestDebugTrace: vi.fn(),
+      clearLatestDebugTrace: vi.fn()
     }
 
     storeMocks.chatStore = chatStore
@@ -167,7 +173,8 @@ describe('useChatFeature orchestration', () => {
         futureSlots: {
           warmth: 7,
           convergenceMode: 'guided'
-        }
+        },
+        debugTrace: true
       },
       expect.objectContaining({
         onDelta: expect.any(Function),
@@ -229,7 +236,8 @@ describe('useChatFeature orchestration', () => {
         futureSlots: {
           warmth: 7,
           convergenceMode: 'guided'
-        }
+        },
+        debugTrace: true
       },
       expect.any(Object)
     )
@@ -247,7 +255,15 @@ describe('useChatFeature orchestration', () => {
       handlers?.onCompleted?.('Hello', {
         type: 'completed',
         text: 'Hello',
-        output: { reply: 'Hello' },
+        output: {
+          reply: 'Hello',
+          sourceReceipts: [{ type: 'project', title: 'Sayachan AI Core' }],
+          debugTrace: {
+            tools: {
+              executed: [{ name: 'getProjectContext', status: 'completed', round: 1 }]
+            }
+          }
+        },
         providerState: {
           strategy: 'previous_response',
           lastResponseId: 'resp-ui-1',
@@ -269,6 +285,15 @@ describe('useChatFeature orchestration', () => {
       strategy: 'previous_response',
       lastResponseId: 'resp-ui-1',
       status: 'active'
+    })
+    expect(feature.getMessageSourceReceipts(1)).toEqual([
+      { type: 'project', title: 'Sayachan AI Core' }
+    ])
+    expect(runtimeControls.clearLatestDebugTrace).toHaveBeenCalled()
+    expect(runtimeControls.setLatestDebugTrace).toHaveBeenCalledWith({
+      tools: {
+        executed: [{ name: 'getProjectContext', status: 'completed', round: 1 }]
+      }
     })
     expect(feature.isStreamingReply.value).toBe(false)
   })
@@ -299,7 +324,8 @@ describe('useChatFeature orchestration', () => {
         futureSlots: {
           warmth: 7,
           convergenceMode: 'guided'
-        }
+        },
+        debugTrace: true
       },
       expect.any(Object)
     )

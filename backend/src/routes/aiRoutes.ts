@@ -47,7 +47,8 @@ const suggestProjectNextActionsHandler: AiHandler = async (ctx) => {
 
 const chatHandler: AiHandler = async (ctx) => {
   ctx.body = await aiService.chat(validatedBody<AiChatRequestDto>(ctx), {
-    userId: resolveCurrentUserId(ctx)
+    userId: resolveCurrentUserId(ctx),
+    userRole: ctx.state.user?.role
   });
 };
 
@@ -89,7 +90,8 @@ const chatStreamHandler: AiHandler = async (ctx) => {
 
   try {
     for await (const event of aiService.chatStream(validatedBody<AiChatRequestDto>(ctx), {
-      userId: resolveCurrentUserId(ctx)
+      userId: resolveCurrentUserId(ctx),
+      userRole: ctx.state.user?.role
     })) {
       if (closed) {
         break;

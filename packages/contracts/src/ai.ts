@@ -56,10 +56,51 @@ export const chatProviderStateSchema = z.object({
   status: z.enum(['active', 'fallback', 'unavailable']).optional()
 })
 
+export const chatSourceReceiptSchema = z.object({
+  type: z.enum(['project', 'note', 'task']),
+  title: z.string().min(1)
+}).strict()
+
+export const chatDebugTraceRangeSchema = z.object({
+  startChar: z.number(),
+  endChar: z.number()
+}).strict()
+
+export const chatDebugTraceSchema = z.object({
+  tools: z.object({
+    limits: z.object({
+      maxToolCallsPerTurn: z.number().optional(),
+      maxToolRounds: z.number().optional()
+    }).strict().optional(),
+    exposed: z.array(z.string()).optional(),
+    requested: z.array(z.object({
+      name: z.string(),
+      round: z.number().optional(),
+      allowed: z.boolean().optional(),
+      cursorPresent: z.boolean().optional()
+    }).strict()).optional(),
+    executed: z.array(z.object({
+      name: z.string(),
+      status: z.string().optional(),
+      round: z.number().optional(),
+      outputTruncated: z.boolean().optional(),
+      sourceReceiptCount: z.number().optional(),
+      errorCode: z.string().optional(),
+      returnedChars: z.number().optional(),
+      contentChars: z.number().optional(),
+      hasMore: z.boolean().optional(),
+      nextCursorPresent: z.boolean().optional(),
+      range: chatDebugTraceRangeSchema.optional()
+    }).strict()).optional()
+  }).strict(),
+  sourceReceipts: z.array(chatSourceReceiptSchema).optional()
+}).strict()
+
 export const chatRuntimeControlsSchema = z.object({
   personalityBaseline: z.enum(chatPersonalityBaselineValues).optional(),
   futureSlots: chatRuntimeFutureSlotsSchema.optional(),
-  providerState: chatProviderStateSchema.optional()
+  providerState: chatProviderStateSchema.optional(),
+  debugTrace: z.boolean().optional()
 })
 
 export const chatRuntimePayloadSchema = chatRuntimeControlsSchema.extend({
@@ -74,7 +115,9 @@ export const aiChatRequestSchema = z.object({
 
 export const chatResponseSchema = z.object({
   reply: z.string().min(1),
-  providerState: chatProviderStateSchema.optional()
+  providerState: chatProviderStateSchema.optional(),
+  sourceReceipts: z.array(chatSourceReceiptSchema).optional(),
+  debugTrace: chatDebugTraceSchema.optional()
 })
 
 export type AiResourceRequestDto = z.infer<typeof aiResourceRequestSchema>
@@ -85,6 +128,8 @@ export type ChatModeDto = (typeof chatModeValues)[number]
 export type ChatFocusDto = z.infer<typeof chatFocusSchema>
 export type ChatProviderStateStrategy = (typeof chatProviderStateStrategyValues)[number]
 export type ChatProviderStateSource = (typeof chatProviderStateSourceValues)[number]
+export type ChatSourceReceiptDto = z.infer<typeof chatSourceReceiptSchema>
+export type ChatDebugTraceDto = z.infer<typeof chatDebugTraceSchema>
 export type ChatMessageDto = z.infer<typeof chatMessageSchema>
 export type ChatContextDto = z.infer<typeof chatContextSchema>
 export type ChatRuntimeControlsDto = z.infer<typeof chatRuntimeControlsSchema>

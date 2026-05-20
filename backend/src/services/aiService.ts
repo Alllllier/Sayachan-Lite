@@ -54,6 +54,7 @@ type ChatStreamEvent = Awaited<ReturnType<ChatStreamRunner>> extends AsyncIterab
 type ProductContextBuilder = (userId: ObjectId | null | undefined) => Promise<ProductContextSnapshot | null>;
 type ChatExecutionOptions = {
   userId?: ObjectId | null;
+  userRole?: string | null;
 };
 
 let runChat: ChatRunner = privateCoreChat;
@@ -169,15 +170,24 @@ function isChatProviderReady(provider: ChatProvider = selectedChatProvider()): b
   return chatProviderReadinessCheck(provider);
 }
 
+function canReturnDebugTrace(options: ChatExecutionOptions): boolean {
+  return options.userRole === 'owner' || options.userRole === 'tester';
+}
+
 function privateCoreRuntimeControls(
   runtimeControls: AiChatRequestDto['runtimeControls'],
   provider: ChatProvider,
   options: ChatExecutionOptions = {}
 ) {
+  const { debugTrace, ...safeRuntimeControls } = runtimeControls || {};
   const controls: Record<string, unknown> = {
-    ...(runtimeControls || {}),
+    ...safeRuntimeControls,
     provider
   };
+
+  if (debugTrace === true && canReturnDebugTrace(options)) {
+    controls.debugTrace = true;
+  }
 
   if (provider === 'openai' && options.userId) {
     controls.toolExecutor = (request: { name: string; arguments?: Record<string, unknown> }) => executeProductContextTool({
@@ -427,11 +437,11 @@ export async function chat({ messages, context, runtimeControls }: AiChatRequest
   try {
     // TODO: extract options (e.g. thinkingEnabled) from request body when strategy is ready
     const privateCoreContext = await buildPrivateCoreContext(context, options);
-    const { reply, providerState } = await runChat(messages, privateCoreContext, {
+    const result = await runChat(messages, privateCoreContext, {
       runtimeControls: privateCoreRuntimeControls(runtimeControls, provider, options)
     });
-    console.log('[AI Route] Private-core v3 chat reply generated, length:', reply?.length);
-    return chatResponseSchema.parse(providerState ? { reply, providerState } : { reply });
+    console.log('[AI Route] Private-core v3 chat reply generated, length:', result.reply?.length);
+    return chatResponseSchema.parse(result);
   } catch (error) {
     console.error('[AI Route] Chat service error:', errorMessage(error));
     console.error('[AI Route] Stack:', errorStack(error) || 'no stack');

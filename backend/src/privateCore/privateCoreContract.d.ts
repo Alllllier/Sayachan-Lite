@@ -30,8 +30,45 @@ declare module '@allier/sayachan-ai-core' {
         toolTimeoutMs?: number;
         maxToolResultChars?: number;
       };
+      debugTrace?: boolean;
       [key: string]: unknown;
     };
+  };
+
+  export type SayachanAiCoreDebugTrace = {
+    tools?: {
+      limits?: {
+        maxToolCallsPerTurn?: number;
+        maxToolRounds?: number;
+      };
+      exposed?: string[];
+      requested?: Array<{
+        name: string;
+        round?: number;
+        allowed?: boolean;
+        cursorPresent?: boolean;
+      }>;
+      executed?: Array<{
+        name: string;
+        status?: string;
+        round?: number;
+        outputTruncated?: boolean;
+        sourceReceiptCount?: number;
+        errorCode?: string;
+        returnedChars?: number;
+        contentChars?: number;
+        hasMore?: boolean;
+        nextCursorPresent?: boolean;
+        range?: {
+          startChar: number;
+          endChar: number;
+        };
+      }>;
+    };
+    sourceReceipts?: Array<{
+      type: 'project' | 'note' | 'task';
+      title: string;
+    }>;
   };
 
   export type SayachanAiCoreChatResult = {
@@ -43,6 +80,11 @@ declare module '@allier/sayachan-ai-core' {
       lastResponseId?: string;
       status?: 'active' | 'fallback' | 'unavailable';
     };
+    sourceReceipts?: Array<{
+      type: 'project' | 'note' | 'task';
+      title: string;
+    }>;
+    debugTrace?: SayachanAiCoreDebugTrace;
   };
 
   export type SayachanAiCoreChatStreamError = {
@@ -71,6 +113,8 @@ declare module '@allier/sayachan-ai-core' {
       lastResponseId?: string;
       status?: 'active' | 'fallback' | 'unavailable';
     };
+    sourceReceipts?: SayachanAiCoreChatResult['sourceReceipts'];
+    debugTrace?: SayachanAiCoreDebugTrace;
     error?: SayachanAiCoreChatStreamError;
   };
 

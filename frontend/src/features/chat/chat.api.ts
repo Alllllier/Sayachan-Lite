@@ -5,10 +5,12 @@ import {
 } from '@sayachan/contracts'
 import type {
   ChatContextDto,
+  ChatDebugTraceDto,
   ChatMessageDto,
   ChatResponseDto,
   ChatRuntimeControlsDto,
-  ChatRuntimePayloadDto
+  ChatRuntimePayloadDto,
+  ChatSourceReceiptDto
 } from '@sayachan/contracts'
 
 type ChatStreamEventType = 'tool_call_started' | 'tool_call_completed' | 'tool_call_failed' | 'text_delta' | 'completed' | 'error'
@@ -26,6 +28,8 @@ export type ChatStreamEvent = {
   round?: number
   output?: ChatResponseDto
   providerState?: ChatProviderState
+  sourceReceipts?: ChatSourceReceiptDto[]
+  debugTrace?: ChatDebugTraceDto
   error?: {
     code?: string
     message?: string
@@ -40,6 +44,20 @@ type StreamChatHandlers = {
   onDelta?: (delta: string, event: ChatStreamEvent) => void
   onCompleted?: (reply: string, event: ChatStreamEvent) => void
   onToolStatus?: (event: ChatStreamEvent) => void
+}
+
+function publicChatResponse(data: ChatResponseDto): ChatResponseDto {
+  const response: ChatResponseDto = { reply: data.reply }
+  if (data.providerState) {
+    response.providerState = data.providerState
+  }
+  if (data.sourceReceipts && data.sourceReceipts.length > 0) {
+    response.sourceReceipts = data.sourceReceipts
+  }
+  if (data.debugTrace) {
+    response.debugTrace = data.debugTrace
+  }
+  return response
 }
 
 export function buildChatRuntimePayload(
@@ -79,9 +97,7 @@ export async function sendChat(
   } catch {
     throw new Error('Empty or invalid reply from server')
   }
-  return data.providerState
-    ? { reply: data.reply, providerState: data.providerState }
-    : { reply: data.reply }
+  return publicChatResponse(data)
 }
 
 function parseSseBlock(block: string): ChatStreamEvent | null {
@@ -152,11 +168,20 @@ export async function streamChat(
 
       if (event.type === 'completed') {
         const reply = event.output?.reply || event.text || completedReply
-        const data = assertApiResponse({ reply }, chatResponseSchema, 'chat stream')
-        handlers.onCompleted?.(data.reply, event)
-        return event.providerState
-          ? { reply: data.reply, providerState: event.providerState }
-          : { reply: data.reply }
+        const data = assertApiResponse({
+          reply,
+          providerState: event.providerState,
+          sourceReceipts: event.output?.sourceReceipts || event.sourceReceipts,
+          debugTrace: event.output?.debugTrace || event.debugTrace
+        }, chatResponseSchema, 'chat stream')
+        const completedEvent = {
+          ...event,
+          output: data,
+          sourceReceipts: data.sourceReceipts,
+          debugTrace: data.debugTrace
+        }
+        handlers.onCompleted?.(data.reply, completedEvent)
+        return publicChatResponse(data)
       }
 
       if (event.type === 'error') {

@@ -94,6 +94,30 @@ describe('chat api boundary', () => {
       .toEqual({ lastUserMessage: '' })
   })
 
+  it('preserves safe source receipts from the chat response', async () => {
+    mockedFetch().mockResolvedValue(jsonResponse({
+      reply: 'Ready.',
+      sourceReceipts: [{ type: 'project', title: 'Sayachan AI Core' }],
+      debugTrace: {
+        tools: {
+          executed: [{ name: 'getProjectContext', status: 'completed', round: 1 }]
+        }
+      }
+    }))
+
+    await expect(sendChat([{ role: 'user', content: 'latest' }], emptyContext, {}))
+      .resolves
+      .toEqual({
+        reply: 'Ready.',
+        sourceReceipts: [{ type: 'project', title: 'Sayachan AI Core' }],
+        debugTrace: {
+          tools: {
+            executed: [{ name: 'getProjectContext', status: 'completed', round: 1 }]
+          }
+        }
+      })
+  })
+
   it('throws when the chat endpoint returns a non-ok response', async () => {
     mockedFetch().mockResolvedValue(jsonResponse(null, false, 503))
 
@@ -190,5 +214,54 @@ describe('chat api boundary', () => {
     await expect(streamChat([{ role: 'user', content: 'hello' }], emptyContext, {}))
       .rejects
       .toThrow('Chat stream ended before completion')
+  })
+
+  it('preserves safe source receipts from the streaming completion event', async () => {
+    let completedReceipts: unknown
+    let completedTrace: unknown
+    mockedFetch().mockResolvedValue(streamResponse([
+      'event: completed\ndata: {"type":"completed","text":"Hello","output":{"reply":"Hello","sourceReceipts":[{"type":"note","title":"Tool notes"}],"debugTrace":{"tools":{"executed":[{"name":"getNoteContent","status":"completed","round":1,"hasMore":true,"nextCursorPresent":true,"range":{"startChar":0,"endChar":800}}]}}}}\n\n'
+    ]))
+
+    await expect(streamChat(
+      [{ role: 'user', content: 'latest' }],
+      emptyContext,
+      {},
+      {
+        onCompleted: (_reply, event) => {
+          completedReceipts = event.sourceReceipts
+          completedTrace = event.debugTrace
+        }
+      }
+    )).resolves.toEqual({
+      reply: 'Hello',
+      sourceReceipts: [{ type: 'note', title: 'Tool notes' }],
+      debugTrace: {
+        tools: {
+          executed: [{
+            name: 'getNoteContent',
+            status: 'completed',
+            round: 1,
+            hasMore: true,
+            nextCursorPresent: true,
+            range: { startChar: 0, endChar: 800 }
+          }]
+        }
+      }
+    })
+
+    expect(completedReceipts).toEqual([{ type: 'note', title: 'Tool notes' }])
+    expect(completedTrace).toEqual({
+      tools: {
+        executed: [{
+          name: 'getNoteContent',
+          status: 'completed',
+          round: 1,
+          hasMore: true,
+          nextCursorPresent: true,
+          range: { startChar: 0, endChar: 800 }
+        }]
+      }
+    })
   })
 })

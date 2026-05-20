@@ -75,6 +75,10 @@ type RuntimeDocument = {
   [key: string]: unknown;
 };
 
+type HexStringLike = {
+  toHexString: () => string;
+};
+
 type LimitedResult<T> = {
   items: T[];
   truncated: boolean;
@@ -111,11 +115,28 @@ function positiveLimit(value: unknown, fallback: number): number {
 }
 
 function isDatabaseReady(): boolean {
-  return [Note, Project, Task].every((model) => model.db.readyState === 1);
+  return [Note, Project, Task].every((model) => Number(model.db.readyState) === 1);
+}
+
+function hasToObject(doc: RuntimeDocument): doc is RuntimeDocument & { toObject: () => Record<string, unknown> } {
+  return typeof doc.toObject === 'function';
 }
 
 function plainObject(doc: RuntimeDocument): Record<string, unknown> {
-  return typeof doc.toObject === 'function' ? doc.toObject() : { ...doc };
+  return hasToObject(doc) ? doc.toObject() : { ...doc };
+}
+
+function asRuntimeDocuments(value: unknown): RuntimeDocument[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is RuntimeDocument => Boolean(item) && typeof item === 'object')
+    : [];
+}
+
+function hasToHexString(value: unknown): value is HexStringLike {
+  return typeof value === 'object'
+    && value !== null
+    && 'toHexString' in value
+    && typeof value.toHexString === 'function';
 }
 
 function stringValue(value: unknown, fallback = ''): string {
@@ -128,7 +149,7 @@ function stringValue(value: unknown, fallback = ''): string {
   if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
     return value.toString();
   }
-  if (typeof value === 'object' && value !== null && 'toHexString' in value && typeof value.toHexString === 'function') {
+  if (hasToHexString(value)) {
     return value.toHexString();
   }
   return fallback;
@@ -209,14 +230,14 @@ async function resolveFocusTasks(projects: RuntimeDocument[], userId: ObjectId):
   }
 
   const uniqueIds = [...new Set(ids)];
-  const tasks = await Task.find({
+  const tasks = asRuntimeDocuments(await Task.find({
     $and: [
       { _id: { $in: uniqueIds } },
       { userId },
       buildArchiveFilter('false'),
       { status: 'active' }
     ]
-  }) as RuntimeDocument[];
+  }));
 
   return toFocusTaskMap(tasks);
 }

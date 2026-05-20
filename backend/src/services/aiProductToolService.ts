@@ -15,6 +15,10 @@ type RuntimeDocument = {
   [key: string]: unknown;
 };
 
+type HexStringLike = {
+  toHexString: () => string;
+};
+
 type ProductToolRequest = {
   name: string;
   arguments?: Record<string, unknown>;
@@ -25,6 +29,8 @@ const PRODUCT_DOMAINS = new Set(['projects', 'notes', 'tasks']);
 const TASK_STATUSES = new Set(['active', 'completed']);
 const NOTE_CONTENT_DEFAULT_CHARS = 2000;
 const NOTE_CONTENT_MAX_CHARS = 4000;
+const NOTE_CONTENT_CURSOR_VERSION = 1;
+const NOTE_CONTENT_CURSOR_TYPE = 'note_content';
 const SEARCH_DEFAULT_LIMIT = 5;
 const SEARCH_MAX_LIMIT = 10;
 
@@ -43,11 +49,18 @@ function asRuntimeDocuments(value: unknown): RuntimeDocument[] {
     : [];
 }
 
+function hasToHexString(value: unknown): value is HexStringLike {
+  return typeof value === 'object'
+    && value !== null
+    && 'toHexString' in value
+    && typeof value.toHexString === 'function';
+}
+
 function stringValue(value: unknown, fallback = ''): string {
   if (typeof value === 'string') return value;
   if (value === null || value === undefined) return fallback;
   if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return value.toString();
-  if (typeof value === 'object' && value !== null && 'toHexString' in value && typeof value.toHexString === 'function') {
+  if (hasToHexString(value)) {
     return value.toHexString();
   }
   return fallback;
@@ -68,6 +81,40 @@ function boundedInteger(value: unknown, fallback: number, min: number, max: numb
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return fallback;
   return Math.max(min, Math.min(max, Math.floor(numeric)));
+}
+
+function noteCursor(noteId: string, startChar: number): string {
+  return Buffer.from(JSON.stringify({
+    v: NOTE_CONTENT_CURSOR_VERSION,
+    type: NOTE_CONTENT_CURSOR_TYPE,
+    noteId,
+    startChar
+  }), 'utf8').toString('base64url');
+}
+
+function decodeNoteCursor(value: unknown, noteId: string, contentChars: number): { ok: true; startChar: number } | { ok: false } {
+  const rawCursor = stringValue(value).trim();
+  if (!rawCursor) return { ok: true, startChar: 0 };
+
+  try {
+    const decoded = JSON.parse(Buffer.from(rawCursor, 'base64url').toString('utf8')) as Record<string, unknown>;
+    if (
+      decoded.v !== NOTE_CONTENT_CURSOR_VERSION
+      || decoded.type !== NOTE_CONTENT_CURSOR_TYPE
+      || decoded.noteId !== noteId
+    ) {
+      return { ok: false };
+    }
+
+    const startChar = Number(decoded.startChar);
+    if (!Number.isInteger(startChar) || startChar < 0) {
+      return { ok: false };
+    }
+
+    return { ok: true, startChar: Math.min(startChar, contentChars) };
+  } catch {
+    return { ok: false };
+  }
 }
 
 function excerpt(value: unknown, maxChars: number): string {
@@ -298,13 +345,29 @@ async function getNoteContent(args: Record<string, unknown>, userId: ObjectId) {
   if (!note) return { status: 'not_found', reason: 'note_not_available' };
 
   const normalized = plainObject(note);
+  const noteIdText = stringValue(normalized._id);
   const content = stringValue(normalized.content);
-  const returnedContent = content.length <= maxChars ? content : content.slice(0, maxChars);
+  const decodedCursor = decodeNoteCursor(args.cursor, noteIdText, content.length);
+  if (!decodedCursor.ok) {
+    return {
+      status: 'not_found',
+      reason: 'invalid_cursor',
+      note: {
+        id: noteIdText,
+        title: stringValue(normalized.title)
+      }
+    };
+  }
+
+  const startChar = decodedCursor.startChar;
+  const endChar = Math.min(content.length, startChar + maxChars);
+  const returnedContent = content.slice(startChar, endChar);
+  const hasMore = endChar < content.length;
 
   return {
     status: 'available',
     note: {
-      id: stringValue(normalized._id),
+      id: noteIdText,
       title: stringValue(normalized.title),
       lifecycle: isArchivedEntity(normalized) ? 'archived' : 'active',
       isPinned: normalized.isPinned === true,
@@ -314,8 +377,11 @@ async function getNoteContent(args: Record<string, unknown>, userId: ObjectId) {
     content: returnedContent,
     contentChars: content.length,
     returnedChars: returnedContent.length,
-    truncated: returnedContent.length < content.length,
-    truncationReason: returnedContent.length < content.length ? 'maxChars' : null
+    range: { startChar, endChar },
+    hasMore,
+    nextCursor: hasMore ? noteCursor(noteIdText, endChar) : null,
+    truncated: hasMore,
+    truncationReason: hasMore ? 'maxChars' : null
   };
 }
 
@@ -335,6 +401,7 @@ export async function executeProductContextTool({ name, arguments: args = {}, us
 export const __test__ = {
   NOTE_CONTENT_DEFAULT_CHARS,
   NOTE_CONTENT_MAX_CHARS,
+  NOTE_CONTENT_CURSOR_VERSION,
   SEARCH_DEFAULT_LIMIT,
   SEARCH_MAX_LIMIT
 };
