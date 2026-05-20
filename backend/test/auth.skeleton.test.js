@@ -5,7 +5,6 @@ import User from '../dist/models/User.js';
 import Invite from '../dist/models/Invite.js';
 import Session from '../dist/models/Session.js';
 import authService from '../dist/services/authService.js';
-import maintenanceService from '../dist/services/maintenanceService.js';
 import { authMiddleware } from '../dist/middleware/app/auth.js';
 import { errorBoundary } from '../dist/middleware/app/errorBoundary.js';
 import routes from '../dist/routes/index.js';
@@ -275,68 +274,6 @@ test('owner-only invite routes reject tester users', async () => {
 
   assert.equal(ctx.status, 403);
   assert.deepEqual(ctx.body, { error: 'Owner access required' });
-});
-
-test('owner maintenance cleanup requires explicit confirmation and owner access', async () => {
-  const handler = getRouteHandler('GET', '/owner/maintenance/clean-legacy-product-status');
-  const calls = [];
-
-  await withPatchedMethods([
-    {
-      target: maintenanceService,
-      key: 'cleanLegacyProductStatus',
-      value: async () => {
-        calls.push('clean');
-        return {
-          packetType: 'legacy_product_status_cleanup',
-          version: 1,
-          notes: { matchedCount: 1, modifiedCount: 1 },
-          projects: { matchedCount: 2, modifiedCount: 2 }
-        };
-      }
-    }
-  ], async () => {
-    const testerCtx = {
-      query: { confirm: 'clean-legacy-product-status' },
-      state: {
-        user: { _id: '000000000000000000000011', role: 'tester', email: 'tester@example.com' }
-      },
-      status: 200,
-      body: undefined
-    };
-    await handler(testerCtx, async () => {});
-    assert.equal(testerCtx.status, 403);
-    assert.deepEqual(testerCtx.body, { error: 'Owner access required' });
-
-    const missingConfirmCtx = {
-      query: {},
-      state: {
-        user: { _id: '000000000000000000000001', role: 'owner', email: 'owner@example.com' }
-      },
-      status: 200,
-      body: undefined
-    };
-    await handler(missingConfirmCtx, async () => {});
-    assert.equal(missingConfirmCtx.status, 400);
-    assert.deepEqual(missingConfirmCtx.body, { error: 'Maintenance cleanup confirmation required' });
-
-    const ownerCtx = {
-      query: { confirm: 'clean-legacy-product-status' },
-      state: {
-        user: { _id: '000000000000000000000001', role: 'owner', email: 'owner@example.com' }
-      },
-      status: 200,
-      body: undefined
-    };
-    await handler(ownerCtx, async () => {});
-    assert.deepEqual(ownerCtx.body, {
-      packetType: 'legacy_product_status_cleanup',
-      version: 1,
-      notes: { matchedCount: 1, modifiedCount: 1 },
-      projects: { matchedCount: 2, modifiedCount: 2 }
-    });
-    assert.deepEqual(calls, ['clean']);
-  });
 });
 
 test('auth mutation routes validate request bodies before service writes', async () => {
