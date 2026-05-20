@@ -10,7 +10,7 @@ import type {
   RouteHandler
 } from './routeTypes.js';
 import aiService from '../services/aiService.js';
-import { requireCurrentUser } from '../middleware/route/currentUser.js';
+import { requireCurrentUser, resolveCurrentUserId } from '../middleware/route/currentUser.js';
 import { validateBody } from '../middleware/route/requestBodyValidation.js';
 import { validatedBody } from './routeState.js';
 import {
@@ -46,7 +46,9 @@ const suggestProjectNextActionsHandler: AiHandler = async (ctx) => {
 };
 
 const chatHandler: AiHandler = async (ctx) => {
-  ctx.body = await aiService.chat(validatedBody<AiChatRequestDto>(ctx));
+  ctx.body = await aiService.chat(validatedBody<AiChatRequestDto>(ctx), {
+    userId: resolveCurrentUserId(ctx)
+  });
 };
 
 async function writeSseEvent(ctx: Parameters<AiHandler>[0], event: unknown): Promise<void> {
@@ -86,7 +88,9 @@ const chatStreamHandler: AiHandler = async (ctx) => {
   });
 
   try {
-    for await (const event of aiService.chatStream(validatedBody<AiChatRequestDto>(ctx))) {
+    for await (const event of aiService.chatStream(validatedBody<AiChatRequestDto>(ctx), {
+      userId: resolveCurrentUserId(ctx)
+    })) {
       if (closed) {
         break;
       }

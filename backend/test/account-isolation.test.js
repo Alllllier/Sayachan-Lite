@@ -5,7 +5,9 @@ import Note from '../dist/models/Note.js';
 import Project from '../dist/models/Project.js';
 import Task from '../dist/models/Task.js';
 import aiService from '../dist/services/aiService.js';
+import productContextService from '../dist/services/aiProductContextService.js';
 import { errorBoundary } from '../dist/middleware/app/errorBoundary.js';
+import { toObjectId } from '../dist/domain/objectIds.js';
 import routes from '../dist/routes/index.js';
 
 function getRouteHandler(router, method, path) {
@@ -82,6 +84,20 @@ function normalizeIds(value) {
   }
 
   return value;
+}
+
+function findQuery(docs, capture = {}) {
+  return {
+    sort(sort) {
+      capture.sort = sort;
+      return {
+        limit(limit) {
+          capture.limit = limit;
+          return Promise.resolve(docs.slice(0, limit));
+        }
+      };
+    }
+  };
 }
 
 function hasClause(query, predicate) {
@@ -404,6 +420,159 @@ test('AI project next-action resolves focus tasks by task id and current user', 
   }
 });
 
+test('AI product context snapshot uses current-user filters and trims product fields', async () => {
+  const userId = toObjectId('000000000000000000000017', 'test.userId');
+  const projectCapture = {};
+  const taskCapture = {};
+  const noteCapture = {};
+  let focusTaskQuery = null;
+
+  await withPatchedMethods([
+    {
+      target: Project,
+      key: 'find',
+      value: (filter) => {
+        projectCapture.filter = filter;
+        return findQuery([
+          createDoc({
+            _id: '000000000000000000000211',
+            name: 'Owned project',
+            summary: 'Bridge work',
+            status: 'in_progress',
+            isPinned: true,
+            currentFocusTaskId: '000000000000000000000311',
+            updatedAt: new Date('2026-05-20T00:00:00.000Z')
+          }),
+          createDoc({
+            _id: '000000000000000000000212',
+            name: 'Extra project',
+            summary: 'Should be omitted by limit',
+            status: 'pending'
+          })
+        ], projectCapture);
+      }
+    },
+    {
+      target: Task,
+      key: 'find',
+      value: (filter) => {
+        if (filter?._id || filter?.$and?.some((clause) => clause._id)) {
+          focusTaskQuery = filter;
+          return Promise.resolve([
+            createDoc({
+              _id: '000000000000000000000311',
+              title: 'Focus the bridge',
+              status: 'active'
+            })
+          ]);
+        }
+
+        taskCapture.filter = filter;
+        return findQuery([
+          createDoc({
+            _id: '000000000000000000000312',
+            title: 'Task in snapshot',
+            status: 'active',
+            originModule: 'project',
+            originId: '000000000000000000000211',
+            updatedAt: new Date('2026-05-20T01:00:00.000Z')
+          }),
+          createDoc({
+            _id: '000000000000000000000313',
+            title: 'Extra task',
+            status: 'active'
+          })
+        ], taskCapture);
+      }
+    },
+    {
+      target: Note,
+      key: 'find',
+      value: (filter) => {
+        noteCapture.filter = filter;
+        return findQuery([
+          createDoc({
+            _id: '000000000000000000000111',
+            title: 'Owned note',
+            content: 'This note excerpt should be trimmed for the product context snapshot.',
+            isPinned: true,
+            updatedAt: new Date('2026-05-20T02:00:00.000Z')
+          }),
+          createDoc({
+            _id: '000000000000000000000112',
+            title: 'Extra note',
+            content: 'Should be omitted by limit'
+          })
+        ], noteCapture);
+      }
+    }
+  ], async () => {
+    const snapshot = await productContextService.buildProductContextSnapshot(userId, {
+      allowDisconnected: true,
+      limits: {
+        maxProjects: 1,
+        maxTasks: 1,
+        maxNotes: 1,
+        noteExcerptChars: 18
+      },
+      now: new Date('2026-05-20T03:00:00.000Z')
+    });
+
+    assert.deepEqual(normalizeIds(projectCapture.filter), {
+      $and: [
+        { archived: { $ne: true } },
+        { userId: '000000000000000000000017' }
+      ]
+    });
+    assert.deepEqual(normalizeIds(taskCapture.filter), {
+      $and: [
+        { archived: { $ne: true } },
+        { userId: '000000000000000000000017' },
+        { status: 'active' }
+      ]
+    });
+    assert.deepEqual(normalizeIds(noteCapture.filter), {
+      $and: [
+        { archived: { $ne: true } },
+        { userId: '000000000000000000000017' }
+      ]
+    });
+    assert.deepEqual(normalizeIds(focusTaskQuery), {
+      $and: [
+        { _id: { $in: ['000000000000000000000311'] } },
+        { userId: '000000000000000000000017' },
+        { archived: { $ne: true } },
+        { status: 'active' }
+      ]
+    });
+    assert.equal(projectCapture.limit, 2);
+    assert.equal(taskCapture.limit, 2);
+    assert.equal(noteCapture.limit, 2);
+
+    assert.equal(snapshot.status, 'available');
+    assert.equal(snapshot.generatedAt, '2026-05-20T03:00:00.000Z');
+    assert.deepEqual(snapshot.projects, [{
+      id: '000000000000000000000211',
+      name: 'Owned project',
+      summary: 'Bridge work',
+      status: 'in_progress',
+      isPinned: true,
+      currentFocusTaskTitle: 'Focus the bridge',
+      updatedAt: '2026-05-20T00:00:00.000Z'
+    }]);
+    assert.deepEqual(snapshot.tasks, [{
+      id: '000000000000000000000312',
+      title: 'Task in snapshot',
+      status: 'active',
+      originModule: 'project',
+      originId: '000000000000000000000211',
+      updatedAt: '2026-05-20T01:00:00.000Z'
+    }]);
+    assert.equal(snapshot.notes[0].excerpt, 'This note excerpt…');
+    assert.deepEqual(snapshot.omitted.map((item) => item.source), ['projects', 'tasks', 'notes']);
+  });
+});
+
 test('AI routes validate request bodies before downstream AI or model work', async () => {
   const noteAiHandler = getRouteHandler(routes, 'POST', '/ai/notes/tasks');
   const projectAiHandler = getRouteHandler(routes, 'POST', '/ai/projects/next-action');
@@ -515,6 +684,62 @@ test('AI chat validation strips unknown message fields before bridge handoff', a
       lastUserMessage: 'hello'
     });
   });
+});
+
+test('AI chat replaces caller-supplied productContext with backend-built snapshot', async () => {
+  const userId = toObjectId('000000000000000000000018', 'test.userId');
+  let capturedCall = null;
+  const trustedProductContext = {
+    packetType: 'product_context_snapshot',
+    version: 1,
+    status: 'available',
+    generatedAt: '2026-05-20T00:00:00.000Z',
+    sources: ['projects'],
+    limits: {
+      maxProjects: 5,
+      maxTasks: 8,
+      maxNotes: 5,
+      noteExcerptChars: 280
+    },
+    projects: [{
+      id: 'trusted-project',
+      name: 'Trusted backend project',
+      summary: 'Backend-owned context',
+      status: 'in_progress',
+      isPinned: true,
+      currentFocusTaskTitle: null,
+      updatedAt: '2026-05-20T00:00:00.000Z'
+    }],
+    tasks: [],
+    notes: [],
+    omitted: []
+  };
+  const restoreProductContextBuilder = aiService.__test__.setProductContextBuilderForTest(async () => trustedProductContext);
+  const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async (messages, context, options) => {
+    capturedCall = { messages, context, options };
+    return { reply: 'trusted context ok' };
+  });
+
+  try {
+    const result = await aiService.chat({
+      messages: [{ role: 'user', content: 'hello trusted context' }],
+      context: {
+        activeTask: 'bridge',
+        productContext: {
+          status: 'available',
+          projects: [{ id: 'spoofed', name: 'Spoofed caller project' }]
+        }
+      },
+      runtimeControls: { personalityBaseline: 'warm' }
+    }, { userId });
+
+    assert.deepEqual(result, { reply: 'trusted context ok' });
+    assert.equal(capturedCall.context.activeTask, 'bridge');
+    assert.deepEqual(capturedCall.context.productContext, trustedProductContext);
+  } finally {
+    restoreChatRunner();
+    restoreProductContextBuilder();
+  }
 });
 
 test('AI chat provider selection defaults to mock and explicit OpenAI follows key ownership', async () => {

@@ -10,6 +10,10 @@ import { chat as privateCoreChat, chatStream as privateCoreChatStream } from '..
 import Note from '../models/Note.js';
 import Project from '../models/Project.js';
 import Task from '../models/Task.js';
+import {
+  buildProductContextSnapshot,
+  type ProductContextSnapshot
+} from './aiProductContextService.js';
 
 type AiPayload = {
   _id?: unknown;
@@ -46,10 +50,15 @@ type ChatStreamRunner = typeof privateCoreChatStream;
 type ChatProvider = 'mock' | 'openai';
 type ChatProviderReadinessCheck = (provider: ChatProvider) => boolean;
 type ChatStreamEvent = Awaited<ReturnType<ChatStreamRunner>> extends AsyncIterable<infer TEvent> ? TEvent : never;
+type ProductContextBuilder = (userId: ObjectId | null | undefined) => Promise<ProductContextSnapshot | null>;
+type ChatExecutionOptions = {
+  userId?: ObjectId | null;
+};
 
 let runChat: ChatRunner = privateCoreChat;
 let runChatStream: ChatStreamRunner = privateCoreChatStream;
 let chatProviderReadinessCheck: ChatProviderReadinessCheck = defaultChatProviderReadinessCheck;
+let productContextBuilder: ProductContextBuilder = buildProductContextSnapshot;
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -171,6 +180,32 @@ function privateCoreRuntimeControls(runtimeControls: AiChatRequestDto['runtimeCo
     };
   }
   return controls;
+}
+
+function mergeProductContext(
+  context: AiChatRequestDto['context'],
+  productContext: ProductContextSnapshot | null
+): AiChatRequestDto['context'] {
+  if (!productContext) {
+    return context;
+  }
+
+  if (context && typeof context === 'object' && !Array.isArray(context)) {
+    return {
+      ...context,
+      productContext
+    };
+  }
+
+  return { productContext };
+}
+
+async function buildPrivateCoreContext(
+  context: AiChatRequestDto['context'],
+  options: ChatExecutionOptions
+): Promise<AiChatRequestDto['context']> {
+  const productContext = await productContextBuilder(options.userId);
+  return mergeProductContext(context, productContext);
 }
 
 function normalizeDoc(doc: AiPayload | null): AiPayload | null {
@@ -360,7 +395,7 @@ export async function suggestProjectNextActions(
   }
 }
 
-export async function chat({ messages, context, runtimeControls }: AiChatRequestDto) {
+export async function chat({ messages, context, runtimeControls }: AiChatRequestDto, options: ChatExecutionOptions = {}) {
   const provider = selectedChatProvider();
 
   if (!isChatProviderReady(provider)) {
@@ -370,7 +405,8 @@ export async function chat({ messages, context, runtimeControls }: AiChatRequest
 
   try {
     // TODO: extract options (e.g. thinkingEnabled) from request body when strategy is ready
-    const { reply, providerState } = await runChat(messages, context, {
+    const privateCoreContext = await buildPrivateCoreContext(context, options);
+    const { reply, providerState } = await runChat(messages, privateCoreContext, {
       runtimeControls: privateCoreRuntimeControls(runtimeControls, provider)
     });
     console.log('[AI Route] Private-core v3 chat reply generated, length:', reply?.length);
@@ -382,7 +418,7 @@ export async function chat({ messages, context, runtimeControls }: AiChatRequest
   }
 }
 
-export async function* chatStream({ messages, context, runtimeControls }: AiChatRequestDto): AsyncIterable<ChatStreamEvent> {
+export async function* chatStream({ messages, context, runtimeControls }: AiChatRequestDto, options: ChatExecutionOptions = {}): AsyncIterable<ChatStreamEvent> {
   const provider = selectedChatProvider();
 
   if (!isChatProviderReady(provider)) {
@@ -392,7 +428,8 @@ export async function* chatStream({ messages, context, runtimeControls }: AiChat
   }
 
   try {
-    yield* runChatStream(messages, context, {
+    const privateCoreContext = await buildPrivateCoreContext(context, options);
+    yield* runChatStream(messages, privateCoreContext, {
       runtimeControls: privateCoreRuntimeControls(runtimeControls, provider)
     });
   } catch (error) {
@@ -434,6 +471,13 @@ export const __test__ = {
     runChatStream = runner;
     return () => {
       runChatStream = previous;
+    };
+  },
+  setProductContextBuilderForTest(builder: ProductContextBuilder) {
+    const previous = productContextBuilder;
+    productContextBuilder = builder;
+    return () => {
+      productContextBuilder = previous;
     };
   }
 };

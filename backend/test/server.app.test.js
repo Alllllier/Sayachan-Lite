@@ -51,6 +51,34 @@ function parseSseEvents(text) {
     });
 }
 
+function productContextFixture() {
+  return {
+    packetType: 'product_context_snapshot',
+    version: 1,
+    status: 'available',
+    generatedAt: '2026-05-20T00:00:00.000Z',
+    sources: ['projects', 'tasks', 'notes'],
+    limits: {
+      maxProjects: 5,
+      maxTasks: 8,
+      maxNotes: 5,
+      noteExcerptChars: 280
+    },
+    projects: [{
+      id: 'project-1',
+      name: 'Route project',
+      summary: 'Route smoke product context',
+      status: 'in_progress',
+      isPinned: true,
+      currentFocusTaskTitle: 'Route focus task',
+      updatedAt: '2026-05-20T00:00:00.000Z'
+    }],
+    tasks: [],
+    notes: [],
+    omitted: []
+  };
+}
+
 function withPatchedMethods(patches, run) {
   const originals = patches.map(({ target, key }) => ({ target, key, value: target[key] }));
 
@@ -147,6 +175,8 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
   const originalProvider = process.env.SAYACHAN_AI_PROVIDER;
   let loadedToken;
   let capturedChatCall;
+  let productContextUserId;
+  const productContext = productContextFixture();
 
   await withPatchedMethods([
     {
@@ -160,6 +190,10 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
   ], async () => {
     process.env.SAYACHAN_AI_PROVIDER = 'openai';
     const restoreProviderReady = aiService.__test__.setChatProviderKeyCheckForTest(() => true);
+    const restoreProductContextBuilder = aiService.__test__.setProductContextBuilderForTest(async (userId) => {
+      productContextUserId = userId?.toHexString();
+      return productContext;
+    });
     const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async (messages, context, options) => {
       capturedChatCall = { messages, context, options };
       return { reply: 'authenticated smoke ok' };
@@ -184,10 +218,11 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
       const body = await response.json();
 
       assert.equal(loadedToken, 'route-smoke-session');
+      assert.equal(productContextUserId, '000000000000000000000001');
       assert.equal(response.status, 200);
       assert.deepEqual(body, { reply: 'authenticated smoke ok' });
       assert.deepEqual(capturedChatCall.messages, [{ role: 'user', content: 'hello from route smoke' }]);
-      assert.deepEqual(capturedChatCall.context, { activeTask: 'smoke-task' });
+      assert.deepEqual(capturedChatCall.context, { activeTask: 'smoke-task', productContext });
       assert.deepEqual(capturedChatCall.options, {
         runtimeControls: {
           personalityBaseline: 'warm',
@@ -197,6 +232,7 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
       });
     } finally {
       restoreChatRunner();
+      restoreProductContextBuilder();
       restoreProviderReady();
       if (originalProvider === undefined) {
         delete process.env.SAYACHAN_AI_PROVIDER;
@@ -215,6 +251,8 @@ test('authenticated /ai/chat/stream reaches controlled private-core stream path 
   const originalProvider = process.env.SAYACHAN_AI_PROVIDER;
   let loadedToken;
   let capturedStreamCall;
+  let productContextUserId;
+  const productContext = productContextFixture();
 
   await withPatchedMethods([
     {
@@ -228,6 +266,10 @@ test('authenticated /ai/chat/stream reaches controlled private-core stream path 
   ], async () => {
     process.env.SAYACHAN_AI_PROVIDER = 'openai';
     const restoreProviderReady = aiService.__test__.setChatProviderKeyCheckForTest(() => true);
+    const restoreProductContextBuilder = aiService.__test__.setProductContextBuilderForTest(async (userId) => {
+      productContextUserId = userId?.toHexString();
+      return productContext;
+    });
     const restoreChatStreamRunner = aiService.__test__.setChatStreamRunnerForTest(async function* (messages, context, options) {
       capturedStreamCall = { messages, context, options };
       yield { packetType: 'chat_stream_event', version: 1, type: 'text_delta', delta: 'hello ', text: 'hello ' };
@@ -254,6 +296,7 @@ test('authenticated /ai/chat/stream reaches controlled private-core stream path 
       const events = parseSseEvents(await response.text());
 
       assert.equal(loadedToken, 'route-stream-session');
+      assert.equal(productContextUserId, '000000000000000000000001');
       assert.equal(response.status, 200);
       assert.equal(response.headers.get('content-type'), 'text/event-stream; charset=utf-8');
       assert.deepEqual(events.map((event) => event.event), ['text_delta', 'text_delta', 'completed']);
@@ -262,7 +305,7 @@ test('authenticated /ai/chat/stream reaches controlled private-core stream path 
       assert.equal(events[1].data.delta, 'stream');
       assert.deepEqual(events[2].data.output, { reply: 'hello stream' });
       assert.deepEqual(capturedStreamCall.messages, [{ role: 'user', content: 'hello from stream route' }]);
-      assert.deepEqual(capturedStreamCall.context, { activeTask: 'stream-smoke-task' });
+      assert.deepEqual(capturedStreamCall.context, { activeTask: 'stream-smoke-task', productContext });
       assert.deepEqual(capturedStreamCall.options, {
         runtimeControls: {
           personalityBaseline: 'warm',
@@ -272,6 +315,7 @@ test('authenticated /ai/chat/stream reaches controlled private-core stream path 
       });
     } finally {
       restoreChatStreamRunner();
+      restoreProductContextBuilder();
       restoreProviderReady();
       if (originalProvider === undefined) {
         delete process.env.SAYACHAN_AI_PROVIDER;
