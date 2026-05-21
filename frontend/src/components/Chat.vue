@@ -37,7 +37,10 @@ const {
   isStreamingReply,
   toolStatusText,
   getMessageSourceReceipts,
+  getMessageMemoryCandidate,
   getMessageFocusSnapshot,
+  acceptMemoryCandidate,
+  dismissMemoryCandidate,
   chatInputDisabled,
   chatSendButtonLabel,
   openPopup,
@@ -93,6 +96,18 @@ function sourceTypeLabel(type: string): string {
   if (type === 'note') return t('chat.sourceNote')
   if (type === 'task') return t('chat.sourceTask')
   return t('chat.sourceItem')
+}
+
+function memoryCandidateTypeLabel(type?: string): string {
+  if (type === 'continuity_hint') return t('settings.memoryTypeContinuity')
+  return t('settings.memoryTypePreference')
+}
+
+function memoryCandidateSaveLabel(index: number): string {
+  const status = getMessageMemoryCandidate(index)?.status
+  if (status === 'saving') return t('common.saving')
+  if (status === 'saved') return t('chat.memoryCandidateSaved')
+  return t('chat.memoryCandidateSave')
 }
 
 function focusSnapshotLabel(index: number): string {
@@ -197,6 +212,44 @@ function debugUsageHasTokens(usage: DebugProviderUsageTrace): boolean {
                   <span class="chat-source-type">{{ sourceTypeLabel(receipt.type) }}</span>
                   <span class="chat-source-title">{{ receipt.title }}</span>
                 </span>
+              </div>
+              <div
+                v-if="getMessageMemoryCandidate(idx) && getMessageMemoryCandidate(idx)?.status !== 'dismissed'"
+                class="chat-memory-candidate"
+                :class="{ 'chat-memory-candidate--saved': getMessageMemoryCandidate(idx)?.status === 'saved', 'chat-memory-candidate--error': getMessageMemoryCandidate(idx)?.status === 'error' }"
+              >
+                <div class="chat-memory-candidate-header">
+                  <span>{{ t('chat.memoryCandidateTitle') }}</span>
+                  <span>{{ memoryCandidateTypeLabel(getMessageMemoryCandidate(idx)?.candidate.type) }}</span>
+                </div>
+                <div class="chat-memory-candidate-content">
+                  {{ getMessageMemoryCandidate(idx)?.candidate.content }}
+                </div>
+                <div v-if="getMessageMemoryCandidate(idx)?.candidate.reason" class="chat-memory-candidate-reason">
+                  {{ getMessageMemoryCandidate(idx)?.candidate.reason }}
+                </div>
+                <div class="chat-memory-candidate-actions">
+                  <span v-if="getMessageMemoryCandidate(idx)?.status === 'error'" class="chat-memory-candidate-status">
+                    {{ t('chat.memoryCandidateError') }}
+                  </span>
+                  <button
+                    type="button"
+                    class="chat-memory-action chat-memory-action--primary"
+                    :disabled="getMessageMemoryCandidate(idx)?.status === 'saving' || getMessageMemoryCandidate(idx)?.status === 'saved'"
+                    @click="acceptMemoryCandidate(idx)"
+                  >
+                    {{ memoryCandidateSaveLabel(idx) }}
+                  </button>
+                  <button
+                    v-if="getMessageMemoryCandidate(idx)?.status !== 'saved'"
+                    type="button"
+                    class="chat-memory-action"
+                    :disabled="getMessageMemoryCandidate(idx)?.status === 'saving'"
+                    @click="dismissMemoryCandidate(idx)"
+                  >
+                    {{ t('chat.memoryCandidateDismiss') }}
+                  </button>
+                </div>
               </div>
             </div>
             <div v-else class="chat-user-stack">
@@ -430,6 +483,13 @@ function debugUsageHasTokens(usage: DebugProviderUsageTrace): boolean {
                   <div class="runtime-debug-line">
                     <span>{{ t('chat.debugUsageProvider') }}</span>
                     <span>{{ debugProviderLabel(debugProviderUsageTrace) }}</span>
+                  </div>
+                  <div v-if="debugProviderUsageTrace.finishReason || debugProviderUsageTrace.incompleteReason" class="runtime-debug-line">
+                    <span>{{ t('chat.debugUsageFinish') }}</span>
+                    <span>
+                      {{ debugProviderUsageTrace.incomplete ? t('chat.debugUsageIncomplete') : (debugProviderUsageTrace.finishReason || t('chat.debugEmpty')) }}
+                      <template v-if="debugProviderUsageTrace.incompleteReason"> · {{ debugProviderUsageTrace.incompleteReason }}</template>
+                    </span>
                   </div>
                   <div v-if="debugUsageHasTokens(debugProviderUsageTrace)" class="runtime-debug-line">
                     <span>{{ t('chat.debugUsageTokens') }}</span>
@@ -726,6 +786,89 @@ function debugUsageHasTokens(usage: DebugProviderUsageTrace): boolean {
 
 .chat-source-type::after {
   content: " · ";
+}
+
+.chat-memory-candidate {
+  width: 100%;
+  padding: 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--action-primary) 22%, var(--border-default));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--action-primary) 6%, var(--surface-card));
+  color: var(--text-primary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.chat-memory-candidate--saved {
+  border-color: color-mix(in srgb, var(--action-primary) 40%, var(--border-default));
+}
+
+.chat-memory-candidate--error {
+  border-color: #e0a5a5;
+  background: #fff8f8;
+}
+
+.chat-memory-candidate-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.chat-memory-candidate-content {
+  margin-top: 5px;
+  word-break: break-word;
+}
+
+.chat-memory-candidate-reason {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  word-break: break-word;
+}
+
+.chat-memory-candidate-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.chat-memory-candidate-status {
+  margin-right: auto;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.chat-memory-action {
+  border: 1px solid var(--border-default);
+  border-radius: 7px;
+  background: var(--surface-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1.2;
+  padding: 5px 8px;
+}
+
+.chat-memory-action:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.chat-memory-action--primary {
+  border-color: color-mix(in srgb, var(--action-primary) 44%, var(--border-default));
+  color: var(--action-primary);
+}
+
+.chat-memory-action:disabled {
+  cursor: default;
+  opacity: 0.7;
 }
 
 .chat-empty-invite {

@@ -17,7 +17,7 @@ const memoryEntrySchema = new mongoose.Schema({
   },
   source: {
     type: String,
-    enum: ['manual'],
+    enum: ['manual', 'assistant_suggested_user_approved'],
     default: 'manual'
   },
   userId: {

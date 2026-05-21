@@ -92,6 +92,10 @@ function canReturnDebugTrace(options: ChatExecutionOptions): boolean {
   return options.userRole === 'owner' || options.userRole === 'tester';
 }
 
+function canUseMemoryCandidate(options: ChatExecutionOptions): boolean {
+  return options.userRole === 'owner' || options.userRole === 'tester';
+}
+
 function isContextRecord(context: unknown): context is Record<string, unknown> {
   return Boolean(context) && typeof context === 'object' && !Array.isArray(context);
 }
@@ -111,7 +115,7 @@ function privateCoreRuntimeControls(
   provider: ChatProvider,
   options: ChatExecutionOptions = {}
 ) {
-  const { debugTrace, ...safeRuntimeControls } = runtimeControls || {};
+  const { debugTrace, memoryCandidate, ...safeRuntimeControls } = runtimeControls || {};
   const controls: Record<string, unknown> = {
     ...safeRuntimeControls,
     provider
@@ -119,6 +123,10 @@ function privateCoreRuntimeControls(
 
   if (debugTrace === true && canReturnDebugTrace(options)) {
     controls.debugTrace = true;
+  }
+
+  if (memoryCandidate === true && provider === 'openai' && canUseMemoryCandidate(options)) {
+    controls.memoryCandidate = { enabled: true };
   }
 
   if (provider === 'openai' && options.userId) {

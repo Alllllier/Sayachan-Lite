@@ -560,7 +560,11 @@ test('memory ledger routes are scoped to current owner or tester', async () => {
   ], async () => {
     await listHandler(createCtx({ userId: '000000000000000000000015' }), async () => {});
     await createHandler(createCtx({
-      body: { type: 'preference', content: '  Use plain language  ' },
+      body: {
+        type: 'preference',
+        content: '  Use plain language  ',
+        source: 'assistant_suggested_user_approved'
+      },
       userId: '000000000000000000000015'
     }), async () => {});
     await updateHandler(createCtx({
@@ -575,6 +579,7 @@ test('memory ledger routes are scoped to current owner or tester', async () => {
 
   assert.equal(seen.every((entry) => hasClause(entry.query, (clause) => clause.userId === '000000000000000000000015')), true);
   assert.equal(seen.some((entry) => entry.op === 'create' && entry.payload.content === 'Use plain language'), true);
+  assert.equal(seen.some((entry) => entry.op === 'create' && entry.payload.source === 'assistant_suggested_user_approved'), true);
   assert.equal(seen.some((entry) => entry.op === 'update' && entry.update.active === false), true);
   assert.equal(seen.some((entry) => entry.op === 'update' && entry.update.active === true), true);
   assert.equal(seen.some((entry) => entry.op === 'delete'), true);
@@ -724,6 +729,7 @@ test('AI chat validation strips unknown message fields before bridge handoff', a
           unknownFutureSlot: 'strip me too'
         },
         lastUserMessage: 'hello',
+        memoryCandidate: true,
         unknownRuntimeField: 'strip me'
       }
     };
@@ -745,7 +751,8 @@ test('AI chat validation strips unknown message fields before bridge handoff', a
         thinking: null,
         debugContext: null
       },
-      lastUserMessage: 'hello'
+      lastUserMessage: 'hello',
+      memoryCandidate: true
     });
   });
 });
@@ -1015,6 +1022,60 @@ test('AI chat forwards debug trace requests only for owner and tester roles', as
     restoreChatRunner();
     restoreMemoryContextBuilder();
     restoreProductContextBuilder();
+  }
+});
+
+test('AI chat forwards memory candidate requests only for owner and tester roles on OpenAI provider', async () => {
+  const originalProvider = process.env.SAYACHAN_AI_PROVIDER;
+  const userId = toObjectId('000000000000000000000026', 'test.userId');
+  const capturedCalls = [];
+  const restoreProviderReady = aiService.__test__.setChatProviderKeyCheckForTest(() => true);
+  const restoreProductContextBuilder = aiService.__test__.setProductContextBuilderForTest(async () => null);
+  const restoreMemoryContextBuilder = aiService.__test__.setMemoryContextBuilderForTest(async () => null);
+  const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async (_messages, _context, options) => {
+    capturedCalls.push(options);
+    return options.runtimeControls?.memoryCandidate?.enabled === true
+      ? {
+          reply: 'candidate ok',
+          memoryCandidate: {
+            type: 'preference',
+            content: 'Use plain language first.',
+            source: 'assistant_suggested_user_approved'
+          }
+        }
+      : { reply: 'candidate off' };
+  });
+
+  try {
+    process.env.SAYACHAN_AI_PROVIDER = 'openai';
+    const allowed = await aiService.chat({
+      messages: [{ role: 'user', content: 'remember this maybe' }],
+      runtimeControls: { memoryCandidate: true }
+    }, { userId, userRole: 'tester' });
+
+    const blocked = await aiService.chat({
+      messages: [{ role: 'user', content: 'remember this maybe' }],
+      runtimeControls: { memoryCandidate: true }
+    }, { userId, userRole: 'viewer' });
+
+    assert.deepEqual(capturedCalls[0].runtimeControls.memoryCandidate, { enabled: true });
+    assert.deepEqual(allowed.memoryCandidate, {
+      type: 'preference',
+      content: 'Use plain language first.',
+      source: 'assistant_suggested_user_approved'
+    });
+    assert.equal(capturedCalls[1].runtimeControls.memoryCandidate, undefined);
+    assert.equal(blocked.memoryCandidate, undefined);
+  } finally {
+    restoreChatRunner();
+    restoreMemoryContextBuilder();
+    restoreProductContextBuilder();
+    restoreProviderReady();
+    if (originalProvider === undefined) {
+      delete process.env.SAYACHAN_AI_PROVIDER;
+    } else {
+      process.env.SAYACHAN_AI_PROVIDER = originalProvider;
+    }
   }
 });
 

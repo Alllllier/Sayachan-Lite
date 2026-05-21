@@ -31,6 +31,9 @@ declare module '@allier/sayachan-ai-core' {
         maxToolResultChars?: number;
       };
       debugTrace?: boolean;
+      memoryCandidate?: boolean | {
+        enabled?: boolean;
+      };
       [key: string]: unknown;
     };
   };
@@ -79,6 +82,9 @@ declare module '@allier/sayachan-ai-core' {
       status: 'available' | 'unavailable' | 'mock';
       provider?: string;
       model?: string;
+      finishReason?: string;
+      incomplete?: boolean;
+      incompleteReason?: string;
       inputTokens?: number;
       outputTokens?: number;
       totalTokens?: number;
@@ -135,6 +141,13 @@ declare module '@allier/sayachan-ai-core' {
       title: string;
     }>;
     debugTrace?: SayachanAiCoreDebugTrace;
+    memoryCandidate?: {
+      type: 'preference' | 'continuity_hint';
+      content: string;
+      reason?: string;
+      source: 'assistant_suggested_user_approved';
+      confidence?: number;
+    };
   };
 
   export type SayachanAiCoreChatStreamError = {
@@ -165,6 +178,10 @@ declare module '@allier/sayachan-ai-core' {
     };
     sourceReceipts?: SayachanAiCoreChatResult['sourceReceipts'];
     debugTrace?: SayachanAiCoreDebugTrace;
+    memoryCandidate?: SayachanAiCoreChatResult['memoryCandidate'];
+    finishReason?: string;
+    incomplete?: boolean;
+    incompleteReason?: string;
     error?: SayachanAiCoreChatStreamError;
   };
 

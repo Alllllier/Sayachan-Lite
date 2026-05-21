@@ -46,12 +46,20 @@ describe('memory api boundary', () => {
 
   it('sends create and update payloads through memory endpoints', async () => {
     mockedFetch().mockResolvedValueOnce(jsonResponse(memoryDto, true, 201))
-    await createMemoryEntry({ type: 'preference', content: 'Use plain language first' })
+    await createMemoryEntry({
+      type: 'preference',
+      content: 'Use plain language first',
+      source: 'assistant_suggested_user_approved'
+    })
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/memory', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'preference', content: 'Use plain language first' })
+      body: JSON.stringify({
+        type: 'preference',
+        content: 'Use plain language first',
+        source: 'assistant_suggested_user_approved'
+      })
     })
 
     mockedFetch().mockResolvedValueOnce(jsonResponse({ ...memoryDto, type: 'continuity_hint' }))

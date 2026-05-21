@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChatFeature } from './useChatFeature.js'
 import { sendChat, streamChat } from './chat.api.js'
+import { createMemoryEntry } from '../memory/memory.api.js'
 import type { ChatFocusDto, ChatMessageDto } from '@sayachan/contracts'
 
 const storeMocks = vi.hoisted(() => ({
@@ -21,8 +22,13 @@ vi.mock('./chat.api.js', () => ({
   streamChat: vi.fn()
 }))
 
+vi.mock('../memory/memory.api.js', () => ({
+  createMemoryEntry: vi.fn()
+}))
+
 const sendChatMock = vi.mocked(sendChat)
 const streamChatMock = vi.mocked(streamChat)
+const createMemoryEntryMock = vi.mocked(createMemoryEntry)
 
 type ChatStoreMock = ReturnType<typeof createChatStore>
 type RuntimeControlsMock = {
@@ -106,6 +112,13 @@ describe('useChatFeature orchestration', () => {
     storeMocks.runtimeControls = runtimeControls
     sendChatMock.mockResolvedValue({ reply: 'Done' })
     streamChatMock.mockResolvedValue({ reply: 'Done' })
+    createMemoryEntryMock.mockResolvedValue({
+      _id: 'memory-1',
+      type: 'preference',
+      content: 'Use plain language first',
+      active: true,
+      source: 'assistant_suggested_user_approved'
+    })
   })
 
   it('opens and closes the chat while keeping the runtime panel state local', () => {
@@ -141,7 +154,8 @@ describe('useChatFeature orchestration', () => {
           warmth: 7,
           convergenceMode: 'guided'
         },
-        debugTrace: true
+        debugTrace: true,
+        memoryCandidate: true
       },
       expect.objectContaining({
         onDelta: expect.any(Function),
@@ -205,7 +219,8 @@ describe('useChatFeature orchestration', () => {
           warmth: 7,
           convergenceMode: 'guided'
         },
-        debugTrace: true
+        debugTrace: true,
+        memoryCandidate: true
       },
       expect.any(Object)
     )
@@ -227,7 +242,8 @@ describe('useChatFeature orchestration', () => {
           warmth: 7,
           convergenceMode: 'guided'
         },
-        debugTrace: true
+        debugTrace: true,
+        memoryCandidate: true
       },
       expect.any(Object)
     )
@@ -249,6 +265,13 @@ describe('useChatFeature orchestration', () => {
         output: {
           reply: 'Hello',
           sourceReceipts: [{ type: 'project', title: 'Sayachan AI Core' }],
+          memoryCandidate: {
+            type: 'preference',
+            content: 'Use plain language first.',
+            reason: 'Stable communication preference.',
+            source: 'assistant_suggested_user_approved',
+            confidence: 0.9
+          },
           debugTrace: {
             tools: {
               executed: [{ name: 'getProjectContext', status: 'completed', round: 1 }]
@@ -280,6 +303,16 @@ describe('useChatFeature orchestration', () => {
     expect(feature.getMessageSourceReceipts(1)).toEqual([
       { type: 'project', title: 'Sayachan AI Core' }
     ])
+    expect(feature.getMessageMemoryCandidate(1)).toEqual({
+      candidate: {
+        type: 'preference',
+        content: 'Use plain language first.',
+        reason: 'Stable communication preference.',
+        source: 'assistant_suggested_user_approved',
+        confidence: 0.9
+      },
+      status: 'pending'
+    })
     expect(runtimeControls.clearLatestDebugTrace).toHaveBeenCalled()
     expect(runtimeControls.setLatestDebugTrace).toHaveBeenCalledWith({
       tools: {
@@ -287,6 +320,41 @@ describe('useChatFeature orchestration', () => {
       }
     })
     expect(feature.isStreamingReply.value).toBe(false)
+  })
+
+  it('saves or dismisses assistant-suggested memory only after user action', async () => {
+    sendChatMock.mockResolvedValue({
+      reply: 'Done',
+      memoryCandidate: {
+        type: 'continuity_hint',
+        content: 'Keep architecture tradeoffs visible.',
+        source: 'assistant_suggested_user_approved'
+      }
+    })
+    runtimeControls.chatStreamingEnabled = false
+    const feature = useChatFeature()
+    feature.inputValue.value = 'hello'
+
+    await feature.handleSend()
+
+    expect(createMemoryEntry).not.toHaveBeenCalled()
+    expect(feature.getMessageMemoryCandidate(1)?.status).toBe('pending')
+
+    await feature.acceptMemoryCandidate(1)
+
+    expect(createMemoryEntry).toHaveBeenCalledWith({
+      type: 'continuity_hint',
+      content: 'Keep architecture tradeoffs visible.',
+      source: 'assistant_suggested_user_approved'
+    })
+    expect(feature.getMessageMemoryCandidate(1)?.status).toBe('saved')
+
+    feature.inputValue.value = 'hello again'
+    await feature.handleSend()
+    expect(feature.getMessageMemoryCandidate(3)?.status).toBe('pending')
+
+    feature.dismissMemoryCandidate(3)
+    expect(feature.getMessageMemoryCandidate(3)?.status).toBe('dismissed')
   })
 
   it('uses the local fallback reply when sendChat fails', async () => {

@@ -6,6 +6,7 @@ import {
 import type {
   ChatContextDto,
   ChatDebugTraceDto,
+  ChatMemoryCandidateDto,
   ChatMessageDto,
   ChatResponseDto,
   ChatRuntimeControlsDto,
@@ -30,6 +31,10 @@ export type ChatStreamEvent = {
   providerState?: ChatProviderState
   sourceReceipts?: ChatSourceReceiptDto[]
   debugTrace?: ChatDebugTraceDto
+  memoryCandidate?: ChatMemoryCandidateDto
+  finishReason?: string
+  incomplete?: boolean
+  incompleteReason?: string
   error?: {
     code?: string
     message?: string
@@ -56,6 +61,9 @@ function publicChatResponse(data: ChatResponseDto): ChatResponseDto {
   }
   if (data.debugTrace) {
     response.debugTrace = data.debugTrace
+  }
+  if (data.memoryCandidate) {
+    response.memoryCandidate = data.memoryCandidate
   }
   return response
 }
@@ -172,13 +180,15 @@ export async function streamChat(
           reply,
           providerState: event.providerState,
           sourceReceipts: event.output?.sourceReceipts || event.sourceReceipts,
-          debugTrace: event.output?.debugTrace || event.debugTrace
+          debugTrace: event.output?.debugTrace || event.debugTrace,
+          memoryCandidate: event.output?.memoryCandidate || event.memoryCandidate
         }, chatResponseSchema, 'chat stream')
         const completedEvent = {
           ...event,
           output: data,
           sourceReceipts: data.sourceReceipts,
-          debugTrace: data.debugTrace
+          debugTrace: data.debugTrace,
+          memoryCandidate: data.memoryCandidate
         }
         handlers.onCompleted?.(data.reply, completedEvent)
         return publicChatResponse(data)

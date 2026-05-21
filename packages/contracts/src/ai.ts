@@ -8,6 +8,7 @@ export const chatProviderStateSourceValues = ['auto', 'env', 'runtime_control'] 
 export const chatModeValues = ['chat/general', 'guide/core_modules'] as const
 export const chatModeDecisionSourceValues = ['input', 'runtime_control', 'context', 'model_intent', 'default'] as const
 export const chatFocusTypeValues = ['note', 'project'] as const
+export const chatMemoryCandidateSourceValues = ['assistant_suggested_user_approved'] as const
 
 export const chatMessageSchema = z.object({
   role: z.enum(chatMessageRoleValues).optional(),
@@ -51,6 +52,14 @@ export const chatProviderStateSchema = z.object({
 export const chatSourceReceiptSchema = z.object({
   type: z.enum(['project', 'note', 'task']),
   title: z.string().min(1)
+}).strict()
+
+export const chatMemoryCandidateSchema = z.object({
+  type: z.enum(['preference', 'continuity_hint']),
+  content: z.string().min(1),
+  reason: z.string().min(1).optional(),
+  source: z.enum(chatMemoryCandidateSourceValues),
+  confidence: z.number().min(0).max(1).optional()
 }).strict()
 
 export const chatDebugTraceRangeSchema = z.object({
@@ -104,6 +113,9 @@ export const chatDebugProviderUsageTraceSchema = z.object({
   status: z.enum(['available', 'unavailable', 'mock']),
   provider: z.string().optional(),
   model: z.string().optional(),
+  finishReason: z.string().optional(),
+  incomplete: z.boolean().optional(),
+  incompleteReason: z.string().optional(),
   inputTokens: z.number().optional(),
   outputTokens: z.number().optional(),
   totalTokens: z.number().optional(),
@@ -150,7 +162,8 @@ export const chatRuntimeControlsSchema = z.object({
   personalityBaseline: z.enum(chatPersonalityBaselineValues).optional(),
   futureSlots: chatRuntimeFutureSlotsSchema.optional(),
   providerState: chatProviderStateSchema.optional(),
-  debugTrace: z.boolean().optional()
+  debugTrace: z.boolean().optional(),
+  memoryCandidate: z.boolean().optional()
 })
 
 export const chatRuntimePayloadSchema = chatRuntimeControlsSchema.extend({
@@ -167,7 +180,8 @@ export const chatResponseSchema = z.object({
   reply: z.string().min(1),
   providerState: chatProviderStateSchema.optional(),
   sourceReceipts: z.array(chatSourceReceiptSchema).optional(),
-  debugTrace: chatDebugTraceSchema.optional()
+  debugTrace: chatDebugTraceSchema.optional(),
+  memoryCandidate: chatMemoryCandidateSchema.optional()
 })
 
 export type ChatPersonalityBaseline = (typeof chatPersonalityBaselineValues)[number]
@@ -176,6 +190,7 @@ export type ChatMessageRole = (typeof chatMessageRoleValues)[number]
 export type ChatModeDto = (typeof chatModeValues)[number]
 export type ChatModeDecisionSource = (typeof chatModeDecisionSourceValues)[number]
 export type ChatFocusDto = z.infer<typeof chatFocusSchema>
+export type ChatMemoryCandidateDto = z.infer<typeof chatMemoryCandidateSchema>
 export type ChatProviderStateStrategy = (typeof chatProviderStateStrategyValues)[number]
 export type ChatProviderStateSource = (typeof chatProviderStateSourceValues)[number]
 export type ChatSourceReceiptDto = z.infer<typeof chatSourceReceiptSchema>

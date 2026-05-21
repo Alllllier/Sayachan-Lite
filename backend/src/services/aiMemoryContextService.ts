@@ -3,7 +3,7 @@ import type { RuntimeDocument } from '../domain/lifecycle.js';
 import MemoryEntry from '../models/MemoryEntry.js';
 
 export type MemoryContextItemType = 'preference' | 'continuity_hint';
-export type MemoryContextSource = 'memory_ledger_v1' | 'manual';
+export type MemoryContextSource = 'memory_ledger_v1' | 'manual' | 'assistant_suggested_user_approved';
 
 export type MemoryContextItem = {
   type: MemoryContextItemType;
@@ -43,7 +43,9 @@ function memoryItem(entry: RuntimeDocument): MemoryContextItem | null {
   return {
     type: normalized.type,
     content: normalized.content.trim(),
-    source: 'manual'
+    source: normalized.source === 'assistant_suggested_user_approved'
+      ? 'assistant_suggested_user_approved'
+      : 'manual'
   };
 }
 

@@ -132,6 +132,13 @@ describe('chat api boundary', () => {
         tools: {
           executed: [{ name: 'getProjectContext', status: 'completed', round: 1 }]
         }
+      },
+      memoryCandidate: {
+        type: 'preference',
+        content: 'Use plain language first.',
+        reason: 'Stable communication preference.',
+        source: 'assistant_suggested_user_approved',
+        confidence: 0.9
       }
     }))
 
@@ -189,6 +196,13 @@ describe('chat api boundary', () => {
           tools: {
             executed: [{ name: 'getProjectContext', status: 'completed', round: 1 }]
           }
+        },
+        memoryCandidate: {
+          type: 'preference',
+          content: 'Use plain language first.',
+          reason: 'Stable communication preference.',
+          source: 'assistant_suggested_user_approved',
+          confidence: 0.9
         }
       })
   })
@@ -295,7 +309,7 @@ describe('chat api boundary', () => {
     let completedReceipts: unknown
     let completedTrace: unknown
     mockedFetch().mockResolvedValue(streamResponse([
-      'event: completed\ndata: {"type":"completed","text":"Hello","output":{"reply":"Hello","sourceReceipts":[{"type":"note","title":"Tool notes"}],"debugTrace":{"focus":{"consumed":false},"context":{"productContext":{"status":"not_provided","itemCount":0,"truncated":false},"session":{"includedMessages":1,"totalMessages":1,"truncated":false}},"providerUsage":{"status":"available","provider":"openai","model":"gpt-5.5","inputTokens":31,"outputTokens":11,"totalTokens":42,"cachedInputTokens":5,"reasoningTokens":7},"tools":{"executed":[{"name":"getNoteContent","status":"completed","round":1,"hasMore":true,"nextCursorPresent":true,"range":{"startChar":0,"endChar":800}}]}}}}\n\n'
+      'event: completed\ndata: {"type":"completed","text":"Hello","finishReason":"max_output_tokens","incomplete":true,"incompleteReason":"max_output_tokens","output":{"reply":"Hello","sourceReceipts":[{"type":"note","title":"Tool notes"}],"debugTrace":{"focus":{"consumed":false},"context":{"productContext":{"status":"not_provided","itemCount":0,"truncated":false},"session":{"includedMessages":1,"totalMessages":1,"truncated":false}},"providerUsage":{"status":"available","provider":"openai","model":"gpt-5.5","finishReason":"max_output_tokens","incomplete":true,"incompleteReason":"max_output_tokens","inputTokens":31,"outputTokens":11,"totalTokens":42,"cachedInputTokens":5,"reasoningTokens":7},"tools":{"executed":[{"name":"getNoteContent","status":"completed","round":1,"hasMore":true,"nextCursorPresent":true,"range":{"startChar":0,"endChar":800}}]}},"memoryCandidate":{"type":"continuity_hint","content":"Keep architecture tradeoffs visible.","reason":"Useful future continuity.","source":"assistant_suggested_user_approved","confidence":0.78}}}\n\n'
     ]))
 
     await expect(streamChat(
@@ -329,6 +343,9 @@ describe('chat api boundary', () => {
           status: 'available',
           provider: 'openai',
           model: 'gpt-5.5',
+          finishReason: 'max_output_tokens',
+          incomplete: true,
+          incompleteReason: 'max_output_tokens',
           inputTokens: 31,
           outputTokens: 11,
           totalTokens: 42,
@@ -345,6 +362,13 @@ describe('chat api boundary', () => {
             range: { startChar: 0, endChar: 800 }
           }]
         }
+      },
+      memoryCandidate: {
+        type: 'continuity_hint',
+        content: 'Keep architecture tradeoffs visible.',
+        reason: 'Useful future continuity.',
+        source: 'assistant_suggested_user_approved',
+        confidence: 0.78
       }
     })
 
@@ -367,6 +391,9 @@ describe('chat api boundary', () => {
         status: 'available',
         provider: 'openai',
         model: 'gpt-5.5',
+        finishReason: 'max_output_tokens',
+        incomplete: true,
+        incompleteReason: 'max_output_tokens',
         inputTokens: 31,
         outputTokens: 11,
         totalTokens: 42,

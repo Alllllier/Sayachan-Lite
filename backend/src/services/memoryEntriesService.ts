@@ -22,6 +22,12 @@ type MemoryEntryUpdate = {
   active?: boolean;
 };
 
+function normalizeSource(source: MemoryEntryCreateDto['source'] | undefined): MemoryEntryCreateDto['source'] {
+  return source === 'assistant_suggested_user_approved'
+    ? 'assistant_suggested_user_approved'
+    : 'manual';
+}
+
 function activeFilter(value: unknown): Record<string, boolean> {
   if (value === true || value === 'true') {
     return { active: true };
@@ -47,7 +53,7 @@ export async function createMemoryEntry(body: MemoryEntryCreateDto, { userId }: 
     type: body.type,
     content: normalizeContent(body.content),
     active: body.active !== false,
-    source: 'manual',
+    source: normalizeSource(body.source),
     userId
   });
 

@@ -4,7 +4,7 @@ export const projectStatusValues = ['pending', 'in_progress', 'completed', 'on_h
 export const taskCreationModeValues = ['ai', 'manual'] as const
 export const taskStatusValues = ['active', 'completed'] as const
 export const memoryEntryTypeValues = ['preference', 'continuity_hint'] as const
-export const memoryEntrySourceValues = ['manual'] as const
+export const memoryEntrySourceValues = ['manual', 'assistant_suggested_user_approved'] as const
 
 const nonEmptyStringSchema = z.string().refine(value => value.trim().length > 0)
 
@@ -95,7 +95,8 @@ export const taskListResponseSchema = z.array(taskResponseSchema)
 export const memoryEntryCreateSchema = z.object({
   type: z.enum(memoryEntryTypeValues),
   content: nonEmptyStringSchema,
-  active: z.boolean().optional()
+  active: z.boolean().optional(),
+  source: z.enum(memoryEntrySourceValues).optional()
 })
 
 export const memoryEntryUpdateSchema = z.object({

@@ -1,7 +1,8 @@
 import { computed, nextTick, ref, watch } from 'vue'
-import type { ChatContextDto, ChatFocusDto, ChatMessageDto, ChatSourceReceiptDto } from '@sayachan/contracts'
+import type { ChatContextDto, ChatFocusDto, ChatMemoryCandidateDto, ChatMessageDto, ChatSourceReceiptDto } from '@sayachan/contracts'
 import { useChatStore } from '../../stores/chat'
 import { useRuntimeControls } from '../../stores/runtimeControls'
+import { createMemoryEntry } from '../memory/memory.api.js'
 import { sendChat, streamChat, type ChatStreamEvent } from './chat.api.js'
 import {
   canSendChatMessage,
@@ -20,6 +21,10 @@ type ChatFeatureOptions = {
 }
 
 type ChatFocusSnapshot = Pick<ChatFocusDto, 'type' | 'title'>
+type ChatMemoryCandidateState = {
+  candidate: ChatMemoryCandidateDto
+  status: 'pending' | 'saving' | 'saved' | 'dismissed' | 'error'
+}
 
 type ChatStoreLike = {
   isOpen: boolean
@@ -51,6 +56,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
   const toolStatusText = ref('')
   const focusSnapshotsByMessageIndex = ref<Record<number, ChatFocusSnapshot>>({})
   const sourceReceiptsByMessageIndex = ref<Record<number, ChatSourceReceiptDto[]>>({})
+  const memoryCandidatesByMessageIndex = ref<Record<number, ChatMemoryCandidateState>>({})
 
   watch(
     () => chatStore.messages.length,
@@ -58,6 +64,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
       if (length === 0) {
         focusSnapshotsByMessageIndex.value = {}
         sourceReceiptsByMessageIndex.value = {}
+        memoryCandidatesByMessageIndex.value = {}
       }
     }
   )
@@ -111,6 +118,56 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
 
   function getMessageSourceReceipts(index: number): ChatSourceReceiptDto[] {
     return sourceReceiptsByMessageIndex.value[index] || []
+  }
+
+  function setMessageMemoryCandidate(index: number | null, candidate?: ChatMemoryCandidateDto): void {
+    if (index === null || !candidate) return
+    memoryCandidatesByMessageIndex.value = {
+      ...memoryCandidatesByMessageIndex.value,
+      [index]: {
+        candidate,
+        status: 'pending'
+      }
+    }
+  }
+
+  function getMessageMemoryCandidate(index: number): ChatMemoryCandidateState | undefined {
+    return memoryCandidatesByMessageIndex.value[index]
+  }
+
+  function updateMemoryCandidateStatus(index: number, status: ChatMemoryCandidateState['status']): void {
+    const current = memoryCandidatesByMessageIndex.value[index]
+    if (!current) return
+    memoryCandidatesByMessageIndex.value = {
+      ...memoryCandidatesByMessageIndex.value,
+      [index]: {
+        ...current,
+        status
+      }
+    }
+  }
+
+  async function acceptMemoryCandidate(index: number): Promise<void> {
+    const current = memoryCandidatesByMessageIndex.value[index]
+    if (!current || (current.status !== 'pending' && current.status !== 'error')) return
+
+    updateMemoryCandidateStatus(index, 'saving')
+    try {
+      await createMemoryEntry({
+        type: current.candidate.type,
+        content: current.candidate.content,
+        source: current.candidate.source
+      })
+      updateMemoryCandidateStatus(index, 'saved')
+    } catch {
+      updateMemoryCandidateStatus(index, 'error')
+    }
+  }
+
+  function dismissMemoryCandidate(index: number): void {
+    const current = memoryCandidatesByMessageIndex.value[index]
+    if (!current || (current.status !== 'pending' && current.status !== 'error')) return
+    updateMemoryCandidateStatus(index, 'dismissed')
   }
 
   function setMessageFocusSnapshot(index: number, focus?: ChatFocusDto): void {
@@ -172,7 +229,8 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           warmth: runtimeControls.futureSlots.warmth,
           convergenceMode: runtimeControls.futureSlots.convergenceMode
         },
-        debugTrace: runtimeControls.debugTraceEnabled
+        debugTrace: runtimeControls.debugTraceEnabled,
+        memoryCandidate: true
       }
       const controlsWithState = chatStore.providerState
         ? { ...controls, providerState: chatStore.providerState }
@@ -207,6 +265,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
             ensureAssistantMessage()
             chatStore.updateMessageContent(assistantMessageIndex as number, reply)
             setMessageSourceReceipts(assistantMessageIndex, event.output?.sourceReceipts || event.sourceReceipts)
+            setMessageMemoryCandidate(assistantMessageIndex, event.output?.memoryCandidate || event.memoryCandidate)
             runtimeControls.setLatestDebugTrace(event.output?.debugTrace || event.debugTrace)
             chatStore.setProviderState(event.providerState)
             scrollToBottom()
@@ -218,10 +277,11 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           chatStore.appendMessage({ role: 'assistant', content: reply })
         }
       } else {
-        const { reply, providerState, sourceReceipts, debugTrace } = await sendChat(requestMessages, chatContext, controlsWithState)
+        const { reply, providerState, sourceReceipts, debugTrace, memoryCandidate } = await sendChat(requestMessages, chatContext, controlsWithState)
         const assistantMessageIndex = chatStore.messages.length
         chatStore.appendMessage({ role: 'assistant', content: reply })
         setMessageSourceReceipts(assistantMessageIndex, sourceReceipts)
+        setMessageMemoryCandidate(assistantMessageIndex, memoryCandidate)
         runtimeControls.setLatestDebugTrace(debugTrace)
         chatStore.setProviderState(providerState)
       }
@@ -254,10 +314,14 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     toolStatusText,
     focusSnapshotsByMessageIndex,
     sourceReceiptsByMessageIndex,
+    memoryCandidatesByMessageIndex,
     chatInputDisabled,
     chatSendButtonLabel,
     getMessageSourceReceipts,
+    getMessageMemoryCandidate,
     getMessageFocusSnapshot,
+    acceptMemoryCandidate,
+    dismissMemoryCandidate,
     openPopup,
     closePopup,
     togglePanel,
