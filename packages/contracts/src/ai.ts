@@ -67,8 +67,56 @@ export const chatDebugModeTraceSchema = z.object({
   reasonCodes: z.array(z.string())
 }).strict()
 
+export const chatDebugFocusTraceSchema = z.object({
+  consumed: z.boolean(),
+  type: z.enum(chatFocusTypeValues).optional(),
+  title: z.string().min(1).optional(),
+  source: z.string().optional()
+}).strict()
+
+export const chatDebugContextTraceSchema = z.object({
+  budget: z.object({
+    maxContextTokens: z.number().optional(),
+    reservedOutputTokens: z.number().optional(),
+    safetyMarginTokens: z.number().optional(),
+    estimatedInputBudgetTokens: z.number().optional(),
+    estimatedUsedTokens: z.number().optional(),
+    strategy: z.string().optional(),
+    inputBudgetStatus: z.string().optional()
+  }).strict().optional(),
+  session: z.object({
+    includedMessages: z.number().optional(),
+    totalMessages: z.number().optional(),
+    truncated: z.boolean().optional(),
+    estimatedTokens: z.number().optional()
+  }).strict().optional(),
+  productContext: z.object({
+    status: z.string().optional(),
+    itemCount: z.number().optional(),
+    truncated: z.boolean().optional()
+  }).strict().optional(),
+  render: z.object({
+    sectionCount: z.number().optional()
+  }).strict().optional()
+}).strict()
+
+export const chatDebugProviderUsageTraceSchema = z.object({
+  status: z.enum(['available', 'unavailable', 'mock']),
+  provider: z.string().optional(),
+  model: z.string().optional(),
+  inputTokens: z.number().optional(),
+  outputTokens: z.number().optional(),
+  totalTokens: z.number().optional(),
+  cachedInputTokens: z.number().optional(),
+  reasoningTokens: z.number().optional(),
+  deterministicMock: z.boolean().optional()
+}).strict()
+
 export const chatDebugTraceSchema = z.object({
   mode: chatDebugModeTraceSchema.optional(),
+  focus: chatDebugFocusTraceSchema.optional(),
+  context: chatDebugContextTraceSchema.optional(),
+  providerUsage: chatDebugProviderUsageTraceSchema.optional(),
   tools: z.object({
     limits: z.object({
       maxToolCallsPerTurn: z.number().optional(),

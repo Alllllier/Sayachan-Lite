@@ -44,6 +44,48 @@ declare module '@allier/sayachan-ai-core' {
       confidence: number;
       reasonCodes: string[];
     };
+    focus?: {
+      consumed: boolean;
+      type?: 'note' | 'project';
+      title?: string;
+      source?: string;
+    };
+    context?: {
+      budget?: {
+        maxContextTokens?: number;
+        reservedOutputTokens?: number;
+        safetyMarginTokens?: number;
+        estimatedInputBudgetTokens?: number;
+        estimatedUsedTokens?: number;
+        strategy?: string;
+        inputBudgetStatus?: string;
+      };
+      session?: {
+        includedMessages?: number;
+        totalMessages?: number;
+        truncated?: boolean;
+        estimatedTokens?: number;
+      };
+      productContext?: {
+        status?: string;
+        itemCount?: number;
+        truncated?: boolean;
+      };
+      render?: {
+        sectionCount?: number;
+      };
+    };
+    providerUsage?: {
+      status: 'available' | 'unavailable' | 'mock';
+      provider?: string;
+      model?: string;
+      inputTokens?: number;
+      outputTokens?: number;
+      totalTokens?: number;
+      cachedInputTokens?: number;
+      reasoningTokens?: number;
+      deterministicMock?: boolean;
+    };
     tools?: {
       limits?: {
         maxToolCallsPerTurn?: number;

@@ -11,6 +11,8 @@ type PersonalityBaselineOption = 'warm' | 'strict' | 'haraguro'
 type ConvergenceModeOption = 'explore' | 'guided' | 'decisive'
 type DebugTraceTools = NonNullable<ChatDebugTraceDto['tools']>
 type DebugModeDecision = NonNullable<ChatDebugTraceDto['mode']>
+type DebugFocusTrace = NonNullable<ChatDebugTraceDto['focus']>
+type DebugProviderUsageTrace = NonNullable<ChatDebugTraceDto['providerUsage']>
 
 const messageListRef = ref<HTMLElement | null>(null)
 const personalityBaselineOptions: PersonalityBaselineOption[] = ['warm', 'strict', 'haraguro']
@@ -79,6 +81,8 @@ const debugSourceReceipts = computed(() => runtimeControls.latestDebugTrace?.sou
 const debugToolLimits = computed(() => debugTraceTools.value.limits || {})
 const debugModeDecision = computed<DebugModeDecision | null>(() => runtimeControls.latestDebugTrace?.mode || null)
 const debugModeHistory = computed<DebugModeDecision[]>(() => runtimeControls.modeDecisionHistory || [])
+const debugFocusTrace = computed<DebugFocusTrace | null>(() => runtimeControls.latestDebugTrace?.focus || null)
+const debugProviderUsageTrace = computed<DebugProviderUsageTrace | null>(() => runtimeControls.latestDebugTrace?.providerUsage || null)
 
 function sendCurrentMessage(): Promise<void> {
   return handleSend()
@@ -96,6 +100,37 @@ function focusSnapshotLabel(index: number): string {
   if (!focus) return ''
   const typeLabel = focus.type === 'project' ? t('chat.focusProject') : t('chat.focusNote')
   return `${typeLabel} · ${focus.title}`
+}
+
+function debugFocusTargetLabel(focus: DebugFocusTrace): string {
+  if (!focus.consumed || !focus.type || !focus.title) return t('chat.debugFocusNone')
+  const typeLabel = focus.type === 'project' ? t('chat.focusProject') : t('chat.focusNote')
+  return `${typeLabel} · ${focus.title}`
+}
+
+function debugUsageStatusLabel(usage: DebugProviderUsageTrace): string {
+  if (usage.status === 'mock') return t('chat.debugUsageMock')
+  if (usage.status === 'available') return t('chat.debugUsageAvailable')
+  return t('chat.debugUsageUnavailable')
+}
+
+function debugProviderLabel(usage: DebugProviderUsageTrace): string {
+  return [usage.provider, usage.model].filter(Boolean).join(' · ') || t('chat.debugEmpty')
+}
+
+function debugTokenValue(value: number | undefined): string {
+  return typeof value === 'number' && Number.isFinite(value) ? String(value) : '-'
+}
+
+function debugUsageHasTokens(usage: DebugProviderUsageTrace): boolean {
+  if (usage.status !== 'available') return false
+  return [
+    usage.inputTokens,
+    usage.outputTokens,
+    usage.totalTokens,
+    usage.cachedInputTokens,
+    usage.reasoningTokens
+  ].some(value => typeof value === 'number' && Number.isFinite(value))
 }
 </script>
 
@@ -365,6 +400,48 @@ function focusSnapshotLabel(index: number): string {
                     >
                       {{ decision.selectedMode }} · {{ decision.source }}<template v-if="decision.fallbackApplied"> · {{ t('chat.debugModeFallback') }}</template>
                     </span>
+                  </div>
+                </template>
+              </div>
+
+              <div class="runtime-debug-block">
+                <div class="runtime-debug-title">{{ t('chat.debugFocus') }}</div>
+                <div v-if="!debugFocusTrace" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
+                <template v-else>
+                  <div class="runtime-debug-line">
+                    <span>{{ t('chat.debugFocusStatus') }}</span>
+                    <span>{{ debugFocusTrace.consumed ? t('chat.debugFocusConsumed') : t('chat.debugFocusNone') }}</span>
+                  </div>
+                  <div v-if="debugFocusTrace.consumed" class="runtime-debug-line">
+                    <span>{{ t('chat.debugFocusTarget') }}</span>
+                    <span>{{ debugFocusTargetLabel(debugFocusTrace) }}</span>
+                  </div>
+                </template>
+              </div>
+
+              <div class="runtime-debug-block">
+                <div class="runtime-debug-title">{{ t('chat.debugProviderUsage') }}</div>
+                <div v-if="!debugProviderUsageTrace" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
+                <template v-else>
+                  <div class="runtime-debug-line">
+                    <span>{{ t('chat.debugUsageStatus') }}</span>
+                    <span>{{ debugUsageStatusLabel(debugProviderUsageTrace) }}</span>
+                  </div>
+                  <div class="runtime-debug-line">
+                    <span>{{ t('chat.debugUsageProvider') }}</span>
+                    <span>{{ debugProviderLabel(debugProviderUsageTrace) }}</span>
+                  </div>
+                  <div v-if="debugUsageHasTokens(debugProviderUsageTrace)" class="runtime-debug-line">
+                    <span>{{ t('chat.debugUsageTokens') }}</span>
+                    <span>{{ debugTokenValue(debugProviderUsageTrace.inputTokens) }} / {{ debugTokenValue(debugProviderUsageTrace.outputTokens) }} / {{ debugTokenValue(debugProviderUsageTrace.totalTokens) }}</span>
+                  </div>
+                  <div v-if="debugProviderUsageTrace.cachedInputTokens !== undefined" class="runtime-debug-line">
+                    <span>{{ t('chat.debugUsageCached') }}</span>
+                    <span>{{ debugTokenValue(debugProviderUsageTrace.cachedInputTokens) }}</span>
+                  </div>
+                  <div v-if="debugProviderUsageTrace.reasoningTokens !== undefined" class="runtime-debug-line">
+                    <span>{{ t('chat.debugUsageReasoning') }}</span>
+                    <span>{{ debugTokenValue(debugProviderUsageTrace.reasoningTokens) }}</span>
                   </div>
                 </template>
               </div>

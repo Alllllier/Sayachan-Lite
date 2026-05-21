@@ -92,6 +92,43 @@ describe('chat api boundary', () => {
           confidence: 1,
           reasonCodes: ['chat_focus_guide']
         },
+        focus: {
+          consumed: true,
+          type: 'project',
+          title: 'Sayachan AI Core',
+          source: 'user_focus_button'
+        },
+        context: {
+          budget: {
+            estimatedInputBudgetTokens: 12000,
+            estimatedUsedTokens: 180,
+            strategy: 'token_budgeted_latest'
+          },
+          session: {
+            includedMessages: 1,
+            totalMessages: 1,
+            truncated: false,
+            estimatedTokens: 42
+          },
+          productContext: {
+            status: 'available',
+            itemCount: 3,
+            truncated: false
+          },
+          render: {
+            sectionCount: 4
+          }
+        },
+        providerUsage: {
+          status: 'available',
+          provider: 'openai',
+          model: 'gpt-5.5',
+          inputTokens: 31,
+          outputTokens: 11,
+          totalTokens: 42,
+          cachedInputTokens: 5,
+          reasoningTokens: 7
+        },
         tools: {
           executed: [{ name: 'getProjectContext', status: 'completed', round: 1 }]
         }
@@ -111,6 +148,43 @@ describe('chat api boundary', () => {
             fallbackApplied: false,
             confidence: 1,
             reasonCodes: ['chat_focus_guide']
+          },
+          focus: {
+            consumed: true,
+            type: 'project',
+            title: 'Sayachan AI Core',
+            source: 'user_focus_button'
+          },
+          context: {
+            budget: {
+              estimatedInputBudgetTokens: 12000,
+              estimatedUsedTokens: 180,
+              strategy: 'token_budgeted_latest'
+            },
+            session: {
+              includedMessages: 1,
+              totalMessages: 1,
+              truncated: false,
+              estimatedTokens: 42
+            },
+            productContext: {
+              status: 'available',
+              itemCount: 3,
+              truncated: false
+            },
+            render: {
+              sectionCount: 4
+            }
+          },
+          providerUsage: {
+            status: 'available',
+            provider: 'openai',
+            model: 'gpt-5.5',
+            inputTokens: 31,
+            outputTokens: 11,
+            totalTokens: 42,
+            cachedInputTokens: 5,
+            reasoningTokens: 7
           },
           tools: {
             executed: [{ name: 'getProjectContext', status: 'completed', round: 1 }]
@@ -221,7 +295,7 @@ describe('chat api boundary', () => {
     let completedReceipts: unknown
     let completedTrace: unknown
     mockedFetch().mockResolvedValue(streamResponse([
-      'event: completed\ndata: {"type":"completed","text":"Hello","output":{"reply":"Hello","sourceReceipts":[{"type":"note","title":"Tool notes"}],"debugTrace":{"tools":{"executed":[{"name":"getNoteContent","status":"completed","round":1,"hasMore":true,"nextCursorPresent":true,"range":{"startChar":0,"endChar":800}}]}}}}\n\n'
+      'event: completed\ndata: {"type":"completed","text":"Hello","output":{"reply":"Hello","sourceReceipts":[{"type":"note","title":"Tool notes"}],"debugTrace":{"focus":{"consumed":false},"context":{"productContext":{"status":"not_provided","itemCount":0,"truncated":false},"session":{"includedMessages":1,"totalMessages":1,"truncated":false}},"providerUsage":{"status":"available","provider":"openai","model":"gpt-5.5","inputTokens":31,"outputTokens":11,"totalTokens":42,"cachedInputTokens":5,"reasoningTokens":7},"tools":{"executed":[{"name":"getNoteContent","status":"completed","round":1,"hasMore":true,"nextCursorPresent":true,"range":{"startChar":0,"endChar":800}}]}}}}\n\n'
     ]))
 
     await expect(streamChat(
@@ -238,6 +312,29 @@ describe('chat api boundary', () => {
       reply: 'Hello',
       sourceReceipts: [{ type: 'note', title: 'Tool notes' }],
       debugTrace: {
+        focus: { consumed: false },
+        context: {
+          productContext: {
+            status: 'not_provided',
+            itemCount: 0,
+            truncated: false
+          },
+          session: {
+            includedMessages: 1,
+            totalMessages: 1,
+            truncated: false
+          }
+        },
+        providerUsage: {
+          status: 'available',
+          provider: 'openai',
+          model: 'gpt-5.5',
+          inputTokens: 31,
+          outputTokens: 11,
+          totalTokens: 42,
+          cachedInputTokens: 5,
+          reasoningTokens: 7
+        },
         tools: {
           executed: [{
             name: 'getNoteContent',
@@ -253,6 +350,29 @@ describe('chat api boundary', () => {
 
     expect(completedReceipts).toEqual([{ type: 'note', title: 'Tool notes' }])
     expect(completedTrace).toEqual({
+      focus: { consumed: false },
+      context: {
+        productContext: {
+          status: 'not_provided',
+          itemCount: 0,
+          truncated: false
+        },
+        session: {
+          includedMessages: 1,
+          totalMessages: 1,
+          truncated: false
+        }
+      },
+      providerUsage: {
+        status: 'available',
+        provider: 'openai',
+        model: 'gpt-5.5',
+        inputTokens: 31,
+        outputTokens: 11,
+        totalTokens: 42,
+        cachedInputTokens: 5,
+        reasoningTokens: 7
+      },
       tools: {
         executed: [{
           name: 'getNoteContent',
