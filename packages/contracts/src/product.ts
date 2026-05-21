@@ -3,6 +3,8 @@ import { z } from 'zod'
 export const projectStatusValues = ['pending', 'in_progress', 'completed', 'on_hold'] as const
 export const taskCreationModeValues = ['ai', 'manual'] as const
 export const taskStatusValues = ['active', 'completed'] as const
+export const memoryEntryTypeValues = ['preference', 'continuity_hint'] as const
+export const memoryEntrySourceValues = ['manual'] as const
 
 const nonEmptyStringSchema = z.string().refine(value => value.trim().length > 0)
 
@@ -90,9 +92,35 @@ export const taskResponseSchema = z.object({
 
 export const taskListResponseSchema = z.array(taskResponseSchema)
 
+export const memoryEntryCreateSchema = z.object({
+  type: z.enum(memoryEntryTypeValues),
+  content: nonEmptyStringSchema,
+  active: z.boolean().optional()
+})
+
+export const memoryEntryUpdateSchema = z.object({
+  type: z.enum(memoryEntryTypeValues).optional(),
+  content: nonEmptyStringSchema.optional(),
+  active: z.boolean().optional()
+}).refine(body => body.type !== undefined || body.content !== undefined || body.active !== undefined)
+
+export const memoryEntryResponseSchema = z.object({
+  _id: z.string(),
+  type: z.enum(memoryEntryTypeValues),
+  content: z.string(),
+  active: z.boolean(),
+  source: z.enum(memoryEntrySourceValues),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional()
+})
+
+export const memoryEntryListResponseSchema = z.array(memoryEntryResponseSchema)
+
 export type ProjectStatus = z.infer<typeof projectWriteSchema>['status']
 export type TaskCreationMode = (typeof taskCreationModeValues)[number]
 export type TaskStatus = (typeof taskStatusValues)[number]
+export type MemoryEntryType = (typeof memoryEntryTypeValues)[number]
+export type MemoryEntrySource = (typeof memoryEntrySourceValues)[number]
 export type NoteCreateDto = z.infer<typeof noteCreateSchema>
 export type NoteUpdateDto = z.infer<typeof noteUpdateSchema>
 export type NoteWriteDto = z.infer<typeof noteWriteSchema>
@@ -104,3 +132,6 @@ export type ProjectDto = z.infer<typeof projectResponseSchema>
 export type TaskCreateDto = z.infer<typeof taskCreateSchema>
 export type TaskUpdateDto = z.infer<typeof taskUpdateSchema>
 export type TaskDto = z.infer<typeof taskResponseSchema>
+export type MemoryEntryCreateDto = z.infer<typeof memoryEntryCreateSchema>
+export type MemoryEntryUpdateDto = z.infer<typeof memoryEntryUpdateSchema>
+export type MemoryEntryDto = z.infer<typeof memoryEntryResponseSchema>

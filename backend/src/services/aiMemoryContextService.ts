@@ -1,7 +1,9 @@
 import type { ObjectId } from '../domain/objectIds.js';
+import type { RuntimeDocument } from '../domain/lifecycle.js';
+import MemoryEntry from '../models/MemoryEntry.js';
 
 export type MemoryContextItemType = 'preference' | 'continuity_hint';
-export type MemoryContextSource = 'backend_seed_v0';
+export type MemoryContextSource = 'memory_ledger_v1' | 'manual';
 
 export type MemoryContextItem = {
   type: MemoryContextItemType;
@@ -23,43 +25,51 @@ type BuildMemoryContextOptions = {
   now?: Date;
 };
 
-const MEMORY_SEED_ROLES = new Set(['owner', 'tester']);
+const MEMORY_ACCESS_ROLES = new Set(['owner', 'tester']);
 
-const SEED_ITEMS: MemoryContextItem[] = [
-  {
-    type: 'preference',
-    content: 'The user prefers complex AI architecture to be explained first in plain language, then with concise system boundaries.',
-    source: 'backend_seed_v0'
-  },
-  {
-    type: 'continuity_hint',
-    content: 'The user is actively building Sayachan / personal_os_lite and wants architectural tradeoffs to stay visible before implementation.',
-    source: 'backend_seed_v0'
+function toPlainObject(entity: RuntimeDocument): Record<string, unknown> {
+  return entity.toObject ? entity.toObject() : { ...entity };
+}
+
+function memoryItem(entry: RuntimeDocument): MemoryContextItem | null {
+  const normalized = toPlainObject(entry);
+  if (normalized.type !== 'preference' && normalized.type !== 'continuity_hint') {
+    return null;
   }
-];
+  if (typeof normalized.content !== 'string' || normalized.content.trim().length === 0) {
+    return null;
+  }
+
+  return {
+    type: normalized.type,
+    content: normalized.content.trim(),
+    source: 'manual'
+  };
+}
 
 export async function buildMemoryContextSnapshot(
   userId: ObjectId | null | undefined,
   options: BuildMemoryContextOptions = {}
 ): Promise<MemoryContextSnapshot | null> {
-  await Promise.resolve();
-  if (!userId || !MEMORY_SEED_ROLES.has(options.userRole || '')) {
+  if (!userId || !MEMORY_ACCESS_ROLES.has(options.userRole || '')) {
     return null;
   }
+
+  const entries = await MemoryEntry.find({ userId, active: true }).sort({ updatedAt: -1 });
+  const items = entries.map(memoryItem).filter(Boolean) as MemoryContextItem[];
 
   return {
     packetType: 'memory_context_snapshot',
     version: 1,
-    status: SEED_ITEMS.length > 0 ? 'available' : 'empty',
+    status: items.length > 0 ? 'available' : 'empty',
     generatedAt: (options.now || new Date()).toISOString(),
-    source: 'backend_seed_v0',
-    items: SEED_ITEMS.map((item) => ({ ...item }))
+    source: 'memory_ledger_v1',
+    items
   };
 }
 
 export const __test__ = {
-  SEED_ITEMS,
-  MEMORY_SEED_ROLES
+  MEMORY_ACCESS_ROLES
 };
 
 export default {

@@ -4,7 +4,9 @@ import assert from 'node:assert/strict';
 import Note from '../dist/models/Note.js';
 import Project from '../dist/models/Project.js';
 import Task from '../dist/models/Task.js';
+import MemoryEntry from '../dist/models/MemoryEntry.js';
 import aiService from '../dist/services/aiService.js';
+import memoryContextService from '../dist/services/aiMemoryContextService.js';
 import productContextService from '../dist/services/aiProductContextService.js';
 import productToolService from '../dist/services/aiProductToolService.js';
 import { errorBoundary } from '../dist/middleware/app/errorBoundary.js';
@@ -32,12 +34,12 @@ function getRouteHandler(router, method, path) {
   });
 }
 
-function createCtx({ query = {}, params = {}, body = {}, userId = '000000000000000000000001' } = {}) {
+function createCtx({ query = {}, params = {}, body = {}, userId = '000000000000000000000001', role = 'tester' } = {}) {
   return {
     query,
     params,
     request: { body },
-    state: { user: { _id: userId, role: 'tester', email: `${userId}@example.com` } },
+    state: { user: { _id: userId, role, email: `${userId}@example.com` } },
     status: 200,
     body: undefined
   };
@@ -483,6 +485,122 @@ test('AI product context snapshot uses current-user filters and trims product fi
   });
 });
 
+test('memory ledger routes are scoped to current owner or tester', async () => {
+  const listHandler = getRouteHandler(routes, 'GET', '/memory');
+  const createHandler = getRouteHandler(routes, 'POST', '/memory');
+  const updateHandler = getRouteHandler(routes, 'PUT', '/memory/:id');
+  const activateHandler = getRouteHandler(routes, 'PUT', '/memory/:id/activate');
+  const deactivateHandler = getRouteHandler(routes, 'PUT', '/memory/:id/deactivate');
+  const deleteHandler = getRouteHandler(routes, 'DELETE', '/memory/:id');
+  const seen = [];
+
+  await withPatchedMethods([
+    {
+      target: MemoryEntry,
+      key: 'find',
+      value: (query) => {
+        seen.push({ op: 'find', query });
+        return {
+          sort(sort) {
+            seen.push({ op: 'sort', query, sort });
+            return [
+              createDoc({
+                _id: '000000000000000000000401',
+                type: 'preference',
+                content: 'Owned memory',
+                active: true,
+                source: 'manual',
+                userId: query.userId,
+                createdAt: new Date('2026-05-21T00:00:00.000Z'),
+                updatedAt: new Date('2026-05-21T00:00:00.000Z')
+              })
+            ];
+          }
+        };
+      }
+    },
+    {
+      target: MemoryEntry,
+      key: 'create',
+      value: async (payload) => {
+        seen.push({ op: 'create', query: { userId: payload.userId }, payload });
+        return createDoc({
+          _id: '000000000000000000000402',
+          ...payload,
+          createdAt: new Date('2026-05-21T00:00:00.000Z'),
+          updatedAt: new Date('2026-05-21T00:00:00.000Z')
+        });
+      }
+    },
+    {
+      target: MemoryEntry,
+      key: 'findOneAndUpdate',
+      value: async (query, update) => {
+        seen.push({ op: 'update', query, update });
+        return createDoc({
+          _id: query._id,
+          type: update.type || 'preference',
+          content: update.content || 'Owned memory',
+          active: update.active !== undefined ? update.active : true,
+          source: 'manual',
+          userId: query.userId,
+          createdAt: new Date('2026-05-21T00:00:00.000Z'),
+          updatedAt: new Date('2026-05-21T00:00:00.000Z')
+        });
+      }
+    },
+    {
+      target: MemoryEntry,
+      key: 'findOneAndDelete',
+      value: async (query) => {
+        seen.push({ op: 'delete', query });
+        return createDoc({ _id: query._id, type: 'preference', content: 'Owned memory', active: true, source: 'manual', userId: query.userId });
+      }
+    }
+  ], async () => {
+    await listHandler(createCtx({ userId: '000000000000000000000015' }), async () => {});
+    await createHandler(createCtx({
+      body: { type: 'preference', content: '  Use plain language  ' },
+      userId: '000000000000000000000015'
+    }), async () => {});
+    await updateHandler(createCtx({
+      params: { id: '000000000000000000000401' },
+      body: { type: 'continuity_hint', content: 'Keep tradeoffs visible' },
+      userId: '000000000000000000000015'
+    }), async () => {});
+    await deactivateHandler(createCtx({ params: { id: '000000000000000000000401' }, userId: '000000000000000000000015' }), async () => {});
+    await activateHandler(createCtx({ params: { id: '000000000000000000000401' }, userId: '000000000000000000000015' }), async () => {});
+    await deleteHandler(createCtx({ params: { id: '000000000000000000000401' }, userId: '000000000000000000000015' }), async () => {});
+  });
+
+  assert.equal(seen.every((entry) => hasClause(entry.query, (clause) => clause.userId === '000000000000000000000015')), true);
+  assert.equal(seen.some((entry) => entry.op === 'create' && entry.payload.content === 'Use plain language'), true);
+  assert.equal(seen.some((entry) => entry.op === 'update' && entry.update.active === false), true);
+  assert.equal(seen.some((entry) => entry.op === 'update' && entry.update.active === true), true);
+  assert.equal(seen.some((entry) => entry.op === 'delete'), true);
+});
+
+test('memory ledger routes reject non-owner non-tester roles before data access', async () => {
+  const listHandler = getRouteHandler(routes, 'GET', '/memory');
+  let dataAccessed = false;
+
+  await withPatchedMethods([
+    {
+      target: MemoryEntry,
+      key: 'find',
+      value: () => {
+        dataAccessed = true;
+        return { sort: () => [] };
+      }
+    }
+  ], async () => {
+    const ctx = createCtx({ role: 'viewer' });
+    await listHandler(ctx, async () => {});
+    assert.equal(ctx.status, 403);
+    assert.equal(dataAccessed, false);
+  });
+});
+
 test('product context snapshot rejects invalid project status before core rendering', async () => {
   const userId = toObjectId('000000000000000000000017', 'userId');
   const projectCapture = {};
@@ -739,7 +857,7 @@ test('AI chat strips caller-supplied reserved context when backend snapshot is u
   }
 });
 
-test('AI chat injects backend seed memory only for owner and tester roles', async () => {
+test('AI chat injects active backend memory ledger entries only for owner and tester roles', async () => {
   const originalProvider = process.env.SAYACHAN_AI_PROVIDER;
   const userId = toObjectId('000000000000000000000024', 'test.userId');
   const capturedCalls = [];
@@ -751,33 +869,73 @@ test('AI chat injects backend seed memory only for owner and tester roles', asyn
 
   try {
     delete process.env.SAYACHAN_AI_PROVIDER;
-    const allowed = await aiService.chat({
-      messages: [{ role: 'user', content: 'hello memory' }],
-      context: {
-        memory: {
-          items: [{ type: 'preference', content: 'spoofed caller memory' }]
+    await withPatchedMethods([
+      {
+        target: MemoryEntry,
+        key: 'find',
+        value: (query) => {
+          assert.equal(normalizeIds(query).userId, '000000000000000000000024');
+          assert.equal(query.active, true);
+          return {
+            sort(sort) {
+              assert.deepEqual(sort, { updatedAt: -1 });
+              return [
+                createDoc({
+                  _id: '000000000000000000000404',
+                  type: 'preference',
+                  content: 'Use plain language before architecture boundaries.',
+                  active: true,
+                  source: 'manual',
+                  userId: query.userId,
+                  updatedAt: new Date('2026-05-21T00:00:00.000Z')
+                }),
+                createDoc({
+                  _id: '000000000000000000000405',
+                  type: 'unsupported',
+                  content: 'Should be dropped',
+                  active: true,
+                  source: 'manual',
+                  userId: query.userId
+                })
+              ];
+            }
+          };
         }
-      },
-      runtimeControls: { personalityBaseline: 'warm' }
-    }, { userId, userRole: 'tester' });
+      }
+    ], async () => {
+      const allowed = await aiService.chat({
+        messages: [{ role: 'user', content: 'hello memory' }],
+        context: {
+          memory: {
+            items: [{ type: 'preference', content: 'spoofed caller memory' }]
+          }
+        },
+        runtimeControls: { personalityBaseline: 'warm' }
+      }, { userId, userRole: 'tester' });
 
-    const blocked = await aiService.chat({
-      messages: [{ role: 'user', content: 'hello viewer memory' }],
-      context: {
-        memory: {
-          items: [{ type: 'preference', content: 'spoofed caller memory' }]
-        }
-      },
-      runtimeControls: { personalityBaseline: 'warm' }
-    }, { userId, userRole: 'viewer' });
+      const blocked = await aiService.chat({
+        messages: [{ role: 'user', content: 'hello viewer memory' }],
+        context: {
+          memory: {
+            items: [{ type: 'preference', content: 'spoofed caller memory' }]
+          }
+        },
+        runtimeControls: { personalityBaseline: 'warm' }
+      }, { userId, userRole: 'viewer' });
 
-    assert.deepEqual(allowed, { reply: 'memory bridge ok' });
-    assert.deepEqual(blocked, { reply: 'memory bridge ok' });
+      assert.deepEqual(allowed, { reply: 'memory bridge ok' });
+      assert.deepEqual(blocked, { reply: 'memory bridge ok' });
+    });
+
     assert.equal(capturedCalls[0].context.memoryContext.packetType, 'memory_context_snapshot');
     assert.equal(capturedCalls[0].context.memoryContext.version, 1);
     assert.equal(capturedCalls[0].context.memoryContext.status, 'available');
-    assert.equal(capturedCalls[0].context.memoryContext.source, 'backend_seed_v0');
-    assert.equal(capturedCalls[0].context.memoryContext.items.length, 2);
+    assert.equal(capturedCalls[0].context.memoryContext.source, 'memory_ledger_v1');
+    assert.deepEqual(capturedCalls[0].context.memoryContext.items, [{
+      type: 'preference',
+      content: 'Use plain language before architecture boundaries.',
+      source: 'manual'
+    }]);
     assert.equal(Object.hasOwn(capturedCalls[0].context, 'memory'), false);
     assert(!JSON.stringify(capturedCalls[0].context).includes('spoofed caller memory'));
     assert.equal(capturedCalls[1].context, undefined);
@@ -792,10 +950,45 @@ test('AI chat injects backend seed memory only for owner and tester roles', asyn
   }
 });
 
+test('memory context snapshot returns empty trusted ledger snapshot when no active entries exist', async () => {
+  const userId = toObjectId('000000000000000000000025', 'test.userId');
+
+  await withPatchedMethods([
+    {
+      target: MemoryEntry,
+      key: 'find',
+      value: (query) => {
+        assert.equal(normalizeIds(query).userId, '000000000000000000000025');
+        assert.equal(query.active, true);
+        return {
+          sort() {
+            return [];
+          }
+        };
+      }
+    }
+  ], async () => {
+    const snapshot = await memoryContextService.buildMemoryContextSnapshot(userId, {
+      userRole: 'owner',
+      now: new Date('2026-05-21T08:00:00.000Z')
+    });
+
+    assert.deepEqual(snapshot, {
+      packetType: 'memory_context_snapshot',
+      version: 1,
+      status: 'empty',
+      generatedAt: '2026-05-21T08:00:00.000Z',
+      source: 'memory_ledger_v1',
+      items: []
+    });
+  });
+});
+
 test('AI chat forwards debug trace requests only for owner and tester roles', async () => {
   const userId = toObjectId('000000000000000000000023', 'test.userId');
   const capturedCalls = [];
   const restoreProductContextBuilder = aiService.__test__.setProductContextBuilderForTest(async () => null);
+  const restoreMemoryContextBuilder = aiService.__test__.setMemoryContextBuilderForTest(async () => null);
   const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async (_messages, _context, options) => {
     capturedCalls.push(options);
     return options.runtimeControls?.debugTrace === true
@@ -820,6 +1013,7 @@ test('AI chat forwards debug trace requests only for owner and tester roles', as
     assert.equal(blocked.debugTrace, undefined);
   } finally {
     restoreChatRunner();
+    restoreMemoryContextBuilder();
     restoreProductContextBuilder();
   }
 });

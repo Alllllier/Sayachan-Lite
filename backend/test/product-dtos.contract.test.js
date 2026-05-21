@@ -6,6 +6,9 @@ import {
   toProjectDto,
   toTaskDto
 } from '../dist/services/responses/productResponses.js';
+import {
+  toMemoryEntryDto
+} from '../dist/services/responses/memoryResponses.js';
 
 function createDoc(data) {
   return {
@@ -238,4 +241,43 @@ test('note DTO normalizes archived only from strict true values', () => {
   assert.equal(toNoteDto(createNoteDoc({}))?.archived, false);
   assert.equal(toNoteDto(null), null);
   assert.equal(toNoteDto(undefined), undefined);
+});
+
+test('memory entry DTO returns only the approved public contract', () => {
+  const createdAt = new Date('2026-05-21T00:00:00.000Z');
+  const updatedAt = new Date('2026-05-21T01:00:00.000Z');
+  const entry = createDoc({
+    _id: 'memory-1',
+    type: 'preference',
+    content: 'Use plain language first',
+    active: true,
+    source: 'manual',
+    userId: 'user-1',
+    __v: 2,
+    createdAt,
+    updatedAt,
+    privateScore: 1
+  });
+
+  const dto = toMemoryEntryDto(entry);
+
+  assert.deepEqual(dto, {
+    _id: 'memory-1',
+    type: 'preference',
+    content: 'Use plain language first',
+    active: true,
+    source: 'manual',
+    createdAt: createdAt.toISOString(),
+    updatedAt: updatedAt.toISOString()
+  });
+  assertOnlyKeys(dto, [
+    '_id',
+    'type',
+    'content',
+    'active',
+    'source',
+    'createdAt',
+    'updatedAt'
+  ]);
+  assertAbsent(dto, ['userId', '__v', 'privateScore']);
 });

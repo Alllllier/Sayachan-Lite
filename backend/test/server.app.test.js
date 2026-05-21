@@ -194,6 +194,14 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
       productContextUserId = userId?.toHexString();
       return productContext;
     });
+    const restoreMemoryContextBuilder = aiService.__test__.setMemoryContextBuilderForTest(async () => ({
+      packetType: 'memory_context_snapshot',
+      version: 1,
+      status: 'available',
+      generatedAt: '2026-05-21T00:00:00.000Z',
+      source: 'memory_ledger_v1',
+      items: [{ type: 'preference', content: 'Use plain language.', source: 'manual' }]
+    }));
     const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async (messages, context, options) => {
       capturedChatCall = { messages, context, options };
       return { reply: 'authenticated smoke ok' };
@@ -225,8 +233,8 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
       assert.equal(capturedChatCall.context.memoryContext.packetType, 'memory_context_snapshot');
       assert.equal(capturedChatCall.context.memoryContext.version, 1);
       assert.equal(capturedChatCall.context.memoryContext.status, 'available');
-      assert.equal(capturedChatCall.context.memoryContext.source, 'backend_seed_v0');
-      assert.equal(capturedChatCall.context.memoryContext.items.length, 2);
+      assert.equal(capturedChatCall.context.memoryContext.source, 'memory_ledger_v1');
+      assert.equal(capturedChatCall.context.memoryContext.items.length, 1);
       assert.equal(capturedChatCall.options.runtimeControls.personalityBaseline, 'warm');
       assert.equal(capturedChatCall.options.runtimeControls.lastUserMessage, 'hello from route smoke');
       assert.equal(capturedChatCall.options.runtimeControls.provider, 'openai');
@@ -241,6 +249,7 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
     } finally {
       restoreChatRunner();
       restoreProductContextBuilder();
+      restoreMemoryContextBuilder();
       restoreProviderReady();
       if (originalProvider === undefined) {
         delete process.env.SAYACHAN_AI_PROVIDER;
@@ -278,6 +287,14 @@ test('authenticated /ai/chat/stream reaches controlled private-core stream path 
       productContextUserId = userId?.toHexString();
       return productContext;
     });
+    const restoreMemoryContextBuilder = aiService.__test__.setMemoryContextBuilderForTest(async () => ({
+      packetType: 'memory_context_snapshot',
+      version: 1,
+      status: 'available',
+      generatedAt: '2026-05-21T00:00:00.000Z',
+      source: 'memory_ledger_v1',
+      items: [{ type: 'preference', content: 'Use plain language.', source: 'manual' }]
+    }));
     const restoreChatStreamRunner = aiService.__test__.setChatStreamRunnerForTest(async function* (messages, context, options) {
       capturedStreamCall = { messages, context, options };
       yield { packetType: 'chat_stream_event', version: 1, type: 'text_delta', delta: 'hello ', text: 'hello ' };
@@ -316,8 +333,8 @@ test('authenticated /ai/chat/stream reaches controlled private-core stream path 
       assert.equal(capturedStreamCall.context.memoryContext.packetType, 'memory_context_snapshot');
       assert.equal(capturedStreamCall.context.memoryContext.version, 1);
       assert.equal(capturedStreamCall.context.memoryContext.status, 'available');
-      assert.equal(capturedStreamCall.context.memoryContext.source, 'backend_seed_v0');
-      assert.equal(capturedStreamCall.context.memoryContext.items.length, 2);
+      assert.equal(capturedStreamCall.context.memoryContext.source, 'memory_ledger_v1');
+      assert.equal(capturedStreamCall.context.memoryContext.items.length, 1);
       assert.equal(capturedStreamCall.options.runtimeControls.personalityBaseline, 'warm');
       assert.equal(capturedStreamCall.options.runtimeControls.lastUserMessage, 'hello from stream route');
       assert.equal(capturedStreamCall.options.runtimeControls.provider, 'openai');
@@ -332,6 +349,7 @@ test('authenticated /ai/chat/stream reaches controlled private-core stream path 
     } finally {
       restoreChatStreamRunner();
       restoreProductContextBuilder();
+      restoreMemoryContextBuilder();
       restoreProviderReady();
       if (originalProvider === undefined) {
         delete process.env.SAYACHAN_AI_PROVIDER;
@@ -461,6 +479,8 @@ test('authenticated /ai/chat returns fallback when controlled chat runner throws
     }
   ], async () => {
     const restoreProviderReady = aiService.__test__.setChatProviderKeyCheckForTest(() => true);
+    const restoreProductContextBuilder = aiService.__test__.setProductContextBuilderForTest(async () => null);
+    const restoreMemoryContextBuilder = aiService.__test__.setMemoryContextBuilderForTest(async () => null);
     const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async () => {
       chatRunnerCalled = true;
       throw new Error('controlled chat runner failure');
@@ -489,6 +509,8 @@ test('authenticated /ai/chat returns fallback when controlled chat runner throws
       assert.equal(chatRunnerCalled, true);
     } finally {
       restoreChatRunner();
+      restoreMemoryContextBuilder();
+      restoreProductContextBuilder();
       restoreProviderReady();
     }
   });
