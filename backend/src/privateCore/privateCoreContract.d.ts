@@ -37,7 +37,7 @@ declare module '@allier/sayachan-ai-core' {
 
   export type SayachanAiCoreDebugTrace = {
     mode?: {
-      source: 'input' | 'runtime_control' | 'context' | 'default';
+      source: 'input' | 'runtime_control' | 'context' | 'model_intent' | 'default';
       requestedMode: string;
       selectedMode: 'chat/general' | 'guide/core_modules';
       fallbackApplied: boolean;

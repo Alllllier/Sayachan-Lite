@@ -6,7 +6,7 @@ export const chatMessageRoleValues = ['user', 'assistant'] as const
 export const chatProviderStateStrategyValues = ['caller_managed', 'previous_response'] as const
 export const chatProviderStateSourceValues = ['auto', 'env', 'runtime_control'] as const
 export const chatModeValues = ['chat/general', 'guide/core_modules'] as const
-export const chatModeDecisionSourceValues = ['input', 'runtime_control', 'context', 'default'] as const
+export const chatModeDecisionSourceValues = ['input', 'runtime_control', 'context', 'model_intent', 'default'] as const
 export const chatFocusTypeValues = ['note', 'project'] as const
 
 export const aiResourceRequestSchema = z.object({

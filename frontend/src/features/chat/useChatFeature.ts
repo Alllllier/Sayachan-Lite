@@ -119,7 +119,6 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           ? baseContext
           : {}
       ),
-      mode: 'guide/core_modules',
       chatFocus: focus
     }
   }

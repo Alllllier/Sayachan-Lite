@@ -226,7 +226,6 @@ describe('useChatFeature orchestration', () => {
         activeTasksCount: 2,
         pinnedProjectName: 'PMO',
         currentNextAction: 'Write handoff',
-        mode: 'guide/core_modules',
         chatFocus: {
           type: 'project',
           id: 'project-1',
