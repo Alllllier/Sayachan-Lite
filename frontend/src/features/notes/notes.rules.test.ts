@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   createEmptyNoteErrors,
   createNoteEditSnapshot,
-  getNoteAIState,
   getNoteActionEligibility,
   hasNoteErrors,
   restoreNoteFromSnapshot,
@@ -93,30 +92,13 @@ describe('notes rules locks', () => {
     expect(restoreNoteFromSnapshot(null, { title: 'Original', content: 'Body' })).toBe(null)
   })
 
-  it('derives pending AI state for loading note ids', () => {
-    expect(getNoteAIState('note-1', new Set(['note-1']), { 'note-1': ['Draft'] })).toBe('pending')
-  })
-
-  it('derives active AI state for generated task drafts', () => {
-    expect(getNoteAIState('note-1', new Set(), { 'note-1': ['Draft'] })).toBe('active')
-  })
-
-  it('derives idle AI state when neither loading nor generated drafts exist', () => {
-    expect(getNoteAIState('note-1', new Set(), {})).toBe('idle')
-    expect(getNoteAIState('note-1', new Set(), { 'note-2': ['Other draft'] })).toBe('idle')
-  })
-
-  it('does not count empty draft arrays as active AI state', () => {
-    expect(getNoteAIState('note-1', new Set(), { 'note-1': [] })).toBe('idle')
-  })
-
-  it('allows active notes to expose pin, edit, archive, delete, and AI task generation', () => {
+  it('allows active notes to expose pin, edit, archive, delete, and chat focus', () => {
     expect(getNoteActionEligibility({ archived: false })).toEqual({
       canPin: true,
       canEdit: true,
       canArchive: true,
       canDelete: true,
-      canGenerateAITasks: true,
+      canFocusChat: true,
       canRestore: false
     })
   })
@@ -127,7 +109,7 @@ describe('notes rules locks', () => {
       canEdit: false,
       canArchive: false,
       canDelete: true,
-      canGenerateAITasks: false,
+      canFocusChat: false,
       canRestore: true
     })
   })

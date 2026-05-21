@@ -21,7 +21,6 @@ import {
   archiveProject as archiveProjectRequest,
   createProject as createProjectRequest,
   deleteProject as deleteProjectRequest,
-  fetchProjectNextActions,
   fetchProjects as fetchProjectsRequest,
   pinProject as pinProjectRequest,
   restoreProject as restoreProjectRequest,
@@ -75,9 +74,6 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const showArchived = ref(false)
-  const aiSuggestions = ref<Record<string, string[]>>({})
-  const aiLoadingProjects: StringSetRef = ref(new Set())
-  const savedSuggestions = ref<Set<string>>(new Set())
   const manualTaskProjects: StringSetRef = ref(new Set())
   const addingManualTasks: StringSetRef = ref(new Set())
   const manualTaskInputs = ref<ProjectStringMap>({})
@@ -507,49 +503,6 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     return getProjectFocusTitle(project, projectTasks.value[project._id] || [])
   }
 
-  function closeAISuggestions(projectId: string): void {
-    delete aiSuggestions.value[projectId]
-  }
-
-  function getProjectAIState(projectId: string): 'pending' | 'active' | 'idle' {
-    if (aiLoadingProjects.value.has(projectId)) return 'pending'
-    if (aiSuggestions.value[projectId] && aiSuggestions.value[projectId].length > 0) return 'active'
-    return 'idle'
-  }
-
-  async function handleAISuggest(project: ProjectWithId): Promise<void> {
-    aiLoadingProjects.value.add(project._id)
-    try {
-      const result = await fetchProjectNextActions(project._id)
-      aiSuggestions.value[project._id] = result.suggestions || []
-    } catch (e) {
-      aiSuggestions.value[project._id] = ['Failed to get AI suggestion']
-    } finally {
-      aiLoadingProjects.value.delete(project._id)
-    }
-  }
-
-  async function saveSuggestionAsTask(projectId: string, suggestion: string): Promise<void> {
-    if (savedSuggestions.value.has(suggestion)) {
-      return
-    }
-
-    savedSuggestions.value.add(suggestion)
-    const newTask = await saveTask(
-      suggestion,
-      'ai',
-      'project',
-      projectId
-    )
-
-    if (newTask) {
-      notify(t('projects.toastSavedAsTask'))
-      await fetchProjectTasksForCard(projectId)
-    } else {
-      savedSuggestions.value.delete(suggestion)
-    }
-  }
-
   async function setTaskAsFocus(project: ProjectWithId, task: TaskApiTask): Promise<void> {
     if (!canSetProjectFocus(task)) return
     if (!task._id) return
@@ -578,9 +531,6 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     loading,
     error,
     showArchived,
-    aiSuggestions,
-    aiLoadingProjects,
-    savedSuggestions,
     manualTaskProjects,
     addingManualTasks,
     manualTaskInputs,
@@ -616,11 +566,7 @@ export function useProjectsFeature(options: ProjectsFeatureOptions = {}) {
     addManualTask,
     addBatchTasks,
     getCurrentFocusDisplay,
-    closeAISuggestions,
-    getProjectAIState,
     fetchProjectTasksForCard,
-    handleAISuggest,
-    saveSuggestionAsTask,
     setTaskAsFocus,
     setProjectArchiveView
   }

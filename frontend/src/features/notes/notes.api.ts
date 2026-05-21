@@ -2,13 +2,11 @@ import { apiFetch, API_BASE } from '../../services/apiClient'
 import { parseApiJsonResponse } from '../../services/apiResponse'
 import {
   noteListResponseSchema,
-  noteResponseSchema,
-  noteTaskDraftsResponseSchema
+  noteResponseSchema
 } from '@sayachan/contracts'
 import type {
   NoteCreateDto,
   NoteDto,
-  NoteTaskDraftsResponseDto,
   NoteUpdateDto
 } from '@sayachan/contracts'
 
@@ -80,19 +78,4 @@ export async function unpinNote(noteId: string): Promise<void> {
   if (!response.ok) {
     throw new Error(`Unpin note failed: ${response.status}`)
   }
-}
-
-export async function fetchNoteTaskDrafts(noteId: string): Promise<NoteTaskDraftsResponseDto> {
-  const response = await apiFetch(`${API_BASE}/ai/notes/tasks`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ _id: noteId })
-  })
-
-  return parseApiJsonResponse<NoteTaskDraftsResponseDto>(
-    response,
-    'Fetch note task drafts failed',
-    noteTaskDraftsResponseSchema,
-    'note task drafts'
-  )
 }

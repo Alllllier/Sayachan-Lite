@@ -602,7 +602,7 @@ async function updateNote(note: NoteDto): Promise<void> {
           </ActionRow>
         </template>
         <ObjectActionArea
-          v-else-if="canUseNoteAction(note, 'canGenerateAITasks')"
+          v-else-if="canUseNoteAction(note, 'canFocusChat')"
           variant="ai"
           active-kind="icon"
           :state="noteChatFocusState(note._id)"
@@ -657,61 +657,6 @@ async function updateNote(note: NoteDto): Promise<void> {
   align-items: center;
   gap: 6px;
   white-space: nowrap;
-}
-
-/* Legacy AI task drafts: parked until AI reveal/list cleanup. */
-.ai-tasks-header {
-  margin-bottom: 8px;
-}
-
-.ai-task-item {
-  display: flex;
-  flex-direction: column;
-  padding: 10px 12px;
-  background: white;
-  border-radius: 4px;
-  margin-bottom: 6px;
-  gap: 10px;
-}
-
-.ai-task-item:last-child {
-  margin-bottom: 0;
-}
-
-.task-content {
-  font-size: 12px;
-  color: #555;
-  line-height: 1.5;
-  word-break: break-word;
-  overflow-wrap: break-word;
-}
-
-.task-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.note-ai-tasks {
-  margin-top: 0;
-  background: color-mix(in srgb, var(--identity-primary-soft) 45%, var(--surface-card));
-  border: 1px solid var(--border-default);
-}
-
-.note-ai-tasks .ai-tasks-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-xs);
-}
-
-.note-ai-tasks .ai-task-item {
-  background: var(--surface-card);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-block);
-}
-
-.note-ai-tasks .task-content {
-  color: var(--text-secondary);
 }
 
 /* Legacy page-level error state */

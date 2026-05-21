@@ -158,8 +158,3 @@ export const projectTasks = {
     }
   ]
 }
-
-export const projectAiSuggestions = [
-  'Write the launch project risk note and link it to the current focus task.',
-  'Create a concise stakeholder update from the remaining active tasks.'
-]

@@ -9,10 +9,6 @@ export const chatModeValues = ['chat/general', 'guide/core_modules'] as const
 export const chatModeDecisionSourceValues = ['input', 'runtime_control', 'context', 'model_intent', 'default'] as const
 export const chatFocusTypeValues = ['note', 'project'] as const
 
-export const aiResourceRequestSchema = z.object({
-  _id: z.string().min(1)
-}).strict()
-
 export const chatMessageSchema = z.object({
   role: z.enum(chatMessageRoleValues).optional(),
   content: z.string().optional()
@@ -31,11 +27,6 @@ export const chatFocusSchema = z.object({
 
 export const chatContextSchema = z.union([
   z.object({
-    activeProjectsCount: z.number().optional(),
-    activeTasksCount: z.number().optional(),
-    pinnedProjectName: z.string().optional(),
-    currentNextAction: z.string().optional(),
-    mode: z.enum(chatModeValues).optional(),
     chatFocus: chatFocusSchema.optional()
   }).strict(),
   z.null()
@@ -120,7 +111,7 @@ export const chatRuntimePayloadSchema = chatRuntimeControlsSchema.extend({
 
 export const aiChatRequestSchema = z.object({
   messages: z.array(chatMessageSchema).optional(),
-  context: z.union([chatContextSchema, z.record(z.string(), z.unknown())]).optional(),
+  context: chatContextSchema.optional(),
   runtimeControls: chatRuntimePayloadSchema.partial().optional()
 })
 
@@ -131,7 +122,6 @@ export const chatResponseSchema = z.object({
   debugTrace: chatDebugTraceSchema.optional()
 })
 
-export type AiResourceRequestDto = z.infer<typeof aiResourceRequestSchema>
 export type ChatPersonalityBaseline = (typeof chatPersonalityBaselineValues)[number]
 export type ChatConvergenceMode = (typeof chatConvergenceModeValues)[number]
 export type ChatMessageRole = (typeof chatMessageRoleValues)[number]

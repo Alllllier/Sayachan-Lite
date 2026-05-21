@@ -18,7 +18,7 @@
 - archive and restore
 - note-origin task archive and restore behavior
 - markdown editing and rendering in the notes UI
-- AI note-to-task generation through backend route with fallback
+- object action button launches one-shot Chat focus for notes
 
 ### Projects Surface
 
@@ -28,7 +28,7 @@
 - project pin and unpin
 - project archive and restore
 - related-task archive and restore
-- AI project next-action suggestions through backend route with fallback
+- object action button launches one-shot Chat focus for projects
 
 ### Tasks Surface
 
@@ -56,7 +56,7 @@
 - global floating chat entry
 - backend `/ai/chat` route
 - assistant-message markdown rendering with a safe basic reading subset
-- cockpit context hydration path through active projects and tasks
+- one-shot chat launch context through `chatFocus`; product facts come from backend snapshots/tools
 - runtime controls store
 - persona baseline switch
 - warmth and convergence controls
@@ -72,9 +72,9 @@
 - lightweight owner management for invites, tester metadata, tester disable/restore, and basic system status
 - tester accounts start with empty product data
 - Note/Project/Task `userId` ownership and route/service scoping
-- public AI note/project persisted-context ownership checks
-- project next-action focus-task lookup scoped by current user
-- frontend account-switch cleanup for chat/cockpit transient state and Notes failure drafts
+- backend-built chat product context snapshots and tools scoped by current user
+- old public GLM note/project helper routes retired
+- frontend account-switch cleanup for chat transient state and Notes failure drafts
 - auth-aware UI review mocks for guarded app-shell surfaces
 - backend owner bootstrap helper script through `npm run bootstrap:owner`
 

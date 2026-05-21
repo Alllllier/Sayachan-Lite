@@ -5,17 +5,14 @@ import { writeResourceCache } from '../../services/resourceCache.js'
 import {
   archiveNote,
   createNote,
-  fetchNoteTaskDrafts,
   fetchNotes,
   updateNote
 } from './notes.api.js'
-import { saveTask } from '../../services/tasks/index.js'
 
 vi.mock('./notes.api.js', () => ({
   archiveNote: vi.fn(),
   createNote: vi.fn(),
   deleteNote: vi.fn(),
-  fetchNoteTaskDrafts: vi.fn(),
   fetchNotes: vi.fn(),
   pinNote: vi.fn(),
   restoreNote: vi.fn(),
@@ -23,15 +20,9 @@ vi.mock('./notes.api.js', () => ({
   updateNote: vi.fn()
 }))
 
-vi.mock('../../services/tasks/index.js', () => ({
-  saveTask: vi.fn()
-}))
-
 const archiveNoteMock = vi.mocked(archiveNote)
 const createNoteMock = vi.mocked(createNote)
-const fetchNoteTaskDraftsMock = vi.mocked(fetchNoteTaskDrafts)
 const fetchNotesMock = vi.mocked(fetchNotes)
-const saveTaskMock = vi.mocked(saveTask)
 const updateNoteMock = vi.mocked(updateNote)
 const NOTE_UPDATED_AT = '2026-01-01'
 
@@ -187,19 +178,4 @@ describe('useNotesFeature orchestration', () => {
     expect(notify).toHaveBeenCalledWith('正在显示缓存笔记，刷新失败。', 'error')
   })
 
-  it('generates and saves note task drafts through feature boundaries', async () => {
-    const notify = vi.fn()
-    const feature = useNotesFeature({ notify })
-    const note = { _id: 'note-1', title: 'PMO', content: 'Plan notes', updatedAt: NOTE_UPDATED_AT }
-    fetchNoteTaskDraftsMock.mockResolvedValue({ drafts: ['Write handoff'] })
-    saveTaskMock.mockResolvedValue({ _id: 'task-1', title: 'Write handoff', status: 'active', archived: false, completed: false })
-
-    await feature.handleAIGenerateTasks(note)
-    await feature.saveNoteTaskDraft(note._id, 'Write handoff')
-
-    expect(fetchNoteTaskDrafts).toHaveBeenCalledWith(note._id)
-    expect(feature.aiTasksByNote[note._id]).toEqual(['Write handoff'])
-    expect(saveTask).toHaveBeenCalledWith('Write handoff', 'ai', 'note', 'note-1')
-    expect(notify).toHaveBeenCalledWith('任务已保存')
-  })
 })

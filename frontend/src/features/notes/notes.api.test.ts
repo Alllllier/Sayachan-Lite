@@ -3,7 +3,6 @@ import {
   archiveNote,
   createNote,
   deleteNote,
-  fetchNoteTaskDrafts,
   fetchNotes,
   pinNote,
   restoreNote,
@@ -95,22 +94,8 @@ describe('notes api boundary', () => {
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/notes/note-1', { method: 'DELETE', credentials: 'include' })
   })
 
-  it('keeps note AI task generation behind the note API boundary', async () => {
-    mockedFetch().mockResolvedValueOnce(jsonResponse({ drafts: ['Write handoff'] }))
-    await expect(fetchNoteTaskDrafts('note-1')).resolves.toEqual({ drafts: ['Write handoff'] })
-    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/ai/notes/tasks', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ _id: 'note-1' })
-    })
-  })
-
-  it('rejects malformed note and AI draft responses before feature state consumes them', async () => {
+  it('rejects malformed note responses before feature state consumes them', async () => {
     mockedFetch().mockResolvedValueOnce(jsonResponse([{ _id: 'note-1', title: 'Missing content' }]))
     await expect(fetchNotes()).rejects.toThrow('Invalid notes list response')
-
-    mockedFetch().mockResolvedValueOnce(jsonResponse({ drafts: ['Write handoff', 42] }))
-    await expect(fetchNoteTaskDrafts('note-1')).rejects.toThrow('Invalid note task drafts response')
   })
 })

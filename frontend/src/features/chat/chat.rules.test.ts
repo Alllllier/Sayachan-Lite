@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   canSendChatMessage,
   getChatFallbackReply,
@@ -6,8 +6,6 @@ import {
   getChatSendText,
   isChatInputDisabled,
   normalizeChatSendText,
-  resolveChatContextForSend,
-  resolveChatContextSnapshot,
   shouldClearChatDraft
 } from './chat.rules'
 
@@ -20,11 +18,10 @@ describe('chat rules locks', () => {
     expect(getChatSendText({ presetText: undefined, inputValue: '  typed  ' })).toBe('typed')
   })
 
-  it('blocks empty sends and concurrent sending or hydration states', () => {
-    expect(canSendChatMessage({ text: 'hello', isSending: false, isHydrating: false })).toBe(true)
-    expect(canSendChatMessage({ text: '   ', isSending: false, isHydrating: false })).toBe(false)
-    expect(canSendChatMessage({ text: 'hello', isSending: true, isHydrating: false })).toBe(false)
-    expect(canSendChatMessage({ text: 'hello', isSending: false, isHydrating: true })).toBe(false)
+  it('blocks empty sends and concurrent sending states', () => {
+    expect(canSendChatMessage({ text: 'hello', isSending: false })).toBe(true)
+    expect(canSendChatMessage({ text: '   ', isSending: false })).toBe(false)
+    expect(canSendChatMessage({ text: 'hello', isSending: true })).toBe(false)
   })
 
   it('clears typed drafts only for typed sends, not preset chip sends', () => {
@@ -32,77 +29,12 @@ describe('chat rules locks', () => {
     expect(shouldClearChatDraft('帮我聚焦')).toBe(false)
   })
 
-  it('derives disabled state and send button label from hydration and sending state', () => {
-    expect(isChatInputDisabled({ isSending: false, isHydrating: false })).toBe(false)
-    expect(isChatInputDisabled({ isSending: true, isHydrating: false })).toBe(true)
-    expect(isChatInputDisabled({ isSending: false, isHydrating: true })).toBe(true)
+  it('derives disabled state and send button label from sending state', () => {
+    expect(isChatInputDisabled({ isSending: false })).toBe(false)
+    expect(isChatInputDisabled({ isSending: true })).toBe(true)
 
-    expect(getChatSendButtonLabel({ isSending: false, isHydrating: false })).toBe('发送')
-    expect(getChatSendButtonLabel({ isSending: true, isHydrating: false })).toBe('思考中')
-    expect(getChatSendButtonLabel({ isSending: true, isHydrating: true })).toBe('准备中')
-  })
-
-  it('reuses hydrated cockpit signals without refreshing cockpit context', async () => {
-    const refreshCockpitContext = vi.fn()
-    const currentContext = {
-      activeProjectsCount: 0,
-      activeTasksCount: 3,
-      pinnedProjectName: '',
-      currentNextAction: ''
-    }
-
-    await expect(resolveChatContextSnapshot({
-      cockpitSignals: { hasHydrated: true },
-      currentContext,
-      refreshCockpitContext
-    })).resolves.toEqual(currentContext)
-
-    expect(refreshCockpitContext).not.toHaveBeenCalled()
-  })
-
-  it('hydrates cockpit context before sending when cockpit signals are cold', async () => {
-    const refreshedContext = {
-      activeProjectsCount: 0,
-      activeTasksCount: 2,
-      pinnedProjectName: '',
-      currentNextAction: ''
-    }
-    const refreshCockpitContext = vi.fn().mockResolvedValue(refreshedContext)
-
-    await expect(resolveChatContextSnapshot({
-      cockpitSignals: { hasHydrated: false },
-      currentContext: {
-        activeProjectsCount: 0,
-        activeTasksCount: 99,
-        pinnedProjectName: '',
-        currentNextAction: ''
-      },
-      refreshCockpitContext
-    })).resolves.toEqual(refreshedContext)
-
-    expect(refreshCockpitContext).toHaveBeenCalledTimes(1)
-  })
-
-  it('falls back to current context when cold dashboard hydration fails', async () => {
-    const error = new Error('offline')
-    const onHydrationError = vi.fn()
-    const refreshCockpitContext = vi.fn().mockRejectedValue(error)
-    const currentContext = {
-      activeProjectsCount: 0,
-      activeTasksCount: 99,
-      pinnedProjectName: '',
-      currentNextAction: ''
-    }
-
-    await expect(resolveChatContextForSend({
-      cockpitSignals: { hasHydrated: false },
-      currentContext,
-      refreshCockpitContext,
-      onHydrationError
-    })).resolves.toEqual(currentContext)
-
-    expect(refreshCockpitContext).toHaveBeenCalledTimes(1)
-    expect(onHydrationError).toHaveBeenCalledWith(error)
+    expect(getChatSendButtonLabel({ isSending: false })).toBe('发送')
+    expect(getChatSendButtonLabel({ isSending: true })).toBe('思考中')
   })
 
   it('derives local fallback replies from the runtime personality baseline', () => {

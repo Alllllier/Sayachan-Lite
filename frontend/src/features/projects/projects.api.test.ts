@@ -3,7 +3,6 @@ import {
   archiveProject,
   createProject,
   deleteProject,
-  fetchProjectNextActions,
   fetchProjects,
   pinProject,
   restoreProject,
@@ -98,16 +97,7 @@ describe('projects api boundary', () => {
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1', { method: 'DELETE', credentials: 'include' })
   })
 
-  it('keeps project AI and focus updates behind the project API boundary', async () => {
-    mockedFetch().mockResolvedValueOnce(jsonResponse({ suggestions: ['Write handoff'] }))
-    await expect(fetchProjectNextActions(projectDto._id)).resolves.toEqual({ suggestions: ['Write handoff'] })
-    expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/ai/projects/next-action', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ _id: 'project-1' })
-    })
-
+  it('keeps project focus updates behind the project API boundary', async () => {
     mockedFetch().mockResolvedValueOnce(jsonResponse({ ...projectDto, currentFocusTaskId: 'task-1' }))
     await updateProjectFocus(projectDto, 'task-1')
     expect(fetch).toHaveBeenLastCalledWith('http://localhost:3001/projects/project-1', {
@@ -123,11 +113,8 @@ describe('projects api boundary', () => {
     })
   })
 
-  it('rejects malformed project and AI suggestion responses before feature state consumes them', async () => {
+  it('rejects malformed project responses before feature state consumes them', async () => {
     mockedFetch().mockResolvedValueOnce(jsonResponse([{ _id: 'project-1', name: 'Missing summary' }]))
     await expect(fetchProjects()).rejects.toThrow('Invalid projects list response')
-
-    mockedFetch().mockResolvedValueOnce(jsonResponse({ suggestions: ['Write handoff', 42] }))
-    await expect(fetchProjectNextActions('project-1')).rejects.toThrow('Invalid project next actions response')
   })
 })

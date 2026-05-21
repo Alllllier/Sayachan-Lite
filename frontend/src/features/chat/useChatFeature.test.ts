@@ -1,21 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChatFeature } from './useChatFeature.js'
-import { refreshCockpitContext } from '../../services/cockpitContextService'
 import { sendChat, streamChat } from './chat.api.js'
 import type { ChatFocusDto, ChatMessageDto } from '@sayachan/contracts'
 
 const storeMocks = vi.hoisted(() => ({
   chatStore: undefined as ChatStoreMock | undefined,
-  cockpitSignals: undefined as CockpitSignalsMock | undefined,
   runtimeControls: undefined as RuntimeControlsMock | undefined
 }))
 
 vi.mock('../../stores/chat', () => ({
   useChatStore: () => storeMocks.chatStore
-}))
-
-vi.mock('../../stores/cockpitSignals', () => ({
-  useCockpitSignals: () => storeMocks.cockpitSignals
 }))
 
 vi.mock('../../stores/runtimeControls', () => ({
@@ -27,22 +21,10 @@ vi.mock('./chat.api.js', () => ({
   streamChat: vi.fn()
 }))
 
-vi.mock('../../services/cockpitContextService', () => ({
-  refreshCockpitContext: vi.fn()
-}))
-
-const refreshCockpitContextMock = vi.mocked(refreshCockpitContext)
 const sendChatMock = vi.mocked(sendChat)
 const streamChatMock = vi.mocked(streamChat)
 
 type ChatStoreMock = ReturnType<typeof createChatStore>
-type CockpitSignalsMock = {
-  activeProjectsCount: number
-  activeTasksCount: number
-  pinnedProjectName: string
-  currentNextAction: string
-  hasHydrated: boolean
-}
 type RuntimeControlsMock = {
   personalityBaseline: 'warm'
   chatStreamingEnabled: boolean
@@ -99,19 +81,11 @@ function createChatStore() {
 
 describe('useChatFeature orchestration', () => {
   let chatStore: ChatStoreMock
-  let cockpitSignals: CockpitSignalsMock
   let runtimeControls: RuntimeControlsMock
 
   beforeEach(() => {
     vi.clearAllMocks()
     chatStore = createChatStore()
-    cockpitSignals = {
-      activeProjectsCount: 1,
-      activeTasksCount: 2,
-      pinnedProjectName: 'PMO',
-      currentNextAction: 'Write handoff',
-      hasHydrated: true
-    }
     runtimeControls = {
       personalityBaseline: 'warm',
       chatStreamingEnabled: true,
@@ -129,7 +103,6 @@ describe('useChatFeature orchestration', () => {
     }
 
     storeMocks.chatStore = chatStore
-    storeMocks.cockpitSignals = cockpitSignals
     storeMocks.runtimeControls = runtimeControls
     sendChatMock.mockResolvedValue({ reply: 'Done' })
     streamChatMock.mockResolvedValue({ reply: 'Done' })
@@ -151,7 +124,7 @@ describe('useChatFeature orchestration', () => {
     expect(feature.isPanelOpen.value).toBe(false)
   })
 
-  it('sends typed chat messages with the current hydrated context', async () => {
+  it('sends typed chat messages with a narrow launch context', async () => {
     const feature = useChatFeature()
     feature.inputValue.value = '  hello  '
 
@@ -159,15 +132,9 @@ describe('useChatFeature orchestration', () => {
 
     expect(chatStore.appendMessage).toHaveBeenNthCalledWith(1, { role: 'user', content: 'hello' })
     expect(feature.inputValue.value).toBe('')
-    expect(refreshCockpitContext).not.toHaveBeenCalled()
     expect(streamChat).toHaveBeenCalledWith(
       [{ role: 'user', content: 'hello' }],
-      {
-        activeProjectsCount: 1,
-        activeTasksCount: 2,
-        pinnedProjectName: 'PMO',
-        currentNextAction: 'Write handoff'
-      },
+      {},
       {
         personalityBaseline: 'warm',
         futureSlots: {
@@ -222,10 +189,6 @@ describe('useChatFeature orchestration', () => {
     expect(streamChat).toHaveBeenCalledWith(
       [{ role: 'user', content: '下一步呢' }],
       {
-        activeProjectsCount: 1,
-        activeTasksCount: 2,
-        pinnedProjectName: 'PMO',
-        currentNextAction: 'Write handoff',
         chatFocus: {
           type: 'project',
           id: 'project-1',
@@ -257,12 +220,7 @@ describe('useChatFeature orchestration', () => {
         { role: 'assistant', content: 'Done' },
         { role: 'user', content: '闲聊一下' }
       ],
-      {
-        activeProjectsCount: 1,
-        activeTasksCount: 2,
-        pinnedProjectName: 'PMO',
-        currentNextAction: 'Write handoff'
-      },
+      {},
       {
         personalityBaseline: 'warm',
         futureSlots: {
@@ -329,40 +287,6 @@ describe('useChatFeature orchestration', () => {
       }
     })
     expect(feature.isStreamingReply.value).toBe(false)
-  })
-
-  it('hydrates cockpit context before sending when signals are cold', async () => {
-    cockpitSignals.hasHydrated = false
-    refreshCockpitContextMock.mockResolvedValue({
-      activeProjectsCount: 1,
-      activeTasksCount: 4,
-      pinnedProjectName: 'PMO',
-      currentNextAction: 'Write handoff'
-    })
-    const feature = useChatFeature()
-
-    await feature.handleSend('帮我聚焦')
-
-    expect(refreshCockpitContext).toHaveBeenCalled()
-    expect(streamChat).toHaveBeenCalledWith(
-      [{ role: 'user', content: '帮我聚焦' }],
-      {
-        activeProjectsCount: 1,
-        activeTasksCount: 4,
-        pinnedProjectName: 'PMO',
-        currentNextAction: 'Write handoff'
-      },
-      {
-        personalityBaseline: 'warm',
-        futureSlots: {
-          warmth: 7,
-          convergenceMode: 'guided'
-        },
-        debugTrace: true
-      },
-      expect.any(Object)
-    )
-    expect(feature.isHydrating.value).toBe(false)
   })
 
   it('uses the local fallback reply when sendChat fails', async () => {

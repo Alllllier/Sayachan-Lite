@@ -2,13 +2,11 @@ import { apiFetch, API_BASE } from '../../services/apiClient'
 import { parseApiJsonResponse } from '../../services/apiResponse'
 import {
   projectListResponseSchema,
-  projectNextActionsResponseSchema,
   projectResponseSchema
 } from '@sayachan/contracts'
 import type {
   ProjectCreateDto,
   ProjectDto,
-  ProjectNextActionsResponseDto,
   ProjectUpdateDto
 } from '@sayachan/contracts'
 
@@ -77,21 +75,6 @@ export async function unpinProject(projectId: string): Promise<void> {
   if (!response.ok) {
     throw new Error(`Unpin project failed: ${response.status}`)
   }
-}
-
-export async function fetchProjectNextActions(projectId: string): Promise<ProjectNextActionsResponseDto> {
-  const response = await apiFetch(`${API_BASE}/ai/projects/next-action`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ _id: projectId })
-  })
-
-  return parseApiJsonResponse<ProjectNextActionsResponseDto>(
-    response,
-    'Fetch project next actions failed',
-    projectNextActionsResponseSchema,
-    'project next actions'
-  )
 }
 
 export async function updateProjectFocus(

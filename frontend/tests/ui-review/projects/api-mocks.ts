@@ -1,4 +1,4 @@
-import { activeProjects, archivedProjects, projectAiSuggestions, projectTasks } from './fixtures.js'
+import { activeProjects, archivedProjects, projectTasks } from './fixtures.js'
 import type { Page } from '@playwright/test'
 
 type ReviewProject = {
@@ -77,11 +77,6 @@ export async function installProjectsReviewApiMocks(page: Page): Promise<void> {
 
     if (method === 'GET' && pathname === '/notes') {
       await route.fulfill(json([]))
-      return
-    }
-
-    if (method === 'POST' && pathname === '/ai/projects/next-action') {
-      await route.fulfill(json({ suggestions: projectAiSuggestions }))
       return
     }
 

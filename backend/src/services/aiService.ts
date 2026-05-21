@@ -1,51 +1,15 @@
 import {
   type AiChatRequestDto,
-  type AiResourceRequestDto,
-  chatResponseSchema,
-  noteTaskDraftsResponseSchema,
-  projectNextActionsResponseSchema
+  chatResponseSchema
 } from '@sayachan/contracts';
-import { type ObjectId, toObjectId } from '../domain/objectIds.js';
+import { type ObjectId } from '../domain/objectIds.js';
 import { chat as privateCoreChat, chatStream as privateCoreChatStream } from '../privateCore/bridge.js';
-import Note from '../models/Note.js';
-import Project from '../models/Project.js';
-import Task from '../models/Task.js';
 import {
   buildProductContextSnapshot,
   type ProductContextSnapshot
 } from './aiProductContextService.js';
 import { executeProductContextTool } from './aiProductToolService.js';
 
-type AiPayload = {
-  _id?: unknown;
-  id?: unknown;
-  title?: string;
-  content?: string;
-  name?: string;
-  summary?: string;
-  status?: string;
-  currentFocusTaskId?: unknown;
-  toObject?: () => AiPayload;
-};
-
-type AiMessageContent = string | Array<{ type?: unknown; text?: unknown }>;
-
-type AiCompletionResponse = {
-  choices?: Array<{
-    message?: {
-      content?: AiMessageContent;
-    };
-  }>;
-};
-
-type AiBodyResult<TBody> = {
-  found: true;
-  body: TBody;
-};
-
-type AiNotFoundResult = {
-  found: false;
-};
 type ChatRunner = typeof privateCoreChat;
 type ChatStreamRunner = typeof privateCoreChatStream;
 type ChatProvider = 'mock' | 'openai';
@@ -68,58 +32,6 @@ function errorMessage(error: unknown): string {
 
 function errorStack(error: unknown): string | undefined {
   return error instanceof Error ? error.stack : undefined;
-}
-
-function textFromMessageContent(messageContent: AiMessageContent | undefined): string {
-  if (typeof messageContent === 'string') {
-    return messageContent.trim();
-  }
-
-  if (Array.isArray(messageContent)) {
-    const textItem = messageContent.find(item => item?.type === 'text');
-    return typeof textItem?.text === 'string' ? textItem.text.trim() : '';
-  }
-
-  return '';
-}
-
-// Phase 3: task-based focus only
-async function getProjectFocusContext(project: AiPayload | null | undefined, userId: ObjectId): Promise<string> {
-  if (project?.currentFocusTaskId && userId) {
-    try {
-      const focusTask = await Task.findOne({ _id: project.currentFocusTaskId, userId });
-      if (focusTask?.title?.trim()) {
-        return focusTask.title.trim();
-      }
-    } catch (error: unknown) {
-      console.error('[AI Route] Failed to resolve focus task:', errorMessage(error));
-    }
-  }
-  return '';
-}
-
-// Fallback response when API key is missing or request fails
-function noteTaskFallback(note: AiPayload | null): { drafts: string[] } {
-  const title = note?.title || '(无标题)';
-  return noteTaskDraftsResponseSchema.parse({
-    drafts: [
-      `基于 "${title}" 的下一步`,
-      `整理 "${title}" 的关键点`
-    ]
-  });
-}
-
-function projectNextActionFallback(project: AiPayload | null): { suggestions: string[] } {
-  const status = project?.status || 'unknown';
-  const statusMap = {
-    pending: ['明确里程碑并设定截止日期', '梳理项目依赖关系'],
-    in_progress: ['检查当前进度并更新阻塞项', '协调相关资源推进任务'],
-    completed: ['记录项目成果并归档', '总结经验教训'],
-    on_hold: ['重新评估依赖和时间线', '确定是否需要重启项目']
-  };
-  return projectNextActionsResponseSchema.parse({
-    suggestions: statusMap[status as keyof typeof statusMap] || ['明确里程碑并设定截止日期']
-  });
 }
 
 function chatFallback() {
@@ -174,6 +86,20 @@ function canReturnDebugTrace(options: ChatExecutionOptions): boolean {
   return options.userRole === 'owner' || options.userRole === 'tester';
 }
 
+function isContextRecord(context: unknown): context is Record<string, unknown> {
+  return Boolean(context) && typeof context === 'object' && !Array.isArray(context);
+}
+
+function sanitizeCallerContext(context: AiChatRequestDto['context']): Record<string, unknown> | undefined {
+  if (!isContextRecord(context)) {
+    return undefined;
+  }
+
+  return isContextRecord(context.chatFocus)
+    ? { chatFocus: context.chatFocus }
+    : undefined;
+}
+
 function privateCoreRuntimeControls(
   runtimeControls: AiChatRequestDto['runtimeControls'],
   provider: ChatProvider,
@@ -216,14 +142,16 @@ function privateCoreRuntimeControls(
 function mergeProductContext(
   context: AiChatRequestDto['context'],
   productContext: ProductContextSnapshot | null
-): AiChatRequestDto['context'] {
+): Record<string, unknown> | undefined {
+  const safeContext = sanitizeCallerContext(context);
+
   if (!productContext) {
-    return context;
+    return safeContext;
   }
 
-  if (context && typeof context === 'object' && !Array.isArray(context)) {
+  if (isContextRecord(safeContext)) {
     return {
-      ...context,
+      ...safeContext,
       productContext
     };
   }
@@ -234,196 +162,9 @@ function mergeProductContext(
 async function buildPrivateCoreContext(
   context: AiChatRequestDto['context'],
   options: ChatExecutionOptions
-): Promise<AiChatRequestDto['context']> {
+): Promise<Record<string, unknown> | undefined> {
   const productContext = await productContextBuilder(options.userId);
   return mergeProductContext(context, productContext);
-}
-
-function normalizeDoc(doc: AiPayload | null): AiPayload | null {
-  return doc?.toObject ? doc.toObject() : doc;
-}
-
-async function resolveOwnedNotePayload(payload: AiResourceRequestDto, userId: ObjectId): Promise<AiPayload | null> {
-  const noteId = toObjectId(payload._id, 'request.body._id');
-  const note = await Note.findOne({ _id: noteId, userId });
-
-  return normalizeDoc(note);
-}
-
-async function resolveOwnedProjectPayload(payload: AiResourceRequestDto, userId: ObjectId): Promise<AiPayload | null> {
-  const projectId = toObjectId(payload._id, 'request.body._id');
-  const project = await Project.findOne({ _id: projectId, userId });
-
-  return normalizeDoc(project);
-}
-
-export async function generateNoteTaskDrafts(
-  payload: AiResourceRequestDto,
-  userId: ObjectId
-): Promise<AiBodyResult<{ drafts: string[] }> | AiNotFoundResult> {
-  const note = await resolveOwnedNotePayload(payload, userId);
-  if (!note) {
-    return { found: false };
-  }
-
-  const API_KEY = process.env.GLM_API_KEY;
-
-  // Fallback: API key missing
-  if (!API_KEY) {
-    console.warn('[AI Route] GLM_API_KEY not found, using fallback');
-    return { found: true, body: noteTaskFallback(note) };
-  }
-
-  const title = note?.title || '(无标题)';
-  const content = (note?.content || '').slice(0, 300);
-
-  const promptText = `始终使用简体中文输出。
-
-基于以下笔记内容，生成 1~2 条可直接执行的 task draft：
-笔记标题：${title}
-笔记内容：${content}
-
-要求：
-- 每条 task 必须可直接保存为 Task.title
-- 不带编号
-- 不带解释文本
-- 简体中文，动作导向
-- 适合从这条 note 延伸的任务
-- 与 note 相关或基于 note 内容扩展
-
-用换行分隔 1~2 条 task，每条一行。`;
-
-  try {
-    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'glm-4.5-air',
-        messages: [{ role: 'user', content: promptText }],
-        max_tokens: 60,
-        temperature: 0.3,
-        thinking: { type: 'disabled' },
-        stream: false
-      })
-    });
-
-    if (!response.ok) {
-      console.error('[AI Route] Note Tasks API request failed:', response.status);
-      return { found: true, body: noteTaskFallback(note) };
-    }
-
-    const data = await response.json() as AiCompletionResponse;
-    let tasksText = '';
-    tasksText = textFromMessageContent(data?.choices?.[0]?.message?.content);
-
-    if (!tasksText) {
-      console.error('[AI Route] Note Tasks invalid API response');
-      return { found: true, body: noteTaskFallback(note) };
-    }
-
-    const tasks = tasksText.split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .slice(0, 2);
-
-    console.log('[AI Route] GLM note tasks generated');
-    return { found: true, body: noteTaskDraftsResponseSchema.parse({ drafts: tasks }) };
-
-  } catch (error) {
-    console.error('[AI Route] Note Tasks API call error:', errorMessage(error));
-    return { found: true, body: noteTaskFallback(note) };
-  }
-}
-
-export async function suggestProjectNextActions(
-  payload: AiResourceRequestDto,
-  userId: ObjectId
-): Promise<AiBodyResult<{ suggestions: string[] }> | AiNotFoundResult> {
-  const project = await resolveOwnedProjectPayload(payload, userId);
-  if (!project) {
-    return { found: false };
-  }
-
-  const API_KEY = process.env.GLM_API_KEY;
-
-  // Fallback: API key missing
-  if (!API_KEY) {
-    console.warn('[AI Route] GLM_API_KEY not found, using fallback');
-    return { found: true, body: projectNextActionFallback(project) };
-  }
-
-  const name = project?.name || '(无项目名)';
-  const summary = project?.summary || '(无描述)';
-  const status = project?.status || 'unknown';
-  // Canonical: task-based focus only
-  const currentFocus = await getProjectFocusContext(project, userId) || '(无)';
-
-  const promptText = `始终使用简体中文输出。
-
-基于以下项目信息，给出 1-2 条值得推进的下一步建议：
-项目名称：${name}
-项目描述：${summary}
-当前状态：${status}
-当前下一步：${currentFocus}
-
-要求：
-- 每条建议必须是具体可执行的动作
-- 简短精炼，适合作为 task 标题
-- 用换行分隔，每条一行
-- 不带编号
-- 不带解释文本
-- 针对"推进"而非"总结"
-
-输出 1-2 条建议：`;
-
-  try {
-    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'glm-4.5-air',
-        messages: [{ role: 'user', content: promptText }],
-        max_tokens: 80,
-        temperature: 0.3,
-        thinking: { type: 'disabled' },
-        stream: false
-      })
-    });
-
-    if (!response.ok) {
-      console.error('[AI Route] Next Action API request failed:', response.status);
-      return { found: true, body: projectNextActionFallback(project) };
-    }
-
-    const data = await response.json() as AiCompletionResponse;
-    let suggestionsText = '';
-    suggestionsText = textFromMessageContent(data?.choices?.[0]?.message?.content);
-
-    if (!suggestionsText) {
-      console.error('[AI Route] Next Action invalid API response');
-      return { found: true, body: projectNextActionFallback(project) };
-    }
-
-    const suggestions = suggestionsText.split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .map(line => line.replace(/^[0-9]+[.、]\s*/, ''))
-      .filter(line => line.length > 0)
-      .slice(0, 2);
-
-    console.log('[AI Route] GLM next action suggestions generated');
-    return { found: true, body: projectNextActionsResponseSchema.parse({ suggestions }) };
-
-  } catch (error) {
-    console.error('[AI Route] Next Action API call error:', errorMessage(error));
-    return { found: true, body: projectNextActionFallback(project) };
-  }
 }
 
 export async function chat({ messages, context, runtimeControls }: AiChatRequestDto, options: ChatExecutionOptions = {}) {
@@ -471,9 +212,6 @@ export async function* chatStream({ messages, context, runtimeControls }: AiChat
 }
 
 export const __test__ = {
-  getProjectFocusContext,
-  resolveOwnedNotePayload,
-  resolveOwnedProjectPayload,
   isChatProviderReady,
   selectedChatProvider,
   setChatProviderReadinessCheckForTest(check: ChatProviderReadinessCheck) {
@@ -516,7 +254,5 @@ export const __test__ = {
 export default {
   chat,
   chatStream,
-  generateNoteTaskDrafts,
-  suggestProjectNextActions,
   __test__
 };

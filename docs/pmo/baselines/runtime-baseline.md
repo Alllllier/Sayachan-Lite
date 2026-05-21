@@ -64,15 +64,14 @@ Current lightweight owner runtime:
 Current account-boundary truth:
 
 - Notes, Projects, and Tasks carry `userId` and their normal product route/service reads and writes are scoped to the current user
-- normal Note, Project, Task, and persisted AI note/project route pipelines attach current-user middleware before product handlers; the product route surface is a personal-account-scoped API, not a shared or anonymous content API
+- normal Note, Project, and Task route pipelines attach current-user middleware before product handlers; the product route surface is a personal-account-scoped API, not a shared or anonymous content API
 - Note, Project, and Task product services require `userId` and no longer keep unowned single-user content fallback branches; the bootstrap-owner legacy data assignment path has been retired
 - Note, Project, and Task models carry indexes for current-user list reads, archived filters, and task provenance cascades so the personal-account model remains the intended medium-term data shape rather than a temporary patch
 - direct-id mutations across account boundaries behave as not found or owner-scoped no-ops through the covered route/service paths
 - project/task cascade and focus-clearing behavior is scoped to current-user-owned related records
-- public AI note/project routes reload persisted note/project payloads by current user ownership before prompt or fallback construction
-- project next-action focus-task resolution is scoped by both task id and current user ownership
-- chat receives caller-supplied public runtime context; the public runtime hydrates cockpit context from credentialed current-user `/projects` and `/tasks` reads
-- frontend-only chat/cockpit transient state resets on logout/account changes
+- chat product context snapshots and tools are backend-built and scoped by current user ownership
+- chat receives only narrow caller-supplied launch context such as one-shot `chatFocus`; product facts come from backend-built snapshots and tools
+- frontend-only chat transient state resets on logout/account changes
 - frontend account-scoped read snapshots in localStorage are used only to hydrate Notes, Projects, project-card task previews, and Dashboard saved-task lists before backend refresh; successful backend reads remain canonical and write back to the snapshot
 - Notes failure drafts in localStorage are scoped by authenticated account key
 - `runtimeControls` localStorage remains device-level and unscoped because it stores AI behavior preference, not account-owned product content
@@ -89,8 +88,7 @@ Notes currently do all of the following:
 - edit active notes through the CodeMirror markdown editor
 - sort active and archived note lists with pinned notes first, then newest updates
 - act as one provenance source for tasks
-- generate note-based AI task drafts through `POST /ai/notes/tasks`
-- save accepted note AI drafts as tasks with `creationMode: "ai"`, `originModule: "note"`, and `originId` set to the note id
+- expose a one-shot Chat focus action for active notes
 - keep failed new-note submissions in the local `sayachan_note_drafts` residue store
 - hydrate from the last account-scoped successful Notes list snapshot while a fresh backend read is in flight
 
@@ -104,8 +102,7 @@ Projects currently do all of the following:
 - expose project-linked single-task and newline-batch task capture
 - show project-card task previews split into active, completed, and archived buckets
 - allow only active, non-archived project tasks to become focus
-- generate AI next-action suggestions through `POST /ai/projects/next-action`
-- save accepted AI suggestions as tasks with `creationMode: "ai"`, `originModule: "project"`, and `originId` set to the project id
+- expose a one-shot Chat focus action for active projects
 - hydrate from the last account-scoped successful Projects list and project-card task preview snapshots while fresh backend reads are in flight
 
 ### Tasks
@@ -138,38 +135,23 @@ Dashboard currently does all of the following:
 Chat currently does all of the following:
 
 - provide a global companion entrypoint
-- consume cockpit signals when already hydrated
-- hydrate cockpit context on demand when needed
+- send narrow launch context to backend `/ai/chat`; the frontend no longer sends cockpit/product snapshots
 - send runtime controls to backend `/ai/chat`
 - include the last user message in the runtime-control payload sent to `/ai/chat`
 - render assistant replies as sanitized markdown
 - keep user-authored chat messages on plain-text rendering
 - clear the typed draft before sending a typed message; preset chip sends do not clear the typed draft
 
-## Cockpit Context Runtime
+## Chat Launch Context Runtime
 
-Current chat cockpit context flow:
+Current chat launch context flow:
 
-1. `cockpitSignals` store keeps:
-   - `activeProjectsCount`
-   - `activeTasksCount`
-   - `pinnedProjectName`
-   - `currentNextAction`
-2. `Chat.vue` reads those signals as chat context.
-3. If cockpit signals are not yet hydrated, chat calls `refreshCockpitContext()` to rebuild a snapshot from authenticated backend `/projects` and `/tasks` reads.
-4. `cockpitContextService.js` derives and writes the cockpit snapshot.
-5. Auth account changes reset the transient cockpit snapshot before the next current-user hydration.
+1. `Chat.vue` can attach a one-shot `chatFocus` when the user starts chat from a note or project focus action.
+2. `useChatFeature` sends `{ chatFocus }` for that turn only, then clears active focus.
+3. The backend strips any caller-supplied product facts and builds trusted product context from current-user data before calling private-core.
+4. private-core may use read-only product tools for additional facts when policy and provider capability allow it.
 
-This is currently a runtime bridge, not a deeper formal context architecture.
-
-Current lightweight truth rule:
-
-- cockpit signals are rebuilt from active `/projects` and active `/tasks` reads
-- active project count excludes archived projects
-- active task count excludes archived and completed tasks
-- pinned project name comes from the first pinned, non-archived project in the active project list
-- current next action comes from the first non-archived project with `currentFocusTaskId`, resolved against the active task list
-- Dashboard saved-task browsing does not redefine cockpit counts or next-action semantics
+This replaces the older cockpit snapshot bridge. The frontend no longer derives or sends `activeProjectsCount`, `activeTasksCount`, `pinnedProjectName`, or `currentNextAction` as AI context.
 
 ## Runtime Control Flow
 
@@ -209,8 +191,8 @@ Preferred runtime provenance fields are:
 
 Current practical shapes include:
 
-- note AI draft saved as task: `creationMode: "ai"`, `originModule: "note"`, `originId: noteId`
-- project manual or AI task: `creationMode: "manual" | "ai"`, `originModule: "project"`, `originId: projectId`
+- historical/provider-created task: `creationMode: "ai"` with the relevant `originModule` and `originId`
+- project manual task: `creationMode: "manual"`, `originModule: "project"`, `originId: projectId`
 - dashboard quick-add task: `creationMode: "manual"`, `originModule: "dashboard"`, `originId: null`
 
 Current frontend task runtime shape:
@@ -237,7 +219,7 @@ Current note archive flow:
 - archiving a note archives note-origin tasks
 - restoring a note restores those archived note-origin tasks
 - note cascades match canonical note provenance: `originModule: "note"` and `originId` equal to the note id
-- archived notes can be restored or deleted, but are not editable, pinnable, archivable again, or eligible for AI task generation in the UI
+- archived notes can be restored or deleted, but are not editable, pinnable, archivable again, or eligible for chat focus in the UI
 
 ### Projects
 
@@ -264,17 +246,14 @@ Current standalone task archive flow:
 
 Current backend-mediated AI surfaces:
 
-- note task generation: `POST /ai/notes/tasks`
-- project next action: `POST /ai/projects/next-action`
 - chat runtime: `POST /ai/chat`
+- chat streaming runtime: `POST /ai/chat/stream`
 
 Current fallback truth:
 
-- note task generation and project next-action use GLM when `GLM_API_KEY` exists and return route-local fallback drafts or suggestions otherwise
-- persisted note/project AI payloads are ownership-checked against the current authenticated user before fallback/provider prompt construction
-- project next-action resolves the current focus task title on the backend with current-user ownership before prompting
-- chat uses the public `/ai/chat` route and `backend/src/privateCore/bridge.ts` to call the private AI core package `@allier/sayachan-ai-core` when `KIMI_API_KEY` or `MOONSHOT_API_KEY` exists
-- chat returns a route-local fallback reply when the key is missing or the bridge call fails
+- chat uses the public `/ai/chat` and `/ai/chat/stream` routes plus `backend/src/privateCore/bridge.ts` to call the private AI core package `@allier/sayachan-ai-core`
+- chat returns a route-local fallback reply or fallback stream when the selected provider is unavailable or the bridge call fails
+- Notes and Projects no longer have separate GLM helper routes; object buttons now hand off through one-shot chat focus
 
 ### Removed Frontend Fallback
 

@@ -128,7 +128,7 @@ describe('runtimeControls store behavior locks', () => {
         selectedMode: 'guide/core_modules',
         fallbackApplied: false,
         confidence: 1,
-        reasonCodes: ['explicit_context_mode']
+        reasonCodes: ['chat_focus_guide']
       },
       tools: { exposed: ['getNoteContent'] }
     })
@@ -139,7 +139,7 @@ describe('runtimeControls store behavior locks', () => {
         selectedMode: 'guide/core_modules',
         fallbackApplied: false,
         confidence: 1,
-        reasonCodes: ['explicit_context_mode']
+        reasonCodes: ['chat_focus_guide']
       },
       tools: { exposed: ['getNoteContent'] }
     })
@@ -149,7 +149,7 @@ describe('runtimeControls store behavior locks', () => {
       selectedMode: 'guide/core_modules',
       fallbackApplied: false,
       confidence: 1,
-      reasonCodes: ['explicit_context_mode']
+      reasonCodes: ['chat_focus_guide']
     }])
 
     store.clearLatestDebugTrace()

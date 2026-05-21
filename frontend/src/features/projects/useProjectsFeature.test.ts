@@ -4,7 +4,6 @@ import { writeResourceCache } from '../../services/resourceCache.js'
 import {
   archiveProject,
   createProject,
-  fetchProjectNextActions,
   fetchProjects,
   updateProject,
   updateProjectFocus
@@ -16,7 +15,6 @@ vi.mock('./projects.api.js', () => ({
   archiveProject: vi.fn(),
   createProject: vi.fn(),
   deleteProject: vi.fn(),
-  fetchProjectNextActions: vi.fn(),
   fetchProjects: vi.fn(),
   pinProject: vi.fn(),
   restoreProject: vi.fn(),
@@ -33,7 +31,6 @@ vi.mock('../../services/tasks/index.js', () => ({
 const archiveProjectMock = vi.mocked(archiveProject)
 const createProjectMock = vi.mocked(createProject)
 const fetchProjectCardTasksMock = vi.mocked(fetchProjectCardTasks)
-const fetchProjectNextActionsMock = vi.mocked(fetchProjectNextActions)
 const fetchProjectsMock = vi.mocked(fetchProjects)
 const saveTaskMock = vi.mocked(saveTask)
 const updateProjectMock = vi.mocked(updateProject)
@@ -179,31 +176,6 @@ describe('useProjectsFeature orchestration', () => {
 
     expect(updateProjectFocus).toHaveBeenCalledWith(project, 'task-1')
     expect(feature.projects.value[0].currentFocusTaskId).toBe('task-1')
-  })
-
-  it('saves AI suggestions as project tasks and refreshes card tasks', async () => {
-    const notify = vi.fn()
-    const feature = useProjectsFeature({ notify })
-    saveTaskMock.mockResolvedValue({ _id: 'task-1', title: 'Draft', status: 'active', archived: false, completed: false })
-    fetchProjectCardTasksMock.mockResolvedValue([{ _id: 'task-1', title: 'Draft' }])
-
-    await feature.saveSuggestionAsTask('project-1', 'Draft')
-
-    expect(saveTask).toHaveBeenCalledWith('Draft', 'ai', 'project', 'project-1')
-    expect(fetchProjectCardTasks).toHaveBeenCalledWith('project-1', false)
-    expect(feature.projectTasks.value['project-1']).toEqual([{ _id: 'task-1', title: 'Draft' }])
-    expect(notify).toHaveBeenCalledWith('已保存为任务')
-  })
-
-  it('generates project AI suggestions from the current project id', async () => {
-    const feature = useProjectsFeature()
-    const project: ProjectDto & { _id: string } = { _id: 'project-1', name: 'PMO', summary: 'Plan', status: 'pending', updatedAt: PROJECT_UPDATED_AT }
-    fetchProjectNextActionsMock.mockResolvedValue({ suggestions: ['Write handoff'] })
-
-    await feature.handleAISuggest(project)
-
-    expect(fetchProjectNextActions).toHaveBeenCalledWith(project._id)
-    expect(feature.aiSuggestions.value[project._id]).toEqual(['Write handoff'])
   })
 
   it('adds a single manual project task, closes capture, and refreshes card tasks', async () => {

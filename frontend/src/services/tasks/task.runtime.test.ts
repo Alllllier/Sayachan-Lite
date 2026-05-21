@@ -78,7 +78,7 @@ describe('task runtime', () => {
     expect(activeTasksSnapshotRef.value).toEqual([])
   })
 
-  it('keeps a separate active-task snapshot for cockpit context', () => {
+  it('keeps a separate active-task snapshot for active list reuse', () => {
     activeTasksSnapshotRef.value = [
       { _id: 'task-1', title: 'Active snapshot task', archived: false, status: 'active' }
     ]

@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test'
-import { projectAiSuggestions } from './fixtures.js'
 import {
   captureProjectsReviewState,
   openProjectsReview,
@@ -89,14 +88,10 @@ test.describe('Projects UI review', () => {
     await pinnedCard.getByRole('button', { name: 'Cancel' }).click()
 
     await pinnedCard.locator('.btn-ai-icon').click()
-    await expect(pinnedCard.getByText('AI Suggestions (2)')).toBeVisible()
-    await expect(pinnedCard.getByText(projectAiSuggestions[0])).toBeVisible()
-    await captureProjectsReviewState(page, 'projects-ai-suggestions-active')
-
-    await pinnedCard.getByRole('button', { name: 'Save as Task' }).first().click()
-    await expect(pinnedCard.getByRole('button', { name: 'Saved' })).toBeVisible()
-    await expect(page.getByText('Saved as task')).toBeVisible()
-    await captureProjectsReviewState(page, 'projects-ai-suggestion-saved-as-task')
+    await expect(page.getByText('Focusing')).toBeVisible()
+    await expect(page.getByText('Project · Pinned launch project')).toBeVisible()
+    await captureProjectsReviewState(page, 'projects-chat-focus-active')
+    await page.getByRole('button', { name: 'Close chat' }).click()
 
     await pinnedCard.getByRole('button', { name: 'Actions' }).click()
     const menu = page.getByRole('menu')

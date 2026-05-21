@@ -7,7 +7,6 @@ import type {
 } from '@sayachan/contracts'
 import { clearResourceCache } from '../services/resourceCache'
 import { useChatStore } from './chat'
-import { useCockpitSignals } from './cockpitSignals'
 
 export type AuthStore = {
   currentUser: PublicUserDto | null
@@ -26,7 +25,6 @@ export type AuthStore = {
 function resetAccountScopedRuntimeState() {
   clearResourceCache()
   useChatStore().resetChat()
-  useCockpitSignals().resetSignals()
 }
 
 export const useAuthStore = defineStore('auth', {

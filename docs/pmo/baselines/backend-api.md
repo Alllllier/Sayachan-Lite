@@ -278,23 +278,17 @@ Current behavior truth:
 
 ### AI
 
-- `POST /ai/notes/tasks`
-- `POST /ai/projects/next-action`
 - `POST /ai/chat`
 - `POST /ai/chat/stream`
 
 Current behavior truth:
 
 - AI routes are behind the same session gate as other normal product/API routes
-- `/ai/notes/tasks` reloads persisted note payloads by `_id` plus current `userId` before using note title/content for fallback or provider prompts
-- `/ai/projects/next-action` reloads persisted project payloads by `_id` plus current `userId` before using project name/summary/status/current focus
-- project next-action focus task title resolution is scoped by both task id and current `userId`
-- missing or cross-account persisted note/project ids return `404`
-- ad hoc AI note/project payloads without `_id` remain accepted for existing non-persisted frontend behavior
-- note and project AI currently use `GLM_API_KEY`
+- chat product context snapshots and tools are backend-built and scoped by current-user ownership
+- old public GLM note/project helper routes have been retired; Notes/Projects object buttons launch one-shot chat focus instead
 - chat uses the private-core bridge; `/ai/chat` returns a normal JSON `{ reply }` response, while `/ai/chat/stream` preserves the same request body and returns Server-Sent Events for `text_delta`, `completed`, and `error`
 - chat requests may include `runtimeControls.providerState`; OpenAI Responses state returns as optional `providerState` on normal chat responses or completed stream events
-- all current AI routes still have fallback responses
+- current chat routes still have fallback responses
 
 ## Current Contract Notes That Matter
 

@@ -1,9 +1,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import type { ChatContextDto, ChatFocusDto, ChatMessageDto, ChatSourceReceiptDto } from '@sayachan/contracts'
 import { useChatStore } from '../../stores/chat'
-import { useCockpitSignals } from '../../stores/cockpitSignals'
 import { useRuntimeControls } from '../../stores/runtimeControls'
-import { refreshCockpitContext } from '../../services/cockpitContextService'
 import { sendChat, streamChat, type ChatStreamEvent } from './chat.api.js'
 import {
   canSendChatMessage,
@@ -11,7 +9,6 @@ import {
   getChatSendButtonLabel,
   getChatSendText,
   isChatInputDisabled,
-  resolveChatContextForSend,
   shouldClearChatDraft
 } from './chat.rules'
 
@@ -19,7 +16,6 @@ const noop = () => {}
 
 type ChatFeatureOptions = {
   scrollToBottom?: () => void
-  onHydrationError?: (error: unknown) => void
   onSendError?: (error: unknown) => void
 }
 
@@ -40,28 +36,17 @@ type ChatStoreLike = {
   clearFocus?: () => void
 }
 
-type CockpitSignalsLike = {
-  activeProjectsCount: number
-  activeTasksCount: number
-  pinnedProjectName: string
-  currentNextAction: string
-  hasHydrated: boolean
-}
-
 type ChatKeydownEvent = Pick<KeyboardEvent, 'key' | 'shiftKey' | 'preventDefault'>
 
 export function useChatFeature(options: ChatFeatureOptions = {}) {
   const scrollToBottom = options.scrollToBottom || noop
-  const onHydrationError = options.onHydrationError || noop
   const onSendError = options.onSendError || noop
 
   const chatStore = useChatStore() as ChatStoreLike
-  const cockpitSignals = useCockpitSignals() as CockpitSignalsLike
   const runtimeControls = useRuntimeControls()
 
   const inputValue = ref('')
   const isPanelOpen = ref(false)
-  const isHydrating = ref(false)
   const isStreamingReply = ref(false)
   const toolStatusText = ref('')
   const focusSnapshotsByMessageIndex = ref<Record<number, ChatFocusSnapshot>>({})
@@ -77,21 +62,14 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     }
   )
 
-  const context = computed<ChatContextDto>(() => ({
-    activeProjectsCount: cockpitSignals.activeProjectsCount,
-    activeTasksCount: cockpitSignals.activeTasksCount,
-    pinnedProjectName: cockpitSignals.pinnedProjectName,
-    currentNextAction: cockpitSignals.currentNextAction,
-  }))
+  const context = computed<ChatContextDto>(() => ({}))
 
   const chatInputDisabled = computed(() => isChatInputDisabled({
-    isSending: chatStore.isSending,
-    isHydrating: isHydrating.value
+    isSending: chatStore.isSending
   }))
 
   const chatSendButtonLabel = computed(() => getChatSendButtonLabel({
-    isSending: chatStore.isSending,
-    isHydrating: isHydrating.value
+    isSending: chatStore.isSending
   }))
 
   function openPopup() {
@@ -165,8 +143,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
 
     if (!canSendChatMessage({
       text,
-      isSending: chatStore.isSending,
-      isHydrating: isHydrating.value
+      isSending: chatStore.isSending
     })) return
 
     if (shouldClearChatDraft(presetText)) {
@@ -179,16 +156,6 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     setMessageFocusSnapshot(userMessageIndex, focusForTurn)
 
     let chatContext: ChatContextDto = context.value
-    if (!cockpitSignals.hasHydrated) {
-      isHydrating.value = true
-      chatContext = await resolveChatContextForSend({
-        cockpitSignals,
-        currentContext: context.value,
-        refreshCockpitContext,
-        onHydrationError
-      })
-      isHydrating.value = false
-    }
     chatContext = contextWithFocusForTurn(chatContext, focusForTurn)
     if (focusForTurn) {
       chatStore.clearFocus?.()
@@ -283,7 +250,6 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     runtimeControls,
     inputValue,
     isPanelOpen,
-    isHydrating,
     isStreamingReply,
     toolStatusText,
     focusSnapshotsByMessageIndex,

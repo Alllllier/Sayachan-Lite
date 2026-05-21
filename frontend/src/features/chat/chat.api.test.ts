@@ -2,12 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildChatRuntimePayload, sendChat, streamChat } from './chat.api.js'
 import type { ChatContextDto } from '@sayachan/contracts'
 
-const emptyContext: ChatContextDto = {
-  activeProjectsCount: 0,
-  activeTasksCount: 0,
-  pinnedProjectName: '',
-  currentNextAction: ''
-}
+const emptyContext: ChatContextDto = {}
 
 function mockedFetch() {
   return vi.mocked(fetch)
@@ -40,19 +35,14 @@ describe('chat api boundary', () => {
     vi.stubGlobal('fetch', vi.fn())
   })
 
-  it('sends chat messages with context, runtime controls, last user message, and future slots', async () => {
+  it('sends chat messages with launch context, runtime controls, last user message, and future slots', async () => {
     mockedFetch().mockResolvedValue(jsonResponse({ reply: 'Ready.' }))
 
     await expect(sendChat([
       { role: 'user', content: 'first' },
       { role: 'assistant', content: 'reply' },
       { role: 'user', content: 'latest' }
-    ], {
-      activeProjectsCount: 0,
-      activeTasksCount: 3,
-      pinnedProjectName: '',
-      currentNextAction: ''
-    }, {
+    ], {}, {
       personalityBaseline: 'strict',
       futureSlots: {
         warmth: 8,
@@ -72,12 +62,7 @@ describe('chat api boundary', () => {
         { role: 'assistant', content: 'reply' },
         { role: 'user', content: 'latest' }
       ],
-      context: {
-        activeProjectsCount: 0,
-        activeTasksCount: 3,
-        pinnedProjectName: '',
-        currentNextAction: ''
-      },
+      context: {},
       runtimeControls: {
         personalityBaseline: 'strict',
         futureSlots: {
@@ -105,7 +90,7 @@ describe('chat api boundary', () => {
           selectedMode: 'guide/core_modules',
           fallbackApplied: false,
           confidence: 1,
-          reasonCodes: ['explicit_context_mode']
+          reasonCodes: ['chat_focus_guide']
         },
         tools: {
           executed: [{ name: 'getProjectContext', status: 'completed', round: 1 }]
@@ -125,7 +110,7 @@ describe('chat api boundary', () => {
             selectedMode: 'guide/core_modules',
             fallbackApplied: false,
             confidence: 1,
-            reasonCodes: ['explicit_context_mode']
+            reasonCodes: ['chat_focus_guide']
           },
           tools: {
             executed: [{ name: 'getProjectContext', status: 'completed', round: 1 }]

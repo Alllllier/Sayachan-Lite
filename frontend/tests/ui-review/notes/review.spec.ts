@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test'
-import { aiDrafts } from './fixtures.js'
 import {
   captureReviewState,
   editingNoteCard,
@@ -17,7 +16,7 @@ test.describe('Notes UI review', () => {
 
     await expect(noteCard(page, 'Pinned planning note')).toBeVisible()
     await expect(noteCard(page, 'Markdown rendering review')).toBeVisible()
-    await expect(noteCard(page, 'AI draft source note')).toBeVisible()
+    await expect(noteCard(page, 'Chat focus source note')).toBeVisible()
     await expect(noteCard(page, 'Markdown rendering review').locator('h1', { hasText: 'Markdown review' })).toBeVisible()
     await expect(noteCard(page, 'Markdown rendering review').locator('pre code')).toContainText('reviewState')
     await expect(page.getByRole('button', { name: 'New note' })).toBeVisible()
@@ -88,16 +87,12 @@ test.describe('Notes UI review', () => {
     await editingCard.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByRole('heading', { name: 'Markdown rendering review updated' })).toBeVisible()
 
-    const aiCard = noteCard(page, 'AI draft source note')
-    await aiCard.locator('.btn-ai-icon').click()
-    await expect(aiCard.getByText('AI Tasks (2)')).toBeVisible()
-    await expect(aiCard.getByText(aiDrafts[0])).toBeVisible()
-    await captureReviewState(page, 'notes-ai-drafts-active')
-
-    await aiCard.getByRole('button', { name: 'Save as Task' }).first().click()
-    await expect(aiCard.getByRole('button', { name: 'Saved' })).toBeVisible()
-    await expect(page.getByText('Task saved')).toBeVisible()
-    await captureReviewState(page, 'notes-ai-draft-saved')
+    const focusCard = noteCard(page, 'Chat focus source note')
+    await focusCard.locator('.btn-ai-icon').click()
+    await expect(page.getByText('Focusing')).toBeVisible()
+    await expect(page.getByText('Note · Chat focus source note')).toBeVisible()
+    await captureReviewState(page, 'notes-chat-focus-active')
+    await page.getByRole('button', { name: 'Close chat' }).click()
 
     await page.getByRole('button', { name: 'Archived' }).click()
     await expect(page.getByRole('heading', { name: 'Archived review note' })).toBeVisible()

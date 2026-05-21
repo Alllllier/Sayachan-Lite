@@ -208,7 +208,6 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
         },
         body: JSON.stringify({
           messages: [{ role: 'user', content: 'hello from route smoke' }],
-          context: { activeTask: 'smoke-task' },
           runtimeControls: {
             personalityBaseline: 'warm',
             lastUserMessage: 'hello from route smoke'
@@ -222,7 +221,7 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
       assert.equal(response.status, 200);
       assert.deepEqual(body, { reply: 'authenticated smoke ok' });
       assert.deepEqual(capturedChatCall.messages, [{ role: 'user', content: 'hello from route smoke' }]);
-      assert.deepEqual(capturedChatCall.context, { activeTask: 'smoke-task', productContext });
+      assert.deepEqual(capturedChatCall.context, { productContext });
       assert.equal(capturedChatCall.options.runtimeControls.personalityBaseline, 'warm');
       assert.equal(capturedChatCall.options.runtimeControls.lastUserMessage, 'hello from route smoke');
       assert.equal(capturedChatCall.options.runtimeControls.provider, 'openai');
@@ -290,7 +289,6 @@ test('authenticated /ai/chat/stream reaches controlled private-core stream path 
         },
         body: JSON.stringify({
           messages: [{ role: 'user', content: 'hello from stream route' }],
-          context: { activeTask: 'stream-smoke-task' },
           runtimeControls: {
             personalityBaseline: 'warm',
             lastUserMessage: 'hello from stream route'
@@ -309,7 +307,7 @@ test('authenticated /ai/chat/stream reaches controlled private-core stream path 
       assert.equal(events[1].data.delta, 'stream');
       assert.deepEqual(events[2].data.output, { reply: 'hello stream' });
       assert.deepEqual(capturedStreamCall.messages, [{ role: 'user', content: 'hello from stream route' }]);
-      assert.deepEqual(capturedStreamCall.context, { activeTask: 'stream-smoke-task', productContext });
+      assert.deepEqual(capturedStreamCall.context, { productContext });
       assert.equal(capturedStreamCall.options.runtimeControls.personalityBaseline, 'warm');
       assert.equal(capturedStreamCall.options.runtimeControls.lastUserMessage, 'hello from stream route');
       assert.equal(capturedStreamCall.options.runtimeControls.provider, 'openai');
@@ -363,7 +361,6 @@ test('authenticated /ai/chat/stream returns streaming fallback without calling r
         },
         body: JSON.stringify({
           messages: [{ role: 'user', content: 'hello stream fallback route' }],
-          context: { activeTask: 'stream-fallback-smoke-task' },
           runtimeControls: {
             personalityBaseline: 'warm',
             lastUserMessage: 'hello stream fallback route'
@@ -416,7 +413,6 @@ test('authenticated /ai/chat returns fallback without calling chat runner when p
         },
         body: JSON.stringify({
           messages: [{ role: 'user', content: 'hello fallback route' }],
-          context: { activeTask: 'fallback-smoke-task' },
           runtimeControls: {
             personalityBaseline: 'warm',
             lastUserMessage: 'hello fallback route'
@@ -469,7 +465,6 @@ test('authenticated /ai/chat returns fallback when controlled chat runner throws
         },
         body: JSON.stringify({
           messages: [{ role: 'user', content: 'hello runner error route' }],
-          context: { activeTask: 'runner-error-smoke-task' },
           runtimeControls: {
             personalityBaseline: 'warm',
             lastUserMessage: 'hello runner error route'

@@ -32,7 +32,6 @@ const {
   runtimeControls,
   inputValue,
   isPanelOpen,
-  isHydrating,
   isStreamingReply,
   toolStatusText,
   getMessageSourceReceipts,
@@ -46,7 +45,6 @@ const {
   handleKeydown
 } = useChatFeature({
   scrollToBottom,
-  onHydrationError: error => console.error('Failed to hydrate context:', error),
   onSendError: error => console.error('Failed to send chat:', error)
 })
 
@@ -172,9 +170,6 @@ function focusSnapshotLabel(index: number): string {
               </div>
               <div class="chat-bubble">{{ msg.content }}</div>
             </div>
-          </div>
-          <div v-if="isHydrating" class="chat-message assistant">
-            <div class="chat-bubble chat-bubble--thinking">{{ t('chat.syncingContext') }}</div>
           </div>
           <div v-if="toolStatusText" class="chat-message assistant">
             <div class="chat-bubble chat-bubble--thinking">{{ toolStatusText }}</div>

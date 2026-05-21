@@ -64,14 +64,6 @@ export const projectResponseSchema = projectWriteSchema.extend({
 
 export const projectListResponseSchema = z.array(projectResponseSchema)
 
-export const noteTaskDraftsResponseSchema = z.object({
-  drafts: z.array(z.string())
-})
-
-export const projectNextActionsResponseSchema = z.object({
-  suggestions: z.array(z.string())
-})
-
 export const taskCreateSchema = z.object({
   title: nonEmptyStringSchema,
   creationMode: z.enum(taskCreationModeValues).optional(),
@@ -109,8 +101,6 @@ export type ProjectCreateDto = z.infer<typeof projectCreateSchema>
 export type ProjectUpdateDto = z.infer<typeof projectUpdateSchema>
 export type ProjectWriteDto = z.infer<typeof projectWriteSchema>
 export type ProjectDto = z.infer<typeof projectResponseSchema>
-export type NoteTaskDraftsResponseDto = z.infer<typeof noteTaskDraftsResponseSchema>
-export type ProjectNextActionsResponseDto = z.infer<typeof projectNextActionsResponseSchema>
 export type TaskCreateDto = z.infer<typeof taskCreateSchema>
 export type TaskUpdateDto = z.infer<typeof taskUpdateSchema>
 export type TaskDto = z.infer<typeof taskResponseSchema>

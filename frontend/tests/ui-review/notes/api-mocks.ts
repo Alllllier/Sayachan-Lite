@@ -1,4 +1,4 @@
-import { activeNotes, aiDrafts, archivedNotes } from './fixtures.js'
+import { activeNotes, archivedNotes } from './fixtures.js'
 import type { Page } from '@playwright/test'
 
 type ReviewNote = {
@@ -93,11 +93,6 @@ export async function installNotesReviewApiMocks(page: Page): Promise<void> {
       }
       notesById.set(saved._id, saved)
       await route.fulfill(json(saved, 201))
-      return
-    }
-
-    if (method === 'POST' && pathname === '/ai/notes/tasks') {
-      await route.fulfill(json({ drafts: aiDrafts }))
       return
     }
 

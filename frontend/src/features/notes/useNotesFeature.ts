@@ -1,13 +1,11 @@
-import { reactive, ref, unref } from 'vue'
+import { ref, unref } from 'vue'
 import type { MaybeRef } from 'vue'
 import type { NoteCreateDto, NoteDto } from '@sayachan/contracts'
 import { readResourceCache, writeResourceCache } from '../../services/resourceCache.js'
-import { saveTask } from '../../services/tasks/index.js'
 import {
   archiveNote as archiveNoteRequest,
   createNote as createNoteRequest,
   deleteNote as deleteNoteRequest,
-  fetchNoteTaskDrafts,
   fetchNotes as fetchNotesRequest,
   pinNote as pinNoteRequest,
   restoreNote as restoreNoteRequest,
@@ -17,7 +15,6 @@ import {
 import {
   createEmptyNoteErrors,
   createNoteEditSnapshot,
-  getNoteAIState as deriveNoteAIState,
   getNoteActionEligibility,
   hasNoteErrors,
   restoreNoteFromSnapshot,
@@ -52,7 +49,6 @@ type NoteForm = Required<Pick<NoteCreateDto, 'title' | 'content'>>
 type DraftMap = Record<string, NoteForm>
 type NoteErrorsById = Record<string, NoteFieldErrors>
 type NoteSnapshotById = Record<string, NoteEditSnapshot>
-type NoteTaskDraftsById = Record<string, string[]>
 
 function sortNotes(notes: NoteDto[]): NoteDto[] {
   return [...notes].sort((a, b) => {
@@ -113,9 +109,6 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const showArchived = ref(false)
-  const aiTasksByNote = reactive<NoteTaskDraftsById>({})
-  const aiLoadingNotes = ref<Set<string>>(new Set())
-  const savedTaskDrafts = ref<Set<string>>(new Set())
   const newNoteErrors = ref(createEmptyNoteErrors())
   const editNoteErrors = ref<NoteErrorsById>({})
   const editingOriginalData = ref<NoteSnapshotById>({})
@@ -334,14 +327,6 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
     editingId.value = null
   }
 
-  function closeAITasks(noteId: string): void {
-    delete aiTasksByNote[noteId]
-  }
-
-  function getNoteAIState(noteId: string) {
-    return deriveNoteAIState(noteId, aiLoadingNotes.value, aiTasksByNote)
-  }
-
   function canUseNoteAction(note: NoteDto, action: keyof ReturnType<typeof getNoteActionEligibility>): boolean {
     return Boolean(getNoteActionEligibility(note)[action])
   }
@@ -351,37 +336,6 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
     void fetchNotes()
   }
 
-  async function handleAIGenerateTasks(note: EditableNote): Promise<void> {
-    aiLoadingNotes.value.add(note._id)
-    try {
-      const result = await fetchNoteTaskDrafts(note._id)
-      aiTasksByNote[note._id] = result.drafts || []
-    } catch (e) {
-      aiTasksByNote[note._id] = ['Failed to generate tasks']
-    } finally {
-      aiLoadingNotes.value.delete(note._id)
-    }
-  }
-
-  async function saveNoteTaskDraft(noteId: string, draft: string): Promise<void> {
-    if (savedTaskDrafts.value.has(draft)) {
-      return
-    }
-
-    savedTaskDrafts.value.add(draft)
-    const newTask = await saveTask(
-      draft,
-      'ai',
-      'note',
-      noteId
-    )
-    if (newTask) {
-      notify(t('notes.toastTaskSaved'))
-    } else {
-      savedTaskDrafts.value.delete(draft)
-    }
-  }
-
   return {
     notes,
     form,
@@ -389,9 +343,6 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
     loading,
     error,
     showArchived,
-    aiTasksByNote,
-    aiLoadingNotes,
-    savedTaskDrafts,
     newNoteErrors,
     editNoteErrors,
     drafts,
@@ -409,11 +360,7 @@ export function useNotesFeature(options: NotesFeatureOptions = {}) {
     updateEditNoteError,
     clearEditNoteErrors,
     reloadDrafts,
-    closeAITasks,
-    getNoteAIState,
     canUseNoteAction,
-    setArchiveView,
-    handleAIGenerateTasks,
-    saveNoteTaskDraft
+    setArchiveView
   }
 }

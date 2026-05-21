@@ -845,39 +845,6 @@ async function submitProjectCapture(): Promise<void> {
   white-space: nowrap;
 }
 
-/* Legacy AI suggestions: parked until AI reveal/list cleanup. */
-.ai-suggestions-header {
-  margin-bottom: 8px;
-}
-
-.ai-suggestion-item {
-  display: flex;
-  flex-direction: column;
-  padding: 10px 12px;
-  background: white;
-  border-radius: 4px;
-  margin-bottom: 8px;
-  gap: 10px;
-}
-
-.ai-suggestion-item:last-child {
-  margin-bottom: 0;
-}
-
-.suggestion-content {
-  font-size: 12px;
-  color: #555;
-  line-height: 1.5;
-  word-break: break-word;
-  overflow-wrap: break-word;
-}
-
-.suggestion-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
 /* Legacy page-level error state */
 .error {
   padding: var(--space-sm);

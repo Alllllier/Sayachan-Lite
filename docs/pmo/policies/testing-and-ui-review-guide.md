@@ -137,7 +137,7 @@ When a sprint touches Notes presentation or reading/editing transitions, stable 
 - overflow menu
 - edit state
 - edit validation
-- AI drafts active
+- chat focus active
 - archived notes
 - mobile active view
 
@@ -147,7 +147,7 @@ When a sprint touches Projects presentation or task/project transitions, stable 
 - task preview collapsed and expanded
 - task capture single and batch modes
 - overflow menu
-- AI suggestions when relevant
+- chat focus active
 - archived projects
 - mobile active view
 

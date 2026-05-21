@@ -42,7 +42,7 @@ Current frontend code shape:
 - shared API requests use `frontend/src/services/apiClient.js` so session cookies are sent with product API calls
 - frontend account-scoped read snapshots use `frontend/src/services/resourceCache.js` for Notes, Projects, project-card task previews, and Dashboard saved-task lists
 - shared task service internals live under `frontend/src/services/tasks/` as API, rules, and runtime state modules
-- auth-aware account switching resets frontend-only chat/cockpit transient state, clears account-scoped resource snapshots, and scopes Notes failure-draft localStorage by authenticated account key
+- auth-aware account switching resets frontend-only chat transient state, clears account-scoped resource snapshots, and scopes Notes failure-draft localStorage by authenticated account key
 
 Current repo-native validation shape:
 
@@ -125,7 +125,7 @@ Current Chat behavior includes:
 - assistant-message markdown rendering in the frontend
 - user-authored chat messages still rendered as plain text
 - runtime controls for personality baseline, warmth, and convergence mode
-- cockpit context hydration on demand through `frontend/src/services/cockpitContextService.js`
+- narrow one-shot chat launch context through `chatFocus`; product facts are built by backend snapshots/tools rather than frontend cockpit hydration
 
 ## Backend Surface
 
@@ -148,9 +148,8 @@ Backend routes currently split into:
 
 Current AI route surface:
 
-- `POST /ai/notes/tasks`
-- `POST /ai/projects/next-action`
 - `POST /ai/chat`
+- `POST /ai/chat/stream`
 
 Current route behavior truth:
 
@@ -166,11 +165,10 @@ Current route behavior truth:
 - `Task.originId` remains provenance-specific and is not yet globally cast to `ObjectId`; note/project provenance tightening is a separate contract decision
 - Note, Project, and Task create/update routes validate product mutation bodies through `backend/src/middleware/route/requestBodyValidation.ts` and route-owned Zod schemas, then pass `ctx.state.validatedBody` to services while preserving raw `ctx.request.body`
 - Note, Project, and Task services write owner-scoped Mongo filters explicitly with `userId` and do not retain unowned single-user content fallback branches
-- public AI note/project routes reload persisted note/project context by current user ownership before constructing fallback/provider prompts
-- project next-action focus task resolution is scoped by both task id and current user ownership
-- note and project AI routes call GLM through backend route logic
+- chat product context snapshots and tools are backend-built and scoped by current-user ownership
+- old public GLM note/project helper routes have been retired; Notes/Projects object buttons launch one-shot chat focus instead
 - chat goes through `backend/src/privateCore/bridge.ts` into the private core
-- fallback responses still exist for all current AI routes
+- fallback responses still exist for chat JSON and stream routes
 
 ## Data Model Truth
 

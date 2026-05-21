@@ -1,4 +1,3 @@
-import type { ChatContextDto } from '@sayachan/contracts'
 import { t } from '../../i18n/productLocale'
 
 type ChatBaseline = 'warm' | 'strict' | 'haraguro' | (string & {})
@@ -6,7 +5,6 @@ type ChatBaseline = 'warm' | 'strict' | 'haraguro' | (string & {})
 type ChatSendState = {
   text: string | null | undefined
   isSending: boolean
-  isHydrating: boolean
 }
 
 type ChatTextSource = {
@@ -16,21 +14,6 @@ type ChatTextSource = {
 
 type ChatBusyState = {
   isSending: boolean
-  isHydrating: boolean
-}
-
-type CockpitSignals = {
-  hasHydrated?: boolean
-}
-
-type ChatContextSnapshotOptions = {
-  cockpitSignals: CockpitSignals | null | undefined
-  currentContext: ChatContextDto
-  refreshCockpitContext: () => ChatContextDto | Promise<ChatContextDto>
-}
-
-type ChatContextSendOptions = ChatContextSnapshotOptions & {
-  onHydrationError?: (error: unknown) => void
 }
 
 export function normalizeChatSendText(value: unknown): string {
@@ -41,8 +24,8 @@ export function isPresetChatSend(presetText: unknown): boolean {
   return typeof presetText === 'string'
 }
 
-export function canSendChatMessage({ text, isSending, isHydrating }: ChatSendState): boolean {
-  return Boolean(normalizeChatSendText(text)) && !isSending && !isHydrating
+export function canSendChatMessage({ text, isSending }: ChatSendState): boolean {
+  return Boolean(normalizeChatSendText(text)) && !isSending
 }
 
 export function shouldClearChatDraft(presetText: unknown): boolean {
@@ -53,15 +36,11 @@ export function getChatSendText({ presetText, inputValue }: ChatTextSource): str
   return normalizeChatSendText(isPresetChatSend(presetText) ? presetText : inputValue)
 }
 
-export function isChatInputDisabled({ isSending, isHydrating }: ChatBusyState): boolean {
-  return Boolean(isSending || isHydrating)
+export function isChatInputDisabled({ isSending }: ChatBusyState): boolean {
+  return Boolean(isSending)
 }
 
-export function getChatSendButtonLabel({ isSending, isHydrating }: ChatBusyState): string {
-  if (isHydrating) {
-    return t('chat.preparing')
-  }
-
+export function getChatSendButtonLabel({ isSending }: ChatBusyState): string {
   return isSending ? t('chat.thinking') : t('chat.send')
 }
 
@@ -73,34 +52,4 @@ export function getChatFallbackReply(baseline: ChatBaseline): string {
   }
 
   return fallbacks[baseline] || fallbacks.warm
-}
-
-export async function resolveChatContextSnapshot({
-  cockpitSignals,
-  currentContext,
-  refreshCockpitContext
-}: ChatContextSnapshotOptions): Promise<ChatContextDto> {
-  if (cockpitSignals?.hasHydrated) {
-    return currentContext
-  }
-
-  return refreshCockpitContext()
-}
-
-export async function resolveChatContextForSend({
-  cockpitSignals,
-  currentContext,
-  refreshCockpitContext,
-  onHydrationError
-}: ChatContextSendOptions): Promise<ChatContextDto> {
-  try {
-    return await resolveChatContextSnapshot({
-      cockpitSignals,
-      currentContext,
-      refreshCockpitContext
-    })
-  } catch (error) {
-    onHydrationError?.(error)
-    return currentContext
-  }
 }

@@ -30,8 +30,8 @@ export const activeNotes = [
   },
   {
     _id: 'note-drafts',
-    title: 'AI draft source note',
-    content: 'Turn this into task drafts with enough length to verify wrapping inside the revealed AI task panel.',
+    title: 'Chat focus source note',
+    content: 'Use this note to verify that the object action button opens chat with a one-shot focus.',
     isPinned: false,
     archived: false,
     updatedAt: '2026-05-01T11:15:00.000Z'
@@ -47,9 +47,4 @@ export const archivedNotes = [
     archived: true,
     updatedAt: '2026-04-28T08:45:00.000Z'
   }
-]
-
-export const aiDrafts = [
-  'Write the UI review report entry with exact mocked states and artifact paths so PMO can review without opening the backend.',
-  'Check the long wrapping behavior in the AI draft panel and save this generated draft as a task from the note.'
 ]
