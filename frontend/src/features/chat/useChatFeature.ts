@@ -3,7 +3,7 @@ import type { ChatContextDto, ChatFocusDto, ChatMemoryCandidateDto, ChatMessageD
 import { useChatStore } from '../../stores/chat'
 import { useRuntimeControls } from '../../stores/runtimeControls'
 import { createMemoryEntry } from '../memory/memory.api.js'
-import { sendChat, streamChat, type ChatStreamEvent } from './chat.api.js'
+import { loadChatSession, sendChat, startNewChatSession, streamChat, type ChatStreamEvent, type ChatProviderState } from './chat.api.js'
 import {
   canSendChatMessage,
   getChatFallbackReply,
@@ -30,9 +30,12 @@ type ChatStoreLike = {
   isOpen: boolean
   isSending: boolean
   messages: ChatMessageDto[]
+  sessionLoaded?: boolean
   openChat: () => void
   closeChat: () => void
   appendMessage: (message: ChatMessageDto) => void
+  hydrateSession?: (messages: ChatMessageDto[], providerState?: ChatProviderState) => void
+  clearMessagesForNewSession?: () => void
   updateMessageContent: (index: number, content: string) => void
   setProviderState: (value: unknown) => void
   setSending: (value: boolean) => void
@@ -117,7 +120,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
   }
 
   function getMessageSourceReceipts(index: number): ChatSourceReceiptDto[] {
-    return sourceReceiptsByMessageIndex.value[index] || []
+    return sourceReceiptsByMessageIndex.value[index] || chatStore.messages[index]?.sourceReceipts || []
   }
 
   function setMessageMemoryCandidate(index: number | null, candidate?: ChatMemoryCandidateDto): void {
@@ -182,7 +185,71 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
   }
 
   function getMessageFocusSnapshot(index: number): ChatFocusSnapshot | undefined {
-    return focusSnapshotsByMessageIndex.value[index]
+    return focusSnapshotsByMessageIndex.value[index] || chatStore.messages[index]?.focusSnapshot
+  }
+
+  function hydrateMessageMetadata(messages: ChatMessageDto[]): void {
+    const focusSnapshots: Record<number, ChatFocusSnapshot> = {}
+    const sourceReceipts: Record<number, ChatSourceReceiptDto[]> = {}
+    const memoryCandidates: Record<number, ChatMemoryCandidateState> = {}
+
+    messages.forEach((message, index) => {
+      if (message.focusSnapshot) {
+        focusSnapshots[index] = message.focusSnapshot
+      }
+      if (message.sourceReceipts && message.sourceReceipts.length > 0) {
+        sourceReceipts[index] = message.sourceReceipts
+      }
+      if (message.memoryCandidate) {
+        memoryCandidates[index] = {
+          candidate: message.memoryCandidate,
+          status: 'pending'
+        }
+      }
+    })
+
+    focusSnapshotsByMessageIndex.value = focusSnapshots
+    sourceReceiptsByMessageIndex.value = sourceReceipts
+    memoryCandidatesByMessageIndex.value = memoryCandidates
+  }
+
+  async function loadCurrentSession(): Promise<void> {
+    if (chatStore.sessionLoaded || chatStore.messages.length > 0) {
+      return
+    }
+
+    try {
+      const session = await loadChatSession()
+      if (chatStore.messages.length > 0) {
+        return
+      }
+
+      chatStore.hydrateSession?.(session.messages, session.providerState)
+      hydrateMessageMetadata(session.messages)
+      scrollToBottom()
+    } catch (error) {
+      onSendError(error)
+    }
+  }
+
+  async function startNewSession(): Promise<void> {
+    if (chatStore.isSending) {
+      return
+    }
+
+    try {
+      await startNewChatSession()
+      chatStore.clearMessagesForNewSession?.()
+      focusSnapshotsByMessageIndex.value = {}
+      sourceReceiptsByMessageIndex.value = {}
+      memoryCandidatesByMessageIndex.value = {}
+      runtimeControls.clearLatestDebugTrace()
+      toolStatusText.value = ''
+      isStreamingReply.value = false
+      scrollToBottom()
+    } catch (error) {
+      onSendError(error)
+    }
   }
 
   function messagesForTransport(messages: ChatMessageDto[]): ChatMessageDto[] {
@@ -209,7 +276,17 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
 
     const focusForTurn = chatStore.activeFocus
     const userMessageIndex = chatStore.messages.length
-    chatStore.appendMessage({ role: 'user', content: text })
+    const userMessage: ChatMessageDto = {
+      role: 'user',
+      content: text
+    }
+    if (focusForTurn) {
+      userMessage.focusSnapshot = {
+        type: focusForTurn.type,
+        title: focusForTurn.title
+      }
+    }
+    chatStore.appendMessage(userMessage)
     setMessageFocusSnapshot(userMessageIndex, focusForTurn)
 
     let chatContext: ChatContextDto = context.value
@@ -325,6 +402,8 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     openPopup,
     closePopup,
     togglePanel,
+    loadCurrentSession,
+    startNewSession,
     handleSend,
     handleKeydown
   }

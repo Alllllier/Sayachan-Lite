@@ -5,6 +5,8 @@ import Note from '../dist/models/Note.js';
 import Project from '../dist/models/Project.js';
 import Task from '../dist/models/Task.js';
 import MemoryEntry from '../dist/models/MemoryEntry.js';
+import ChatConversation from '../dist/models/ChatConversation.js';
+import ChatMessage from '../dist/models/ChatMessage.js';
 import aiService from '../dist/services/aiService.js';
 import memoryContextService from '../dist/services/aiMemoryContextService.js';
 import productContextService from '../dist/services/aiProductContextService.js';
@@ -1376,6 +1378,306 @@ test('AI chat defaults to mock provider and passes provider runtime control to p
     } else {
       process.env.OPENAI_API_KEY = originalOpenAI;
     }
+  }
+});
+
+test('AI chat persists turns and uses backend-owned session history and provider state', async () => {
+  const userId = toObjectId('000000000000000000000027', 'test.userId');
+  const conversationId = toObjectId('000000000000000000000501', 'test.conversationId');
+  const storedMessages = [
+    createDoc({
+      _id: '000000000000000000000601',
+      conversationId,
+      userId,
+      role: 'user',
+      content: 'stored hello',
+      createdAt: new Date('2026-05-22T00:00:00.000Z')
+    }),
+    createDoc({
+      _id: '000000000000000000000602',
+      conversationId,
+      userId,
+      role: 'assistant',
+      content: 'stored reply',
+      createdAt: new Date('2026-05-22T00:01:00.000Z')
+    })
+  ];
+  const createdMessages = [];
+  const conversationUpdates = [];
+  let capturedCall = null;
+  let messageSequence = 3;
+
+  const restoreProductContextBuilder = aiService.__test__.setProductContextBuilderForTest(async () => null);
+  const restoreMemoryContextBuilder = aiService.__test__.setMemoryContextBuilderForTest(async () => null);
+  const restoreChatPersistence = aiService.__test__.setChatPersistenceAvailabilityCheckForTest(() => true);
+  const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async (messages, context, options) => {
+    capturedCall = { messages, context, options };
+    return {
+      reply: 'persisted bridge ok',
+      providerState: {
+        strategy: 'previous_response',
+        lastResponseId: 'resp-new',
+        status: 'active'
+      },
+      sourceReceipts: [{ type: 'note', title: 'Stored Note' }],
+      memoryCandidate: {
+        type: 'preference',
+        content: 'Keep persisted chat grounded.',
+        source: 'assistant_suggested_user_approved'
+      }
+    };
+  });
+
+  try {
+    await withPatchedMethods([
+      {
+        target: ChatConversation,
+        key: 'findOne',
+        value: (query) => {
+          assert.equal(normalizeIds(query).userId, '000000000000000000000027');
+          return {
+            sort(sort) {
+              assert.deepEqual(sort, { updatedAt: -1 });
+              return Promise.resolve(createDoc({
+                _id: conversationId,
+                userId,
+                archived: false,
+                providerState: {
+                  strategy: 'previous_response',
+                  lastResponseId: 'resp-stored',
+                  status: 'active'
+                },
+                createdAt: new Date('2026-05-22T00:00:00.000Z'),
+                updatedAt: new Date('2026-05-22T00:01:00.000Z')
+              }));
+            }
+          };
+        }
+      },
+      {
+        target: ChatConversation,
+        key: 'findOneAndUpdate',
+        value: async (query, update) => {
+          conversationUpdates.push({ query: normalizeIds(query), update: normalizeIds(update) });
+          return createDoc({ _id: conversationId, userId, ...update });
+        }
+      },
+      {
+        target: ChatMessage,
+        key: 'create',
+        value: async (payload) => {
+          const doc = createDoc({
+            _id: `00000000000000000000060${messageSequence}`,
+            ...payload,
+            createdAt: new Date(`2026-05-22T00:0${messageSequence}:00.000Z`),
+            updatedAt: new Date(`2026-05-22T00:0${messageSequence}:00.000Z`)
+          });
+          messageSequence += 1;
+          createdMessages.push(normalizeIds(payload));
+          storedMessages.push(doc);
+          return doc;
+        }
+      },
+      {
+        target: ChatMessage,
+        key: 'find',
+        value: (query) => {
+          assert.deepEqual(normalizeIds(query), {
+            conversationId: '000000000000000000000501',
+            userId: '000000000000000000000027'
+          });
+          return {
+            sort(sort) {
+              assert.deepEqual(sort, { createdAt: -1 });
+              return {
+                limit(limit) {
+                  return Promise.resolve(storedMessages
+                    .slice()
+                    .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+                    .slice(0, limit));
+                }
+              };
+            }
+          };
+        }
+      }
+    ], async () => {
+      const result = await aiService.chat({
+        messages: [{ role: 'user', content: 'client latest' }],
+        runtimeControls: {
+          personalityBaseline: 'warm',
+          providerState: {
+            strategy: 'previous_response',
+            lastResponseId: 'spoofed-client-state',
+            status: 'active'
+          }
+        }
+      }, { userId, userRole: 'tester' });
+
+      assert.equal(result.reply, 'persisted bridge ok');
+    });
+
+    assert.deepEqual(capturedCall.messages, [
+      { role: 'user', content: 'stored hello' },
+      { role: 'assistant', content: 'stored reply' },
+      { role: 'user', content: 'client latest' }
+    ]);
+    assert.equal(capturedCall.options.runtimeControls.providerState.lastResponseId, 'resp-stored');
+    assert.equal(JSON.stringify(capturedCall.options.runtimeControls).includes('spoofed-client-state'), false);
+    assert.equal(createdMessages[0].role, 'user');
+    assert.equal(createdMessages[0].content, 'client latest');
+    assert.equal(createdMessages[1].role, 'assistant');
+    assert.equal(createdMessages[1].providerState.lastResponseId, 'resp-new');
+    assert.deepEqual(createdMessages[1].sourceReceipts, [{ type: 'note', title: 'Stored Note' }]);
+    assert.equal(createdMessages[1].memoryCandidate.content, 'Keep persisted chat grounded.');
+    assert.equal(conversationUpdates.at(-1).update.providerState.lastResponseId, 'resp-new');
+  } finally {
+    restoreChatRunner();
+    restoreChatPersistence();
+    restoreMemoryContextBuilder();
+    restoreProductContextBuilder();
+  }
+});
+
+test('AI chat session endpoint returns current-user persisted messages', async () => {
+  const userId = toObjectId('000000000000000000000028', 'test.userId');
+  const conversationId = toObjectId('000000000000000000000502', 'test.conversationId');
+  const restoreChatPersistence = aiService.__test__.setChatPersistenceAvailabilityCheckForTest(() => true);
+
+  try {
+    await withPatchedMethods([
+      {
+        target: ChatConversation,
+        key: 'findOne',
+        value: (query) => {
+          assert.equal(normalizeIds(query).userId, '000000000000000000000028');
+          return {
+            sort() {
+              return Promise.resolve(createDoc({
+                _id: conversationId,
+                userId,
+                archived: false,
+                providerState: {
+                  strategy: 'previous_response',
+                  lastResponseId: 'resp-session',
+                  status: 'active'
+                },
+                createdAt: new Date('2026-05-22T00:00:00.000Z'),
+                updatedAt: new Date('2026-05-22T00:02:00.000Z')
+              }));
+            }
+          };
+        }
+      },
+      {
+        target: ChatMessage,
+        key: 'find',
+        value: (query) => {
+          assert.deepEqual(normalizeIds(query), {
+            conversationId: '000000000000000000000502',
+            userId: '000000000000000000000028'
+          });
+          return {
+            sort() {
+              return {
+                limit() {
+                  return Promise.resolve([
+                    createDoc({
+                      _id: '000000000000000000000612',
+                      conversationId,
+                      userId,
+                      role: 'assistant',
+                      content: 'restored answer',
+                      sourceReceipts: [{ type: 'project', title: 'Sayachan' }],
+                      createdAt: new Date('2026-05-22T00:01:00.000Z')
+                    }),
+                    createDoc({
+                      _id: '000000000000000000000611',
+                      conversationId,
+                      userId,
+                      role: 'user',
+                      content: 'restored question',
+                      focusSnapshot: { type: 'project', title: 'AI Core' },
+                      createdAt: new Date('2026-05-22T00:00:00.000Z')
+                    })
+                  ]);
+                }
+              };
+            }
+          };
+        }
+      }
+    ], async () => {
+      const session = await aiService.currentChatSession({ userId, userRole: 'tester' });
+
+      assert.equal(session.conversation._id, '000000000000000000000502');
+      assert.equal(session.providerState.lastResponseId, 'resp-session');
+      assert.deepEqual(session.messages.map(message => ({ role: message.role, content: message.content })), [
+        { role: 'user', content: 'restored question' },
+        { role: 'assistant', content: 'restored answer' }
+      ]);
+      assert.deepEqual(session.messages[0].focusSnapshot, { type: 'project', title: 'AI Core' });
+      assert.deepEqual(session.messages[1].sourceReceipts, [{ type: 'project', title: 'Sayachan' }]);
+    });
+  } finally {
+    restoreChatPersistence();
+  }
+});
+
+test('AI chat new session archives only the current user active conversation', async () => {
+  const userId = toObjectId('000000000000000000000029', 'test.userId');
+  const conversationId = toObjectId('000000000000000000000503', 'test.conversationId');
+  const restoreChatPersistence = aiService.__test__.setChatPersistenceAvailabilityCheckForTest(() => true);
+  const updates = [];
+
+  try {
+    await withPatchedMethods([
+      {
+        target: ChatConversation,
+        key: 'findOne',
+        value: (query) => {
+          assert.equal(normalizeIds(query).userId, '000000000000000000000029');
+          assert.deepEqual(normalizeIds(query).archived, { $ne: true });
+          return {
+            sort() {
+              return Promise.resolve(createDoc({
+                _id: conversationId,
+                userId,
+                archived: false,
+                providerState: {
+                  strategy: 'previous_response',
+                  lastResponseId: 'resp-old',
+                  status: 'active'
+                },
+                createdAt: new Date('2026-05-22T00:00:00.000Z'),
+                updatedAt: new Date('2026-05-22T00:02:00.000Z')
+              }));
+            }
+          };
+        }
+      },
+      {
+        target: ChatConversation,
+        key: 'findOneAndUpdate',
+        value: async (query, update) => {
+          updates.push({ query: normalizeIds(query), update: normalizeIds(update) });
+          return createDoc({ _id: conversationId, userId, ...update });
+        }
+      }
+    ], async () => {
+      const session = await aiService.startNewChatSession({ userId, userRole: 'tester' });
+
+      assert.deepEqual(session, { messages: [] });
+    });
+
+    assert.deepEqual(updates[0].query, {
+      _id: '000000000000000000000503',
+      userId: '000000000000000000000029'
+    });
+    assert.equal(updates[0].update.$set.archived, true);
+    assert.equal(updates[0].update.$unset.providerState, 1);
+  } finally {
+    restoreChatPersistence();
   }
 });
 

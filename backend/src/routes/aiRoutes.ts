@@ -17,6 +17,20 @@ type AiHandler = RouteHandler<AiState>;
 
 const router = new Router<AiState>();
 
+const currentChatSessionHandler: AiHandler = async (ctx) => {
+  ctx.body = await aiService.currentChatSession({
+    userId: resolveCurrentUserId(ctx),
+    userRole: ctx.state.user?.role
+  });
+};
+
+const newChatSessionHandler: AiHandler = async (ctx) => {
+  ctx.body = await aiService.startNewChatSession({
+    userId: resolveCurrentUserId(ctx),
+    userRole: ctx.state.user?.role
+  });
+};
+
 const chatHandler: AiHandler = async (ctx) => {
   ctx.body = await aiService.chat(validatedBody<AiChatRequestDto>(ctx), {
     userId: resolveCurrentUserId(ctx),
@@ -89,6 +103,8 @@ const chatStreamHandler: AiHandler = async (ctx) => {
   }
 };
 
+router.get('/ai/chat/session', currentChatSessionHandler);
+router.delete('/ai/chat/session', newChatSessionHandler);
 router.post('/ai/chat', validateBody<AiChatRequestDto, AiState>(aiChatRequestSchema), chatHandler);
 router.post('/ai/chat/stream', validateBody<AiChatRequestDto, AiState>(aiChatRequestSchema), chatStreamHandler);
 

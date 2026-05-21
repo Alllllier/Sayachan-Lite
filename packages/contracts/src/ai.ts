@@ -10,11 +10,6 @@ export const chatModeDecisionSourceValues = ['input', 'runtime_control', 'contex
 export const chatFocusTypeValues = ['note', 'project'] as const
 export const chatMemoryCandidateSourceValues = ['assistant_suggested_user_approved'] as const
 
-export const chatMessageSchema = z.object({
-  role: z.enum(chatMessageRoleValues).optional(),
-  content: z.string().optional()
-})
-
 export const chatFocusSchema = z.object({
   type: z.enum(chatFocusTypeValues),
   id: z.string().min(1),
@@ -24,6 +19,11 @@ export const chatFocusSchema = z.object({
   status: z.string().optional(),
   currentFocusTaskTitle: z.string().optional(),
   source: z.literal('user_focus_button')
+}).strict()
+
+export const chatMessageFocusSnapshotSchema = z.object({
+  type: z.enum(chatFocusTypeValues),
+  title: z.string().min(1)
 }).strict()
 
 export const chatContextSchema = z.union([
@@ -61,6 +61,16 @@ export const chatMemoryCandidateSchema = z.object({
   source: z.enum(chatMemoryCandidateSourceValues),
   confidence: z.number().min(0).max(1).optional()
 }).strict()
+
+export const chatMessageSchema = z.object({
+  _id: z.string().min(1).optional(),
+  role: z.enum(chatMessageRoleValues).optional(),
+  content: z.string().optional(),
+  focusSnapshot: chatMessageFocusSnapshotSchema.optional(),
+  sourceReceipts: z.array(chatSourceReceiptSchema).optional(),
+  memoryCandidate: chatMemoryCandidateSchema.optional(),
+  createdAt: z.string().optional()
+})
 
 export const chatDebugTraceRangeSchema = z.object({
   startChar: z.number(),
@@ -184,12 +194,25 @@ export const chatResponseSchema = z.object({
   memoryCandidate: chatMemoryCandidateSchema.optional()
 })
 
+export const chatConversationSchema = z.object({
+  _id: z.string().min(1),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional()
+}).strict()
+
+export const chatSessionResponseSchema = z.object({
+  conversation: chatConversationSchema.optional(),
+  messages: z.array(chatMessageSchema),
+  providerState: chatProviderStateSchema.optional()
+}).strict()
+
 export type ChatPersonalityBaseline = (typeof chatPersonalityBaselineValues)[number]
 export type ChatConvergenceMode = (typeof chatConvergenceModeValues)[number]
 export type ChatMessageRole = (typeof chatMessageRoleValues)[number]
 export type ChatModeDto = (typeof chatModeValues)[number]
 export type ChatModeDecisionSource = (typeof chatModeDecisionSourceValues)[number]
 export type ChatFocusDto = z.infer<typeof chatFocusSchema>
+export type ChatMessageFocusSnapshotDto = z.infer<typeof chatMessageFocusSnapshotSchema>
 export type ChatMemoryCandidateDto = z.infer<typeof chatMemoryCandidateSchema>
 export type ChatProviderStateStrategy = (typeof chatProviderStateStrategyValues)[number]
 export type ChatProviderStateSource = (typeof chatProviderStateSourceValues)[number]
@@ -201,3 +224,5 @@ export type ChatRuntimeControlsDto = z.infer<typeof chatRuntimeControlsSchema>
 export type ChatRuntimePayloadDto = z.infer<typeof chatRuntimePayloadSchema>
 export type AiChatRequestDto = z.infer<typeof aiChatRequestSchema>
 export type ChatResponseDto = z.infer<typeof chatResponseSchema>
+export type ChatConversationDto = z.infer<typeof chatConversationSchema>
+export type ChatSessionResponseDto = z.infer<typeof chatSessionResponseSchema>

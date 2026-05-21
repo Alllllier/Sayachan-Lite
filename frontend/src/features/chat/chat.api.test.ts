@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildChatRuntimePayload, sendChat, streamChat } from './chat.api.js'
+import { buildChatRuntimePayload, loadChatSession, sendChat, startNewChatSession, streamChat } from './chat.api.js'
 import type { ChatContextDto } from '@sayachan/contracts'
 
 const emptyContext: ChatContextDto = {}
@@ -77,6 +77,94 @@ describe('chat api boundary', () => {
   it('uses an empty last user message when no user message exists', async () => {
     expect(buildChatRuntimePayload([{ role: 'assistant', content: 'hello' }], {}))
       .toEqual({ lastUserMessage: '' })
+  })
+
+  it('loads the persisted current chat session', async () => {
+    mockedFetch().mockResolvedValue(jsonResponse({
+      conversation: {
+        _id: 'conversation-1',
+        createdAt: '2026-05-22T00:00:00.000Z',
+        updatedAt: '2026-05-22T00:01:00.000Z'
+      },
+      messages: [
+        {
+          _id: 'message-1',
+          role: 'user',
+          content: '帮我看看这篇笔记',
+          focusSnapshot: { type: 'note', title: 'Tool notes' },
+          createdAt: '2026-05-22T00:00:00.000Z'
+        },
+        {
+          _id: 'message-2',
+          role: 'assistant',
+          content: '可以，我看一下。',
+          sourceReceipts: [{ type: 'note', title: 'Tool notes' }],
+          memoryCandidate: {
+            type: 'preference',
+            content: 'Use plain language first.',
+            source: 'assistant_suggested_user_approved'
+          },
+          createdAt: '2026-05-22T00:01:00.000Z'
+        }
+      ],
+      providerState: {
+        strategy: 'previous_response',
+        lastResponseId: 'resp-session',
+        status: 'active'
+      }
+    }))
+
+    await expect(loadChatSession()).resolves.toEqual({
+      conversation: {
+        _id: 'conversation-1',
+        createdAt: '2026-05-22T00:00:00.000Z',
+        updatedAt: '2026-05-22T00:01:00.000Z'
+      },
+      messages: [
+        {
+          _id: 'message-1',
+          role: 'user',
+          content: '帮我看看这篇笔记',
+          focusSnapshot: { type: 'note', title: 'Tool notes' },
+          createdAt: '2026-05-22T00:00:00.000Z'
+        },
+        {
+          _id: 'message-2',
+          role: 'assistant',
+          content: '可以，我看一下。',
+          sourceReceipts: [{ type: 'note', title: 'Tool notes' }],
+          memoryCandidate: {
+            type: 'preference',
+            content: 'Use plain language first.',
+            source: 'assistant_suggested_user_approved'
+          },
+          createdAt: '2026-05-22T00:01:00.000Z'
+        }
+      ],
+      providerState: {
+        strategy: 'previous_response',
+        lastResponseId: 'resp-session',
+        status: 'active'
+      }
+    })
+
+    expect(fetch).toHaveBeenCalledWith('http://localhost:3001/ai/chat/session', {
+      method: 'GET',
+      credentials: 'include'
+    })
+  })
+
+  it('starts a new chat session by archiving the current backend session', async () => {
+    mockedFetch().mockResolvedValue(jsonResponse({
+      messages: []
+    }))
+
+    await expect(startNewChatSession()).resolves.toEqual({ messages: [] })
+
+    expect(fetch).toHaveBeenCalledWith('http://localhost:3001/ai/chat/session', {
+      method: 'DELETE',
+      credentials: 'include'
+    })
   })
 
   it('preserves safe source receipts from the chat response', async () => {

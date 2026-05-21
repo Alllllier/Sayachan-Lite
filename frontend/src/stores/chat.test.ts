@@ -65,6 +65,56 @@ describe('chat store behavior locks', () => {
     })
   })
 
+  it('hydrates a persisted chat session', () => {
+    const store = useChatStore()
+
+    store.hydrateSession([
+      { _id: 'message-1', role: 'user', content: 'hello' },
+      { _id: 'message-2', role: 'assistant', content: 'hi' }
+    ], {
+      strategy: 'previous_response',
+      lastResponseId: 'resp-session',
+      status: 'active'
+    })
+
+    expect(store.messages).toEqual([
+      { _id: 'message-1', role: 'user', content: 'hello' },
+      { _id: 'message-2', role: 'assistant', content: 'hi' }
+    ])
+    expect(store.providerState).toEqual({
+      strategy: 'previous_response',
+      lastResponseId: 'resp-session',
+      status: 'active'
+    })
+    expect(store.sessionLoaded).toBe(true)
+  })
+
+  it('clears messages while keeping the chat surface open for a new session', () => {
+    const store = useChatStore()
+    store.openChat()
+    store.hydrateSession([
+      { _id: 'message-1', role: 'user', content: 'hello' }
+    ], {
+      strategy: 'previous_response',
+      lastResponseId: 'resp-session',
+      status: 'active'
+    })
+    store.setFocus({
+      type: 'note',
+      id: 'note-1',
+      title: 'Architecture map',
+      source: 'user_focus_button'
+    })
+
+    store.clearMessagesForNewSession()
+
+    expect(store.isOpen).toBe(true)
+    expect(store.messages).toEqual([])
+    expect(store.providerState).toBeUndefined()
+    expect(store.activeFocus).toBeUndefined()
+    expect(store.sessionLoaded).toBe(true)
+  })
+
   it('tracks a user-selected chat focus until it is cleared or reset', () => {
     const store = useChatStore()
 
@@ -108,5 +158,6 @@ describe('chat store behavior locks', () => {
     expect(store.isSending).toBe(false)
     expect(store.providerState).toBeUndefined()
     expect(store.activeFocus).toBeUndefined()
+    expect(store.sessionLoaded).toBe(false)
   })
 })

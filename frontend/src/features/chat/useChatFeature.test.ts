@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChatFeature } from './useChatFeature.js'
-import { sendChat, streamChat } from './chat.api.js'
+import { loadChatSession, sendChat, startNewChatSession, streamChat } from './chat.api.js'
 import { createMemoryEntry } from '../memory/memory.api.js'
 import type { ChatFocusDto, ChatMessageDto } from '@sayachan/contracts'
 
@@ -18,7 +18,9 @@ vi.mock('../../stores/runtimeControls', () => ({
 }))
 
 vi.mock('./chat.api.js', () => ({
+  loadChatSession: vi.fn(),
   sendChat: vi.fn(),
+  startNewChatSession: vi.fn(),
   streamChat: vi.fn()
 }))
 
@@ -26,7 +28,9 @@ vi.mock('../memory/memory.api.js', () => ({
   createMemoryEntry: vi.fn()
 }))
 
+const loadChatSessionMock = vi.mocked(loadChatSession)
 const sendChatMock = vi.mocked(sendChat)
+const startNewChatSessionMock = vi.mocked(startNewChatSession)
 const streamChatMock = vi.mocked(streamChat)
 const createMemoryEntryMock = vi.mocked(createMemoryEntry)
 
@@ -52,6 +56,7 @@ function createChatStore() {
     isOpen: false,
     isSending: false,
     messages: [] as ChatMessageDto[],
+    sessionLoaded: false,
     openChat: vi.fn(() => {
       store.isOpen = true
     }),
@@ -60,6 +65,17 @@ function createChatStore() {
     }),
     appendMessage: vi.fn((message: ChatMessageDto) => {
       store.messages.push(message)
+    }),
+    hydrateSession: vi.fn((messages: ChatMessageDto[], providerState?: unknown) => {
+      store.messages = messages
+      store.providerState = providerState
+      store.sessionLoaded = true
+    }),
+    clearMessagesForNewSession: vi.fn(() => {
+      store.messages = []
+      store.providerState = undefined
+      store.activeFocus = undefined
+      store.sessionLoaded = true
     }),
     updateMessageContent: vi.fn((index: number, content: string) => {
       store.messages[index] = {
@@ -110,7 +126,9 @@ describe('useChatFeature orchestration', () => {
 
     storeMocks.chatStore = chatStore
     storeMocks.runtimeControls = runtimeControls
+    loadChatSessionMock.mockResolvedValue({ messages: [] })
     sendChatMock.mockResolvedValue({ reply: 'Done' })
+    startNewChatSessionMock.mockResolvedValue({ messages: [] })
     streamChatMock.mockResolvedValue({ reply: 'Done' })
     createMemoryEntryMock.mockResolvedValue({
       _id: 'memory-1',
@@ -135,6 +153,104 @@ describe('useChatFeature orchestration', () => {
     feature.closePopup()
     expect(chatStore.closeChat).toHaveBeenCalled()
     expect(feature.isPanelOpen.value).toBe(false)
+  })
+
+  it('hydrates the current persisted chat session once', async () => {
+    const scrollToBottom = vi.fn()
+    loadChatSessionMock.mockResolvedValue({
+      messages: [
+        {
+          _id: 'message-1',
+          role: 'user',
+          content: '帮我看看这篇笔记',
+          focusSnapshot: { type: 'note', title: 'Tool notes' }
+        },
+        {
+          _id: 'message-2',
+          role: 'assistant',
+          content: '我看到了。',
+          sourceReceipts: [{ type: 'note', title: 'Tool notes' }],
+          memoryCandidate: {
+            type: 'preference',
+            content: 'Use plain language first.',
+            source: 'assistant_suggested_user_approved'
+          }
+        }
+      ],
+      providerState: {
+        strategy: 'previous_response',
+        lastResponseId: 'resp-session',
+        status: 'active'
+      }
+    })
+    const feature = useChatFeature({ scrollToBottom })
+
+    await feature.loadCurrentSession()
+    await feature.loadCurrentSession()
+
+    expect(loadChatSession).toHaveBeenCalledTimes(1)
+    expect(chatStore.hydrateSession).toHaveBeenCalledWith([
+      {
+        _id: 'message-1',
+        role: 'user',
+        content: '帮我看看这篇笔记',
+        focusSnapshot: { type: 'note', title: 'Tool notes' }
+      },
+      {
+        _id: 'message-2',
+        role: 'assistant',
+        content: '我看到了。',
+        sourceReceipts: [{ type: 'note', title: 'Tool notes' }],
+        memoryCandidate: {
+          type: 'preference',
+          content: 'Use plain language first.',
+          source: 'assistant_suggested_user_approved'
+        }
+      }
+    ], {
+      strategy: 'previous_response',
+      lastResponseId: 'resp-session',
+      status: 'active'
+    })
+    expect(feature.getMessageFocusSnapshot(0)).toEqual({ type: 'note', title: 'Tool notes' })
+    expect(feature.getMessageSourceReceipts(1)).toEqual([{ type: 'note', title: 'Tool notes' }])
+    expect(feature.getMessageMemoryCandidate(1)?.status).toBe('pending')
+    expect(scrollToBottom).toHaveBeenCalled()
+  })
+
+  it('starts a new chat session and clears local message metadata', async () => {
+    chatStore.messages = [
+      { role: 'user', content: 'old', focusSnapshot: { type: 'note', title: 'Old note' } },
+      {
+        role: 'assistant',
+        content: 'old reply',
+        sourceReceipts: [{ type: 'note', title: 'Old note' }],
+        memoryCandidate: {
+          type: 'preference',
+          content: 'Old memory',
+          source: 'assistant_suggested_user_approved'
+        }
+      }
+    ]
+    chatStore.providerState = {
+      strategy: 'previous_response',
+      lastResponseId: 'resp-old',
+      status: 'active'
+    }
+    const scrollToBottom = vi.fn()
+    const feature = useChatFeature({ scrollToBottom })
+    await feature.loadCurrentSession()
+
+    expect(feature.getMessageSourceReceipts(1)).toEqual([{ type: 'note', title: 'Old note' }])
+
+    await feature.startNewSession()
+
+    expect(startNewChatSession).toHaveBeenCalled()
+    expect(chatStore.clearMessagesForNewSession).toHaveBeenCalled()
+    expect(feature.getMessageSourceReceipts(1)).toEqual([])
+    expect(feature.getMessageMemoryCandidate(1)).toBeUndefined()
+    expect(runtimeControls.clearLatestDebugTrace).toHaveBeenCalled()
+    expect(scrollToBottom).toHaveBeenCalled()
   })
 
   it('sends typed chat messages with a narrow launch context', async () => {

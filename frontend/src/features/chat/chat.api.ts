@@ -1,7 +1,8 @@
 import { apiFetch, API_BASE } from '../../services/apiClient'
 import { assertApiResponse } from '../../services/apiResponse'
 import {
-  chatResponseSchema
+  chatResponseSchema,
+  chatSessionResponseSchema
 } from '@sayachan/contracts'
 import type {
   ChatContextDto,
@@ -11,6 +12,7 @@ import type {
   ChatResponseDto,
   ChatRuntimeControlsDto,
   ChatRuntimePayloadDto,
+  ChatSessionResponseDto,
   ChatSourceReceiptDto
 } from '@sayachan/contracts'
 
@@ -106,6 +108,30 @@ export async function sendChat(
     throw new Error('Empty or invalid reply from server')
   }
   return publicChatResponse(data)
+}
+
+export async function loadChatSession(): Promise<ChatSessionResponseDto> {
+  const res = await apiFetch(`${API_BASE}/ai/chat/session`, {
+    method: 'GET'
+  })
+
+  if (!res.ok) {
+    throw new Error(`Chat session request failed: ${res.status}`)
+  }
+
+  return assertApiResponse(await res.json() as unknown, chatSessionResponseSchema, 'chat session')
+}
+
+export async function startNewChatSession(): Promise<ChatSessionResponseDto> {
+  const res = await apiFetch(`${API_BASE}/ai/chat/session`, {
+    method: 'DELETE'
+  })
+
+  if (!res.ok) {
+    throw new Error(`New chat session request failed: ${res.status}`)
+  }
+
+  return assertApiResponse(await res.json() as unknown, chatSessionResponseSchema, 'new chat session')
 }
 
 function parseSseBlock(block: string): ChatStreamEvent | null {

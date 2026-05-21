@@ -11,6 +11,7 @@ export const useChatStore = defineStore('chat', () => {
   const isSending = ref(false)
   const providerState = ref<ChatProviderState | undefined>()
   const activeFocus = ref<ChatFocus | undefined>()
+  const sessionLoaded = ref(false)
 
   function openChat() {
     isOpen.value = true
@@ -22,6 +23,12 @@ export const useChatStore = defineStore('chat', () => {
 
   function appendMessage(message: ChatMessageDto): void {
     messages.value.push(message)
+  }
+
+  function hydrateSession(nextMessages: ChatMessageDto[], nextProviderState?: ChatProviderState): void {
+    messages.value = nextMessages
+    providerState.value = nextProviderState
+    sessionLoaded.value = true
   }
 
   function updateMessageContent(index: number, content: string): void {
@@ -41,6 +48,13 @@ export const useChatStore = defineStore('chat', () => {
     providerState.value = value
   }
 
+  function clearMessagesForNewSession(): void {
+    messages.value = []
+    providerState.value = undefined
+    activeFocus.value = undefined
+    sessionLoaded.value = true
+  }
+
   function setFocus(focus: ChatFocus): void {
     activeFocus.value = focus
   }
@@ -55,6 +69,7 @@ export const useChatStore = defineStore('chat', () => {
     isSending.value = false
     providerState.value = undefined
     activeFocus.value = undefined
+    sessionLoaded.value = false
   }
 
   return {
@@ -63,12 +78,15 @@ export const useChatStore = defineStore('chat', () => {
     isSending,
     providerState,
     activeFocus,
+    sessionLoaded,
     openChat,
     closeChat,
     appendMessage,
+    hydrateSession,
     updateMessageContent,
     setSending,
     setProviderState,
+    clearMessagesForNewSession,
     setFocus,
     clearFocus,
     resetChat

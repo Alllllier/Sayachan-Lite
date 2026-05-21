@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, nextTick, watch } from 'vue'
+import { computed, ref, nextTick, onMounted, watch } from 'vue'
 import type { ChatDebugTraceDto } from '@sayachan/contracts'
 import avatarUrl from '../assets/avatar/sayachan-avatar.jpg'
 import { useChatFeature } from '../features/chat/useChatFeature.js'
@@ -46,6 +46,8 @@ const {
   openPopup,
   closePopup,
   togglePanel,
+  loadCurrentSession,
+  startNewSession,
   handleSend,
   handleKeydown
 } = useChatFeature({
@@ -55,6 +57,10 @@ const {
 
 watch(() => chatStore.messages.length, () => {
   scrollToBottom()
+})
+
+onMounted(() => {
+  void loadCurrentSession()
 })
 
 function updateWarmth(event: Event): void {
@@ -168,6 +174,9 @@ function debugUsageHasTokens(usage: DebugProviderUsageTrace): boolean {
         <div class="chat-header">
           <span class="chat-title">{{ t('chat.assistantName') }}</span>
           <div class="chat-header-actions">
+            <button class="chat-new-session-btn" :disabled="chatStore.isSending" @click="startNewSession" :aria-label="t('chat.newSession')" :title="t('chat.newSession')">
+              {{ t('chat.newSession') }}
+            </button>
             <button class="chat-gear-btn" @click="togglePanel" :aria-label="t('chat.runtimeControls')" :title="t('chat.runtimeControls')">
               <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"></circle>
@@ -636,6 +645,30 @@ function debugUsageHasTokens(usage: DebugProviderUsageTrace): boolean {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
+}
+
+.chat-new-session-btn {
+  min-height: 28px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 var(--space-sm);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.chat-new-session-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.chat-new-session-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .chat-gear-btn {

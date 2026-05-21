@@ -2,6 +2,7 @@ import {
   type AiChatRequestDto,
   chatResponseSchema
 } from '@sayachan/contracts';
+import mongoose from 'mongoose';
 import { type ObjectId } from '../domain/objectIds.js';
 import { chat as privateCoreChat, chatStream as privateCoreChatStream } from '../privateCore/bridge.js';
 import {
@@ -13,11 +14,18 @@ import {
   type MemoryContextSnapshot
 } from './aiMemoryContextService.js';
 import { executeProductContextTool } from './aiProductToolService.js';
+import {
+  appendAssistantMessage,
+  archiveCurrentChatSession,
+  loadCurrentChatSession,
+  preparePersistentChatTurn
+} from './chatPersistenceService.js';
 
 type ChatRunner = typeof privateCoreChat;
 type ChatStreamRunner = typeof privateCoreChatStream;
 type ChatProvider = 'mock' | 'openai';
 type ChatProviderReadinessCheck = (provider: ChatProvider) => boolean;
+type ChatPersistenceAvailabilityCheck = () => boolean;
 type ChatStreamEvent = Awaited<ReturnType<ChatStreamRunner>> extends AsyncIterable<infer TEvent> ? TEvent : never;
 type ProductContextBuilder = (userId: ObjectId | null | undefined) => Promise<ProductContextSnapshot | null>;
 type MemoryContextBuilder = (options: ChatExecutionOptions) => Promise<MemoryContextSnapshot | null>;
@@ -25,10 +33,12 @@ type ChatExecutionOptions = {
   userId?: ObjectId | null;
   userRole?: string | null;
 };
+type PreparedPersistentTurn = Awaited<ReturnType<typeof preparePersistentChatTurn>>;
 
 let runChat: ChatRunner = privateCoreChat;
 let runChatStream: ChatStreamRunner = privateCoreChatStream;
 let chatProviderReadinessCheck: ChatProviderReadinessCheck = defaultChatProviderReadinessCheck;
+let chatPersistenceAvailabilityCheck: ChatPersistenceAvailabilityCheck = defaultChatPersistenceAvailabilityCheck;
 let productContextBuilder: ProductContextBuilder = buildProductContextSnapshot;
 let memoryContextBuilder: MemoryContextBuilder = (options) => buildMemoryContextSnapshot(options.userId, { userRole: options.userRole });
 
@@ -44,9 +54,8 @@ function chatFallback() {
   return chatResponseSchema.parse({ reply: '我在这，我们先把当前最重要的一步理清楚。' });
 }
 
-async function* chatFallbackStream(): AsyncIterable<ChatStreamEvent> {
+async function* chatFallbackStream(fallback = chatFallback()): AsyncIterable<ChatStreamEvent> {
   await Promise.resolve();
-  const fallback = chatFallback();
   yield {
     packetType: 'chat_stream_event',
     version: 1,
@@ -84,6 +93,10 @@ function defaultChatProviderReadinessCheck(provider: ChatProvider): boolean {
   return Boolean(process.env.OPENAI_API_KEY);
 }
 
+function defaultChatPersistenceAvailabilityCheck(): boolean {
+  return Number(mongoose.connection.readyState) === 1;
+}
+
 function isChatProviderReady(provider: ChatProvider = selectedChatProvider()): boolean {
   return chatProviderReadinessCheck(provider);
 }
@@ -113,9 +126,10 @@ function sanitizeCallerContext(context: AiChatRequestDto['context']): Record<str
 function privateCoreRuntimeControls(
   runtimeControls: AiChatRequestDto['runtimeControls'],
   provider: ChatProvider,
-  options: ChatExecutionOptions = {}
+  options: ChatExecutionOptions = {},
+  serverProviderState?: unknown
 ) {
-  const { debugTrace, memoryCandidate, ...safeRuntimeControls } = runtimeControls || {};
+  const { debugTrace, memoryCandidate, providerState: callerProviderState, ...safeRuntimeControls } = runtimeControls || {};
   const controls: Record<string, unknown> = {
     ...safeRuntimeControls,
     provider
@@ -144,10 +158,11 @@ function privateCoreRuntimeControls(
     };
   }
 
-  if (runtimeControls?.providerState) {
+  const providerState = serverProviderState || (!options.userId ? callerProviderState : undefined);
+  if (providerState) {
     return {
       ...controls,
-      providerState: runtimeControls.providerState
+      providerState
     };
   }
   return controls;
@@ -184,48 +199,129 @@ async function buildPrivateCoreContext(
   return mergeTrustedContext(context, productContext, memoryContext);
 }
 
+async function prepareTurnForPersistence(
+  request: AiChatRequestDto,
+  options: ChatExecutionOptions
+): Promise<PreparedPersistentTurn> {
+  if (!options.userId || !chatPersistenceAvailabilityCheck()) {
+    return null;
+  }
+
+  try {
+    return await preparePersistentChatTurn(request, { userId: options.userId });
+  } catch (error) {
+    console.error('[AI Route] Chat persistence prepare failed:', errorMessage(error));
+    return null;
+  }
+}
+
+async function persistAssistantReply(
+  preparedTurn: PreparedPersistentTurn,
+  reply: string,
+  result: {
+    providerState?: unknown;
+    sourceReceipts?: unknown;
+    memoryCandidate?: unknown;
+  },
+  options: ChatExecutionOptions
+): Promise<void> {
+  if (!preparedTurn || !options.userId) {
+    return;
+  }
+
+  try {
+    await appendAssistantMessage(preparedTurn, reply, result, { userId: options.userId });
+  } catch (error) {
+    console.error('[AI Route] Chat persistence assistant append failed:', errorMessage(error));
+  }
+}
+
+function messagesForCore(request: AiChatRequestDto, preparedTurn: PreparedPersistentTurn) {
+  return preparedTurn?.messages || request.messages;
+}
+
 export async function chat({ messages, context, runtimeControls }: AiChatRequestDto, options: ChatExecutionOptions = {}) {
+  const request = { messages, context, runtimeControls };
   const provider = selectedChatProvider();
+  const preparedTurn = await prepareTurnForPersistence(request, options);
 
   if (!isChatProviderReady(provider)) {
     console.warn(`[AI Route] ${provider} provider is not ready, using fallback`);
-    return chatFallback();
+    const fallback = chatFallback();
+    await persistAssistantReply(preparedTurn, fallback.reply, fallback, options);
+    return fallback;
   }
 
   try {
     // TODO: extract options (e.g. thinkingEnabled) from request body when strategy is ready
     const privateCoreContext = await buildPrivateCoreContext(context, options);
-    const result = await runChat(messages, privateCoreContext, {
-      runtimeControls: privateCoreRuntimeControls(runtimeControls, provider, options)
+    const result = await runChat(messagesForCore(request, preparedTurn), privateCoreContext, {
+      runtimeControls: privateCoreRuntimeControls(runtimeControls, provider, options, preparedTurn?.providerState)
     });
     console.log('[AI Route] Private-core v3 chat reply generated, length:', result.reply?.length);
-    return chatResponseSchema.parse(result);
+    const parsed = chatResponseSchema.parse(result);
+    await persistAssistantReply(preparedTurn, parsed.reply, parsed, options);
+    return parsed;
   } catch (error) {
     console.error('[AI Route] Chat service error:', errorMessage(error));
     console.error('[AI Route] Stack:', errorStack(error) || 'no stack');
-    return chatFallback();
+    const fallback = chatFallback();
+    await persistAssistantReply(preparedTurn, fallback.reply, fallback, options);
+    return fallback;
   }
 }
 
 export async function* chatStream({ messages, context, runtimeControls }: AiChatRequestDto, options: ChatExecutionOptions = {}): AsyncIterable<ChatStreamEvent> {
+  const request = { messages, context, runtimeControls };
   const provider = selectedChatProvider();
+  const preparedTurn = await prepareTurnForPersistence(request, options);
 
   if (!isChatProviderReady(provider)) {
     console.warn(`[AI Route] ${provider} provider is not ready, using streaming fallback`);
-    yield* chatFallbackStream();
+    const fallback = chatFallback();
+    await persistAssistantReply(preparedTurn, fallback.reply, fallback, options);
+    yield* chatFallbackStream(fallback);
     return;
   }
 
   try {
     const privateCoreContext = await buildPrivateCoreContext(context, options);
-    yield* runChatStream(messages, privateCoreContext, {
-      runtimeControls: privateCoreRuntimeControls(runtimeControls, provider, options)
-    });
+    for await (const event of runChatStream(messagesForCore(request, preparedTurn), privateCoreContext, {
+      runtimeControls: privateCoreRuntimeControls(runtimeControls, provider, options, preparedTurn?.providerState)
+    })) {
+      if (event?.type === 'completed') {
+        const reply = event.output?.reply || event.text || '';
+        await persistAssistantReply(preparedTurn, reply, {
+          providerState: event.output?.providerState || event.providerState,
+          sourceReceipts: event.output?.sourceReceipts || event.sourceReceipts,
+          memoryCandidate: event.output?.memoryCandidate || event.memoryCandidate
+        }, options);
+      }
+      yield event;
+    }
   } catch (error) {
     console.error('[AI Route] Chat stream service error:', errorMessage(error));
     console.error('[AI Route] Stack:', errorStack(error) || 'no stack');
-    yield* chatFallbackStream();
+    const fallback = chatFallback();
+    await persistAssistantReply(preparedTurn, fallback.reply, fallback, options);
+    yield* chatFallbackStream(fallback);
   }
+}
+
+export async function currentChatSession(options: ChatExecutionOptions = {}) {
+  if (!options.userId || !chatPersistenceAvailabilityCheck()) {
+    return { messages: [] };
+  }
+
+  return loadCurrentChatSession({ userId: options.userId });
+}
+
+export async function startNewChatSession(options: ChatExecutionOptions = {}) {
+  if (!options.userId || !chatPersistenceAvailabilityCheck()) {
+    return { messages: [] };
+  }
+
+  return archiveCurrentChatSession({ userId: options.userId });
 }
 
 export const __test__ = {
@@ -243,6 +339,13 @@ export const __test__ = {
     chatProviderReadinessCheck = check;
     return () => {
       chatProviderReadinessCheck = previous;
+    };
+  },
+  setChatPersistenceAvailabilityCheckForTest(check: ChatPersistenceAvailabilityCheck) {
+    const previous = chatPersistenceAvailabilityCheck;
+    chatPersistenceAvailabilityCheck = check;
+    return () => {
+      chatPersistenceAvailabilityCheck = previous;
     };
   },
   setChatRunnerForTest(runner: ChatRunner) {
@@ -277,6 +380,8 @@ export const __test__ = {
 
 export default {
   chat,
+  currentChatSession,
+  startNewChatSession,
   chatStream,
   __test__
 };
