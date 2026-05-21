@@ -1,4 +1,4 @@
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import type { ChatContextDto, ChatFocusDto, ChatMessageDto, ChatSourceReceiptDto } from '@sayachan/contracts'
 import { useChatStore } from '../../stores/chat'
 import { useCockpitSignals } from '../../stores/cockpitSignals'
@@ -22,6 +22,8 @@ type ChatFeatureOptions = {
   onHydrationError?: (error: unknown) => void
   onSendError?: (error: unknown) => void
 }
+
+type ChatFocusSnapshot = Pick<ChatFocusDto, 'type' | 'title'>
 
 type ChatStoreLike = {
   isOpen: boolean
@@ -62,7 +64,18 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
   const isHydrating = ref(false)
   const isStreamingReply = ref(false)
   const toolStatusText = ref('')
+  const focusSnapshotsByMessageIndex = ref<Record<number, ChatFocusSnapshot>>({})
   const sourceReceiptsByMessageIndex = ref<Record<number, ChatSourceReceiptDto[]>>({})
+
+  watch(
+    () => chatStore.messages.length,
+    length => {
+      if (length === 0) {
+        focusSnapshotsByMessageIndex.value = {}
+        sourceReceiptsByMessageIndex.value = {}
+      }
+    }
+  )
 
   const context = computed<ChatContextDto>(() => ({
     activeProjectsCount: cockpitSignals.activeProjectsCount,
@@ -95,15 +108,19 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     isPanelOpen.value = !isPanelOpen.value
   }
 
-  function contextWithActiveFocus(baseContext: ChatContextDto): ChatContextDto {
-    if (!chatStore.activeFocus || !baseContext || typeof baseContext !== 'object' || Array.isArray(baseContext)) {
+  function contextWithFocusForTurn(baseContext: ChatContextDto, focus?: ChatFocusDto): ChatContextDto {
+    if (!focus) {
       return baseContext
     }
 
     return {
-      ...baseContext,
+      ...(
+        baseContext && typeof baseContext === 'object' && !Array.isArray(baseContext)
+          ? baseContext
+          : {}
+      ),
       mode: 'guide/core_modules',
-      chatFocus: chatStore.activeFocus
+      chatFocus: focus
     }
   }
 
@@ -117,6 +134,28 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
 
   function getMessageSourceReceipts(index: number): ChatSourceReceiptDto[] {
     return sourceReceiptsByMessageIndex.value[index] || []
+  }
+
+  function setMessageFocusSnapshot(index: number, focus?: ChatFocusDto): void {
+    if (!focus) return
+    focusSnapshotsByMessageIndex.value = {
+      ...focusSnapshotsByMessageIndex.value,
+      [index]: {
+        type: focus.type,
+        title: focus.title
+      }
+    }
+  }
+
+  function getMessageFocusSnapshot(index: number): ChatFocusSnapshot | undefined {
+    return focusSnapshotsByMessageIndex.value[index]
+  }
+
+  function messagesForTransport(messages: ChatMessageDto[]): ChatMessageDto[] {
+    return messages.map(message => ({
+      role: message.role,
+      content: message.content
+    }))
   }
 
   async function handleSend(presetText?: string | null) {
@@ -135,7 +174,10 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
       inputValue.value = ''
     }
 
+    const focusForTurn = chatStore.activeFocus
+    const userMessageIndex = chatStore.messages.length
     chatStore.appendMessage({ role: 'user', content: text })
+    setMessageFocusSnapshot(userMessageIndex, focusForTurn)
 
     let chatContext: ChatContextDto = context.value
     if (!cockpitSignals.hasHydrated) {
@@ -148,7 +190,10 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
       })
       isHydrating.value = false
     }
-    chatContext = contextWithActiveFocus(chatContext)
+    chatContext = contextWithFocusForTurn(chatContext, focusForTurn)
+    if (focusForTurn) {
+      chatStore.clearFocus?.()
+    }
 
     chatStore.setSending(true)
     isStreamingReply.value = false
@@ -166,6 +211,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
       const controlsWithState = chatStore.providerState
         ? { ...controls, providerState: chatStore.providerState }
         : controls
+      const requestMessages = messagesForTransport(chatStore.messages)
 
       if (runtimeControls.chatStreamingEnabled) {
         let assistantMessageIndex: number | null = null
@@ -178,7 +224,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           }
         }
 
-        const { reply } = await streamChat(chatStore.messages, chatContext, controlsWithState, {
+        const { reply } = await streamChat(requestMessages, chatContext, controlsWithState, {
           onDelta: (delta) => {
             streamedReply += delta
             toolStatusText.value = ''
@@ -206,7 +252,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           chatStore.appendMessage({ role: 'assistant', content: reply })
         }
       } else {
-        const { reply, providerState, sourceReceipts, debugTrace } = await sendChat(chatStore.messages, chatContext, controlsWithState)
+        const { reply, providerState, sourceReceipts, debugTrace } = await sendChat(requestMessages, chatContext, controlsWithState)
         const assistantMessageIndex = chatStore.messages.length
         chatStore.appendMessage({ role: 'assistant', content: reply })
         setMessageSourceReceipts(assistantMessageIndex, sourceReceipts)
@@ -241,10 +287,12 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     isHydrating,
     isStreamingReply,
     toolStatusText,
+    focusSnapshotsByMessageIndex,
     sourceReceiptsByMessageIndex,
     chatInputDisabled,
     chatSendButtonLabel,
     getMessageSourceReceipts,
+    getMessageFocusSnapshot,
     openPopup,
     closePopup,
     togglePanel,

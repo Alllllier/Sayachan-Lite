@@ -161,7 +161,7 @@ describe('useChatFeature orchestration', () => {
     expect(feature.inputValue.value).toBe('')
     expect(refreshCockpitContext).not.toHaveBeenCalled()
     expect(streamChat).toHaveBeenCalledWith(
-      chatStore.messages,
+      [{ role: 'user', content: 'hello' }],
       {
         activeProjectsCount: 1,
         activeTasksCount: 2,
@@ -198,7 +198,7 @@ describe('useChatFeature orchestration', () => {
     expect(chatStore.appendMessage).toHaveBeenLastCalledWith({ role: 'assistant', content: 'Done' })
   })
 
-  it('includes an active chat focus in the send context and routes to core guide mode', async () => {
+  it('consumes an active chat focus once while routing that turn to core guide mode', async () => {
     chatStore.activeFocus = {
       type: 'project',
       id: 'project-1',
@@ -213,8 +213,14 @@ describe('useChatFeature orchestration', () => {
 
     await feature.handleSend()
 
+    expect(chatStore.clearFocus).toHaveBeenCalledTimes(1)
+    expect(chatStore.activeFocus).toBeUndefined()
+    expect(feature.getMessageFocusSnapshot(0)).toEqual({
+      type: 'project',
+      title: 'Sayachan AI Core'
+    })
     expect(streamChat).toHaveBeenCalledWith(
-      chatStore.messages,
+      [{ role: 'user', content: '下一步呢' }],
       {
         activeProjectsCount: 1,
         activeTasksCount: 2,
@@ -241,6 +247,34 @@ describe('useChatFeature orchestration', () => {
       },
       expect.any(Object)
     )
+
+    feature.inputValue.value = '闲聊一下'
+    await feature.handleSend()
+
+    expect(streamChat).toHaveBeenNthCalledWith(
+      2,
+      [
+        { role: 'user', content: '下一步呢' },
+        { role: 'assistant', content: 'Done' },
+        { role: 'user', content: '闲聊一下' }
+      ],
+      {
+        activeProjectsCount: 1,
+        activeTasksCount: 2,
+        pinnedProjectName: 'PMO',
+        currentNextAction: 'Write handoff'
+      },
+      {
+        personalityBaseline: 'warm',
+        futureSlots: {
+          warmth: 7,
+          convergenceMode: 'guided'
+        },
+        debugTrace: true
+      },
+      expect.any(Object)
+    )
+    expect(feature.getMessageFocusSnapshot(2)).toBeUndefined()
   })
 
   it('updates the assistant message as stream deltas arrive', async () => {
@@ -312,7 +346,7 @@ describe('useChatFeature orchestration', () => {
 
     expect(refreshCockpitContext).toHaveBeenCalled()
     expect(streamChat).toHaveBeenCalledWith(
-      chatStore.messages,
+      [{ role: 'user', content: '帮我聚焦' }],
       {
         activeProjectsCount: 1,
         activeTasksCount: 4,

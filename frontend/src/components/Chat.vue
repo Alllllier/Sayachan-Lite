@@ -36,6 +36,7 @@ const {
   isStreamingReply,
   toolStatusText,
   getMessageSourceReceipts,
+  getMessageFocusSnapshot,
   chatInputDisabled,
   chatSendButtonLabel,
   openPopup,
@@ -90,6 +91,13 @@ function sourceTypeLabel(type: string): string {
   if (type === 'note') return t('chat.sourceNote')
   if (type === 'task') return t('chat.sourceTask')
   return t('chat.sourceItem')
+}
+
+function focusSnapshotLabel(index: number): string {
+  const focus = getMessageFocusSnapshot(index)
+  if (!focus) return ''
+  const typeLabel = focus.type === 'project' ? t('chat.focusProject') : t('chat.focusNote')
+  return `${typeLabel} · ${focus.title}`
 }
 </script>
 
@@ -158,7 +166,12 @@ function sourceTypeLabel(type: string): string {
                 </span>
               </div>
             </div>
-            <div v-else class="chat-bubble">{{ msg.content }}</div>
+            <div v-else class="chat-user-stack">
+              <div v-if="focusSnapshotLabel(idx)" class="chat-focus-snapshot">
+                {{ focusSnapshotLabel(idx) }}
+              </div>
+              <div class="chat-bubble">{{ msg.content }}</div>
+            </div>
           </div>
           <div v-if="isHydrating" class="chat-message assistant">
             <div class="chat-bubble chat-bubble--thinking">{{ t('chat.syncingContext') }}</div>
@@ -581,6 +594,32 @@ function sourceTypeLabel(type: string): string {
 
 .chat-assistant-stack .chat-bubble {
   max-width: 100%;
+}
+
+.chat-user-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  max-width: 80%;
+  gap: 5px;
+}
+
+.chat-user-stack .chat-bubble {
+  max-width: 100%;
+}
+
+.chat-focus-snapshot {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 7px;
+  border: 1px solid color-mix(in srgb, var(--action-primary) 22%, var(--border-default));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--action-primary) 6%, var(--surface-card));
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.3;
 }
 
 .chat-source-receipts {
