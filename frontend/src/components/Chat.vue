@@ -200,11 +200,6 @@ function debugUsageHasTokens(usage: DebugProviderUsageTrace): boolean {
           <div v-if="chatStore.messages.length === 0" class="chat-empty-invite">
             {{ t('chat.emptyInvite') }}
           </div>
-          <div class="chat-chips">
-            <button class="chip" :disabled="chatInputDisabled" @click="handleSend(t('chat.presetFocus'))">{{ t('chat.presetFocus') }}</button>
-            <button class="chip" :disabled="chatInputDisabled" @click="handleSend(t('chat.presetNextStep'))">{{ t('chat.presetNextStep') }}</button>
-            <button class="chip" :disabled="chatInputDisabled" @click="handleSend(t('chat.presetSummary'))">{{ t('chat.presetSummary') }}</button>
-          </div>
           <div
             v-for="(msg, idx) in chatStore.messages"
             :key="idx"
@@ -987,37 +982,6 @@ function debugUsageHasTokens(usage: DebugProviderUsageTrace): boolean {
   background: var(--surface-panel);
   color: var(--text-primary);
   border-bottom-left-radius: 4px;
-}
-
-/* Quick Chips */
-.chat-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xs);
-  margin-top: 2px;
-  margin-bottom: var(--space-sm);
-}
-
-.chip {
-  padding: 6px 12px;
-  border-radius: var(--radius-full);
-  border: 1px solid #eeeeee;
-  background: var(--surface-card);
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
-}
-
-.chip:hover:not(:disabled) {
-  background: var(--surface-hover);
-  border-color: var(--border-accent);
-  color: var(--text-primary);
-}
-
-.chip:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* Footer */

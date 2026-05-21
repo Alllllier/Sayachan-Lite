@@ -10,12 +10,12 @@ import {
 } from './chat.rules'
 
 describe('chat rules locks', () => {
-  it('normalizes typed and preset send text before submission', () => {
+  it('normalizes typed and override send text before submission', () => {
     expect(normalizeChatSendText('  hello  ')).toBe('hello')
     expect(normalizeChatSendText('   ')).toBe('')
     expect(normalizeChatSendText(null)).toBe('')
-    expect(getChatSendText({ presetText: '  preset  ', inputValue: 'typed' })).toBe('preset')
-    expect(getChatSendText({ presetText: undefined, inputValue: '  typed  ' })).toBe('typed')
+    expect(getChatSendText({ overrideText: '  展开讲讲  ', inputValue: 'typed' })).toBe('展开讲讲')
+    expect(getChatSendText({ overrideText: undefined, inputValue: '  typed  ' })).toBe('typed')
   })
 
   it('blocks empty sends and concurrent sending states', () => {
@@ -24,9 +24,9 @@ describe('chat rules locks', () => {
     expect(canSendChatMessage({ text: 'hello', isSending: true })).toBe(false)
   })
 
-  it('clears typed drafts only for typed sends, not preset chip sends', () => {
+  it('clears typed drafts only for typed sends, not programmatic sends', () => {
     expect(shouldClearChatDraft(undefined)).toBe(true)
-    expect(shouldClearChatDraft('帮我聚焦')).toBe(false)
+    expect(shouldClearChatDraft('展开讲讲')).toBe(false)
   })
 
   it('derives disabled state and send button label from sending state', () => {

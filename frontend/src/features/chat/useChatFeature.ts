@@ -292,9 +292,9 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     }))
   }
 
-  async function handleSend(presetText?: string | null, sendOptions: { expansionOfferId?: string } = {}) {
+  async function handleSend(overrideText?: string | null, sendOptions: { expansionOfferId?: string } = {}) {
     const text = getChatSendText({
-      presetText,
+      overrideText,
       inputValue: inputValue.value
     })
 
@@ -303,7 +303,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
       isSending: chatStore.isSending
     })) return
 
-    if (shouldClearChatDraft(presetText)) {
+    if (shouldClearChatDraft(overrideText)) {
       inputValue.value = ''
     }
 

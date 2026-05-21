@@ -8,7 +8,7 @@ type ChatSendState = {
 }
 
 type ChatTextSource = {
-  presetText?: string | null
+  overrideText?: string | null
   inputValue?: string | null
 }
 
@@ -20,20 +20,20 @@ export function normalizeChatSendText(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
 }
 
-export function isPresetChatSend(presetText: unknown): boolean {
-  return typeof presetText === 'string'
+export function isOverrideChatSend(overrideText: unknown): boolean {
+  return typeof overrideText === 'string'
 }
 
 export function canSendChatMessage({ text, isSending }: ChatSendState): boolean {
   return Boolean(normalizeChatSendText(text)) && !isSending
 }
 
-export function shouldClearChatDraft(presetText: unknown): boolean {
-  return !isPresetChatSend(presetText)
+export function shouldClearChatDraft(overrideText: unknown): boolean {
+  return !isOverrideChatSend(overrideText)
 }
 
-export function getChatSendText({ presetText, inputValue }: ChatTextSource): string {
-  return normalizeChatSendText(isPresetChatSend(presetText) ? presetText : inputValue)
+export function getChatSendText({ overrideText, inputValue }: ChatTextSource): string {
+  return normalizeChatSendText(isOverrideChatSend(overrideText) ? overrideText : inputValue)
 }
 
 export function isChatInputDisabled({ isSending }: ChatBusyState): boolean {
