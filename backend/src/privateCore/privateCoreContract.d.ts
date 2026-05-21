@@ -34,6 +34,14 @@ declare module '@allier/sayachan-ai-core' {
       memoryCandidate?: boolean | {
         enabled?: boolean;
       };
+      responseStrategy?: {
+        enabled?: boolean;
+        type?: 'expand_from_offer';
+        offerId?: string;
+        originalUserText?: string;
+        minConfidence?: number;
+      };
+      expansionOfferId?: string;
       [key: string]: unknown;
     };
   };
@@ -44,6 +52,13 @@ declare module '@allier/sayachan-ai-core' {
       requestedMode: string;
       selectedMode: 'chat/general' | 'guide/core_modules';
       fallbackApplied: boolean;
+      confidence: number;
+      reasonCodes: string[];
+    };
+    strategy?: {
+      action: 'direct_answer' | 'expansion_offer' | 'expand_from_offer';
+      source: 'model_strategy' | 'runtime_control' | 'heuristic_guard' | 'not_attempted';
+      status: string;
       confidence: number;
       reasonCodes: string[];
     };
@@ -147,6 +162,17 @@ declare module '@allier/sayachan-ai-core' {
       reason?: string;
       source: 'assistant_suggested_user_approved';
       confidence?: number;
+    };
+    responseStrategy?: {
+      action: 'direct_answer' | 'expansion_offer' | 'expand_from_offer';
+      source?: 'model_strategy' | 'runtime_control' | 'heuristic_guard' | 'not_attempted';
+      status?: string;
+      confidence?: number;
+      reasonCodes?: string[];
+    };
+    expansionOffer?: {
+      offerId: string;
+      status?: 'pending' | 'accepted';
     };
   };
 

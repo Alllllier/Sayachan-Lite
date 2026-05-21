@@ -1624,6 +1624,230 @@ test('AI chat session endpoint returns current-user persisted messages', async (
   }
 });
 
+test('AI chat persists expansion offers with backend-owned offer ids', async () => {
+  const userId = toObjectId('000000000000000000000030', 'test.userId');
+  const conversationId = toObjectId('000000000000000000000504', 'test.conversationId');
+  const restoreChatPersistence = aiService.__test__.setChatPersistenceAvailabilityCheckForTest(() => true);
+  const restoreProductContextBuilder = aiService.__test__.setProductContextBuilderForTest(async () => null);
+  const restoreMemoryContextBuilder = aiService.__test__.setMemoryContextBuilderForTest(async () => null);
+  const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async () => ({
+    reply: '这个会讲得有点长哦。你想听我慢慢展开吗？',
+    responseStrategy: {
+      action: 'expansion_offer',
+      source: 'model_strategy',
+      status: 'completed',
+      confidence: 0.84,
+      reasonCodes: ['broad_explanation']
+    }
+  }));
+  const storedMessages = [];
+  const createdMessages = [];
+  let sequence = 1;
+
+  try {
+    await withPatchedMethods([
+      {
+        target: ChatConversation,
+        key: 'findOne',
+        value: () => ({
+          sort() {
+            return Promise.resolve(createDoc({
+              _id: conversationId,
+              userId,
+              archived: false,
+              createdAt: new Date('2026-05-22T00:00:00.000Z'),
+              updatedAt: new Date('2026-05-22T00:00:00.000Z')
+            }));
+          }
+        })
+      },
+      {
+        target: ChatConversation,
+        key: 'findOneAndUpdate',
+        value: async (query, update) => createDoc({ _id: conversationId, userId, ...query, ...update })
+      },
+      {
+        target: ChatMessage,
+        key: 'create',
+        value: async (payload) => {
+          const doc = createDoc({
+            _id: `00000000000000000000070${sequence}`,
+            ...payload,
+            createdAt: new Date(`2026-05-22T00:0${sequence}:00.000Z`)
+          });
+          sequence += 1;
+          createdMessages.push(normalizeIds(payload));
+          storedMessages.push(doc);
+          return doc;
+        }
+      },
+      {
+        target: ChatMessage,
+        key: 'find',
+        value: () => ({
+          sort() {
+            return {
+              limit() {
+                return Promise.resolve(storedMessages.slice().reverse());
+              }
+            };
+          }
+        })
+      }
+    ], async () => {
+      const result = await aiService.chat({
+        messages: [{ role: 'user', content: '群论在工程学中的具体应用有哪些' }]
+      }, { userId, userRole: 'tester' });
+
+      assert.equal(result.expansionOffer.offerId, '000000000000000000000702');
+      assert.equal(result.expansionOffer.status, 'pending');
+    });
+
+    assert.equal(createdMessages[1].runtimeMeta.responseStrategy.action, 'expansion_offer');
+    assert.equal(createdMessages[1].runtimeMeta.expansionOffer.status, 'pending');
+    assert.equal(createdMessages[1].runtimeMeta.expansionOffer.originalUserText, '群论在工程学中的具体应用有哪些');
+    assert.equal(createdMessages[1].runtimeMeta.expansionOffer.originalUserMessageId, '000000000000000000000701');
+  } finally {
+    restoreChatPersistence();
+    restoreProductContextBuilder();
+    restoreMemoryContextBuilder();
+    restoreChatRunner();
+  }
+});
+
+test('AI chat accepts expansion offers by resolving original text from backend messages', async () => {
+  const userId = toObjectId('000000000000000000000031', 'test.userId');
+  const conversationId = toObjectId('000000000000000000000505', 'test.conversationId');
+  const offerId = toObjectId('000000000000000000000703', 'test.offerId');
+  const restoreChatPersistence = aiService.__test__.setChatPersistenceAvailabilityCheckForTest(() => true);
+  const restoreProductContextBuilder = aiService.__test__.setProductContextBuilderForTest(async () => null);
+  const restoreMemoryContextBuilder = aiService.__test__.setMemoryContextBuilderForTest(async () => null);
+  let capturedCall;
+  const acceptedUpdates = [];
+  const storedMessages = [
+    createDoc({
+      _id: '000000000000000000000711',
+      conversationId,
+      userId,
+      role: 'user',
+      content: '群论在工程学中的具体应用有哪些',
+      createdAt: new Date('2026-05-22T00:01:00.000Z')
+    }),
+    createDoc({
+      _id: offerId,
+      conversationId,
+      userId,
+      role: 'assistant',
+      content: '这个会讲得有点长哦。你想听我慢慢展开吗？',
+      runtimeMeta: {
+        expansionOffer: {
+          status: 'pending',
+          originalUserText: '群论在工程学中的具体应用有哪些'
+        }
+      },
+      createdAt: new Date('2026-05-22T00:02:00.000Z')
+    })
+  ];
+  const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async (messages, context, options) => {
+    capturedCall = { messages, context, options };
+    return { reply: '好，展开讲。' };
+  });
+
+  try {
+    await withPatchedMethods([
+      {
+        target: ChatConversation,
+        key: 'findOne',
+        value: () => ({
+          sort() {
+            return Promise.resolve(createDoc({
+              _id: conversationId,
+              userId,
+              archived: false,
+              createdAt: new Date('2026-05-22T00:00:00.000Z'),
+              updatedAt: new Date('2026-05-22T00:02:00.000Z')
+            }));
+          }
+        })
+      },
+      {
+        target: ChatConversation,
+        key: 'findOneAndUpdate',
+        value: async (query, update) => createDoc({ _id: conversationId, userId, ...query, ...update })
+      },
+      {
+        target: ChatMessage,
+        key: 'findOne',
+        value: async (query) => {
+          assert.deepEqual(normalizeIds(query), {
+            _id: '000000000000000000000703',
+            conversationId: '000000000000000000000505',
+            userId: '000000000000000000000031',
+            role: 'assistant',
+            'runtimeMeta.expansionOffer.status': 'pending'
+          });
+          return storedMessages[1];
+        }
+      },
+      {
+        target: ChatMessage,
+        key: 'create',
+        value: async (payload) => {
+          const doc = createDoc({
+            _id: payload.role === 'user' ? '000000000000000000000704' : '000000000000000000000705',
+            ...payload,
+            createdAt: new Date('2026-05-22T00:03:00.000Z')
+          });
+          storedMessages.push(doc);
+          return doc;
+        }
+      },
+      {
+        target: ChatMessage,
+        key: 'findOneAndUpdate',
+        value: async (query, update) => {
+          acceptedUpdates.push({ query: normalizeIds(query), update: normalizeIds(update) });
+          return storedMessages[1];
+        }
+      },
+      {
+        target: ChatMessage,
+        key: 'find',
+        value: () => ({
+          sort() {
+            return {
+              limit() {
+                return Promise.resolve(storedMessages.slice().reverse());
+              }
+            };
+          }
+        })
+      }
+    ], async () => {
+      const result = await aiService.chat({
+        messages: [{ role: 'user', content: '展开讲讲' }],
+        runtimeControls: {
+          expansionOfferId: '000000000000000000000703'
+        }
+      }, { userId, userRole: 'tester' });
+
+      assert.equal(result.reply, '好，展开讲。');
+    });
+
+    assert.equal(capturedCall.options.runtimeControls.responseStrategy.type, 'expand_from_offer');
+    assert.equal(capturedCall.options.runtimeControls.responseStrategy.offerId, '000000000000000000000703');
+    assert.equal(capturedCall.options.runtimeControls.responseStrategy.originalUserText, '群论在工程学中的具体应用有哪些');
+    assert.equal(Object.hasOwn(capturedCall.options.runtimeControls, 'expansionOfferId'), false);
+    assert.equal(acceptedUpdates[0].update.$set['runtimeMeta.expansionOffer.status'], 'accepted');
+    assert.equal(acceptedUpdates[0].update.$set['runtimeMeta.expansionOffer.acceptedByMessageId'], '000000000000000000000704');
+  } finally {
+    restoreChatPersistence();
+    restoreProductContextBuilder();
+    restoreMemoryContextBuilder();
+    restoreChatRunner();
+  }
+});
+
 test('AI chat new session archives only the current user active conversation', async () => {
   const userId = toObjectId('000000000000000000000029', 'test.userId');
   const conversationId = toObjectId('000000000000000000000503', 'test.conversationId');

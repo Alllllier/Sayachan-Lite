@@ -1,5 +1,5 @@
 import { computed, nextTick, ref, watch } from 'vue'
-import type { ChatContextDto, ChatFocusDto, ChatMemoryCandidateDto, ChatMessageDto, ChatSourceReceiptDto } from '@sayachan/contracts'
+import type { ChatContextDto, ChatExpansionOfferDto, ChatFocusDto, ChatMemoryCandidateDto, ChatMessageDto, ChatSourceReceiptDto } from '@sayachan/contracts'
 import { useChatStore } from '../../stores/chat'
 import { useRuntimeControls } from '../../stores/runtimeControls'
 import { createMemoryEntry } from '../memory/memory.api.js'
@@ -25,6 +25,7 @@ type ChatMemoryCandidateState = {
   candidate: ChatMemoryCandidateDto
   status: 'pending' | 'saving' | 'saved' | 'dismissed' | 'error'
 }
+type ChatExpansionOfferState = ChatExpansionOfferDto
 
 type ChatStoreLike = {
   isOpen: boolean
@@ -60,6 +61,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
   const focusSnapshotsByMessageIndex = ref<Record<number, ChatFocusSnapshot>>({})
   const sourceReceiptsByMessageIndex = ref<Record<number, ChatSourceReceiptDto[]>>({})
   const memoryCandidatesByMessageIndex = ref<Record<number, ChatMemoryCandidateState>>({})
+  const expansionOffersByMessageIndex = ref<Record<number, ChatExpansionOfferState>>({})
 
   watch(
     () => chatStore.messages.length,
@@ -68,6 +70,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
         focusSnapshotsByMessageIndex.value = {}
         sourceReceiptsByMessageIndex.value = {}
         memoryCandidatesByMessageIndex.value = {}
+        expansionOffersByMessageIndex.value = {}
       }
     }
   )
@@ -138,6 +141,30 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     return memoryCandidatesByMessageIndex.value[index]
   }
 
+  function setMessageExpansionOffer(index: number | null, expansionOffer?: ChatExpansionOfferDto): void {
+    if (index === null || !expansionOffer) return
+    expansionOffersByMessageIndex.value = {
+      ...expansionOffersByMessageIndex.value,
+      [index]: expansionOffer
+    }
+  }
+
+  function getMessageExpansionOffer(index: number): ChatExpansionOfferState | undefined {
+    return expansionOffersByMessageIndex.value[index] || chatStore.messages[index]?.expansionOffer
+  }
+
+  function updateExpansionOfferStatus(index: number, status: ChatExpansionOfferState['status']): void {
+    const current = getMessageExpansionOffer(index)
+    if (!current) return
+    expansionOffersByMessageIndex.value = {
+      ...expansionOffersByMessageIndex.value,
+      [index]: {
+        ...current,
+        status
+      }
+    }
+  }
+
   function updateMemoryCandidateStatus(index: number, status: ChatMemoryCandidateState['status']): void {
     const current = memoryCandidatesByMessageIndex.value[index]
     if (!current) return
@@ -192,6 +219,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     const focusSnapshots: Record<number, ChatFocusSnapshot> = {}
     const sourceReceipts: Record<number, ChatSourceReceiptDto[]> = {}
     const memoryCandidates: Record<number, ChatMemoryCandidateState> = {}
+    const expansionOffers: Record<number, ChatExpansionOfferState> = {}
 
     messages.forEach((message, index) => {
       if (message.focusSnapshot) {
@@ -206,11 +234,15 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           status: 'pending'
         }
       }
+      if (message.expansionOffer) {
+        expansionOffers[index] = message.expansionOffer
+      }
     })
 
     focusSnapshotsByMessageIndex.value = focusSnapshots
     sourceReceiptsByMessageIndex.value = sourceReceipts
     memoryCandidatesByMessageIndex.value = memoryCandidates
+    expansionOffersByMessageIndex.value = expansionOffers
   }
 
   async function loadCurrentSession(): Promise<void> {
@@ -243,6 +275,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
       focusSnapshotsByMessageIndex.value = {}
       sourceReceiptsByMessageIndex.value = {}
       memoryCandidatesByMessageIndex.value = {}
+      expansionOffersByMessageIndex.value = {}
       runtimeControls.clearLatestDebugTrace()
       toolStatusText.value = ''
       isStreamingReply.value = false
@@ -259,7 +292,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     }))
   }
 
-  async function handleSend(presetText?: string | null) {
+  async function handleSend(presetText?: string | null, sendOptions: { expansionOfferId?: string } = {}) {
     const text = getChatSendText({
       presetText,
       inputValue: inputValue.value
@@ -309,6 +342,9 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
         debugTrace: runtimeControls.debugTraceEnabled,
         memoryCandidate: true
       }
+      if (sendOptions.expansionOfferId) {
+        Object.assign(controls, { expansionOfferId: sendOptions.expansionOfferId })
+      }
       const controlsWithState = chatStore.providerState
         ? { ...controls, providerState: chatStore.providerState }
         : controls
@@ -343,6 +379,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
             chatStore.updateMessageContent(assistantMessageIndex as number, reply)
             setMessageSourceReceipts(assistantMessageIndex, event.output?.sourceReceipts || event.sourceReceipts)
             setMessageMemoryCandidate(assistantMessageIndex, event.output?.memoryCandidate || event.memoryCandidate)
+            setMessageExpansionOffer(assistantMessageIndex, event.output?.expansionOffer || event.expansionOffer)
             runtimeControls.setLatestDebugTrace(event.output?.debugTrace || event.debugTrace)
             chatStore.setProviderState(event.providerState)
             scrollToBottom()
@@ -354,11 +391,12 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           chatStore.appendMessage({ role: 'assistant', content: reply })
         }
       } else {
-        const { reply, providerState, sourceReceipts, debugTrace, memoryCandidate } = await sendChat(requestMessages, chatContext, controlsWithState)
+        const { reply, providerState, sourceReceipts, debugTrace, memoryCandidate, expansionOffer } = await sendChat(requestMessages, chatContext, controlsWithState)
         const assistantMessageIndex = chatStore.messages.length
         chatStore.appendMessage({ role: 'assistant', content: reply })
         setMessageSourceReceipts(assistantMessageIndex, sourceReceipts)
         setMessageMemoryCandidate(assistantMessageIndex, memoryCandidate)
+        setMessageExpansionOffer(assistantMessageIndex, expansionOffer)
         runtimeControls.setLatestDebugTrace(debugTrace)
         chatStore.setProviderState(providerState)
       }
@@ -373,6 +411,13 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
       toolStatusText.value = ''
       chatStore.setSending(false)
     }
+  }
+
+  async function acceptExpansionOffer(index: number, confirmationText = '展开讲讲'): Promise<void> {
+    const offer = getMessageExpansionOffer(index)
+    if (!offer || offer.status === 'accepted' || chatStore.isSending) return
+    updateExpansionOfferStatus(index, 'accepted')
+    await handleSend(confirmationText, { expansionOfferId: offer.offerId })
   }
 
   function handleKeydown(event: ChatKeydownEvent) {
@@ -392,13 +437,16 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     focusSnapshotsByMessageIndex,
     sourceReceiptsByMessageIndex,
     memoryCandidatesByMessageIndex,
+    expansionOffersByMessageIndex,
     chatInputDisabled,
     chatSendButtonLabel,
     getMessageSourceReceipts,
     getMessageMemoryCandidate,
+    getMessageExpansionOffer,
     getMessageFocusSnapshot,
     acceptMemoryCandidate,
     dismissMemoryCandidate,
+    acceptExpansionOffer,
     openPopup,
     closePopup,
     togglePanel,

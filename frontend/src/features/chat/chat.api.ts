@@ -7,9 +7,11 @@ import {
 import type {
   ChatContextDto,
   ChatDebugTraceDto,
+  ChatExpansionOfferDto,
   ChatMemoryCandidateDto,
   ChatMessageDto,
   ChatResponseDto,
+  ChatResponseStrategyDto,
   ChatRuntimeControlsDto,
   ChatRuntimePayloadDto,
   ChatSessionResponseDto,
@@ -34,6 +36,8 @@ export type ChatStreamEvent = {
   sourceReceipts?: ChatSourceReceiptDto[]
   debugTrace?: ChatDebugTraceDto
   memoryCandidate?: ChatMemoryCandidateDto
+  responseStrategy?: ChatResponseStrategyDto
+  expansionOffer?: ChatExpansionOfferDto
   finishReason?: string
   incomplete?: boolean
   incompleteReason?: string
@@ -66,6 +70,12 @@ function publicChatResponse(data: ChatResponseDto): ChatResponseDto {
   }
   if (data.memoryCandidate) {
     response.memoryCandidate = data.memoryCandidate
+  }
+  if (data.responseStrategy) {
+    response.responseStrategy = data.responseStrategy
+  }
+  if (data.expansionOffer) {
+    response.expansionOffer = data.expansionOffer
   }
   return response
 }
@@ -207,14 +217,18 @@ export async function streamChat(
           providerState: event.providerState,
           sourceReceipts: event.output?.sourceReceipts || event.sourceReceipts,
           debugTrace: event.output?.debugTrace || event.debugTrace,
-          memoryCandidate: event.output?.memoryCandidate || event.memoryCandidate
+          memoryCandidate: event.output?.memoryCandidate || event.memoryCandidate,
+          responseStrategy: event.output?.responseStrategy || event.responseStrategy,
+          expansionOffer: event.output?.expansionOffer || event.expansionOffer
         }, chatResponseSchema, 'chat stream')
         const completedEvent = {
           ...event,
           output: data,
           sourceReceipts: data.sourceReceipts,
           debugTrace: data.debugTrace,
-          memoryCandidate: data.memoryCandidate
+          memoryCandidate: data.memoryCandidate,
+          responseStrategy: data.responseStrategy,
+          expansionOffer: data.expansionOffer
         }
         handlers.onCompleted?.(data.reply, completedEvent)
         return publicChatResponse(data)

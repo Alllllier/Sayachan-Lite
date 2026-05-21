@@ -7,6 +7,9 @@ export const chatProviderStateStrategyValues = ['caller_managed', 'previous_resp
 export const chatProviderStateSourceValues = ['auto', 'env', 'runtime_control'] as const
 export const chatModeValues = ['chat/general', 'guide/core_modules'] as const
 export const chatModeDecisionSourceValues = ['input', 'runtime_control', 'context', 'model_intent', 'default'] as const
+export const chatResponseStrategyActionValues = ['direct_answer', 'expansion_offer', 'expand_from_offer'] as const
+export const chatResponseStrategySourceValues = ['model_strategy', 'runtime_control', 'heuristic_guard', 'not_attempted'] as const
+export const chatExpansionOfferStatusValues = ['pending', 'accepted'] as const
 export const chatFocusTypeValues = ['note', 'project'] as const
 export const chatMemoryCandidateSourceValues = ['assistant_suggested_user_approved'] as const
 
@@ -62,6 +65,19 @@ export const chatMemoryCandidateSchema = z.object({
   confidence: z.number().min(0).max(1).optional()
 }).strict()
 
+export const chatResponseStrategySchema = z.object({
+  action: z.enum(chatResponseStrategyActionValues),
+  source: z.enum(chatResponseStrategySourceValues).optional(),
+  status: z.string().optional(),
+  confidence: z.number().min(0).max(1).optional(),
+  reasonCodes: z.array(z.string()).optional()
+}).strict()
+
+export const chatExpansionOfferSchema = z.object({
+  offerId: z.string().min(1),
+  status: z.enum(chatExpansionOfferStatusValues).optional()
+}).strict()
+
 export const chatMessageSchema = z.object({
   _id: z.string().min(1).optional(),
   role: z.enum(chatMessageRoleValues).optional(),
@@ -69,6 +85,7 @@ export const chatMessageSchema = z.object({
   focusSnapshot: chatMessageFocusSnapshotSchema.optional(),
   sourceReceipts: z.array(chatSourceReceiptSchema).optional(),
   memoryCandidate: chatMemoryCandidateSchema.optional(),
+  expansionOffer: chatExpansionOfferSchema.optional(),
   createdAt: z.string().optional()
 })
 
@@ -91,6 +108,14 @@ export const chatDebugFocusTraceSchema = z.object({
   type: z.enum(chatFocusTypeValues).optional(),
   title: z.string().min(1).optional(),
   source: z.string().optional()
+}).strict()
+
+export const chatDebugStrategyTraceSchema = z.object({
+  action: z.enum(chatResponseStrategyActionValues),
+  source: z.enum(chatResponseStrategySourceValues),
+  status: z.string(),
+  confidence: z.number(),
+  reasonCodes: z.array(z.string())
 }).strict()
 
 export const chatDebugContextTraceSchema = z.object({
@@ -136,6 +161,7 @@ export const chatDebugProviderUsageTraceSchema = z.object({
 
 export const chatDebugTraceSchema = z.object({
   mode: chatDebugModeTraceSchema.optional(),
+  strategy: chatDebugStrategyTraceSchema.optional(),
   focus: chatDebugFocusTraceSchema.optional(),
   context: chatDebugContextTraceSchema.optional(),
   providerUsage: chatDebugProviderUsageTraceSchema.optional(),
@@ -173,7 +199,8 @@ export const chatRuntimeControlsSchema = z.object({
   futureSlots: chatRuntimeFutureSlotsSchema.optional(),
   providerState: chatProviderStateSchema.optional(),
   debugTrace: z.boolean().optional(),
-  memoryCandidate: z.boolean().optional()
+  memoryCandidate: z.boolean().optional(),
+  expansionOfferId: z.string().min(1).optional()
 })
 
 export const chatRuntimePayloadSchema = chatRuntimeControlsSchema.extend({
@@ -191,7 +218,9 @@ export const chatResponseSchema = z.object({
   providerState: chatProviderStateSchema.optional(),
   sourceReceipts: z.array(chatSourceReceiptSchema).optional(),
   debugTrace: chatDebugTraceSchema.optional(),
-  memoryCandidate: chatMemoryCandidateSchema.optional()
+  memoryCandidate: chatMemoryCandidateSchema.optional(),
+  responseStrategy: chatResponseStrategySchema.optional(),
+  expansionOffer: chatExpansionOfferSchema.optional()
 })
 
 export const chatConversationSchema = z.object({
@@ -211,9 +240,12 @@ export type ChatConvergenceMode = (typeof chatConvergenceModeValues)[number]
 export type ChatMessageRole = (typeof chatMessageRoleValues)[number]
 export type ChatModeDto = (typeof chatModeValues)[number]
 export type ChatModeDecisionSource = (typeof chatModeDecisionSourceValues)[number]
+export type ChatResponseStrategyAction = (typeof chatResponseStrategyActionValues)[number]
 export type ChatFocusDto = z.infer<typeof chatFocusSchema>
 export type ChatMessageFocusSnapshotDto = z.infer<typeof chatMessageFocusSnapshotSchema>
 export type ChatMemoryCandidateDto = z.infer<typeof chatMemoryCandidateSchema>
+export type ChatExpansionOfferDto = z.infer<typeof chatExpansionOfferSchema>
+export type ChatResponseStrategyDto = z.infer<typeof chatResponseStrategySchema>
 export type ChatProviderStateStrategy = (typeof chatProviderStateStrategyValues)[number]
 export type ChatProviderStateSource = (typeof chatProviderStateSourceValues)[number]
 export type ChatSourceReceiptDto = z.infer<typeof chatSourceReceiptSchema>

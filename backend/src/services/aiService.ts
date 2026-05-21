@@ -1,5 +1,7 @@
 import {
   type AiChatRequestDto,
+  type ChatMessageDto,
+  type ChatResponseDto,
   chatResponseSchema
 } from '@sayachan/contracts';
 import mongoose from 'mongoose';
@@ -34,6 +36,7 @@ type ChatExecutionOptions = {
   userRole?: string | null;
 };
 type PreparedPersistentTurn = Awaited<ReturnType<typeof preparePersistentChatTurn>>;
+type PreparedExpansionRequest = NonNullable<PreparedPersistentTurn>['expansionRequest'];
 
 let runChat: ChatRunner = privateCoreChat;
 let runChatStream: ChatStreamRunner = privateCoreChatStream;
@@ -127,9 +130,11 @@ function privateCoreRuntimeControls(
   runtimeControls: AiChatRequestDto['runtimeControls'],
   provider: ChatProvider,
   options: ChatExecutionOptions = {},
-  serverProviderState?: unknown
+  serverProviderState?: unknown,
+  expansionRequest?: PreparedExpansionRequest
 ) {
   const { debugTrace, memoryCandidate, providerState: callerProviderState, ...safeRuntimeControls } = runtimeControls || {};
+  delete (safeRuntimeControls as Record<string, unknown>).expansionOfferId;
   const controls: Record<string, unknown> = {
     ...safeRuntimeControls,
     provider
@@ -141,6 +146,14 @@ function privateCoreRuntimeControls(
 
   if (memoryCandidate === true && provider === 'openai' && canUseMemoryCandidate(options)) {
     controls.memoryCandidate = { enabled: true };
+  }
+
+  if (expansionRequest) {
+    controls.responseStrategy = {
+      type: 'expand_from_offer',
+      offerId: expansionRequest.offerId,
+      originalUserText: expansionRequest.originalUserText
+    };
   }
 
   if (provider === 'openai' && options.userId) {
@@ -222,18 +235,31 @@ async function persistAssistantReply(
     providerState?: unknown;
     sourceReceipts?: unknown;
     memoryCandidate?: unknown;
+    responseStrategy?: unknown;
   },
   options: ChatExecutionOptions
-): Promise<void> {
+): Promise<ChatMessageDto | undefined> {
   if (!preparedTurn || !options.userId) {
-    return;
+    return undefined;
   }
 
   try {
-    await appendAssistantMessage(preparedTurn, reply, result, { userId: options.userId });
+    return await appendAssistantMessage(preparedTurn, reply, result, { userId: options.userId });
   } catch (error) {
     console.error('[AI Route] Chat persistence assistant append failed:', errorMessage(error));
+    return undefined;
   }
+}
+
+function withPersistedExpansionOffer(result: ChatResponseDto, message?: ChatMessageDto): ChatResponseDto {
+  if (!message?.expansionOffer) {
+    return result;
+  }
+
+  return {
+    ...result,
+    expansionOffer: message.expansionOffer
+  };
 }
 
 function messagesForCore(request: AiChatRequestDto, preparedTurn: PreparedPersistentTurn) {
@@ -256,12 +282,12 @@ export async function chat({ messages, context, runtimeControls }: AiChatRequest
     // TODO: extract options (e.g. thinkingEnabled) from request body when strategy is ready
     const privateCoreContext = await buildPrivateCoreContext(context, options);
     const result = await runChat(messagesForCore(request, preparedTurn), privateCoreContext, {
-      runtimeControls: privateCoreRuntimeControls(runtimeControls, provider, options, preparedTurn?.providerState)
+      runtimeControls: privateCoreRuntimeControls(runtimeControls, provider, options, preparedTurn?.providerState, preparedTurn?.expansionRequest)
     });
     console.log('[AI Route] Private-core v3 chat reply generated, length:', result.reply?.length);
     const parsed = chatResponseSchema.parse(result);
-    await persistAssistantReply(preparedTurn, parsed.reply, parsed, options);
-    return parsed;
+    const persistedMessage = await persistAssistantReply(preparedTurn, parsed.reply, parsed, options);
+    return withPersistedExpansionOffer(parsed, persistedMessage);
   } catch (error) {
     console.error('[AI Route] Chat service error:', errorMessage(error));
     console.error('[AI Route] Stack:', errorStack(error) || 'no stack');
@@ -287,17 +313,29 @@ export async function* chatStream({ messages, context, runtimeControls }: AiChat
   try {
     const privateCoreContext = await buildPrivateCoreContext(context, options);
     for await (const event of runChatStream(messagesForCore(request, preparedTurn), privateCoreContext, {
-      runtimeControls: privateCoreRuntimeControls(runtimeControls, provider, options, preparedTurn?.providerState)
+      runtimeControls: privateCoreRuntimeControls(runtimeControls, provider, options, preparedTurn?.providerState, preparedTurn?.expansionRequest)
     })) {
+      let outputEvent = event;
       if (event?.type === 'completed') {
         const reply = event.output?.reply || event.text || '';
-        await persistAssistantReply(preparedTurn, reply, {
-          providerState: event.output?.providerState || event.providerState,
-          sourceReceipts: event.output?.sourceReceipts || event.sourceReceipts,
-          memoryCandidate: event.output?.memoryCandidate || event.memoryCandidate
+        const parsedOutput = chatResponseSchema.parse({
+          ...(event.output || {}),
+          reply
+        });
+        const persistedMessage = await persistAssistantReply(preparedTurn, reply, {
+          providerState: parsedOutput.providerState || event.providerState,
+          sourceReceipts: parsedOutput.sourceReceipts || event.sourceReceipts,
+          memoryCandidate: parsedOutput.memoryCandidate || event.memoryCandidate,
+          responseStrategy: parsedOutput.responseStrategy
         }, options);
+        if (persistedMessage?.expansionOffer) {
+          outputEvent = {
+            ...event,
+            output: withPersistedExpansionOffer(parsedOutput, persistedMessage)
+          };
+        }
       }
-      yield event;
+      yield outputEvent;
     }
   } catch (error) {
     console.error('[AI Route] Chat stream service error:', errorMessage(error));

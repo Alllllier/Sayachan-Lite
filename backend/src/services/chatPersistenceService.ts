@@ -2,11 +2,13 @@ import {
   type AiChatRequestDto,
   chatMemoryCandidateSchema,
   chatProviderStateSchema,
+  chatResponseStrategySchema,
   chatSessionResponseSchema,
   chatSourceReceiptSchema,
   type ChatMessageDto,
   type ChatProviderStateSource,
   type ChatProviderStateStrategy,
+  type ChatResponseStrategyDto,
   type ChatSessionResponseDto
 } from '@sayachan/contracts';
 import { toObjectId, type ObjectId } from '../domain/objectIds.js';
@@ -39,8 +41,13 @@ type ServiceOptions = {
 type PreparedChatTurn = {
   conversation: ChatConversationRecord;
   userMessage: unknown;
+  latestUserText: string;
   messages: ChatMessageDto[];
   providerState?: ChatProviderState;
+  expansionRequest?: {
+    offerId: string;
+    originalUserText: string;
+  };
 };
 
 function recordId(record: unknown): unknown {
@@ -90,11 +97,102 @@ function normalizeMemoryCandidate(value: unknown) {
   return parsed.success ? parsed.data : undefined;
 }
 
+function normalizeResponseStrategy(value: unknown): ChatResponseStrategyDto | undefined {
+  const parsed = chatResponseStrategySchema.safeParse(value);
+  return parsed.success ? parsed.data : undefined;
+}
+
 function coreMessagesFromDtos(messages: ChatMessageDto[]): ChatMessageDto[] {
   return messages.map(message => ({
     role: message.role,
     content: message.content
   }));
+}
+
+function expansionOfferIdFromRequest(request: AiChatRequestDto): string | undefined {
+  const value = request.runtimeControls?.expansionOfferId;
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function plainObject(value: unknown): Record<string, unknown> {
+  if (value && typeof value === 'object' && 'toObject' in value && typeof value.toObject === 'function') {
+    return (value as { toObject: () => Record<string, unknown> }).toObject();
+  }
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function runtimeMetaObject(value: unknown): Record<string, unknown> {
+  const normalized = plainObject(value);
+  return normalized.runtimeMeta && typeof normalized.runtimeMeta === 'object' && !Array.isArray(normalized.runtimeMeta)
+    ? normalized.runtimeMeta as Record<string, unknown>
+    : {};
+}
+
+async function resolveExpansionRequest(
+  conversationId: ObjectId,
+  userId: ObjectId,
+  offerId: string | undefined
+): Promise<PreparedChatTurn['expansionRequest'] | undefined> {
+  if (!offerId) {
+    return undefined;
+  }
+
+  let offerObjectId: ObjectId;
+  try {
+    offerObjectId = toObjectId(offerId, 'chatExpansionOffer.offerId');
+  } catch {
+    return undefined;
+  }
+
+  const offerMessage = await ChatMessage.findOne({
+    _id: offerObjectId,
+    conversationId,
+    userId,
+    role: 'assistant',
+    'runtimeMeta.expansionOffer.status': 'pending'
+  });
+  const expansionOffer = runtimeMetaObject(offerMessage).expansionOffer;
+  const originalUserText = expansionOffer && typeof expansionOffer === 'object' && !Array.isArray(expansionOffer)
+    ? (expansionOffer as { originalUserText?: unknown }).originalUserText
+    : undefined;
+
+  if (typeof originalUserText !== 'string' || !originalUserText.trim()) {
+    return undefined;
+  }
+
+  return {
+    offerId: offerObjectId.toHexString(),
+    originalUserText: originalUserText.trim()
+  };
+}
+
+async function markExpansionOfferAccepted(
+  conversationId: ObjectId,
+  userId: ObjectId,
+  expansionRequest: PreparedChatTurn['expansionRequest'] | undefined,
+  userMessage: unknown
+): Promise<void> {
+  if (!expansionRequest) {
+    return;
+  }
+
+  await ChatMessage.findOneAndUpdate(
+    {
+      _id: toObjectId(expansionRequest.offerId, 'chatExpansionOffer.offerId'),
+      conversationId,
+      userId,
+      role: 'assistant',
+      'runtimeMeta.expansionOffer.status': 'pending'
+    },
+    {
+      $set: {
+        'runtimeMeta.expansionOffer.status': 'accepted',
+        'runtimeMeta.expansionOffer.acceptedAt': new Date(),
+        'runtimeMeta.expansionOffer.acceptedByMessageId': recordId(userMessage)
+      }
+    },
+    { new: true, runValidators: true }
+  );
 }
 
 async function findCurrentConversation(userId: ObjectId): Promise<ChatConversationRecord | null> {
@@ -206,21 +304,37 @@ export async function preparePersistentChatTurn(
 
   const conversation = await getOrCreateCurrentConversation(userId);
   const conversationId = conversationObjectId(conversation);
+  const expansionRequest = await resolveExpansionRequest(
+    conversationId,
+    userId,
+    expansionOfferIdFromRequest(request)
+  );
   const userMessage = await ChatMessage.create({
     conversationId,
     userId,
     role: 'user',
     content,
-    focusSnapshot: focusSnapshotFromContext(request.context)
+    focusSnapshot: focusSnapshotFromContext(request.context),
+    runtimeMeta: expansionRequest
+      ? {
+          expansionRequest: {
+            offerId: expansionRequest.offerId,
+            status: 'accepted'
+          }
+        }
+      : undefined
   });
+  await markExpansionOfferAccepted(conversationId, userId, expansionRequest, userMessage);
   await touchConversation(conversationId, userId);
   const messages = await listConversationMessages(conversationId, userId);
 
   return {
     conversation,
     userMessage,
+    latestUserText: content,
     messages: coreMessagesFromDtos(messages),
-    providerState: normalizeProviderState(conversation.providerState)
+    providerState: normalizeProviderState(conversation.providerState),
+    expansionRequest
   };
 }
 
@@ -231,21 +345,40 @@ export async function appendAssistantMessage(
     providerState?: unknown;
     sourceReceipts?: unknown;
     memoryCandidate?: unknown;
+    responseStrategy?: unknown;
   },
   { userId }: ServiceOptions
-): Promise<void> {
+): Promise<ChatMessageDto | undefined> {
   const conversationId = conversationObjectId(preparedTurn.conversation);
   const providerState = normalizeProviderState(result.providerState);
-  await ChatMessage.create({
+  const responseStrategy = normalizeResponseStrategy(result.responseStrategy);
+  const runtimeMeta = responseStrategy
+    ? {
+        responseStrategy,
+        ...(responseStrategy.action === 'expansion_offer'
+          ? {
+              expansionOffer: {
+                status: 'pending',
+                originalUserMessageId: recordId(preparedTurn.userMessage),
+                originalUserText: preparedTurn.latestUserText,
+                createdAt: new Date()
+              }
+            }
+          : {})
+      }
+    : undefined;
+  const message = await ChatMessage.create({
     conversationId,
     userId,
     role: 'assistant',
     content: reply,
     providerState,
     sourceReceipts: normalizeSourceReceipts(result.sourceReceipts),
-    memoryCandidate: normalizeMemoryCandidate(result.memoryCandidate)
+    memoryCandidate: normalizeMemoryCandidate(result.memoryCandidate),
+    runtimeMeta
   });
   await touchConversation(conversationId, userId, providerState);
+  return toChatMessageDto(message);
 }
 
 export const __test__ = {
