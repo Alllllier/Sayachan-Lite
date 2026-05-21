@@ -221,7 +221,12 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
       assert.equal(response.status, 200);
       assert.deepEqual(body, { reply: 'authenticated smoke ok' });
       assert.deepEqual(capturedChatCall.messages, [{ role: 'user', content: 'hello from route smoke' }]);
-      assert.deepEqual(capturedChatCall.context, { productContext });
+      assert.deepEqual(capturedChatCall.context.productContext, productContext);
+      assert.equal(capturedChatCall.context.memoryContext.packetType, 'memory_context_snapshot');
+      assert.equal(capturedChatCall.context.memoryContext.version, 1);
+      assert.equal(capturedChatCall.context.memoryContext.status, 'available');
+      assert.equal(capturedChatCall.context.memoryContext.source, 'backend_seed_v0');
+      assert.equal(capturedChatCall.context.memoryContext.items.length, 2);
       assert.equal(capturedChatCall.options.runtimeControls.personalityBaseline, 'warm');
       assert.equal(capturedChatCall.options.runtimeControls.lastUserMessage, 'hello from route smoke');
       assert.equal(capturedChatCall.options.runtimeControls.provider, 'openai');
@@ -307,7 +312,12 @@ test('authenticated /ai/chat/stream reaches controlled private-core stream path 
       assert.equal(events[1].data.delta, 'stream');
       assert.deepEqual(events[2].data.output, { reply: 'hello stream' });
       assert.deepEqual(capturedStreamCall.messages, [{ role: 'user', content: 'hello from stream route' }]);
-      assert.deepEqual(capturedStreamCall.context, { productContext });
+      assert.deepEqual(capturedStreamCall.context.productContext, productContext);
+      assert.equal(capturedStreamCall.context.memoryContext.packetType, 'memory_context_snapshot');
+      assert.equal(capturedStreamCall.context.memoryContext.version, 1);
+      assert.equal(capturedStreamCall.context.memoryContext.status, 'available');
+      assert.equal(capturedStreamCall.context.memoryContext.source, 'backend_seed_v0');
+      assert.equal(capturedStreamCall.context.memoryContext.items.length, 2);
       assert.equal(capturedStreamCall.options.runtimeControls.personalityBaseline, 'warm');
       assert.equal(capturedStreamCall.options.runtimeControls.lastUserMessage, 'hello from stream route');
       assert.equal(capturedStreamCall.options.runtimeControls.provider, 'openai');

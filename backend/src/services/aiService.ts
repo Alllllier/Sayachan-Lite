@@ -8,6 +8,10 @@ import {
   buildProductContextSnapshot,
   type ProductContextSnapshot
 } from './aiProductContextService.js';
+import {
+  buildMemoryContextSnapshot,
+  type MemoryContextSnapshot
+} from './aiMemoryContextService.js';
 import { executeProductContextTool } from './aiProductToolService.js';
 
 type ChatRunner = typeof privateCoreChat;
@@ -16,6 +20,7 @@ type ChatProvider = 'mock' | 'openai';
 type ChatProviderReadinessCheck = (provider: ChatProvider) => boolean;
 type ChatStreamEvent = Awaited<ReturnType<ChatStreamRunner>> extends AsyncIterable<infer TEvent> ? TEvent : never;
 type ProductContextBuilder = (userId: ObjectId | null | undefined) => Promise<ProductContextSnapshot | null>;
+type MemoryContextBuilder = (options: ChatExecutionOptions) => Promise<MemoryContextSnapshot | null>;
 type ChatExecutionOptions = {
   userId?: ObjectId | null;
   userRole?: string | null;
@@ -25,6 +30,7 @@ let runChat: ChatRunner = privateCoreChat;
 let runChatStream: ChatStreamRunner = privateCoreChatStream;
 let chatProviderReadinessCheck: ChatProviderReadinessCheck = defaultChatProviderReadinessCheck;
 let productContextBuilder: ProductContextBuilder = buildProductContextSnapshot;
+let memoryContextBuilder: MemoryContextBuilder = (options) => buildMemoryContextSnapshot(options.userId, { userRole: options.userRole });
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -139,32 +145,35 @@ function privateCoreRuntimeControls(
   return controls;
 }
 
-function mergeProductContext(
+function mergeTrustedContext(
   context: AiChatRequestDto['context'],
-  productContext: ProductContextSnapshot | null
+  productContext: ProductContextSnapshot | null,
+  memoryContext: MemoryContextSnapshot | null
 ): Record<string, unknown> | undefined {
   const safeContext = sanitizeCallerContext(context);
+  const trustedContext: Record<string, unknown> = {
+    ...(isContextRecord(safeContext) ? safeContext : {})
+  };
 
-  if (!productContext) {
-    return safeContext;
+  if (productContext) {
+    trustedContext.productContext = productContext;
+  }
+  if (memoryContext) {
+    trustedContext.memoryContext = memoryContext;
   }
 
-  if (isContextRecord(safeContext)) {
-    return {
-      ...safeContext,
-      productContext
-    };
-  }
-
-  return { productContext };
+  return Object.keys(trustedContext).length > 0 ? trustedContext : undefined;
 }
 
 async function buildPrivateCoreContext(
   context: AiChatRequestDto['context'],
   options: ChatExecutionOptions
 ): Promise<Record<string, unknown> | undefined> {
-  const productContext = await productContextBuilder(options.userId);
-  return mergeProductContext(context, productContext);
+  const [productContext, memoryContext] = await Promise.all([
+    productContextBuilder(options.userId),
+    memoryContextBuilder(options)
+  ]);
+  return mergeTrustedContext(context, productContext, memoryContext);
 }
 
 export async function chat({ messages, context, runtimeControls }: AiChatRequestDto, options: ChatExecutionOptions = {}) {
@@ -247,6 +256,13 @@ export const __test__ = {
     productContextBuilder = builder;
     return () => {
       productContextBuilder = previous;
+    };
+  },
+  setMemoryContextBuilderForTest(builder: MemoryContextBuilder) {
+    const previous = memoryContextBuilder;
+    memoryContextBuilder = builder;
+    return () => {
+      memoryContextBuilder = previous;
     };
   }
 };

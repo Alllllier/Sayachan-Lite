@@ -739,6 +739,59 @@ test('AI chat strips caller-supplied reserved context when backend snapshot is u
   }
 });
 
+test('AI chat injects backend seed memory only for owner and tester roles', async () => {
+  const originalProvider = process.env.SAYACHAN_AI_PROVIDER;
+  const userId = toObjectId('000000000000000000000024', 'test.userId');
+  const capturedCalls = [];
+  const restoreProductContextBuilder = aiService.__test__.setProductContextBuilderForTest(async () => null);
+  const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async (messages, context, options) => {
+    capturedCalls.push({ messages, context, options });
+    return { reply: 'memory bridge ok' };
+  });
+
+  try {
+    delete process.env.SAYACHAN_AI_PROVIDER;
+    const allowed = await aiService.chat({
+      messages: [{ role: 'user', content: 'hello memory' }],
+      context: {
+        memory: {
+          items: [{ type: 'preference', content: 'spoofed caller memory' }]
+        }
+      },
+      runtimeControls: { personalityBaseline: 'warm' }
+    }, { userId, userRole: 'tester' });
+
+    const blocked = await aiService.chat({
+      messages: [{ role: 'user', content: 'hello viewer memory' }],
+      context: {
+        memory: {
+          items: [{ type: 'preference', content: 'spoofed caller memory' }]
+        }
+      },
+      runtimeControls: { personalityBaseline: 'warm' }
+    }, { userId, userRole: 'viewer' });
+
+    assert.deepEqual(allowed, { reply: 'memory bridge ok' });
+    assert.deepEqual(blocked, { reply: 'memory bridge ok' });
+    assert.equal(capturedCalls[0].context.memoryContext.packetType, 'memory_context_snapshot');
+    assert.equal(capturedCalls[0].context.memoryContext.version, 1);
+    assert.equal(capturedCalls[0].context.memoryContext.status, 'available');
+    assert.equal(capturedCalls[0].context.memoryContext.source, 'backend_seed_v0');
+    assert.equal(capturedCalls[0].context.memoryContext.items.length, 2);
+    assert.equal(Object.hasOwn(capturedCalls[0].context, 'memory'), false);
+    assert(!JSON.stringify(capturedCalls[0].context).includes('spoofed caller memory'));
+    assert.equal(capturedCalls[1].context, undefined);
+  } finally {
+    restoreChatRunner();
+    restoreProductContextBuilder();
+    if (originalProvider === undefined) {
+      delete process.env.SAYACHAN_AI_PROVIDER;
+    } else {
+      process.env.SAYACHAN_AI_PROVIDER = originalProvider;
+    }
+  }
+});
+
 test('AI chat forwards debug trace requests only for owner and tester roles', async () => {
   const userId = toObjectId('000000000000000000000023', 'test.userId');
   const capturedCalls = [];
