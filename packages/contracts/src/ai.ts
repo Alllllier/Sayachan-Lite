@@ -196,6 +196,31 @@ export const chatDebugGovernanceTraceSchema = z.object({
   reasonCodes: z.array(z.string()).optional()
 }).strict()
 
+export const chatDebugJudgmentSummarySchema = z.object({
+  status: z.string().optional(),
+  source: z.string().optional(),
+  selectedMode: z.enum(chatModeValues).optional(),
+  action: z.string().optional(),
+  needed: z.boolean().optional(),
+  fallbackApplied: z.boolean().optional(),
+  confidence: z.number().optional(),
+  reasonCodes: z.array(z.string()).optional(),
+  errorCode: z.string().optional()
+}).strict()
+
+export const chatDebugJudgmentTraceSchema = z.object({
+  phase: z.enum(['pre_turn', 'post_turn']),
+  status: z.string(),
+  source: z.string(),
+  provider: z.string().optional(),
+  model: z.string().optional(),
+  profileStatus: z.string().optional(),
+  confidence: z.number().optional(),
+  reasonCodes: z.array(z.string()),
+  judgments: z.record(z.string(), chatDebugJudgmentSummarySchema).optional(),
+  errorCode: z.string().optional()
+}).strict()
+
 export const chatDebugTraceSchema = z.object({
   mode: chatDebugModeTraceSchema.optional(),
   strategy: chatDebugStrategyTraceSchema.optional(),
@@ -205,6 +230,7 @@ export const chatDebugTraceSchema = z.object({
   memory: chatDebugMemoryTraceSchema.optional(),
   memoryCandidate: chatDebugMemoryCandidateTraceSchema.optional(),
   governance: chatDebugGovernanceTraceSchema.optional(),
+  judgment: z.array(chatDebugJudgmentTraceSchema).optional(),
   tools: z.object({
     limits: z.object({
       maxToolCallsPerTurn: z.number().optional(),

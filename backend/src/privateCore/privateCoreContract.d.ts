@@ -153,6 +153,28 @@ declare module '@allier/sayachan-ai-core' {
       memoryCandidateStatus?: string;
       reasonCodes?: string[];
     };
+    judgment?: Array<{
+      phase: 'pre_turn' | 'post_turn';
+      status: string;
+      source: string;
+      provider?: string;
+      model?: string;
+      profileStatus?: string;
+      confidence?: number;
+      reasonCodes: string[];
+      judgments?: Record<string, {
+        status?: string;
+        source?: string;
+        selectedMode?: 'chat/general' | 'guide/core_modules';
+        action?: string;
+        needed?: boolean;
+        fallbackApplied?: boolean;
+        confidence?: number;
+        reasonCodes?: string[];
+        errorCode?: string;
+      }>;
+      errorCode?: string;
+    }>;
     tools?: {
       limits?: {
         maxToolCallsPerTurn?: number;

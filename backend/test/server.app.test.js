@@ -299,7 +299,35 @@ test('authenticated /ai/chat/stream reaches controlled private-core stream path 
       capturedStreamCall = { messages, context, options };
       yield { packetType: 'chat_stream_event', version: 1, type: 'text_delta', delta: 'hello ', text: 'hello ' };
       yield { packetType: 'chat_stream_event', version: 1, type: 'text_delta', delta: 'stream', text: 'hello stream' };
-      yield { packetType: 'chat_stream_event', version: 1, type: 'completed', text: 'hello stream', output: { reply: 'hello stream' } };
+      yield {
+        packetType: 'chat_stream_event',
+        version: 1,
+        type: 'completed',
+        text: 'hello stream',
+        output: {
+          reply: 'hello stream',
+          debugTrace: {
+            judgment: [{
+              phase: 'pre_turn',
+              status: 'completed',
+              source: 'lightweight_model',
+              provider: 'openai',
+              model: 'gpt-5-nano',
+              reasonCodes: ['model_intent_selected'],
+              judgments: {
+                modeIntent: {
+                  status: 'completed',
+                  source: 'model_intent',
+                  selectedMode: 'guide/core_modules',
+                  confidence: 0.86,
+                  reasonCodes: ['work_planning']
+                }
+              }
+            }],
+            tools: {}
+          }
+        }
+      };
     });
 
     try {
@@ -327,7 +355,14 @@ test('authenticated /ai/chat/stream reaches controlled private-core stream path 
       assert.deepEqual(events.map((event) => event.data.type), ['text_delta', 'text_delta', 'completed']);
       assert.equal(events[0].data.delta, 'hello ');
       assert.equal(events[1].data.delta, 'stream');
-      assert.deepEqual(events[2].data.output, { reply: 'hello stream' });
+      assert.equal(events[2].data.output.reply, 'hello stream');
+      assert.deepEqual(events[2].data.output.debugTrace.judgment[0].judgments.modeIntent, {
+        status: 'completed',
+        source: 'model_intent',
+        selectedMode: 'guide/core_modules',
+        confidence: 0.86,
+        reasonCodes: ['work_planning']
+      });
       assert.deepEqual(capturedStreamCall.messages, [{ role: 'user', content: 'hello from stream route' }]);
       assert.deepEqual(capturedStreamCall.context.productContext, productContext);
       assert.equal(capturedStreamCall.context.memoryContext.packetType, 'memory_context_snapshot');
