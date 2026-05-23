@@ -11,6 +11,7 @@ export const chatResponseStrategyActionValues = ['direct_answer', 'expansion_off
 export const chatResponseStrategySourceValues = ['model_strategy', 'runtime_control', 'heuristic_guard', 'not_attempted'] as const
 export const chatExpansionOfferStatusValues = ['pending', 'accepted'] as const
 export const chatFocusTypeValues = ['note', 'project'] as const
+export const chatMemoryCandidateTypeValues = ['preference', 'continuity_hint'] as const
 export const chatMemoryCandidateSourceValues = ['assistant_suggested_user_approved'] as const
 
 export const chatFocusSchema = z.object({
@@ -58,7 +59,7 @@ export const chatSourceReceiptSchema = z.object({
 }).strict()
 
 export const chatMemoryCandidateSchema = z.object({
-  type: z.enum(['preference', 'continuity_hint']),
+  type: z.enum(chatMemoryCandidateTypeValues),
   content: z.string().min(1),
   reason: z.string().min(1).optional(),
   source: z.enum(chatMemoryCandidateSourceValues),
@@ -159,12 +160,51 @@ export const chatDebugProviderUsageTraceSchema = z.object({
   deterministicMock: z.boolean().optional()
 }).strict()
 
+export const chatDebugMemoryTraceSchema = z.object({
+  status: z.string(),
+  contract: z.string().optional(),
+  retrieval: z.string().optional(),
+  persistence: z.string().optional(),
+  itemCount: z.number().optional(),
+  typeCounts: z.record(z.string(), z.number()).optional(),
+  sourceCounts: z.record(z.string(), z.number()).optional(),
+  snapshotStatus: z.string().optional(),
+  usedAsContinuity: z.boolean().optional(),
+  untrustedReason: z.string().optional()
+}).strict()
+
+export const chatDebugMemoryCandidateTraceSchema = z.object({
+  enabled: z.boolean(),
+  status: z.string(),
+  shouldSuggest: z.boolean(),
+  reasonCodes: z.array(z.string()),
+  candidateType: z.enum(chatMemoryCandidateTypeValues).optional(),
+  confidence: z.number().optional(),
+  providerUsage: chatDebugProviderUsageTraceSchema.optional(),
+  errorCode: z.string().optional()
+}).strict()
+
+export const chatDebugGovernanceTraceSchema = z.object({
+  status: z.string(),
+  lanes: z.object({
+    memory: z.string().optional(),
+    tools: z.string().optional(),
+    productContext: z.string().optional()
+  }).strict().optional(),
+  memoryStatus: z.string().optional(),
+  memoryCandidateStatus: z.string().optional(),
+  reasonCodes: z.array(z.string()).optional()
+}).strict()
+
 export const chatDebugTraceSchema = z.object({
   mode: chatDebugModeTraceSchema.optional(),
   strategy: chatDebugStrategyTraceSchema.optional(),
   focus: chatDebugFocusTraceSchema.optional(),
   context: chatDebugContextTraceSchema.optional(),
   providerUsage: chatDebugProviderUsageTraceSchema.optional(),
+  memory: chatDebugMemoryTraceSchema.optional(),
+  memoryCandidate: chatDebugMemoryCandidateTraceSchema.optional(),
+  governance: chatDebugGovernanceTraceSchema.optional(),
   tools: z.object({
     limits: z.object({
       maxToolCallsPerTurn: z.number().optional(),

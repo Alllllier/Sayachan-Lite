@@ -14,10 +14,15 @@ type DebugModeDecision = NonNullable<ChatDebugTraceDto['mode']>
 type DebugStrategyTrace = NonNullable<ChatDebugTraceDto['strategy']>
 type DebugFocusTrace = NonNullable<ChatDebugTraceDto['focus']>
 type DebugProviderUsageTrace = NonNullable<ChatDebugTraceDto['providerUsage']>
+type DebugMemoryTrace = NonNullable<ChatDebugTraceDto['memory']>
+type DebugMemoryCandidateTrace = NonNullable<ChatDebugTraceDto['memoryCandidate']>
+type DebugGovernanceTrace = NonNullable<ChatDebugTraceDto['governance']>
 
 const messageListRef = ref<HTMLElement | null>(null)
 const personalityBaselineOptions: PersonalityBaselineOption[] = ['warm', 'strict', 'haraguro']
 const convergenceModeOptions: ConvergenceModeOption[] = ['explore', 'guided', 'decisive']
+// Kept for the existing UI, hidden until convergence moves to strategy/mode ownership.
+const showConvergenceModeControl = false
 const emptyDebugTools: DebugTraceTools = {}
 const auth = useAuthStore()
 
@@ -96,6 +101,9 @@ const debugStrategyTrace = computed<DebugStrategyTrace | null>(() => runtimeCont
 const debugModeHistory = computed<DebugModeDecision[]>(() => runtimeControls.modeDecisionHistory || [])
 const debugFocusTrace = computed<DebugFocusTrace | null>(() => runtimeControls.latestDebugTrace?.focus || null)
 const debugProviderUsageTrace = computed<DebugProviderUsageTrace | null>(() => runtimeControls.latestDebugTrace?.providerUsage || null)
+const debugMemoryTrace = computed<DebugMemoryTrace | null>(() => runtimeControls.latestDebugTrace?.memory || null)
+const debugMemoryCandidateTrace = computed<DebugMemoryCandidateTrace | null>(() => runtimeControls.latestDebugTrace?.memoryCandidate || null)
+const debugGovernanceTrace = computed<DebugGovernanceTrace | null>(() => runtimeControls.latestDebugTrace?.governance || null)
 
 function sendCurrentMessage(): Promise<void> {
   return handleSend()
@@ -160,6 +168,16 @@ function debugUsageHasTokens(usage: DebugProviderUsageTrace): boolean {
     usage.cachedInputTokens,
     usage.reasoningTokens
   ].some(value => typeof value === 'number' && Number.isFinite(value))
+}
+
+function debugMemoryLabel(memory: DebugMemoryTrace): string {
+  const count = typeof memory.itemCount === 'number' ? `${memory.itemCount} ${t('chat.debugItems')}` : t('chat.debugEmpty')
+  return `${memory.status} · ${count}`
+}
+
+function debugCandidateLabel(candidate: DebugMemoryCandidateTrace): string {
+  const reason = candidate.reasonCodes?.[0]
+  return `${candidate.status}${reason ? ` · ${reason}` : ''}`
 }
 </script>
 
@@ -399,7 +417,7 @@ function debugUsageHasTokens(usage: DebugProviderUsageTrace): boolean {
               </div>
             </div>
 
-            <div class="runtime-trait">
+            <div v-if="showConvergenceModeControl" class="runtime-trait">
               <div class="runtime-trait-header">
                 <span class="runtime-trait-title">{{ t('stores.runtimeControls.convergenceTitle') }}</span>
               </div>
@@ -546,6 +564,29 @@ function debugUsageHasTokens(usage: DebugProviderUsageTrace): boolean {
                   <div v-if="debugProviderUsageTrace.reasoningTokens !== undefined" class="runtime-debug-line">
                     <span>{{ t('chat.debugUsageReasoning') }}</span>
                     <span>{{ debugTokenValue(debugProviderUsageTrace.reasoningTokens) }}</span>
+                  </div>
+                </template>
+              </div>
+
+              <div class="runtime-debug-block">
+                <div class="runtime-debug-title">{{ t('chat.debugGovernance') }}</div>
+                <div v-if="!debugGovernanceTrace && !debugMemoryTrace && !debugMemoryCandidateTrace" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
+                <template v-else>
+                  <div v-if="debugGovernanceTrace" class="runtime-debug-line">
+                    <span>{{ t('chat.debugGovernancePolicy') }}</span>
+                    <span>{{ debugGovernanceTrace.status }}</span>
+                  </div>
+                  <div v-if="debugMemoryTrace" class="runtime-debug-line">
+                    <span>{{ t('chat.debugGovernanceMemory') }}</span>
+                    <span>{{ debugMemoryLabel(debugMemoryTrace) }}</span>
+                  </div>
+                  <div v-if="debugMemoryCandidateTrace" class="runtime-debug-line">
+                    <span>{{ t('chat.debugGovernanceCandidate') }}</span>
+                    <span>{{ debugCandidateLabel(debugMemoryCandidateTrace) }}</span>
+                  </div>
+                  <div v-if="debugGovernanceTrace?.reasonCodes?.length" class="runtime-debug-line">
+                    <span>{{ t('chat.debugModeReasons') }}</span>
+                    <span>{{ debugGovernanceTrace.reasonCodes.slice(0, 3).join(', ') }}</span>
                   </div>
                 </template>
               </div>

@@ -107,6 +107,52 @@ declare module '@allier/sayachan-ai-core' {
       reasoningTokens?: number;
       deterministicMock?: boolean;
     };
+    memory?: {
+      status: string;
+      contract?: string;
+      retrieval?: string;
+      persistence?: string;
+      itemCount?: number;
+      typeCounts?: Record<string, number>;
+      sourceCounts?: Record<string, number>;
+      snapshotStatus?: string;
+      usedAsContinuity?: boolean;
+      untrustedReason?: string;
+    };
+    memoryCandidate?: {
+      enabled: boolean;
+      status: string;
+      shouldSuggest: boolean;
+      reasonCodes: string[];
+      candidateType?: 'preference' | 'continuity_hint';
+      confidence?: number;
+      providerUsage?: {
+        status: 'available' | 'unavailable' | 'mock';
+        provider?: string;
+        model?: string;
+        finishReason?: string;
+        incomplete?: boolean;
+        incompleteReason?: string;
+        inputTokens?: number;
+        outputTokens?: number;
+        totalTokens?: number;
+        cachedInputTokens?: number;
+        reasoningTokens?: number;
+        deterministicMock?: boolean;
+      };
+      errorCode?: string;
+    };
+    governance?: {
+      status: string;
+      lanes?: {
+        memory?: string;
+        tools?: string;
+        productContext?: string;
+      };
+      memoryStatus?: string;
+      memoryCandidateStatus?: string;
+      reasonCodes?: string[];
+    };
     tools?: {
       limits?: {
         maxToolCallsPerTurn?: number;

@@ -276,8 +276,7 @@ describe('useChatFeature orchestration', () => {
       {
         personalityBaseline: 'warm',
         futureSlots: {
-          warmth: 7,
-          convergenceMode: 'guided'
+          warmth: 7
         },
         debugTrace: true,
         memoryCandidate: true
@@ -341,8 +340,7 @@ describe('useChatFeature orchestration', () => {
       {
         personalityBaseline: 'warm',
         futureSlots: {
-          warmth: 7,
-          convergenceMode: 'guided'
+          warmth: 7
         },
         debugTrace: true,
         memoryCandidate: true
@@ -364,8 +362,7 @@ describe('useChatFeature orchestration', () => {
       {
         personalityBaseline: 'warm',
         futureSlots: {
-          warmth: 7,
-          convergenceMode: 'guided'
+          warmth: 7
         },
         debugTrace: true,
         memoryCandidate: true

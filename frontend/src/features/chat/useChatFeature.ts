@@ -336,8 +336,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
       const controls = {
         personalityBaseline: runtimeControls.personalityBaseline,
         futureSlots: {
-          warmth: runtimeControls.futureSlots.warmth,
-          convergenceMode: runtimeControls.futureSlots.convergenceMode
+          warmth: runtimeControls.futureSlots.warmth
         },
         debugTrace: runtimeControls.debugTraceEnabled,
         memoryCandidate: true
