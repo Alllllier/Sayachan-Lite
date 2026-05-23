@@ -201,6 +201,8 @@ export const chatDebugJudgmentSummarySchema = z.object({
   source: z.string().optional(),
   selectedMode: z.enum(chatModeValues).optional(),
   action: z.string().optional(),
+  targetShape: z.string().optional(),
+  basis: z.string().optional(),
   needed: z.boolean().optional(),
   fallbackApplied: z.boolean().optional(),
   confidence: z.number().optional(),

@@ -167,6 +167,8 @@ declare module '@allier/sayachan-ai-core' {
         source?: string;
         selectedMode?: 'chat/general' | 'guide/core_modules';
         action?: string;
+        targetShape?: string;
+        basis?: string;
         needed?: boolean;
         fallbackApplied?: boolean;
         confidence?: number;

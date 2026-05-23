@@ -17,6 +17,8 @@ type DebugProviderUsageTrace = NonNullable<ChatDebugTraceDto['providerUsage']>
 type DebugMemoryTrace = NonNullable<ChatDebugTraceDto['memory']>
 type DebugMemoryCandidateTrace = NonNullable<ChatDebugTraceDto['memoryCandidate']>
 type DebugGovernanceTrace = NonNullable<ChatDebugTraceDto['governance']>
+type DebugJudgmentTrace = NonNullable<ChatDebugTraceDto['judgment']>[number]
+type DebugJudgmentSummary = NonNullable<DebugJudgmentTrace['judgments']>[string]
 
 const messageListRef = ref<HTMLElement | null>(null)
 const personalityBaselineOptions: PersonalityBaselineOption[] = ['warm', 'strict', 'haraguro']
@@ -99,6 +101,18 @@ const debugToolLimits = computed(() => debugTraceTools.value.limits || {})
 const debugModeDecision = computed<DebugModeDecision | null>(() => runtimeControls.latestDebugTrace?.mode || null)
 const debugStrategyTrace = computed<DebugStrategyTrace | null>(() => runtimeControls.latestDebugTrace?.strategy || null)
 const debugModeHistory = computed<DebugModeDecision[]>(() => runtimeControls.modeDecisionHistory || [])
+const debugPreTurnJudgment = computed<DebugJudgmentTrace | null>(() => (
+  runtimeControls.latestDebugTrace?.judgment?.find(entry => entry.phase === 'pre_turn') || null
+))
+const debugPreTurnJudgments = computed<Record<string, DebugJudgmentSummary>>(() => debugPreTurnJudgment.value?.judgments || {})
+const debugModeIntentJudgment = computed<DebugJudgmentSummary | null>(() => debugPreTurnJudgments.value.modeIntent || null)
+const debugStrategyJudgment = computed<DebugJudgmentSummary | null>(() => debugPreTurnJudgments.value.responseStrategy || null)
+const debugOutputShapeJudgment = computed<DebugJudgmentSummary | null>(() => debugPreTurnJudgments.value.outputShapeIntent || null)
+const hasDebugInternalJudgment = computed(() => Boolean(
+  debugPreTurnJudgment.value ||
+  debugModeDecision.value ||
+  debugStrategyTrace.value
+))
 const debugFocusTrace = computed<DebugFocusTrace | null>(() => runtimeControls.latestDebugTrace?.focus || null)
 const debugProviderUsageTrace = computed<DebugProviderUsageTrace | null>(() => runtimeControls.latestDebugTrace?.providerUsage || null)
 const debugMemoryTrace = computed<DebugMemoryTrace | null>(() => runtimeControls.latestDebugTrace?.memory || null)
@@ -178,6 +192,33 @@ function debugMemoryLabel(memory: DebugMemoryTrace): string {
 function debugCandidateLabel(candidate: DebugMemoryCandidateTrace): string {
   const reason = candidate.reasonCodes?.[0]
   return `${candidate.status}${reason ? ` · ${reason}` : ''}`
+}
+
+function debugConfidence(value: number | undefined): string {
+  return typeof value === 'number' && Number.isFinite(value) ? String(value) : '-'
+}
+
+function debugModeJudgmentLabel(judgment: DebugJudgmentSummary | null, fallback: DebugModeDecision | null): string {
+  const selectedMode = judgment?.selectedMode || fallback?.selectedMode || t('chat.debugEmpty')
+  const source = judgment?.source || fallback?.source
+  const fallbackApplied = judgment?.fallbackApplied === true || fallback?.fallbackApplied === true
+  return `${selectedMode}${source ? ` · ${source}` : ''}${fallbackApplied ? ` · ${t('chat.debugModeFallback')}` : ''}`
+}
+
+function debugStrategyJudgmentLabel(judgment: DebugJudgmentSummary | null, fallback: DebugStrategyTrace | null): string {
+  const action = judgment?.action || fallback?.action || t('chat.debugEmpty')
+  const source = judgment?.source || fallback?.source
+  return `${action}${source ? ` · ${source}` : ''}`
+}
+
+function debugJudgmentStatusLabel(judgment: DebugJudgmentSummary | null): string {
+  if (!judgment) return t('chat.debugEmpty')
+  return `${judgment.status || t('chat.debugEmpty')} · ${debugConfidence(judgment.confidence)}`
+}
+
+function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
+  if (!judgment?.targetShape) return t('chat.debugEmpty')
+  return `${judgment.targetShape}${judgment.basis ? ` · ${judgment.basis}` : ''}`
 }
 </script>
 
@@ -472,21 +513,49 @@ function debugCandidateLabel(candidate: DebugMemoryCandidateTrace): string {
             </div>
 
             <div v-if="runtimeControls.debugTraceEnabled" class="runtime-debug-console">
-              <div class="runtime-debug-block">
-                <div class="runtime-debug-title">{{ t('chat.debugMode') }}</div>
-                <div v-if="!debugModeDecision && debugModeHistory.length === 0" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
+              <div class="runtime-debug-block runtime-debug-block--judgment">
+                <div class="runtime-debug-title">{{ t('chat.debugInternalJudgment') }}</div>
+                <div v-if="!hasDebugInternalJudgment" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
                 <template v-else>
-                  <div v-if="debugModeDecision" class="runtime-debug-line">
-                    <span>{{ t('chat.debugModeCurrent') }}</span>
-                    <span>{{ debugModeDecision.selectedMode }} · {{ debugModeDecision.source }}</span>
+                  <div v-if="debugPreTurnJudgment" class="runtime-debug-line">
+                    <span>{{ t('chat.debugJudgmentPhase') }}</span>
+                    <span>{{ debugPreTurnJudgment.status }} · {{ debugPreTurnJudgment.source }}</span>
                   </div>
-                  <div v-if="debugModeDecision" class="runtime-debug-line">
-                    <span>{{ t('chat.debugModeRequested') }}</span>
-                    <span>{{ debugModeDecision.requestedMode }}<template v-if="debugModeDecision.fallbackApplied"> · {{ t('chat.debugModeFallback') }}</template></span>
+                  <div class="runtime-debug-line">
+                    <span>{{ t('chat.debugJudgmentMode') }}</span>
+                    <span>{{ debugModeJudgmentLabel(debugModeIntentJudgment, debugModeDecision) }}</span>
                   </div>
-                  <div v-if="debugModeDecision?.reasonCodes?.length" class="runtime-debug-line">
+                  <div v-if="debugModeIntentJudgment || debugModeDecision" class="runtime-debug-line">
+                    <span>{{ t('chat.debugJudgmentStatus') }}</span>
+                    <span>{{ debugJudgmentStatusLabel(debugModeIntentJudgment) }}</span>
+                  </div>
+                  <div class="runtime-debug-line">
+                    <span>{{ t('chat.debugJudgmentStrategy') }}</span>
+                    <span>{{ debugStrategyJudgmentLabel(debugStrategyJudgment, debugStrategyTrace) }}</span>
+                  </div>
+                  <div v-if="debugStrategyJudgment || debugStrategyTrace" class="runtime-debug-line">
+                    <span>{{ t('chat.debugJudgmentStatus') }}</span>
+                    <span>{{ debugJudgmentStatusLabel(debugStrategyJudgment) }}</span>
+                  </div>
+                  <div class="runtime-debug-line">
+                    <span>{{ t('chat.debugJudgmentOutputShape') }}</span>
+                    <span>{{ debugOutputShapeLabel(debugOutputShapeJudgment) }}</span>
+                  </div>
+                  <div v-if="debugOutputShapeJudgment" class="runtime-debug-line">
+                    <span>{{ t('chat.debugJudgmentStatus') }}</span>
+                    <span>{{ debugJudgmentStatusLabel(debugOutputShapeJudgment) }}</span>
+                  </div>
+                  <div v-if="debugModeIntentJudgment?.reasonCodes?.length" class="runtime-debug-line">
                     <span>{{ t('chat.debugModeReasons') }}</span>
-                    <span>{{ debugModeDecision.reasonCodes.join(', ') }}</span>
+                    <span>{{ debugModeIntentJudgment.reasonCodes.join(', ') }}</span>
+                  </div>
+                  <div v-if="debugStrategyJudgment?.reasonCodes?.length" class="runtime-debug-line">
+                    <span>{{ t('chat.debugStrategy') }}</span>
+                    <span>{{ debugStrategyJudgment.reasonCodes.join(', ') }}</span>
+                  </div>
+                  <div v-if="debugOutputShapeJudgment?.reasonCodes?.length" class="runtime-debug-line">
+                    <span>{{ t('chat.debugJudgmentOutputShape') }}</span>
+                    <span>{{ debugOutputShapeJudgment.reasonCodes.join(', ') }}</span>
                   </div>
                   <div v-if="debugModeHistory.length > 0" class="runtime-debug-meta">
                     <span>{{ t('chat.debugModeHistory') }}</span>
@@ -496,25 +565,6 @@ function debugCandidateLabel(candidate: DebugMemoryCandidateTrace): string {
                     >
                       {{ decision.selectedMode }} · {{ decision.source }}<template v-if="decision.fallbackApplied"> · {{ t('chat.debugModeFallback') }}</template>
                     </span>
-                  </div>
-                </template>
-              </div>
-
-              <div class="runtime-debug-block">
-                <div class="runtime-debug-title">{{ t('chat.debugStrategy') }}</div>
-                <div v-if="!debugStrategyTrace" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
-                <template v-else>
-                  <div class="runtime-debug-line">
-                    <span>{{ t('chat.debugStrategyAction') }}</span>
-                    <span>{{ debugStrategyTrace.action }} · {{ debugStrategyTrace.source }}</span>
-                  </div>
-                  <div class="runtime-debug-line">
-                    <span>{{ t('chat.debugStrategyStatus') }}</span>
-                    <span>{{ debugStrategyTrace.status }} · {{ debugStrategyTrace.confidence }}</span>
-                  </div>
-                  <div v-if="debugStrategyTrace.reasonCodes?.length" class="runtime-debug-line">
-                    <span>{{ t('chat.debugModeReasons') }}</span>
-                    <span>{{ debugStrategyTrace.reasonCodes.join(', ') }}</span>
                   </div>
                 </template>
               </div>
@@ -1339,6 +1389,13 @@ function debugCandidateLabel(candidate: DebugMemoryCandidateTrace): string {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.runtime-debug-block--judgment {
+  padding: var(--space-sm);
+  border: 1px solid rgba(66, 184, 131, 0.24);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
 }
 
 .runtime-debug-title {
