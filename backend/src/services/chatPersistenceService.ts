@@ -46,7 +46,6 @@ type PreparedChatTurn = {
   providerState?: ChatProviderState;
   expansionRequest?: {
     offerId: string;
-    originalUserText: string;
   };
 };
 
@@ -114,20 +113,6 @@ function expansionOfferIdFromRequest(request: AiChatRequestDto): string | undefi
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
-function plainObject(value: unknown): Record<string, unknown> {
-  if (value && typeof value === 'object' && 'toObject' in value && typeof value.toObject === 'function') {
-    return (value as { toObject: () => Record<string, unknown> }).toObject();
-  }
-  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
-}
-
-function runtimeMetaObject(value: unknown): Record<string, unknown> {
-  const normalized = plainObject(value);
-  return normalized.runtimeMeta && typeof normalized.runtimeMeta === 'object' && !Array.isArray(normalized.runtimeMeta)
-    ? normalized.runtimeMeta as Record<string, unknown>
-    : {};
-}
-
 async function resolveExpansionRequest(
   conversationId: ObjectId,
   userId: ObjectId,
@@ -151,18 +136,12 @@ async function resolveExpansionRequest(
     role: 'assistant',
     'runtimeMeta.expansionOffer.status': 'pending'
   });
-  const expansionOffer = runtimeMetaObject(offerMessage).expansionOffer;
-  const originalUserText = expansionOffer && typeof expansionOffer === 'object' && !Array.isArray(expansionOffer)
-    ? (expansionOffer as { originalUserText?: unknown }).originalUserText
-    : undefined;
-
-  if (typeof originalUserText !== 'string' || !originalUserText.trim()) {
+  if (!offerMessage) {
     return undefined;
   }
 
   return {
-    offerId: offerObjectId.toHexString(),
-    originalUserText: originalUserText.trim()
+    offerId: offerObjectId.toHexString()
   };
 }
 
@@ -355,7 +334,7 @@ export async function appendAssistantMessage(
   const runtimeMeta = responseStrategy
     ? {
         responseStrategy,
-        ...(responseStrategy.action === 'expansion_offer'
+        ...(responseStrategy.resolvedAction === 'expansion_offer'
           ? {
               expansionOffer: {
                 status: 'pending',

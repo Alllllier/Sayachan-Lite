@@ -1633,7 +1633,14 @@ test('AI chat persists expansion offers with backend-owned offer ids', async () 
   const restoreChatRunner = aiService.__test__.setChatRunnerForTest(async () => ({
     reply: '这个会讲得有点长哦。你想听我慢慢展开吗？',
     responseStrategy: {
-      action: 'expansion_offer',
+      resolvedAction: 'expansion_offer',
+      expansionDecision: {
+        action: 'expansion_offer',
+        status: 'completed',
+        source: 'model_strategy',
+        confidence: 0.84,
+        reasonCodes: ['broad_explanation']
+      },
       source: 'model_strategy',
       status: 'completed',
       confidence: 0.84,
@@ -1703,7 +1710,7 @@ test('AI chat persists expansion offers with backend-owned offer ids', async () 
       assert.equal(result.expansionOffer.status, 'pending');
     });
 
-    assert.equal(createdMessages[1].runtimeMeta.responseStrategy.action, 'expansion_offer');
+    assert.equal(createdMessages[1].runtimeMeta.responseStrategy.resolvedAction, 'expansion_offer');
     assert.equal(createdMessages[1].runtimeMeta.expansionOffer.status, 'pending');
     assert.equal(createdMessages[1].runtimeMeta.expansionOffer.originalUserText, '群论在工程学中的具体应用有哪些');
     assert.equal(createdMessages[1].runtimeMeta.expansionOffer.originalUserMessageId, '000000000000000000000701');
@@ -1715,7 +1722,7 @@ test('AI chat persists expansion offers with backend-owned offer ids', async () 
   }
 });
 
-test('AI chat accepts expansion offers by resolving original text from backend messages', async () => {
+test('AI chat accepts expansion offers by validating pending offer and using transcript continuity', async () => {
   const userId = toObjectId('000000000000000000000031', 'test.userId');
   const conversationId = toObjectId('000000000000000000000505', 'test.conversationId');
   const offerId = toObjectId('000000000000000000000703', 'test.offerId');
@@ -1836,8 +1843,11 @@ test('AI chat accepts expansion offers by resolving original text from backend m
 
     assert.equal(capturedCall.options.runtimeControls.responseStrategy.type, 'expand_from_offer');
     assert.equal(capturedCall.options.runtimeControls.responseStrategy.offerId, '000000000000000000000703');
-    assert.equal(capturedCall.options.runtimeControls.responseStrategy.originalUserText, '群论在工程学中的具体应用有哪些');
+    assert.equal(capturedCall.options.runtimeControls.responseStrategy.continuationSource, 'transcript');
+    assert.equal(Object.hasOwn(capturedCall.options.runtimeControls.responseStrategy, 'originalUserText'), false);
     assert.equal(Object.hasOwn(capturedCall.options.runtimeControls, 'expansionOfferId'), false);
+    assert(capturedCall.messages.some((message) => message.role === 'user' && message.content === '群论在工程学中的具体应用有哪些'));
+    assert(capturedCall.messages.some((message) => message.role === 'assistant' && message.content.includes('慢慢展开')));
     assert.equal(acceptedUpdates[0].update.$set['runtimeMeta.expansionOffer.status'], 'accepted');
     assert.equal(acceptedUpdates[0].update.$set['runtimeMeta.expansionOffer.acceptedByMessageId'], '000000000000000000000704');
   } finally {

@@ -7,7 +7,8 @@ export const chatProviderStateStrategyValues = ['caller_managed', 'previous_resp
 export const chatProviderStateSourceValues = ['auto', 'env', 'runtime_control'] as const
 export const chatModeValues = ['chat/general', 'guide/core_modules'] as const
 export const chatModeDecisionSourceValues = ['input', 'runtime_control', 'context', 'model_intent', 'default'] as const
-export const chatResponseStrategyActionValues = ['direct_answer', 'expansion_offer', 'expand_from_offer'] as const
+export const chatResponseStrategyResolvedActionValues = ['direct_answer', 'expansion_offer', 'expand_from_offer'] as const
+export const chatExpansionDecisionActionValues = ['direct_answer', 'expansion_offer'] as const
 export const chatResponseStrategySourceValues = ['model_strategy', 'runtime_control', 'heuristic_guard', 'not_attempted'] as const
 export const chatExpansionOfferStatusValues = ['pending', 'accepted'] as const
 export const chatFocusTypeValues = ['note', 'project'] as const
@@ -67,7 +68,14 @@ export const chatMemoryCandidateSchema = z.object({
 }).strict()
 
 export const chatResponseStrategySchema = z.object({
-  action: z.enum(chatResponseStrategyActionValues),
+  resolvedAction: z.enum(chatResponseStrategyResolvedActionValues),
+  expansionDecision: z.object({
+    action: z.enum(chatExpansionDecisionActionValues),
+    status: z.string().optional(),
+    source: z.enum(chatResponseStrategySourceValues).optional(),
+    confidence: z.number().min(0).max(1).optional(),
+    reasonCodes: z.array(z.string()).optional()
+  }).strict().optional(),
   source: z.enum(chatResponseStrategySourceValues).optional(),
   status: z.string().optional(),
   confidence: z.number().min(0).max(1).optional(),
@@ -112,11 +120,17 @@ export const chatDebugFocusTraceSchema = z.object({
 }).strict()
 
 export const chatDebugStrategyTraceSchema = z.object({
-  action: z.enum(chatResponseStrategyActionValues),
+  resolvedAction: z.enum(chatResponseStrategyResolvedActionValues),
   source: z.enum(chatResponseStrategySourceValues),
   status: z.string(),
   confidence: z.number(),
-  reasonCodes: z.array(z.string())
+  reasonCodes: z.array(z.string()),
+  expansionDecision: z.object({
+    action: z.enum(chatExpansionDecisionActionValues),
+    status: z.string().optional(),
+    confidence: z.number().optional(),
+    reasonCodes: z.array(z.string()).optional()
+  }).strict().optional(),
 }).strict()
 
 export const chatDebugContextTraceSchema = z.object({
@@ -200,7 +214,8 @@ export const chatDebugJudgmentSummarySchema = z.object({
   status: z.string().optional(),
   source: z.string().optional(),
   selectedMode: z.enum(chatModeValues).optional(),
-  action: z.string().optional(),
+  resolvedAction: z.string().optional(),
+  expansionAction: z.string().optional(),
   targetShape: z.string().optional(),
   basis: z.string().optional(),
   needed: z.boolean().optional(),
@@ -308,7 +323,8 @@ export type ChatConvergenceMode = (typeof chatConvergenceModeValues)[number]
 export type ChatMessageRole = (typeof chatMessageRoleValues)[number]
 export type ChatModeDto = (typeof chatModeValues)[number]
 export type ChatModeDecisionSource = (typeof chatModeDecisionSourceValues)[number]
-export type ChatResponseStrategyAction = (typeof chatResponseStrategyActionValues)[number]
+export type ChatResponseStrategyResolvedAction = (typeof chatResponseStrategyResolvedActionValues)[number]
+export type ChatExpansionDecisionAction = (typeof chatExpansionDecisionActionValues)[number]
 export type ChatFocusDto = z.infer<typeof chatFocusSchema>
 export type ChatMessageFocusSnapshotDto = z.infer<typeof chatMessageFocusSnapshotSchema>
 export type ChatMemoryCandidateDto = z.infer<typeof chatMemoryCandidateSchema>

@@ -152,7 +152,7 @@ function privateCoreRuntimeControls(
     controls.responseStrategy = {
       type: 'expand_from_offer',
       offerId: expansionRequest.offerId,
-      originalUserText: expansionRequest.originalUserText
+      continuationSource: 'transcript'
     };
   }
 

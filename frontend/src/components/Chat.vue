@@ -206,7 +206,7 @@ function debugModeJudgmentLabel(judgment: DebugJudgmentSummary | null, fallback:
 }
 
 function debugStrategyJudgmentLabel(judgment: DebugJudgmentSummary | null, fallback: DebugStrategyTrace | null): string {
-  const action = judgment?.action || fallback?.action || t('chat.debugEmpty')
+  const action = judgment?.resolvedAction || fallback?.resolvedAction || t('chat.debugEmpty')
   const source = judgment?.source || fallback?.source
   return `${action}${source ? ` · ${source}` : ''}`
 }
