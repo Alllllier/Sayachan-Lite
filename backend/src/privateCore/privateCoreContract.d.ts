@@ -176,6 +176,8 @@ declare module '@allier/sayachan-ai-core' {
         resolvedAction?: string;
         expansionAction?: string;
         priorOfferAction?: string;
+        vulnerability?: string;
+        repair?: string;
         targetShape?: string;
         basis?: string;
         needed?: boolean;

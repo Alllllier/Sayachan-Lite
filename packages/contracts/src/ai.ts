@@ -216,6 +216,8 @@ export const chatDebugJudgmentSummarySchema = z.object({
   resolvedAction: z.string().optional(),
   expansionAction: z.string().optional(),
   priorOfferAction: z.string().optional(),
+  vulnerability: z.string().optional(),
+  repair: z.string().optional(),
   targetShape: z.string().optional(),
   basis: z.string().optional(),
   needed: z.boolean().optional(),
