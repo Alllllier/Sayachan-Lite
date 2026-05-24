@@ -35,13 +35,8 @@ declare module '@allier/sayachan-ai-core' {
         enabled?: boolean;
       };
       responseStrategy?: {
-        enabled?: boolean;
-        type?: 'expand_from_offer';
-        offerId?: string;
-        continuationSource?: 'transcript';
         minConfidence?: number;
       };
-      expansionOfferId?: string;
       [key: string]: unknown;
     };
   };
@@ -57,12 +52,18 @@ declare module '@allier/sayachan-ai-core' {
     };
     strategy?: {
       resolvedAction: 'direct_answer' | 'expansion_offer' | 'expand_from_offer';
-      source: 'model_strategy' | 'runtime_control' | 'heuristic_guard' | 'not_attempted';
+      source: 'model_strategy' | 'not_attempted';
       status: string;
       confidence: number;
       reasonCodes: string[];
       expansionDecision?: {
         action: 'direct_answer' | 'expansion_offer';
+        status?: string;
+        confidence?: number;
+        reasonCodes?: string[];
+      };
+      priorOfferDecision?: {
+        action: 'none' | 'accept_prior_offer' | 'reject_prior_offer';
         status?: string;
         confidence?: number;
         reasonCodes?: string[];
@@ -174,6 +175,7 @@ declare module '@allier/sayachan-ai-core' {
         selectedMode?: 'chat/general' | 'guide/core_modules';
         resolvedAction?: string;
         expansionAction?: string;
+        priorOfferAction?: string;
         targetShape?: string;
         basis?: string;
         needed?: boolean;
@@ -245,18 +247,14 @@ declare module '@allier/sayachan-ai-core' {
       expansionDecision?: {
         action: 'direct_answer' | 'expansion_offer';
         status?: string;
-        source?: 'model_strategy' | 'runtime_control' | 'heuristic_guard' | 'not_attempted';
+        source?: 'model_strategy' | 'not_attempted';
         confidence?: number;
         reasonCodes?: string[];
       };
-      source?: 'model_strategy' | 'runtime_control' | 'heuristic_guard' | 'not_attempted';
+      source?: 'model_strategy' | 'not_attempted';
       status?: string;
       confidence?: number;
       reasonCodes?: string[];
-    };
-    expansionOffer?: {
-      offerId: string;
-      status?: 'pending' | 'accepted';
     };
   };
 

@@ -1,5 +1,4 @@
 import {
-  chatExpansionOfferSchema,
   chatConversationSchema,
   chatMessageSchema,
   type ChatConversationDto,
@@ -78,24 +77,6 @@ function copyIfPresent(source: Record<string, unknown>, target: Record<string, u
   }
 }
 
-function runtimeExpansionOffer(message: Record<string, unknown>): unknown {
-  const runtimeMeta = message.runtimeMeta;
-  if (!runtimeMeta || typeof runtimeMeta !== 'object' || Array.isArray(runtimeMeta)) {
-    return undefined;
-  }
-
-  const expansionOffer = (runtimeMeta as { expansionOffer?: unknown }).expansionOffer;
-  if (!expansionOffer || typeof expansionOffer !== 'object' || Array.isArray(expansionOffer)) {
-    return undefined;
-  }
-
-  const parsed = chatExpansionOfferSchema.safeParse({
-    offerId: publicString(message._id),
-    status: (expansionOffer as { status?: unknown }).status
-  });
-  return parsed.success ? parsed.data : undefined;
-}
-
 export function toChatConversationDto(conversation: unknown): ChatConversationDto | undefined {
   if (!conversation) {
     return undefined;
@@ -122,9 +103,5 @@ export function toChatMessageDto(message: unknown): ChatMessageDto | undefined {
     createdAt: publicIsoString(normalized.createdAt)
   };
   copyIfPresent(normalized, dto, ['focusSnapshot', 'sourceReceipts', 'memoryCandidate']);
-  const expansionOffer = runtimeExpansionOffer(normalized);
-  if (expansionOffer) {
-    dto.expansionOffer = expansionOffer;
-  }
   return chatMessageSchema.parse(dto);
 }

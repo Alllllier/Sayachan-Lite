@@ -88,10 +88,6 @@ const chatMessageSchema = new mongoose.Schema({
   focusSnapshot: {
     type: focusSnapshotSchema,
     default: undefined
-  },
-  runtimeMeta: {
-    type: mongoose.Schema.Types.Mixed,
-    default: undefined
   }
 }, {
   timestamps: true

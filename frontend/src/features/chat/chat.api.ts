@@ -7,7 +7,6 @@ import {
 import type {
   ChatContextDto,
   ChatDebugTraceDto,
-  ChatExpansionOfferDto,
   ChatMemoryCandidateDto,
   ChatMessageDto,
   ChatResponseDto,
@@ -37,7 +36,6 @@ export type ChatStreamEvent = {
   debugTrace?: ChatDebugTraceDto
   memoryCandidate?: ChatMemoryCandidateDto
   responseStrategy?: ChatResponseStrategyDto
-  expansionOffer?: ChatExpansionOfferDto
   finishReason?: string
   incomplete?: boolean
   incompleteReason?: string
@@ -73,9 +71,6 @@ function publicChatResponse(data: ChatResponseDto): ChatResponseDto {
   }
   if (data.responseStrategy) {
     response.responseStrategy = data.responseStrategy
-  }
-  if (data.expansionOffer) {
-    response.expansionOffer = data.expansionOffer
   }
   return response
 }
@@ -218,8 +213,7 @@ export async function streamChat(
           sourceReceipts: event.output?.sourceReceipts || event.sourceReceipts,
           debugTrace: event.output?.debugTrace || event.debugTrace,
           memoryCandidate: event.output?.memoryCandidate || event.memoryCandidate,
-          responseStrategy: event.output?.responseStrategy || event.responseStrategy,
-          expansionOffer: event.output?.expansionOffer || event.expansionOffer
+          responseStrategy: event.output?.responseStrategy || event.responseStrategy
         }, chatResponseSchema, 'chat stream')
         const completedEvent = {
           ...event,
@@ -227,8 +221,7 @@ export async function streamChat(
           sourceReceipts: data.sourceReceipts,
           debugTrace: data.debugTrace,
           memoryCandidate: data.memoryCandidate,
-          responseStrategy: data.responseStrategy,
-          expansionOffer: data.expansionOffer
+          responseStrategy: data.responseStrategy
         }
         handlers.onCompleted?.(data.reply, completedEvent)
         return publicChatResponse(data)

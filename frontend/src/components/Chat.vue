@@ -46,11 +46,9 @@ const {
   toolStatusText,
   getMessageSourceReceipts,
   getMessageMemoryCandidate,
-  getMessageExpansionOffer,
   getMessageFocusSnapshot,
   acceptMemoryCandidate,
   dismissMemoryCandidate,
-  acceptExpansionOffer,
   chatInputDisabled,
   chatSendButtonLabel,
   openPopup,
@@ -140,10 +138,6 @@ function memoryCandidateSaveLabel(index: number): string {
   if (status === 'saving') return t('common.saving')
   if (status === 'saved') return t('chat.memoryCandidateSaved')
   return t('chat.memoryCandidateSave')
-}
-
-function expansionOfferAcceptLabel(): string {
-  return t('chat.expansionOfferAccept')
 }
 
 function focusSnapshotLabel(index: number): string {
@@ -321,19 +315,6 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
                     {{ t('chat.memoryCandidateDismiss') }}
                   </button>
                 </div>
-              </div>
-              <div
-                v-if="getMessageExpansionOffer(idx)?.status !== 'accepted' && getMessageExpansionOffer(idx)"
-                class="chat-expansion-offer"
-              >
-                <button
-                  type="button"
-                  class="chat-expansion-offer-btn"
-                  :disabled="chatStore.isSending"
-                  @click="acceptExpansionOffer(idx, expansionOfferAcceptLabel())"
-                >
-                  {{ expansionOfferAcceptLabel() }}
-                </button>
               </div>
             </div>
             <div v-else class="chat-user-stack">
@@ -1028,31 +1009,6 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
 .chat-memory-action:disabled {
   cursor: default;
   opacity: 0.7;
-}
-
-.chat-expansion-offer {
-  display: flex;
-  justify-content: flex-start;
-}
-
-.chat-expansion-offer-btn {
-  border: 1px solid color-mix(in srgb, var(--action-primary) 38%, var(--border-default));
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--action-primary) 7%, var(--surface-card));
-  color: var(--action-primary);
-  cursor: pointer;
-  font-size: 12px;
-  line-height: 1.2;
-  padding: 7px 10px;
-}
-
-.chat-expansion-offer-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--action-primary) 12%, var(--surface-card));
-}
-
-.chat-expansion-offer-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
 }
 
 .chat-empty-invite {

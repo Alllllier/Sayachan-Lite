@@ -174,10 +174,6 @@ describe('useChatFeature orchestration', () => {
             type: 'preference',
             content: 'Use plain language first.',
             source: 'assistant_suggested_user_approved'
-          },
-          expansionOffer: {
-            offerId: 'message-2',
-            status: 'pending'
           }
         }
       ],
@@ -209,10 +205,6 @@ describe('useChatFeature orchestration', () => {
             type: 'preference',
             content: 'Use plain language first.',
             source: 'assistant_suggested_user_approved'
-          },
-          expansionOffer: {
-            offerId: 'message-2',
-            status: 'pending'
           }
         }
     ], {
@@ -223,7 +215,6 @@ describe('useChatFeature orchestration', () => {
     expect(feature.getMessageFocusSnapshot(0)).toEqual({ type: 'note', title: 'Tool notes' })
     expect(feature.getMessageSourceReceipts(1)).toEqual([{ type: 'note', title: 'Tool notes' }])
     expect(feature.getMessageMemoryCandidate(1)?.status).toBe('pending')
-    expect(feature.getMessageExpansionOffer(1)?.offerId).toBe('message-2')
     expect(scrollToBottom).toHaveBeenCalled()
   })
 
@@ -479,23 +470,17 @@ describe('useChatFeature orchestration', () => {
     expect(feature.getMessageMemoryCandidate(3)?.status).toBe('dismissed')
   })
 
-  it('shows and accepts expansion offers through a backend-owned offer id', async () => {
+  it('sends natural expansion confirmations without backend-owned offer ids', async () => {
     chatStore.messages = [{
       role: 'assistant',
-      content: '这个会有点长，要展开吗？',
-      expansionOffer: {
-        offerId: '000000000000000000000702',
-        status: 'pending'
-      }
+      content: '这个会有点长，要展开吗？'
     }]
     streamChatMock.mockResolvedValue({ reply: 'Expanded answer' })
     const feature = useChatFeature()
+    feature.inputValue.value = '展开讲讲'
 
-    expect(feature.getMessageExpansionOffer(0)?.status).toBe('pending')
+    await feature.handleSend()
 
-    await feature.acceptExpansionOffer(0, '展开讲讲')
-
-    expect(feature.getMessageExpansionOffer(0)?.status).toBe('accepted')
     expect(chatStore.appendMessage).toHaveBeenNthCalledWith(1, {
       role: 'user',
       content: '展开讲讲'
@@ -506,8 +491,8 @@ describe('useChatFeature orchestration', () => {
         { role: 'user', content: '展开讲讲' }
       ],
       {},
-      expect.objectContaining({
-        expansionOfferId: '000000000000000000000702'
+      expect.not.objectContaining({
+        expansionOfferId: expect.any(String)
       }),
       expect.any(Object)
     )

@@ -1624,7 +1624,7 @@ test('AI chat session endpoint returns current-user persisted messages', async (
   }
 });
 
-test('AI chat persists expansion offers with backend-owned offer ids', async () => {
+test('AI chat returns expansion strategy without persisting offer metadata', async () => {
   const userId = toObjectId('000000000000000000000030', 'test.userId');
   const conversationId = toObjectId('000000000000000000000504', 'test.conversationId');
   const restoreChatPersistence = aiService.__test__.setChatPersistenceAvailabilityCheckForTest(() => true);
@@ -1706,14 +1706,11 @@ test('AI chat persists expansion offers with backend-owned offer ids', async () 
         messages: [{ role: 'user', content: '群论在工程学中的具体应用有哪些' }]
       }, { userId, userRole: 'tester' });
 
-      assert.equal(result.expansionOffer.offerId, '000000000000000000000702');
-      assert.equal(result.expansionOffer.status, 'pending');
+      assert.equal(result.responseStrategy.resolvedAction, 'expansion_offer');
+      assert.equal(Object.hasOwn(result, 'expansionOffer'), false);
     });
 
-    assert.equal(createdMessages[1].runtimeMeta.responseStrategy.resolvedAction, 'expansion_offer');
-    assert.equal(createdMessages[1].runtimeMeta.expansionOffer.status, 'pending');
-    assert.equal(createdMessages[1].runtimeMeta.expansionOffer.originalUserText, '群论在工程学中的具体应用有哪些');
-    assert.equal(createdMessages[1].runtimeMeta.expansionOffer.originalUserMessageId, '000000000000000000000701');
+    assert.equal(Object.hasOwn(createdMessages[1], 'runtimeMeta'), false);
   } finally {
     restoreChatPersistence();
     restoreProductContextBuilder();
@@ -1722,15 +1719,13 @@ test('AI chat persists expansion offers with backend-owned offer ids', async () 
   }
 });
 
-test('AI chat accepts expansion offers by validating pending offer and using transcript continuity', async () => {
+test('AI chat forwards natural expansion confirmations through visible transcript', async () => {
   const userId = toObjectId('000000000000000000000031', 'test.userId');
   const conversationId = toObjectId('000000000000000000000505', 'test.conversationId');
-  const offerId = toObjectId('000000000000000000000703', 'test.offerId');
   const restoreChatPersistence = aiService.__test__.setChatPersistenceAvailabilityCheckForTest(() => true);
   const restoreProductContextBuilder = aiService.__test__.setProductContextBuilderForTest(async () => null);
   const restoreMemoryContextBuilder = aiService.__test__.setMemoryContextBuilderForTest(async () => null);
   let capturedCall;
-  const acceptedUpdates = [];
   const storedMessages = [
     createDoc({
       _id: '000000000000000000000711',
@@ -1741,17 +1736,11 @@ test('AI chat accepts expansion offers by validating pending offer and using tra
       createdAt: new Date('2026-05-22T00:01:00.000Z')
     }),
     createDoc({
-      _id: offerId,
+      _id: '000000000000000000000703',
       conversationId,
       userId,
       role: 'assistant',
       content: '这个会讲得有点长哦。你想听我慢慢展开吗？',
-      runtimeMeta: {
-        expansionOffer: {
-          status: 'pending',
-          originalUserText: '群论在工程学中的具体应用有哪些'
-        }
-      },
       createdAt: new Date('2026-05-22T00:02:00.000Z')
     })
   ];
@@ -1784,20 +1773,6 @@ test('AI chat accepts expansion offers by validating pending offer and using tra
       },
       {
         target: ChatMessage,
-        key: 'findOne',
-        value: async (query) => {
-          assert.deepEqual(normalizeIds(query), {
-            _id: '000000000000000000000703',
-            conversationId: '000000000000000000000505',
-            userId: '000000000000000000000031',
-            role: 'assistant',
-            'runtimeMeta.expansionOffer.status': 'pending'
-          });
-          return storedMessages[1];
-        }
-      },
-      {
-        target: ChatMessage,
         key: 'create',
         value: async (payload) => {
           const doc = createDoc({
@@ -1807,14 +1782,6 @@ test('AI chat accepts expansion offers by validating pending offer and using tra
           });
           storedMessages.push(doc);
           return doc;
-        }
-      },
-      {
-        target: ChatMessage,
-        key: 'findOneAndUpdate',
-        value: async (query, update) => {
-          acceptedUpdates.push({ query: normalizeIds(query), update: normalizeIds(update) });
-          return storedMessages[1];
         }
       },
       {
@@ -1832,24 +1799,17 @@ test('AI chat accepts expansion offers by validating pending offer and using tra
       }
     ], async () => {
       const result = await aiService.chat({
-        messages: [{ role: 'user', content: '展开讲讲' }],
-        runtimeControls: {
-          expansionOfferId: '000000000000000000000703'
-        }
+        messages: [{ role: 'user', content: '展开讲讲' }]
       }, { userId, userRole: 'tester' });
 
       assert.equal(result.reply, '好，展开讲。');
     });
 
-    assert.equal(capturedCall.options.runtimeControls.responseStrategy.type, 'expand_from_offer');
-    assert.equal(capturedCall.options.runtimeControls.responseStrategy.offerId, '000000000000000000000703');
-    assert.equal(capturedCall.options.runtimeControls.responseStrategy.continuationSource, 'transcript');
-    assert.equal(Object.hasOwn(capturedCall.options.runtimeControls.responseStrategy, 'originalUserText'), false);
+    assert.equal(Object.hasOwn(capturedCall.options.runtimeControls, 'responseStrategy'), false);
     assert.equal(Object.hasOwn(capturedCall.options.runtimeControls, 'expansionOfferId'), false);
     assert(capturedCall.messages.some((message) => message.role === 'user' && message.content === '群论在工程学中的具体应用有哪些'));
     assert(capturedCall.messages.some((message) => message.role === 'assistant' && message.content.includes('慢慢展开')));
-    assert.equal(acceptedUpdates[0].update.$set['runtimeMeta.expansionOffer.status'], 'accepted');
-    assert.equal(acceptedUpdates[0].update.$set['runtimeMeta.expansionOffer.acceptedByMessageId'], '000000000000000000000704');
+    assert(capturedCall.messages.some((message) => message.role === 'user' && message.content === '展开讲讲'));
   } finally {
     restoreChatPersistence();
     restoreProductContextBuilder();
