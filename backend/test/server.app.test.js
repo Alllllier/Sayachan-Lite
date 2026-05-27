@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import authService from '../dist/services/authService.js';
 import aiService from '../dist/services/aiService.js';
+import sayachanService from '../dist/services/sayachanService.js';
 import { allowedOrigins, createApp } from '../dist/server.js';
 
 function listen(app) {
@@ -256,6 +257,148 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
       } else {
         process.env.SAYACHAN_AI_PROVIDER = originalProvider;
       }
+    }
+  });
+});
+
+test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply shape', async () => {
+  const app = createApp({
+    corsOrigins: ['http://localhost:5173'],
+    trustProxy: false
+  });
+  let loadedToken;
+  let capturedCoreRequest;
+  let productContextUserId;
+  const productContext = productContextFixture();
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'loadUserForSession',
+      value: async (token) => {
+        loadedToken = token;
+        return { _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' };
+      }
+    }
+  ], async () => {
+    const restoreProductContextBuilder = sayachanService.__test__.setProductContextBuilderForTest(async (userId) => {
+      productContextUserId = userId?.toHexString();
+      return productContext;
+    });
+    const restoreMemoryContextBuilder = sayachanService.__test__.setMemoryContextBuilderForTest(async () => ({
+      packetType: 'memory_context_snapshot',
+      version: 1,
+      status: 'available',
+      generatedAt: '2026-05-21T00:00:00.000Z',
+      source: 'memory_ledger_v1',
+      items: [{ type: 'preference', content: 'Use plain language.', source: 'manual' }]
+    }));
+    const restoreCoreTurnRunner = sayachanService.__test__.setCoreTurnRunnerForTest(async (request) => {
+      capturedCoreRequest = request;
+      return {
+        turn_id: 'turn-route-smoke',
+        response: {
+          role: 'assistant',
+          content: 'sayachan v4 bridge ok'
+        },
+        trace: {
+          trace_id: 'turn-route-smoke',
+          debug_available: true
+        },
+        debug: null
+      };
+    });
+
+    try {
+      const response = await requestKoaApp(app, '/sayachan', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer sayachan-v4-session',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'hello from v4 route' }],
+          context: {
+            chatFocus: {
+              type: 'project',
+              id: 'project-1',
+              title: 'Route project',
+              source: 'user_focus_button'
+            }
+          },
+          runtimeControls: {
+            lastUserMessage: 'hello from v4 route',
+            debugTrace: true
+          }
+        })
+      });
+      const body = await response.json();
+
+      assert.equal(loadedToken, 'sayachan-v4-session');
+      assert.equal(productContextUserId, '000000000000000000000001');
+      assert.equal(response.status, 200);
+      assert.deepEqual(body, { reply: 'sayachan v4 bridge ok' });
+      assert.equal(capturedCoreRequest.host.host_id, 'saya-desk');
+      assert.equal(capturedCoreRequest.host.surface, 'workspace-chat');
+      assert.equal(capturedCoreRequest.host.host_user_id, '000000000000000000000001');
+      assert.equal(capturedCoreRequest.input.text, 'hello from v4 route');
+      assert.deepEqual(capturedCoreRequest.conversation.recent_messages, [
+        { role: 'user', content: 'hello from v4 route' }
+      ]);
+      assert.deepEqual(capturedCoreRequest.host.authorized_context.productContext, productContext);
+      assert.equal(capturedCoreRequest.host.authorized_context.memoryContext.packetType, 'memory_context_snapshot');
+      assert.equal(capturedCoreRequest.host.authorized_context.chatFocus.title, 'Route project');
+      assert.equal(capturedCoreRequest.options.debug, true);
+      assert.equal(capturedCoreRequest.options.stream, false);
+    } finally {
+      restoreCoreTurnRunner();
+      restoreMemoryContextBuilder();
+      restoreProductContextBuilder();
+    }
+  });
+});
+
+test('authenticated /sayachan returns explicit 502 when Sayachan Core bridge fails', async () => {
+  const app = createApp({
+    corsOrigins: ['http://localhost:5173'],
+    trustProxy: false
+  });
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'loadUserForSession',
+      value: async () => ({ _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' })
+    }
+  ], async () => {
+    const restoreProductContextBuilder = sayachanService.__test__.setProductContextBuilderForTest(async () => null);
+    const restoreMemoryContextBuilder = sayachanService.__test__.setMemoryContextBuilderForTest(async () => null);
+    const restoreCoreTurnRunner = sayachanService.__test__.setCoreTurnRunnerForTest(async () => {
+      throw new Error('controlled core failure');
+    });
+
+    try {
+      const response = await requestKoaApp(app, '/sayachan', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer sayachan-v4-failure-session',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'hello failure route' }],
+          runtimeControls: {
+            lastUserMessage: 'hello failure route'
+          }
+        })
+      });
+      const body = await response.json();
+
+      assert.equal(response.status, 502);
+      assert.deepEqual(body, { error: 'Sayachan Core request failed' });
+    } finally {
+      restoreCoreTurnRunner();
+      restoreMemoryContextBuilder();
+      restoreProductContextBuilder();
     }
   });
 });

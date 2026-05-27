@@ -75,5 +75,5 @@ export function isHttpError(error: unknown): error is HttpErrorLike {
   return error instanceof Error
     && typeof (error as Partial<HttpErrorLike>).status === 'number'
     && (error as Partial<HttpErrorLike>).status! >= 400
-    && (error as Partial<HttpErrorLike>).status! < 500;
+    && (error as Partial<HttpErrorLike>).status! < 600;
 }
