@@ -9,6 +9,7 @@ import { t } from '../i18n/productLocale'
 
 type PersonalityBaselineOption = 'warm' | 'strict' | 'haraguro'
 type ConvergenceModeOption = 'explore' | 'guided' | 'decisive'
+type CoreVersionOption = 'v3' | 'v4'
 type DebugTraceTools = NonNullable<ChatDebugTraceDto['tools']>
 type DebugModeDecision = NonNullable<ChatDebugTraceDto['mode']>
 type DebugStrategyTrace = NonNullable<ChatDebugTraceDto['strategy']>
@@ -23,6 +24,7 @@ type DebugJudgmentSummary = NonNullable<DebugJudgmentTrace['judgments']>[string]
 const messageListRef = ref<HTMLElement | null>(null)
 const personalityBaselineOptions: PersonalityBaselineOption[] = ['warm', 'strict', 'haraguro']
 const convergenceModeOptions: ConvergenceModeOption[] = ['explore', 'guided', 'decisive']
+const coreVersionOptions: CoreVersionOption[] = ['v3', 'v4']
 // Kept for the existing UI, hidden until convergence moves to strategy/mode ownership.
 const showConvergenceModeControl = false
 const emptyDebugTools: DebugTraceTools = {}
@@ -373,10 +375,31 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
 
         <div class="runtime-panel-body">
           <div class="runtime-section">
+            <div class="runtime-section-title">{{ t('chat.coreVersion') }}</div>
+            <div class="runtime-segmented" role="group" :aria-label="t('chat.coreVersion')">
+              <button
+                v-for="key in coreVersionOptions"
+                :key="key"
+                type="button"
+                class="runtime-segmented-btn"
+                :class="{ active: runtimeControls.coreVersion === key }"
+                @click="runtimeControls.setCoreVersion(key)"
+              >
+                {{ key === 'v3' ? t('chat.coreVersionV3') : t('chat.coreVersionV4') }}
+              </button>
+            </div>
+            <div class="runtime-toggle-caption runtime-toggle-caption--stacked">
+              {{ runtimeControls.coreVersion === 'v4' ? t('chat.coreVersionCaptionV4') : t('chat.coreVersionCaptionV3') }}
+            </div>
+          </div>
+
+          <div class="runtime-section">
             <div class="runtime-toggle-row">
               <div>
                 <div class="runtime-section-title runtime-section-title--inline">{{ t('chat.streamingMode') }}</div>
-                <div class="runtime-toggle-caption">{{ t('chat.streamingModeCaption') }}</div>
+                <div class="runtime-toggle-caption">
+                  {{ runtimeControls.coreVersion === 'v4' ? t('chat.streamingModeCaptionV4') : t('chat.streamingModeCaption') }}
+                </div>
               </div>
               <button
                 class="runtime-toggle"
@@ -384,6 +407,8 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
                 type="button"
                 role="switch"
                 :aria-checked="runtimeControls.chatStreamingEnabled"
+                :aria-disabled="runtimeControls.coreVersion === 'v4'"
+                :disabled="runtimeControls.coreVersion === 'v4'"
                 @click="runtimeControls.setChatStreamingEnabled(!runtimeControls.chatStreamingEnabled)"
               >
                 <span class="runtime-toggle-thumb"></span>
@@ -1222,6 +1247,10 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
   color: var(--text-muted);
 }
 
+.runtime-toggle-caption--stacked {
+  margin-top: var(--space-xs);
+}
+
 .runtime-toggle {
   flex: 0 0 auto;
   width: 42px;
@@ -1237,6 +1266,11 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
 .runtime-toggle.active {
   background: var(--action-primary);
   border-color: var(--action-primary);
+}
+
+.runtime-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 .runtime-toggle-thumb {

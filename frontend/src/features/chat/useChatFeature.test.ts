@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChatFeature } from './useChatFeature.js'
-import { loadChatSession, sendChat, startNewChatSession, streamChat } from './chat.api.js'
+import { loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat } from './chat.api.js'
 import { createMemoryEntry } from '../memory/memory.api.js'
 import type { ChatFocusDto, ChatMessageDto } from '@sayachan/contracts'
 
@@ -20,6 +20,7 @@ vi.mock('../../stores/runtimeControls', () => ({
 vi.mock('./chat.api.js', () => ({
   loadChatSession: vi.fn(),
   sendChat: vi.fn(),
+  sendSayachan: vi.fn(),
   startNewChatSession: vi.fn(),
   streamChat: vi.fn()
 }))
@@ -30,12 +31,14 @@ vi.mock('../memory/memory.api.js', () => ({
 
 const loadChatSessionMock = vi.mocked(loadChatSession)
 const sendChatMock = vi.mocked(sendChat)
+const sendSayachanMock = vi.mocked(sendSayachan)
 const startNewChatSessionMock = vi.mocked(startNewChatSession)
 const streamChatMock = vi.mocked(streamChat)
 const createMemoryEntryMock = vi.mocked(createMemoryEntry)
 
 type ChatStoreMock = ReturnType<typeof createChatStore>
 type RuntimeControlsMock = {
+  coreVersion: 'v3' | 'v4'
   personalityBaseline: 'warm'
   chatStreamingEnabled: boolean
   debugTraceEnabled: boolean
@@ -47,6 +50,7 @@ type RuntimeControlsMock = {
     toneLabel: string
   }
   setChatStreamingEnabled: (value: boolean) => void
+  setCoreVersion: (value: 'v3' | 'v4') => void
   setLatestDebugTrace: (value: unknown) => void
   clearLatestDebugTrace: () => void
 }
@@ -109,6 +113,7 @@ describe('useChatFeature orchestration', () => {
     vi.clearAllMocks()
     chatStore = createChatStore()
     runtimeControls = {
+      coreVersion: 'v3',
       personalityBaseline: 'warm',
       chatStreamingEnabled: true,
       debugTraceEnabled: true,
@@ -120,6 +125,7 @@ describe('useChatFeature orchestration', () => {
         toneLabel: 'Warm'
       },
       setChatStreamingEnabled: vi.fn(),
+      setCoreVersion: vi.fn(),
       setLatestDebugTrace: vi.fn(),
       clearLatestDebugTrace: vi.fn()
     }
@@ -128,6 +134,7 @@ describe('useChatFeature orchestration', () => {
     storeMocks.runtimeControls = runtimeControls
     loadChatSessionMock.mockResolvedValue({ messages: [] })
     sendChatMock.mockResolvedValue({ reply: 'Done' })
+    sendSayachanMock.mockResolvedValue({ reply: 'V4 Done' })
     startNewChatSessionMock.mockResolvedValue({ messages: [] })
     streamChatMock.mockResolvedValue({ reply: 'Done' })
     createMemoryEntryMock.mockResolvedValue({
@@ -292,6 +299,39 @@ describe('useChatFeature orchestration', () => {
     expect(sendChat).toHaveBeenCalled()
     expect(streamChat).not.toHaveBeenCalled()
     expect(chatStore.appendMessage).toHaveBeenLastCalledWith({ role: 'assistant', content: 'Done' })
+  })
+
+  it('routes v4 turns through the dedicated Sayachan gateway without using v3 streaming state', async () => {
+    runtimeControls.coreVersion = 'v4'
+    runtimeControls.chatStreamingEnabled = true
+    chatStore.providerState = {
+      strategy: 'previous_response',
+      lastResponseId: 'resp-v3',
+      status: 'active'
+    }
+    chatStore.activeFocus = {
+      type: 'project',
+      id: 'project-1',
+      title: 'Sayachan AI Core',
+      summary: 'Private-core work',
+      status: 'in_progress',
+      source: 'user_focus_button'
+    }
+    const feature = useChatFeature()
+    feature.inputValue.value = '晚上好'
+
+    await feature.handleSend()
+
+    expect(sendSayachan).toHaveBeenCalledWith({
+      text: '晚上好',
+      focus: { type: 'project', id: 'project-1' },
+      debug: true
+    })
+    expect(streamChat).not.toHaveBeenCalled()
+    expect(sendChat).not.toHaveBeenCalled()
+    expect(chatStore.appendMessage).toHaveBeenLastCalledWith({ role: 'assistant', content: 'V4 Done' })
+    expect(chatStore.setProviderState).toHaveBeenCalledWith(undefined)
+    expect(chatStore.setSending).toHaveBeenLastCalledWith(false)
   })
 
   it('consumes an active chat focus once while routing that turn to core guide mode', async () => {

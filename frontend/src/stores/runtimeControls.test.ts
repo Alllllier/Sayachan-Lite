@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useRuntimeControls } from './runtimeControls.js'
 
+const LS_CORE_VERSION_KEY = 'sayachan.chatCoreVersion'
 const LS_BASELINE_KEY = 'sayachan.personalityBaseline'
 const LS_WARMTH_KEY = 'sayachan.warmth'
 const LS_CONVERGENCE_KEY = 'sayachan.convergenceMode'
@@ -32,6 +33,7 @@ describe('runtimeControls store behavior locks', () => {
 
   it('hydrates valid saved runtime control values from localStorage', () => {
     const store = createRuntimeStore({
+      [LS_CORE_VERSION_KEY]: 'v3',
       [LS_BASELINE_KEY]: 'strict',
       [LS_WARMTH_KEY]: '7',
       [LS_CONVERGENCE_KEY]: 'explore',
@@ -39,6 +41,7 @@ describe('runtimeControls store behavior locks', () => {
       [LS_DEBUG_TRACE_KEY]: 'false'
     })
 
+    expect(store.coreVersion).toBe('v3')
     expect(store.personalityBaseline).toBe('strict')
     expect(store.futureSlots.warmth).toBe(7)
     expect(store.futureSlots.convergenceMode).toBe('explore')
@@ -49,15 +52,44 @@ describe('runtimeControls store behavior locks', () => {
 
   it('falls back to warm, guided, and streaming enabled when saved values are invalid or absent', () => {
     const store = createRuntimeStore({
+      [LS_CORE_VERSION_KEY]: 'v0',
       [LS_BASELINE_KEY]: 'chaos',
       [LS_CONVERGENCE_KEY]: 'random'
     })
 
+    expect(store.coreVersion).toBe('v3')
     expect(store.personalityBaseline).toBe('warm')
     expect(store.futureSlots.convergenceMode).toBe('guided')
     expect(store.chatStreamingEnabled).toBe(true)
     expect(store.debugTraceEnabled).toBe(true)
     expect(store.personalityConfig.label).toBe('温暖')
+  })
+
+  it('forces non-streaming mode when the v4 core path is selected', () => {
+    const store = createRuntimeStore({
+      [LS_CORE_VERSION_KEY]: 'v4',
+      [LS_STREAMING_KEY]: 'true'
+    })
+
+    expect(store.coreVersion).toBe('v4')
+    expect(store.chatStreamingEnabled).toBe(false)
+
+    store.setChatStreamingEnabled(true)
+    expect(store.chatStreamingEnabled).toBe(false)
+    expect(localStorage.setItem).toHaveBeenCalledWith(LS_STREAMING_KEY, 'false')
+
+    store.setCoreVersion('v3')
+    expect(store.coreVersion).toBe('v3')
+    expect(localStorage.setItem).toHaveBeenCalledWith(LS_CORE_VERSION_KEY, 'v3')
+
+    store.setChatStreamingEnabled(true)
+    expect(store.chatStreamingEnabled).toBe(true)
+
+    store.setCoreVersion('v4')
+    expect(store.coreVersion).toBe('v4')
+    expect(store.chatStreamingEnabled).toBe(false)
+    expect(localStorage.setItem).toHaveBeenCalledWith(LS_CORE_VERSION_KEY, 'v4')
+    expect(localStorage.setItem).toHaveBeenCalledWith(LS_STREAMING_KEY, 'false')
   })
 
   it('updates and persists only valid personality baselines', () => {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildChatRuntimePayload, loadChatSession, sendChat, startNewChatSession, streamChat } from './chat.api.js'
+import { buildChatRuntimePayload, loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat } from './chat.api.js'
 import type { ChatContextDto } from '@sayachan/contracts'
 
 const emptyContext: ChatContextDto = {}
@@ -77,6 +77,36 @@ describe('chat api boundary', () => {
   it('uses an empty last user message when no user message exists', async () => {
     expect(buildChatRuntimePayload([{ role: 'assistant', content: 'hello' }], {}))
       .toEqual({ lastUserMessage: '' })
+  })
+
+  it('sends v4 Sayachan requests through the dedicated gateway contract', async () => {
+    mockedFetch().mockResolvedValue(jsonResponse({
+      reply: '晚上好。',
+      turnId: 'turn-1',
+      trace: {
+        traceId: 'trace-1',
+        debugAvailable: true
+      }
+    }))
+
+    await expect(sendSayachan({
+      text: '晚上好',
+      focus: { type: 'project', id: 'project-1' },
+      debug: true
+    })).resolves.toEqual({ reply: '晚上好。' })
+
+    expect(fetch).toHaveBeenCalledWith('http://localhost:3001/sayachan', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: expect.any(String)
+    })
+    expect(JSON.parse(String(mockedFetch().mock.calls[0][1]?.body))).toEqual({
+      text: '晚上好',
+      surface: 'project-detail',
+      focus: { type: 'project', id: 'project-1' },
+      options: { debug: true }
+    })
   })
 
   it('loads the persisted current chat session', async () => {

@@ -3,7 +3,9 @@ import { ref, reactive, computed } from 'vue'
 import type { ChatConvergenceMode, ChatDebugTraceDto, ChatPersonalityBaseline } from '@sayachan/contracts'
 
 type ChatDebugModeTrace = NonNullable<ChatDebugTraceDto['mode']>
+export type ChatCoreVersion = 'v3' | 'v4'
 
+const LS_CORE_VERSION_KEY = 'sayachan.chatCoreVersion'
 const LS_BASELINE_KEY = 'sayachan.personalityBaseline'
 const LS_WARMTH_KEY = 'sayachan.warmth'
 const LS_CONVERGENCE_KEY = 'sayachan.convergenceMode'
@@ -12,6 +14,12 @@ const LS_DEBUG_TRACE_KEY = 'sayachan.chatDebugTraceEnabled'
 const MODE_DECISION_HISTORY_LIMIT = 6
 
 export const useRuntimeControls = defineStore('runtimeControls', () => {
+  const savedCoreVersion = localStorage.getItem(LS_CORE_VERSION_KEY)
+  const initialCoreVersion: ChatCoreVersion = isCoreVersion(savedCoreVersion)
+    ? savedCoreVersion
+    : 'v3'
+  const coreVersion = ref<ChatCoreVersion>(initialCoreVersion)
+
   const savedBaseline = localStorage.getItem(LS_BASELINE_KEY)
   const initialBaseline: ChatPersonalityBaseline = isPersonalityBaseline(savedBaseline)
     ? savedBaseline
@@ -19,7 +27,11 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
 
   const personalityBaseline = ref(initialBaseline)
   const savedStreaming = localStorage.getItem(LS_STREAMING_KEY)
-  const chatStreamingEnabled = ref(savedStreaming === null ? true : savedStreaming !== 'false')
+  const chatStreamingEnabled = ref(
+    initialCoreVersion === 'v4'
+      ? false
+      : savedStreaming === null ? true : savedStreaming !== 'false'
+  )
   const savedDebugTrace = localStorage.getItem(LS_DEBUG_TRACE_KEY)
   const debugTraceEnabled = ref(savedDebugTrace === null ? true : savedDebugTrace !== 'false')
   const latestDebugTrace = ref<ChatDebugTraceDto | null>(null)
@@ -79,6 +91,22 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
     return value === 'explore' || value === 'guided' || value === 'decisive'
   }
 
+  function isCoreVersion(value: unknown): value is ChatCoreVersion {
+    return value === 'v3' || value === 'v4'
+  }
+
+  function setCoreVersion(value: unknown): void {
+    if (!isCoreVersion(value)) {
+      return
+    }
+
+    coreVersion.value = value
+    localStorage.setItem(LS_CORE_VERSION_KEY, value)
+    if (value === 'v4') {
+      setChatStreamingEnabled(false)
+    }
+  }
+
   function setBaseline(value: unknown): void {
     if (isPersonalityBaseline(value)) {
       personalityBaseline.value = value
@@ -102,7 +130,7 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
   }
 
   function setChatStreamingEnabled(value: unknown): void {
-    chatStreamingEnabled.value = value === true
+    chatStreamingEnabled.value = coreVersion.value === 'v4' ? false : value === true
     localStorage.setItem(LS_STREAMING_KEY, String(chatStreamingEnabled.value))
   }
 
@@ -126,6 +154,7 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
   }
 
   return {
+    coreVersion,
     personalityBaseline,
     chatStreamingEnabled,
     debugTraceEnabled,
@@ -134,6 +163,7 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
     futureSlots,
     personalityConfig,
     uiLabels,
+    setCoreVersion,
     setBaseline,
     setWarmth,
     setConvergenceMode,

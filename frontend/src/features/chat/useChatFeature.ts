@@ -3,7 +3,7 @@ import type { ChatContextDto, ChatFocusDto, ChatMemoryCandidateDto, ChatMessageD
 import { useChatStore } from '../../stores/chat'
 import { useRuntimeControls } from '../../stores/runtimeControls'
 import { createMemoryEntry } from '../memory/memory.api.js'
-import { loadChatSession, sendChat, startNewChatSession, streamChat, type ChatStreamEvent, type ChatProviderState } from './chat.api.js'
+import { loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat, type ChatStreamEvent, type ChatProviderState } from './chat.api.js'
 import {
   canSendChatMessage,
   getChatFallbackReply,
@@ -312,6 +312,20 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
         ? { ...controls, providerState: chatStore.providerState }
         : controls
       const requestMessages = messagesForTransport(chatStore.messages)
+
+      if (runtimeControls.coreVersion === 'v4') {
+        const { reply } = await sendSayachan({
+          text,
+          focus: focusForTurn
+            ? { type: focusForTurn.type, id: focusForTurn.id }
+            : null,
+          debug: runtimeControls.debugTraceEnabled
+        })
+        chatStore.appendMessage({ role: 'assistant', content: reply })
+        chatStore.setProviderState(undefined)
+        scrollToBottom()
+        return
+      }
 
       if (runtimeControls.chatStreamingEnabled) {
         let assistantMessageIndex: number | null = null

@@ -2,7 +2,8 @@ import { apiFetch, API_BASE } from '../../services/apiClient'
 import { assertApiResponse } from '../../services/apiResponse'
 import {
   chatResponseSchema,
-  chatSessionResponseSchema
+  chatSessionResponseSchema,
+  sayaDeskSayachanResponseSchema
 } from '@sayachan/contracts'
 import type {
   ChatContextDto,
@@ -14,7 +15,9 @@ import type {
   ChatRuntimeControlsDto,
   ChatRuntimePayloadDto,
   ChatSessionResponseDto,
-  ChatSourceReceiptDto
+  ChatSourceReceiptDto,
+  SayaDeskSayachanFocusDto,
+  SayaDeskSayachanSurface
 } from '@sayachan/contracts'
 
 type ChatStreamEventType = 'tool_call_started' | 'tool_call_completed' | 'tool_call_failed' | 'text_delta' | 'completed' | 'error'
@@ -55,6 +58,14 @@ type StreamChatHandlers = {
   onToolStatus?: (event: ChatStreamEvent) => void
 }
 
+type SendSayachanInput = {
+  text: string
+  focus?: Pick<SayaDeskSayachanFocusDto, 'type' | 'id'> | null
+  surface?: SayaDeskSayachanSurface
+  conversationId?: string
+  debug?: boolean
+}
+
 function publicChatResponse(data: ChatResponseDto): ChatResponseDto {
   const response: ChatResponseDto = { reply: data.reply }
   if (data.providerState) {
@@ -73,6 +84,15 @@ function publicChatResponse(data: ChatResponseDto): ChatResponseDto {
     response.responseStrategy = data.responseStrategy
   }
   return response
+}
+
+function surfaceForSayachanFocus(
+  focus?: Pick<SayaDeskSayachanFocusDto, 'type' | 'id'> | null
+): SayaDeskSayachanSurface {
+  if (focus?.type === 'note') return 'note-detail'
+  if (focus?.type === 'project') return 'project-detail'
+  if (focus?.type === 'task') return 'task-detail'
+  return 'workspace-chat'
 }
 
 export function buildChatRuntimePayload(
@@ -113,6 +133,34 @@ export async function sendChat(
     throw new Error('Empty or invalid reply from server')
   }
   return publicChatResponse(data)
+}
+
+export async function sendSayachan(input: SendSayachanInput): Promise<ChatResponseDto> {
+  const focus = input.focus
+    ? { type: input.focus.type, id: input.focus.id }
+    : null
+  const res = await apiFetch(`${API_BASE}/sayachan`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      text: input.text,
+      surface: input.surface || surfaceForSayachanFocus(focus),
+      focus,
+      ...(input.conversationId ? { conversationId: input.conversationId } : {}),
+      ...(typeof input.debug === 'boolean' ? { options: { debug: input.debug } } : {})
+    })
+  })
+
+  if (!res.ok) {
+    throw new Error(`Sayachan request failed: ${res.status}`)
+  }
+
+  try {
+    const data = assertApiResponse(await res.json() as unknown, sayaDeskSayachanResponseSchema, 'sayachan')
+    return { reply: data.reply }
+  } catch {
+    throw new Error('Empty or invalid reply from Sayachan')
+  }
 }
 
 export async function loadChatSession(): Promise<ChatSessionResponseDto> {
