@@ -400,6 +400,18 @@ test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply 
       ]);
       assert.deepEqual(capturedCoreRequest.host.authorized_context.focus, focusSnapshot);
       assert.deepEqual(capturedCoreRequest.host.authorized_context.host_capabilities, hostCapabilities);
+      assert.equal(
+        capturedCoreRequest.host.authorized_context.host_tool_channel.packetType,
+        'saya_desk_host_tool_channel'
+      );
+      assert.equal(
+        capturedCoreRequest.host.authorized_context.host_tool_channel.endpoint,
+        'http://127.0.0.1:3001/sayachan/tools/execute'
+      );
+      assert.deepEqual(capturedCoreRequest.host.authorized_context.host_tool_channel.authorization, {
+        type: 'bearer',
+        token: 'sayachan-v4-session'
+      });
       assert.equal(Object.hasOwn(capturedCoreRequest.host.authorized_context, 'productContext'), false);
       assert.equal(Object.hasOwn(capturedCoreRequest.host.authorized_context, 'memoryContext'), false);
       assert.equal(Object.hasOwn(capturedCoreRequest.host.authorized_context, 'chatFocus'), false);

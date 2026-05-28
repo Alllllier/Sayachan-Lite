@@ -35,6 +35,7 @@ type ChatPersistenceAvailabilityCheck = () => boolean;
 type SayachanExecutionOptions = {
   userId?: ObjectId | null;
   userRole?: string | null;
+  hostToolSessionToken?: string | null;
 };
 type PreparedPersistentTurn = Awaited<ReturnType<typeof preparePersistentTextTurn>>;
 
@@ -55,6 +56,19 @@ function defaultChatPersistenceAvailabilityCheck(): boolean {
   return Number(mongoose.connection.readyState) === 1;
 }
 
+function configuredHostToolEndpoint(): string {
+  const explicit = process.env.SAYACHAN_HOST_TOOL_URL?.trim();
+  if (explicit) {
+    return explicit;
+  }
+
+  const defaultPort = process.env.PORT || '3001';
+  const baseUrl = (
+    process.env.SAYACHAN_BACKEND_INTERNAL_URL || `http://127.0.0.1:${defaultPort}`
+  ).replace(/\/+$/, '');
+  return `${baseUrl}/sayachan/tools/execute`;
+}
+
 async function buildAuthorizedContext(
   request: SayaDeskSayachanRequestDto,
   options: SayachanExecutionOptions
@@ -66,6 +80,19 @@ async function buildAuthorizedContext(
 
   if (focusSnapshot) {
     authorizedContext.focus = focusSnapshot;
+  }
+
+  if (options.userId && options.hostToolSessionToken) {
+    authorizedContext.host_tool_channel = {
+      packetType: 'saya_desk_host_tool_channel',
+      version: 1,
+      endpoint: configuredHostToolEndpoint(),
+      authorization: {
+        type: 'bearer',
+        token: options.hostToolSessionToken
+      },
+      source: 'saya_desk_route_session'
+    };
   }
 
   return Object.keys(authorizedContext).length > 0 ? authorizedContext : undefined;
@@ -240,7 +267,8 @@ export const __test__ = {
     return () => {
       chatPersistenceAvailabilityCheck = previous;
     };
-  }
+  },
+  configuredHostToolEndpoint
 };
 
 export default {
