@@ -13,9 +13,38 @@ const coreTraceSchema = z.object({
   debug_available: z.boolean().optional()
 }).strict();
 
+const coreTurnActivityItemSchema = z.object({
+  item_id: z.string(),
+  kind: z.enum([
+    'assistant_progress',
+    'tool_status',
+    'tool_result_summary',
+    'capability_notice'
+  ]),
+  status: z.enum([
+    'planned',
+    'started',
+    'completed',
+    'skipped',
+    'unavailable',
+    'failed'
+  ]),
+  text: z.string(),
+  display: z.enum(['collapse_item', 'inline_during_turn']),
+  canonical_message: z.literal(false),
+  capability: z.string().nullable().optional(),
+  source_trace: z.array(z.string())
+}).strict();
+
+const coreTurnActivitySchema = z.object({
+  default_collapsed: z.boolean(),
+  items: z.array(coreTurnActivityItemSchema)
+}).strict();
+
 const coreTurnResponseSchema = z.object({
   turn_id: z.string(),
   response: coreMessageSchema,
+  turn_activity: coreTurnActivitySchema.nullable().optional(),
   trace: coreTraceSchema,
   debug: z.unknown().optional().nullable()
 }).strict();
