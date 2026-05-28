@@ -1,6 +1,7 @@
 import {
   type SayaDeskSayachanFocusDto,
   type SayaDeskSayachanResponseDto,
+  type SayaDeskSayachanTurnActivityDto,
   type SayaDeskSayachanRequestDto,
   sayaDeskSayachanResponseSchema
 } from '@sayachan/contracts';
@@ -142,6 +143,27 @@ function coreRequest(
   };
 }
 
+function projectTurnActivity(coreResponse: SayachanCoreTurnResponse): SayaDeskSayachanTurnActivityDto | undefined {
+  const activity = coreResponse.turn_activity;
+  if (!activity || activity.items.length === 0) {
+    return undefined;
+  }
+
+  return {
+    defaultCollapsed: activity.default_collapsed,
+    items: activity.items.map(item => ({
+      itemId: item.item_id,
+      kind: item.kind,
+      status: item.status,
+      text: item.text,
+      display: item.display,
+      canonicalMessage: item.canonical_message,
+      ...(item.capability ? { capability: item.capability } : {}),
+      sourceTrace: item.source_trace
+    }))
+  };
+}
+
 async function persistAssistantReply(
   preparedTurn: PreparedPersistentTurn,
   coreResponse: SayachanCoreTurnResponse,
@@ -170,6 +192,7 @@ export async function chat(request: SayaDeskSayachanRequestDto, options: Sayacha
     const parsed = sayaDeskSayachanResponseSchema.parse({
       reply: coreResponse.response.content,
       turnId: coreResponse.turn_id,
+      turnActivity: projectTurnActivity(coreResponse),
       trace: {
         traceId: coreResponse.trace.trace_id,
         debugAvailable: coreResponse.trace.debug_available

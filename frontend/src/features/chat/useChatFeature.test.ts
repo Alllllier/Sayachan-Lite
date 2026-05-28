@@ -317,6 +317,22 @@ describe('useChatFeature orchestration', () => {
       status: 'in_progress',
       source: 'user_focus_button'
     }
+    sendSayachanMock.mockResolvedValue({
+      reply: 'V4 Done',
+      turnActivity: {
+        defaultCollapsed: true,
+        items: [{
+          itemId: 'turn-v4:activity:1',
+          kind: 'assistant_progress',
+          status: 'unavailable',
+          text: '这个需要回看项目里的记录；我现在还没法直接翻到，会先按当前对话判断。',
+          display: 'collapse_item',
+          canonicalMessage: false,
+          capability: 'saya_desk.list_project_tasks',
+          sourceTrace: ['resolver.activity', 'resolver.tool_intent']
+        }]
+      }
+    })
     const feature = useChatFeature()
     feature.inputValue.value = '晚上好'
 
@@ -329,7 +345,22 @@ describe('useChatFeature orchestration', () => {
     })
     expect(streamChat).not.toHaveBeenCalled()
     expect(sendChat).not.toHaveBeenCalled()
-    expect(chatStore.appendMessage).toHaveBeenLastCalledWith({ role: 'assistant', content: 'V4 Done' })
+    expect(chatStore.appendMessage).toHaveBeenNthCalledWith(2, { role: 'assistant', content: '' })
+    expect(chatStore.updateMessageContent).toHaveBeenCalledWith(1, 'V4 Done')
+    expect(feature.getMessageTurnActivity(1)).toEqual({
+      defaultCollapsed: true,
+      items: [{
+        itemId: 'turn-v4:activity:1',
+        kind: 'assistant_progress',
+        status: 'unavailable',
+        text: '这个需要回看项目里的记录；我现在还没法直接翻到，会先按当前对话判断。',
+        display: 'collapse_item',
+        canonicalMessage: false,
+        capability: 'saya_desk.list_project_tasks',
+        sourceTrace: ['resolver.activity', 'resolver.tool_intent']
+      }]
+    })
+    expect(feature.isPendingAssistantMessage(1)).toBe(false)
     expect(chatStore.setProviderState).toHaveBeenCalledWith(undefined)
     expect(chatStore.setSending).toHaveBeenLastCalledWith(false)
   })

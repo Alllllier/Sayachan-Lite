@@ -86,6 +86,19 @@ describe('chat api boundary', () => {
       trace: {
         traceId: 'trace-1',
         debugAvailable: true
+      },
+      turnActivity: {
+        defaultCollapsed: true,
+        items: [{
+          itemId: 'turn-1:activity:1',
+          kind: 'assistant_progress',
+          status: 'unavailable',
+          text: '这个需要回看项目里的记录；我现在还没法直接翻到，会先按当前对话判断。',
+          display: 'collapse_item',
+          canonicalMessage: false,
+          capability: 'saya_desk.list_project_tasks',
+          sourceTrace: ['resolver.activity', 'resolver.tool_intent']
+        }]
       }
     }))
 
@@ -93,7 +106,22 @@ describe('chat api boundary', () => {
       text: '晚上好',
       focus: { type: 'project', id: 'project-1' },
       debug: true
-    })).resolves.toEqual({ reply: '晚上好。' })
+    })).resolves.toEqual({
+      reply: '晚上好。',
+      turnActivity: {
+        defaultCollapsed: true,
+        items: [{
+          itemId: 'turn-1:activity:1',
+          kind: 'assistant_progress',
+          status: 'unavailable',
+          text: '这个需要回看项目里的记录；我现在还没法直接翻到，会先按当前对话判断。',
+          display: 'collapse_item',
+          canonicalMessage: false,
+          capability: 'saya_desk.list_project_tasks',
+          sourceTrace: ['resolver.activity', 'resolver.tool_intent']
+        }]
+      }
+    })
 
     expect(fetch).toHaveBeenCalledWith('http://localhost:3001/sayachan', {
       method: 'POST',

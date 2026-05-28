@@ -3,7 +3,7 @@ import type { ChatContextDto, ChatFocusDto, ChatMemoryCandidateDto, ChatMessageD
 import { useChatStore } from '../../stores/chat'
 import { useRuntimeControls } from '../../stores/runtimeControls'
 import { createMemoryEntry } from '../memory/memory.api.js'
-import { loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat, type ChatStreamEvent, type ChatProviderState } from './chat.api.js'
+import { loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat, type ChatStreamEvent, type ChatProviderState, type SayachanTurnActivity } from './chat.api.js'
 import {
   canSendChatMessage,
   getChatFallbackReply,
@@ -57,9 +57,11 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
   const isPanelOpen = ref(false)
   const isStreamingReply = ref(false)
   const toolStatusText = ref('')
+  const pendingAssistantMessageIndex = ref<number | null>(null)
   const focusSnapshotsByMessageIndex = ref<Record<number, ChatFocusSnapshot>>({})
   const sourceReceiptsByMessageIndex = ref<Record<number, ChatSourceReceiptDto[]>>({})
   const memoryCandidatesByMessageIndex = ref<Record<number, ChatMemoryCandidateState>>({})
+  const turnActivitiesByMessageIndex = ref<Record<number, SayachanTurnActivity>>({})
 
   watch(
     () => chatStore.messages.length,
@@ -68,6 +70,8 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
         focusSnapshotsByMessageIndex.value = {}
         sourceReceiptsByMessageIndex.value = {}
         memoryCandidatesByMessageIndex.value = {}
+        turnActivitiesByMessageIndex.value = {}
+        pendingAssistantMessageIndex.value = null
       }
     }
   )
@@ -121,6 +125,22 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
 
   function getMessageSourceReceipts(index: number): ChatSourceReceiptDto[] {
     return sourceReceiptsByMessageIndex.value[index] || chatStore.messages[index]?.sourceReceipts || []
+  }
+
+  function setMessageTurnActivity(index: number | null, activity?: SayachanTurnActivity): void {
+    if (index === null || !activity || activity.items.length === 0) return
+    turnActivitiesByMessageIndex.value = {
+      ...turnActivitiesByMessageIndex.value,
+      [index]: activity
+    }
+  }
+
+  function getMessageTurnActivity(index: number): SayachanTurnActivity | undefined {
+    return turnActivitiesByMessageIndex.value[index]
+  }
+
+  function isPendingAssistantMessage(index: number): boolean {
+    return pendingAssistantMessageIndex.value === index
   }
 
   function setMessageMemoryCandidate(index: number | null, candidate?: ChatMemoryCandidateDto): void {
@@ -243,6 +263,8 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
       focusSnapshotsByMessageIndex.value = {}
       sourceReceiptsByMessageIndex.value = {}
       memoryCandidatesByMessageIndex.value = {}
+      turnActivitiesByMessageIndex.value = {}
+      pendingAssistantMessageIndex.value = null
       runtimeControls.clearLatestDebugTrace()
       toolStatusText.value = ''
       isStreamingReply.value = false
@@ -299,6 +321,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     isStreamingReply.value = false
     toolStatusText.value = ''
     runtimeControls.clearLatestDebugTrace()
+    let pendingMessageIndexForTurn: number | null = null
     try {
       const controls = {
         personalityBaseline: runtimeControls.personalityBaseline,
@@ -314,14 +337,20 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
       const requestMessages = messagesForTransport(chatStore.messages)
 
       if (runtimeControls.coreVersion === 'v4') {
-        const { reply } = await sendSayachan({
+        pendingMessageIndexForTurn = chatStore.messages.length
+        pendingAssistantMessageIndex.value = pendingMessageIndexForTurn
+        chatStore.appendMessage({ role: 'assistant', content: '' })
+        scrollToBottom()
+
+        const { reply, turnActivity } = await sendSayachan({
           text,
           focus: focusForTurn
             ? { type: focusForTurn.type, id: focusForTurn.id }
             : null,
           debug: runtimeControls.debugTraceEnabled
         })
-        chatStore.appendMessage({ role: 'assistant', content: reply })
+        chatStore.updateMessageContent(pendingMessageIndexForTurn, reply)
+        setMessageTurnActivity(pendingMessageIndexForTurn, turnActivity)
         chatStore.setProviderState(undefined)
         scrollToBottom()
         return
@@ -377,13 +406,18 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
       }
     } catch (error) {
       onSendError(error)
-      chatStore.appendMessage({
-        role: 'assistant',
-        content: getChatFallbackReply(runtimeControls.personalityBaseline)
-      })
+      if (pendingMessageIndexForTurn !== null) {
+        chatStore.updateMessageContent(pendingMessageIndexForTurn, getChatFallbackReply(runtimeControls.personalityBaseline))
+      } else {
+        chatStore.appendMessage({
+          role: 'assistant',
+          content: getChatFallbackReply(runtimeControls.personalityBaseline)
+        })
+      }
     } finally {
       isStreamingReply.value = false
       toolStatusText.value = ''
+      pendingAssistantMessageIndex.value = null
       chatStore.setSending(false)
     }
   }
@@ -402,12 +436,16 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     isPanelOpen,
     isStreamingReply,
     toolStatusText,
+    pendingAssistantMessageIndex,
     focusSnapshotsByMessageIndex,
     sourceReceiptsByMessageIndex,
     memoryCandidatesByMessageIndex,
+    turnActivitiesByMessageIndex,
     chatInputDisabled,
     chatSendButtonLabel,
     getMessageSourceReceipts,
+    getMessageTurnActivity,
+    isPendingAssistantMessage,
     getMessageMemoryCandidate,
     getMessageFocusSnapshot,
     acceptMemoryCandidate,

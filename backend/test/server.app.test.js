@@ -324,6 +324,19 @@ test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply 
           trace_id: 'turn-route-smoke',
           debug_available: true
         },
+        turn_activity: {
+          default_collapsed: true,
+          items: [{
+            item_id: 'turn-route-smoke:activity:1',
+            kind: 'assistant_progress',
+            status: 'unavailable',
+            text: '这个需要回看项目里的记录；我现在还没法直接翻到，会先按当前对话判断。',
+            display: 'collapse_item',
+            canonical_message: false,
+            capability: 'saya_desk.list_project_tasks',
+            source_trace: ['resolver.activity', 'resolver.tool_intent']
+          }]
+        },
         debug: null
       };
     });
@@ -359,6 +372,19 @@ test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply 
       assert.deepEqual(body, {
         reply: 'sayachan v4 bridge ok',
         turnId: 'turn-route-smoke',
+        turnActivity: {
+          defaultCollapsed: true,
+          items: [{
+            itemId: 'turn-route-smoke:activity:1',
+            kind: 'assistant_progress',
+            status: 'unavailable',
+            text: '这个需要回看项目里的记录；我现在还没法直接翻到，会先按当前对话判断。',
+            display: 'collapse_item',
+            canonicalMessage: false,
+            capability: 'saya_desk.list_project_tasks',
+            sourceTrace: ['resolver.activity', 'resolver.tool_intent']
+          }]
+        },
         trace: {
           traceId: 'turn-route-smoke',
           debugAvailable: true

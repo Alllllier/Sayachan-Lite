@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, nextTick, onMounted, watch } from 'vue'
-import type { ChatDebugTraceDto } from '@sayachan/contracts'
+import type { ChatDebugTraceDto, SayaDeskSayachanTurnActivityItemDto } from '@sayachan/contracts'
 import avatarUrl from '../assets/avatar/sayachan-avatar.jpg'
 import { useChatFeature } from '../features/chat/useChatFeature.js'
 import { useAuthStore } from '../stores/auth'
@@ -47,6 +47,8 @@ const {
   isStreamingReply,
   toolStatusText,
   getMessageSourceReceipts,
+  getMessageTurnActivity,
+  isPendingAssistantMessage,
   getMessageMemoryCandidate,
   getMessageFocusSnapshot,
   acceptMemoryCandidate,
@@ -147,6 +149,29 @@ function focusSnapshotLabel(index: number): string {
   if (!focus) return ''
   const typeLabel = focus.type === 'project' ? t('chat.focusProject') : t('chat.focusNote')
   return `${typeLabel} · ${focus.title}`
+}
+
+function hasMessageTurnActivity(index: number): boolean {
+  return (getMessageTurnActivity(index)?.items.length || 0) > 0
+}
+
+function turnActivityItems(index: number): SayaDeskSayachanTurnActivityItemDto[] {
+  return getMessageTurnActivity(index)?.items || []
+}
+
+function turnActivitySummary(index: number): string {
+  return t('chat.turnActivitySummary', {
+    count: getMessageTurnActivity(index)?.items.length || 0
+  })
+}
+
+function turnActivityStatusLabel(status: string): string {
+  if (status === 'unavailable') return t('chat.turnActivityUnavailable')
+  if (status === 'failed') return t('chat.turnActivityFailed')
+  if (status === 'completed') return t('chat.turnActivityCompleted')
+  if (status === 'started') return t('chat.turnActivityStarted')
+  if (status === 'skipped') return t('chat.turnActivitySkipped')
+  return t('chat.turnActivityPlanned')
 }
 
 function debugFocusTargetLabel(focus: DebugFocusTrace): string {
@@ -263,8 +288,37 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
           >
             <div v-if="msg.role === 'assistant'" class="chat-assistant-stack">
               <div
+                v-if="isPendingAssistantMessage(idx)"
+                class="chat-pending-meta"
+                role="status"
+              >
+                <span class="chat-pending-dot"></span>
+                <span>{{ t('chat.pendingMeta') }}</span>
+              </div>
+              <details
+                v-if="hasMessageTurnActivity(idx)"
+                class="chat-turn-activity"
+                :open="getMessageTurnActivity(idx)?.defaultCollapsed === false"
+              >
+                <summary class="chat-turn-activity-summary">
+                  <span>{{ turnActivitySummary(idx) }}</span>
+                </summary>
+                <div class="chat-turn-activity-list">
+                  <div
+                    v-for="item in turnActivityItems(idx)"
+                    :key="item.itemId"
+                    class="chat-turn-activity-item"
+                    :class="`chat-turn-activity-item--${item.status}`"
+                  >
+                    <span class="chat-turn-activity-status">{{ turnActivityStatusLabel(item.status) }}</span>
+                    <span class="chat-turn-activity-text">{{ item.text }}</span>
+                  </div>
+                </div>
+              </details>
+              <div
                 class="chat-bubble markdown-body"
-                v-html="renderMarkdown(msg.content)"
+                :class="{ 'chat-bubble--empty': !msg.content && isPendingAssistantMessage(idx) }"
+                v-html="msg.content ? renderMarkdown(msg.content) : ''"
               ></div>
               <div
                 v-if="getMessageSourceReceipts(idx).length > 0"
@@ -879,6 +933,101 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
 .chat-bubble--thinking {
   opacity: 0.7;
   font-style: italic;
+}
+
+.chat-bubble--empty {
+  min-width: 180px;
+  min-height: 36px;
+}
+
+.chat-pending-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--action-primary) 8%, var(--surface-card));
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.chat-pending-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--action-primary);
+  animation: chat-pending-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes chat-pending-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.chat-turn-activity {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--action-primary) 18%, var(--border-default));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--action-primary) 5%, var(--surface-card));
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.chat-turn-activity-summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 6px 8px;
+  user-select: none;
+}
+
+.chat-turn-activity-summary::-webkit-details-marker {
+  display: none;
+}
+
+.chat-turn-activity-summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 5px;
+  transition: transform 0.15s ease;
+}
+
+.chat-turn-activity[open] .chat-turn-activity-summary::before {
+  transform: rotate(90deg);
+}
+
+.chat-turn-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0 8px 8px;
+}
+
+.chat-turn-activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.chat-turn-activity-status {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+.chat-turn-activity-text {
+  min-width: 0;
+  color: var(--text-primary);
+  word-break: break-word;
 }
 
 .chat-assistant-stack {
