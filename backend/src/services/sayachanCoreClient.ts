@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const DEFAULT_CORE_URL = 'http://127.0.0.1:8765';
-const DEFAULT_TIMEOUT_MS = 15000;
+const DEFAULT_TIMEOUT_MS = 60000;
 
 const coreMessageSchema = z.object({
   role: z.enum(['assistant']),
@@ -48,6 +48,7 @@ export type SayachanCoreTurnRequest = {
 };
 
 export type SayachanCoreTurnResponse = z.infer<typeof coreTurnResponseSchema>;
+type CoreFetchInit = NonNullable<Parameters<typeof fetch>[1]>;
 
 function configuredCoreUrl(): string {
   return (process.env.SAYACHAN_CORE_URL || DEFAULT_CORE_URL).replace(/\/+$/, '');
@@ -61,7 +62,7 @@ function configuredTimeoutMs(): number {
   return Math.floor(value);
 }
 
-async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+async function fetchWithTimeout(url: string, init: CoreFetchInit, timeoutMs: number): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 

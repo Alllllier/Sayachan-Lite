@@ -100,11 +100,13 @@ function recordId(value: unknown): string | undefined {
     return undefined;
   }
   const rawId = (value as { _id?: unknown })._id;
-  return typeof rawId === 'string'
-    ? rawId
-    : rawId && typeof rawId === 'object' && 'toString' in rawId
-      ? rawId.toString()
-      : undefined;
+  if (typeof rawId === 'string') {
+    return rawId;
+  }
+  if (rawId instanceof mongoose.Types.ObjectId) {
+    return rawId.toHexString();
+  }
+  return undefined;
 }
 
 function coreRequest(
