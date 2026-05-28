@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import authService from '../dist/services/authService.js';
 import aiService from '../dist/services/aiService.js';
 import sayachanService from '../dist/services/sayachanService.js';
+import sayachanHostToolService from '../dist/services/sayachanHostToolService.js';
 import { allowedOrigins, createApp } from '../dist/server.js';
 
 function listen(app) {
@@ -443,6 +444,162 @@ test('authenticated /sayachan rejects legacy v3-shaped body', async () => {
 
     assert.equal(response.status, 400);
     assert.equal(body.error, 'Invalid request body');
+  });
+});
+
+test('authenticated /sayachan/tools/execute reaches host tool gateway', async () => {
+  const app = createApp({
+    corsOrigins: ['http://localhost:5173'],
+    trustProxy: false
+  });
+  let loadedToken;
+  let capturedToolRequest;
+  let capturedUserId;
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'loadUserForSession',
+      value: async (token) => {
+        loadedToken = token;
+        return { _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' };
+      }
+    },
+    {
+      target: sayachanHostToolService,
+      key: 'executeHostTool',
+      value: async (request, options) => {
+        capturedToolRequest = request;
+        capturedUserId = options.userId.toHexString();
+        return {
+          requestId: request.requestId,
+          status: 'completed',
+          capability: request.capability,
+          result: {
+            packetType: 'saya_desk_host_tool_result',
+            version: 1,
+            project: {
+              id: request.arguments.focus.id,
+              name: 'Route project'
+            },
+            tasks: [{ id: 'task-1', title: 'Route task', status: 'active' }]
+          },
+          resultSummary: 'Read 1 task(s) for project "Route project".',
+          sourceReceipts: [{ type: 'project', title: 'Route project' }],
+          truncated: false,
+          sourceTrace: ['sayachan_host_tool_service', 'list_project_tasks']
+        };
+      }
+    }
+  ], async () => {
+    const response = await requestKoaApp(app, '/sayachan/tools/execute', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sayachan-host-tool-session',
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        requestId: 'tool-request-1',
+        turnId: 'turn-1',
+        hostId: 'saya-desk',
+        hostUserId: '000000000000000000000001',
+        capability: 'saya_desk.list_project_tasks',
+        arguments: {
+          focus: {
+            type: 'project',
+            id: '000000000000000000000201'
+          },
+          query: '项目任务'
+        },
+        risk: 'read_only',
+        requiresConfirmation: false,
+        sourceTrace: ['resolver.tool_intent']
+      })
+    });
+    const body = await response.json();
+
+    assert.equal(loadedToken, 'sayachan-host-tool-session');
+    assert.equal(capturedUserId, '000000000000000000000001');
+    assert.deepEqual(capturedToolRequest, {
+      requestId: 'tool-request-1',
+      turnId: 'turn-1',
+      hostId: 'saya-desk',
+      hostUserId: '000000000000000000000001',
+      capability: 'saya_desk.list_project_tasks',
+      arguments: {
+        focus: {
+          type: 'project',
+          id: '000000000000000000000201'
+        },
+        query: '项目任务'
+      },
+      risk: 'read_only',
+      requiresConfirmation: false,
+      sourceTrace: ['resolver.tool_intent']
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(body, {
+      requestId: 'tool-request-1',
+      status: 'completed',
+      capability: 'saya_desk.list_project_tasks',
+      result: {
+        packetType: 'saya_desk_host_tool_result',
+        version: 1,
+        project: {
+          id: '000000000000000000000201',
+          name: 'Route project'
+        },
+        tasks: [{ id: 'task-1', title: 'Route task', status: 'active' }]
+      },
+      resultSummary: 'Read 1 task(s) for project "Route project".',
+      sourceReceipts: [{ type: 'project', title: 'Route project' }],
+      truncated: false,
+      sourceTrace: ['sayachan_host_tool_service', 'list_project_tasks']
+    });
+  });
+});
+
+test('authenticated /sayachan/tools/execute rejects mismatched host user', async () => {
+  const app = createApp({
+    corsOrigins: ['http://localhost:5173'],
+    trustProxy: false
+  });
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'loadUserForSession',
+      value: async () => ({ _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' })
+    }
+  ], async () => {
+    const response = await requestKoaApp(app, '/sayachan/tools/execute', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sayachan-host-tool-mismatch-session',
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        requestId: 'tool-request-mismatch',
+        turnId: 'turn-1',
+        hostId: 'saya-desk',
+        hostUserId: '000000000000000000000099',
+        capability: 'saya_desk.list_project_tasks',
+        arguments: {
+          focus: {
+            type: 'project',
+            id: '000000000000000000000201'
+          }
+        },
+        risk: 'read_only',
+        requiresConfirmation: false
+      })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 403);
+    assert.deepEqual(body, {
+      error: 'Host tool user mismatch'
+    });
   });
 });
 

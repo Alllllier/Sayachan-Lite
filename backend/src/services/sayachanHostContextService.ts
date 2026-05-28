@@ -40,12 +40,12 @@ export type SayaDeskAuthorizedFocusSnapshot = {
 export type SayaDeskHostCapabilityManifest = {
   packetType: 'saya_desk_host_capability_manifest';
   version: 1;
-  status: 'declared_only';
+  status: 'declared_only' | 'executable';
   tools: Array<{
     name: string;
     risk: 'read_only';
     requiresConfirmation: false;
-    execution: 'future_tool_lane';
+    execution: 'future_tool_lane' | 'host_gateway_route';
   }>;
 };
 
@@ -190,31 +190,31 @@ export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityMan
   return {
     packetType: 'saya_desk_host_capability_manifest',
     version: 1,
-    status: 'declared_only',
+    status: 'executable',
     tools: [
       {
         name: 'saya_desk.search_product_context',
         risk: 'read_only',
         requiresConfirmation: false,
-        execution: 'future_tool_lane'
+        execution: 'host_gateway_route'
       },
       {
         name: 'saya_desk.get_project_context',
         risk: 'read_only',
         requiresConfirmation: false,
-        execution: 'future_tool_lane'
+        execution: 'host_gateway_route'
       },
       {
         name: 'saya_desk.list_project_tasks',
         risk: 'read_only',
         requiresConfirmation: false,
-        execution: 'future_tool_lane'
+        execution: 'host_gateway_route'
       },
       {
         name: 'saya_desk.get_note_content',
         risk: 'read_only',
         requiresConfirmation: false,
-        execution: 'future_tool_lane'
+        execution: 'host_gateway_route'
       }
     ]
   };

@@ -9,6 +9,12 @@ export const sayaDeskSayachanSurfaceValues = [
 ] as const
 
 export const sayaDeskSayachanFocusTypeValues = ['note', 'project', 'task'] as const
+export const sayaDeskHostToolCapabilityValues = [
+  'saya_desk.search_product_context',
+  'saya_desk.get_project_context',
+  'saya_desk.list_project_tasks',
+  'saya_desk.get_note_content'
+] as const
 
 export const sayaDeskSayachanFocusSchema = z.object({
   type: z.enum(sayaDeskSayachanFocusTypeValues),
@@ -56,6 +62,43 @@ export const sayaDeskSayachanTurnActivitySchema = z.object({
   items: z.array(sayaDeskSayachanTurnActivityItemSchema)
 }).strict()
 
+export const sayaDeskHostToolRiskValues = ['read_only', 'write', 'external_effect', 'unknown'] as const
+export const sayaDeskHostToolExecutionStatusValues = ['completed', 'denied', 'failed', 'unavailable'] as const
+
+export const sayaDeskHostToolSourceReceiptSchema = z.object({
+  type: z.enum(sayaDeskSayachanFocusTypeValues),
+  title: z.string().min(1)
+}).strict()
+
+export const sayaDeskHostToolExecutionErrorSchema = z.object({
+  code: z.string().min(1),
+  message: z.string().min(1).optional()
+}).strict()
+
+export const sayaDeskHostToolExecutionRequestSchema = z.object({
+  requestId: z.string().min(1),
+  turnId: z.string().min(1),
+  hostId: z.literal('saya-desk'),
+  hostUserId: z.string().min(1),
+  capability: z.enum(sayaDeskHostToolCapabilityValues),
+  arguments: z.record(z.string(), z.unknown()).default({}),
+  risk: z.enum(sayaDeskHostToolRiskValues).default('unknown'),
+  requiresConfirmation: z.boolean().default(true),
+  sourceTrace: z.array(z.string()).optional()
+}).strict()
+
+export const sayaDeskHostToolExecutionResultSchema = z.object({
+  requestId: z.string().min(1),
+  status: z.enum(sayaDeskHostToolExecutionStatusValues),
+  capability: z.enum(sayaDeskHostToolCapabilityValues),
+  result: z.unknown().optional(),
+  resultSummary: z.string().min(1).optional(),
+  sourceReceipts: z.array(sayaDeskHostToolSourceReceiptSchema).optional(),
+  truncated: z.boolean().optional(),
+  error: sayaDeskHostToolExecutionErrorSchema.optional(),
+  sourceTrace: z.array(z.string()).optional()
+}).strict()
+
 export const sayaDeskSayachanRequestSchema = z.object({
   text: z.string().trim().min(1),
   surface: z.enum(sayaDeskSayachanSurfaceValues).default('workspace-chat'),
@@ -78,8 +121,11 @@ export const sayaDeskSayachanResponseSchema = z.object({
 
 export type SayaDeskSayachanSurface = (typeof sayaDeskSayachanSurfaceValues)[number]
 export type SayaDeskSayachanFocusType = (typeof sayaDeskSayachanFocusTypeValues)[number]
+export type SayaDeskHostToolCapability = (typeof sayaDeskHostToolCapabilityValues)[number]
 export type SayaDeskSayachanFocusDto = z.infer<typeof sayaDeskSayachanFocusSchema>
 export type SayaDeskSayachanTurnActivityItemDto = z.infer<typeof sayaDeskSayachanTurnActivityItemSchema>
 export type SayaDeskSayachanTurnActivityDto = z.infer<typeof sayaDeskSayachanTurnActivitySchema>
+export type SayaDeskHostToolExecutionRequestDto = z.infer<typeof sayaDeskHostToolExecutionRequestSchema>
+export type SayaDeskHostToolExecutionResultDto = z.infer<typeof sayaDeskHostToolExecutionResultSchema>
 export type SayaDeskSayachanRequestDto = z.infer<typeof sayaDeskSayachanRequestSchema>
 export type SayaDeskSayachanResponseDto = z.infer<typeof sayaDeskSayachanResponseSchema>
