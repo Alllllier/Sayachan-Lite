@@ -1,24 +1,22 @@
 import {
-  type AiChatRequestDto,
-  type ChatMessageDto,
-  type ChatResponseDto,
-  chatResponseSchema
+  type SayaDeskSayachanFocusDto,
+  type SayaDeskSayachanResponseDto,
+  type SayaDeskSayachanRequestDto,
+  sayaDeskSayachanResponseSchema
 } from '@sayachan/contracts';
 import mongoose from 'mongoose';
 import { BadRequestError, HttpError } from '../http/httpErrors.js';
 import { type ObjectId } from '../domain/objectIds.js';
 import {
-  buildProductContextSnapshot,
-  type ProductContextSnapshot
-} from './aiProductContextService.js';
-import {
-  buildMemoryContextSnapshot,
-  type MemoryContextSnapshot
-} from './aiMemoryContextService.js';
-import {
   appendAssistantMessage,
-  preparePersistentChatTurn
+  preparePersistentTextTurn
 } from './chatPersistenceService.js';
+import {
+  buildSayaDeskFocusSnapshot,
+  buildSayaDeskHostCapabilityManifest,
+  type SayaDeskAuthorizedFocusSnapshot,
+  type SayaDeskHostCapabilityManifest
+} from './sayachanHostContextService.js';
 import {
   postSayachanCoreTurn,
   type SayachanCoreConversationMessage,
@@ -27,20 +25,21 @@ import {
 } from './sayachanCoreClient.js';
 
 type SayachanCoreTurnRunner = typeof postSayachanCoreTurn;
-type ProductContextBuilder = (userId: ObjectId | null | undefined) => Promise<ProductContextSnapshot | null>;
-type MemoryContextBuilder = (options: SayachanExecutionOptions) => Promise<MemoryContextSnapshot | null>;
+type FocusSnapshotBuilder = (
+  focus: SayaDeskSayachanFocusDto | null | undefined,
+  userId: ObjectId | null | undefined
+) => Promise<SayaDeskAuthorizedFocusSnapshot | null>;
+type HostCapabilityManifestBuilder = () => SayaDeskHostCapabilityManifest;
 type ChatPersistenceAvailabilityCheck = () => boolean;
 type SayachanExecutionOptions = {
   userId?: ObjectId | null;
   userRole?: string | null;
 };
-type PreparedPersistentTurn = Awaited<ReturnType<typeof preparePersistentChatTurn>>;
+type PreparedPersistentTurn = Awaited<ReturnType<typeof preparePersistentTextTurn>>;
 
 let runCoreTurn: SayachanCoreTurnRunner = postSayachanCoreTurn;
-let productContextBuilder: ProductContextBuilder = buildProductContextSnapshot;
-let memoryContextBuilder: MemoryContextBuilder = (options) => buildMemoryContextSnapshot(options.userId, {
-  userRole: options.userRole
-});
+let focusSnapshotBuilder: FocusSnapshotBuilder = buildSayaDeskFocusSnapshot;
+let hostCapabilityManifestBuilder: HostCapabilityManifestBuilder = buildSayaDeskHostCapabilityManifest;
 let chatPersistenceAvailabilityCheck: ChatPersistenceAvailabilityCheck = defaultChatPersistenceAvailabilityCheck;
 
 function errorMessage(error: unknown): string {
@@ -55,70 +54,45 @@ function defaultChatPersistenceAvailabilityCheck(): boolean {
   return Number(mongoose.connection.readyState) === 1;
 }
 
-function isContextRecord(context: unknown): context is Record<string, unknown> {
-  return Boolean(context) && typeof context === 'object' && !Array.isArray(context);
-}
-
-function sanitizeCallerContext(context: AiChatRequestDto['context']): Record<string, unknown> {
-  if (!isContextRecord(context) || !isContextRecord(context.chatFocus)) {
-    return {};
-  }
-
-  return { chatFocus: context.chatFocus };
-}
-
 async function buildAuthorizedContext(
-  context: AiChatRequestDto['context'],
+  request: SayaDeskSayachanRequestDto,
   options: SayachanExecutionOptions
 ): Promise<Record<string, unknown> | undefined> {
-  const [productContext, memoryContext] = await Promise.all([
-    productContextBuilder(options.userId),
-    memoryContextBuilder(options)
-  ]);
+  const focusSnapshot = await focusSnapshotBuilder(request.focus, options.userId);
   const authorizedContext: Record<string, unknown> = {
-    ...sanitizeCallerContext(context)
+    host_capabilities: hostCapabilityManifestBuilder()
   };
 
-  if (productContext) {
-    authorizedContext.productContext = productContext;
-  }
-  if (memoryContext) {
-    authorizedContext.memoryContext = memoryContext;
+  if (focusSnapshot) {
+    authorizedContext.focus = focusSnapshot;
   }
 
   return Object.keys(authorizedContext).length > 0 ? authorizedContext : undefined;
 }
 
-function latestUserText(request: AiChatRequestDto, preparedTurn: PreparedPersistentTurn): string {
+function latestUserText(request: SayaDeskSayachanRequestDto, preparedTurn: PreparedPersistentTurn): string {
   if (preparedTurn?.latestUserText) {
     return preparedTurn.latestUserText;
   }
 
-  if (typeof request.runtimeControls?.lastUserMessage === 'string' && request.runtimeControls.lastUserMessage.trim()) {
-    return request.runtimeControls.lastUserMessage.trim();
-  }
-
-  const latestUser = Array.isArray(request.messages)
-    ? [...request.messages].reverse().find((message) => message?.role === 'user')
-    : null;
-  return typeof latestUser?.content === 'string' ? latestUser.content.trim() : '';
+  return request.text.trim();
 }
 
 function messagesForCore(
-  request: AiChatRequestDto,
+  request: SayaDeskSayachanRequestDto,
   preparedTurn: PreparedPersistentTurn
 ): SayachanCoreConversationMessage[] {
-  const messages = preparedTurn?.messages || request.messages || [];
-  return messages
-    .filter((message): message is ChatMessageDto & { role: 'user' | 'assistant'; content: string } => (
+  if (!preparedTurn) {
+    return [{ role: 'user', content: request.text.trim() }];
+  }
+
+  return preparedTurn.messages
+    .filter((message): message is { role: 'user' | 'assistant'; content: string } => (
       (message.role === 'user' || message.role === 'assistant')
         && typeof message.content === 'string'
         && message.content.trim().length > 0
     ))
-    .map((message) => ({
-      role: message.role,
-      content: message.content
-    }));
+    .map((message) => ({ role: message.role, content: message.content }));
 }
 
 function recordId(value: unknown): string | undefined {
@@ -134,7 +108,7 @@ function recordId(value: unknown): string | undefined {
 }
 
 function coreRequest(
-  request: AiChatRequestDto,
+  request: SayaDeskSayachanRequestDto,
   preparedTurn: PreparedPersistentTurn,
   authorizedContext: Record<string, unknown> | undefined,
   options: SayachanExecutionOptions
@@ -150,17 +124,17 @@ function coreRequest(
   return {
     host: {
       host_id: 'saya-desk',
-      surface: 'workspace-chat',
+      surface: request.surface,
       ...(options.userId ? { host_user_id: options.userId.toHexString() } : {}),
       ...(authorizedContext ? { authorized_context: authorizedContext } : {})
     },
     input: { text },
     conversation: {
-      ...(preparedTurn ? { conversation_id: recordId(preparedTurn.conversation) } : {}),
+      conversation_id: request.conversationId || (preparedTurn ? recordId(preparedTurn.conversation) : undefined),
       recent_messages: messagesForCore(request, preparedTurn)
     },
     options: {
-      debug: request.runtimeControls?.debugTrace === true && canReturnDebugTrace(options),
+      debug: request.options?.debug === true && canReturnDebugTrace(options),
       stream: false
     }
   };
@@ -182,16 +156,23 @@ async function persistAssistantReply(
   }
 }
 
-export async function chat(request: AiChatRequestDto, options: SayachanExecutionOptions = {}): Promise<ChatResponseDto> {
+export async function chat(request: SayaDeskSayachanRequestDto, options: SayachanExecutionOptions = {}): Promise<SayaDeskSayachanResponseDto> {
   const preparedTurn = options.userId && chatPersistenceAvailabilityCheck()
-    ? await preparePersistentChatTurn(request, { userId: options.userId })
+    ? await preparePersistentTextTurn({ text: request.text }, { userId: options.userId })
     : null;
-  const authorizedContext = await buildAuthorizedContext(request.context, options);
+  const authorizedContext = await buildAuthorizedContext(request, options);
   const turnRequest = coreRequest(request, preparedTurn, authorizedContext, options);
 
   try {
     const coreResponse = await runCoreTurn(turnRequest);
-    const parsed = chatResponseSchema.parse({ reply: coreResponse.response.content });
+    const parsed = sayaDeskSayachanResponseSchema.parse({
+      reply: coreResponse.response.content,
+      turnId: coreResponse.turn_id,
+      trace: {
+        traceId: coreResponse.trace.trace_id,
+        debugAvailable: coreResponse.trace.debug_available
+      }
+    });
     await persistAssistantReply(preparedTurn, coreResponse, options);
     return parsed;
   } catch (error) {
@@ -214,18 +195,18 @@ export const __test__ = {
       runCoreTurn = previous;
     };
   },
-  setProductContextBuilderForTest(builder: ProductContextBuilder) {
-    const previous = productContextBuilder;
-    productContextBuilder = builder;
+  setFocusSnapshotBuilderForTest(builder: FocusSnapshotBuilder) {
+    const previous = focusSnapshotBuilder;
+    focusSnapshotBuilder = builder;
     return () => {
-      productContextBuilder = previous;
+      focusSnapshotBuilder = previous;
     };
   },
-  setMemoryContextBuilderForTest(builder: MemoryContextBuilder) {
-    const previous = memoryContextBuilder;
-    memoryContextBuilder = builder;
+  setHostCapabilityManifestBuilderForTest(builder: HostCapabilityManifestBuilder) {
+    const previous = hostCapabilityManifestBuilder;
+    hostCapabilityManifestBuilder = builder;
     return () => {
-      memoryContextBuilder = previous;
+      hostCapabilityManifestBuilder = previous;
     };
   },
   setChatPersistenceAvailabilityCheckForTest(check: ChatPersistenceAvailabilityCheck) {

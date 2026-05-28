@@ -98,6 +98,37 @@ function coreMessagesFromDtos(messages: ChatMessageDto[]): ChatMessageDto[] {
   }));
 }
 
+async function preparePersistentTextContent(
+  content: string,
+  focusSnapshot: ReturnType<typeof focusSnapshotFromContext> | undefined,
+  { userId }: ServiceOptions
+): Promise<PreparedChatTurn | null> {
+  const normalizedContent = content.trim();
+  if (!normalizedContent) {
+    return null;
+  }
+
+  const conversation = await getOrCreateCurrentConversation(userId);
+  const conversationId = conversationObjectId(conversation);
+  const userMessage = await ChatMessage.create({
+    conversationId,
+    userId,
+    role: 'user',
+    content: normalizedContent,
+    focusSnapshot
+  });
+  await touchConversation(conversationId, userId);
+  const messages = await listConversationMessages(conversationId, userId);
+
+  return {
+    conversation,
+    userMessage,
+    latestUserText: normalizedContent,
+    messages: coreMessagesFromDtos(messages),
+    providerState: normalizeProviderState(conversation.providerState)
+  };
+}
+
 async function findCurrentConversation(userId: ObjectId): Promise<ChatConversationRecord | null> {
   return ChatConversation.findOne({
     userId,
@@ -200,30 +231,18 @@ export async function preparePersistentChatTurn(
   request: AiChatRequestDto,
   { userId }: ServiceOptions
 ): Promise<PreparedChatTurn | null> {
-  const content = latestUserTextFromRequest(request);
-  if (!content) {
-    return null;
-  }
+  return preparePersistentTextContent(
+    latestUserTextFromRequest(request),
+    focusSnapshotFromContext(request.context),
+    { userId }
+  );
+}
 
-  const conversation = await getOrCreateCurrentConversation(userId);
-  const conversationId = conversationObjectId(conversation);
-  const userMessage = await ChatMessage.create({
-    conversationId,
-    userId,
-    role: 'user',
-    content,
-    focusSnapshot: focusSnapshotFromContext(request.context)
-  });
-  await touchConversation(conversationId, userId);
-  const messages = await listConversationMessages(conversationId, userId);
-
-  return {
-    conversation,
-    userMessage,
-    latestUserText: content,
-    messages: coreMessagesFromDtos(messages),
-    providerState: normalizeProviderState(conversation.providerState)
-  };
+export async function preparePersistentTextTurn(
+  { text }: { text: string },
+  options: ServiceOptions
+): Promise<PreparedChatTurn | null> {
+  return preparePersistentTextContent(text, undefined, options);
 }
 
 export async function appendAssistantMessage(
@@ -261,6 +280,7 @@ export default {
   appendAssistantMessage,
   archiveCurrentChatSession,
   loadCurrentChatSession,
+  preparePersistentTextTurn,
   preparePersistentChatTurn,
   __test__
 };

@@ -1,6 +1,9 @@
 import Router from '@koa/router';
 
-import { aiChatRequestSchema, type AiChatRequestDto } from '@sayachan/contracts';
+import {
+  sayaDeskSayachanRequestSchema,
+  type SayaDeskSayachanRequestDto
+} from '@sayachan/contracts';
 import type {
   AuthenticatedRouteState,
   RouteHandler
@@ -16,13 +19,13 @@ type SayachanHandler = RouteHandler<SayachanState>;
 const router = new Router<SayachanState>();
 
 const sayachanHandler: SayachanHandler = async (ctx) => {
-  ctx.body = await sayachanService.chat(validatedBody<AiChatRequestDto>(ctx), {
+  ctx.body = await sayachanService.chat(validatedBody<SayaDeskSayachanRequestDto>(ctx), {
     userId: resolveCurrentUserId(ctx),
     userRole: ctx.state.user?.role
   });
 };
 
-router.post('/sayachan', validateBody<AiChatRequestDto, SayachanState>(aiChatRequestSchema), sayachanHandler);
+router.post('/sayachan', validateBody<SayaDeskSayachanRequestDto, SayachanState>(sayaDeskSayachanRequestSchema), sayachanHandler);
 
 const exportedRouter = Object.assign(router, {
   __test__: sayachanService.__test__

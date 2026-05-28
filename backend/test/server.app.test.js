@@ -268,8 +268,32 @@ test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply 
   });
   let loadedToken;
   let capturedCoreRequest;
-  let productContextUserId;
-  const productContext = productContextFixture();
+  let focusUserId;
+  let requestedFocus;
+  const focusSnapshot = {
+    packetType: 'saya_desk_focus_snapshot',
+    version: 1,
+    source: 'saya_desk_authorized_focus',
+    type: 'project',
+    id: '000000000000000000000201',
+    title: 'Route project',
+    summary: 'Route smoke focus snapshot',
+    status: 'in_progress',
+    lifecycle: 'active',
+    currentFocusTaskTitle: 'Route focus task',
+    updatedAt: '2026-05-20T00:00:00.000Z'
+  };
+  const hostCapabilities = {
+    packetType: 'saya_desk_host_capability_manifest',
+    version: 1,
+    status: 'declared_only',
+    tools: [{
+      name: 'saya_desk.search_product_context',
+      risk: 'read_only',
+      requiresConfirmation: false,
+      execution: 'future_tool_lane'
+    }]
+  };
 
   await withPatchedMethods([
     {
@@ -281,18 +305,13 @@ test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply 
       }
     }
   ], async () => {
-    const restoreProductContextBuilder = sayachanService.__test__.setProductContextBuilderForTest(async (userId) => {
-      productContextUserId = userId?.toHexString();
-      return productContext;
+    const restoreFocusSnapshotBuilder = sayachanService.__test__.setFocusSnapshotBuilderForTest(async (focus, userId) => {
+      requestedFocus = focus;
+      focusUserId = userId?.toHexString();
+      return focusSnapshot;
     });
-    const restoreMemoryContextBuilder = sayachanService.__test__.setMemoryContextBuilderForTest(async () => ({
-      packetType: 'memory_context_snapshot',
-      version: 1,
-      status: 'available',
-      generatedAt: '2026-05-21T00:00:00.000Z',
-      source: 'memory_ledger_v1',
-      items: [{ type: 'preference', content: 'Use plain language.', source: 'manual' }]
-    }));
+    const restoreHostCapabilityManifestBuilder = sayachanService.__test__.setHostCapabilityManifestBuilderForTest(() => hostCapabilities);
+    const restoreChatPersistenceAvailabilityCheck = sayachanService.__test__.setChatPersistenceAvailabilityCheckForTest(() => false);
     const restoreCoreTurnRunner = sayachanService.__test__.setCoreTurnRunnerForTest(async (request) => {
       capturedCoreRequest = request;
       return {
@@ -317,44 +336,87 @@ test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply 
           'content-type': 'application/json'
         },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: 'hello from v4 route' }],
-          context: {
-            chatFocus: {
-              type: 'project',
-              id: 'project-1',
-              title: 'Route project',
-              source: 'user_focus_button'
-            }
+          text: 'hello from v4 route',
+          surface: 'project-detail',
+          focus: {
+            type: 'project',
+            id: '000000000000000000000201'
           },
-          runtimeControls: {
-            lastUserMessage: 'hello from v4 route',
-            debugTrace: true
+          options: {
+            debug: true
           }
         })
       });
       const body = await response.json();
 
       assert.equal(loadedToken, 'sayachan-v4-session');
-      assert.equal(productContextUserId, '000000000000000000000001');
+      assert.equal(focusUserId, '000000000000000000000001');
+      assert.deepEqual(requestedFocus, {
+        type: 'project',
+        id: '000000000000000000000201'
+      });
       assert.equal(response.status, 200);
-      assert.deepEqual(body, { reply: 'sayachan v4 bridge ok' });
+      assert.deepEqual(body, {
+        reply: 'sayachan v4 bridge ok',
+        turnId: 'turn-route-smoke',
+        trace: {
+          traceId: 'turn-route-smoke',
+          debugAvailable: true
+        }
+      });
       assert.equal(capturedCoreRequest.host.host_id, 'saya-desk');
-      assert.equal(capturedCoreRequest.host.surface, 'workspace-chat');
+      assert.equal(capturedCoreRequest.host.surface, 'project-detail');
       assert.equal(capturedCoreRequest.host.host_user_id, '000000000000000000000001');
       assert.equal(capturedCoreRequest.input.text, 'hello from v4 route');
       assert.deepEqual(capturedCoreRequest.conversation.recent_messages, [
         { role: 'user', content: 'hello from v4 route' }
       ]);
-      assert.deepEqual(capturedCoreRequest.host.authorized_context.productContext, productContext);
-      assert.equal(capturedCoreRequest.host.authorized_context.memoryContext.packetType, 'memory_context_snapshot');
-      assert.equal(capturedCoreRequest.host.authorized_context.chatFocus.title, 'Route project');
+      assert.deepEqual(capturedCoreRequest.host.authorized_context.focus, focusSnapshot);
+      assert.deepEqual(capturedCoreRequest.host.authorized_context.host_capabilities, hostCapabilities);
+      assert.equal(Object.hasOwn(capturedCoreRequest.host.authorized_context, 'productContext'), false);
+      assert.equal(Object.hasOwn(capturedCoreRequest.host.authorized_context, 'memoryContext'), false);
+      assert.equal(Object.hasOwn(capturedCoreRequest.host.authorized_context, 'chatFocus'), false);
       assert.equal(capturedCoreRequest.options.debug, true);
       assert.equal(capturedCoreRequest.options.stream, false);
     } finally {
       restoreCoreTurnRunner();
-      restoreMemoryContextBuilder();
-      restoreProductContextBuilder();
+      restoreChatPersistenceAvailabilityCheck();
+      restoreHostCapabilityManifestBuilder();
+      restoreFocusSnapshotBuilder();
     }
+  });
+});
+
+test('authenticated /sayachan rejects legacy v3-shaped body', async () => {
+  const app = createApp({
+    corsOrigins: ['http://localhost:5173'],
+    trustProxy: false
+  });
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'loadUserForSession',
+      value: async () => ({ _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' })
+    }
+  ], async () => {
+    const response = await requestKoaApp(app, '/sayachan', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sayachan-v4-legacy-body-session',
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: 'legacy route body' }],
+        runtimeControls: {
+          lastUserMessage: 'legacy route body'
+        }
+      })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(body.error, 'Invalid request body');
   });
 });
 
@@ -371,8 +433,14 @@ test('authenticated /sayachan returns explicit 502 when Sayachan Core bridge fai
       value: async () => ({ _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' })
     }
   ], async () => {
-    const restoreProductContextBuilder = sayachanService.__test__.setProductContextBuilderForTest(async () => null);
-    const restoreMemoryContextBuilder = sayachanService.__test__.setMemoryContextBuilderForTest(async () => null);
+    const restoreFocusSnapshotBuilder = sayachanService.__test__.setFocusSnapshotBuilderForTest(async () => null);
+    const restoreHostCapabilityManifestBuilder = sayachanService.__test__.setHostCapabilityManifestBuilderForTest(() => ({
+      packetType: 'saya_desk_host_capability_manifest',
+      version: 1,
+      status: 'declared_only',
+      tools: []
+    }));
+    const restoreChatPersistenceAvailabilityCheck = sayachanService.__test__.setChatPersistenceAvailabilityCheckForTest(() => false);
     const restoreCoreTurnRunner = sayachanService.__test__.setCoreTurnRunnerForTest(async () => {
       throw new Error('controlled core failure');
     });
@@ -385,10 +453,7 @@ test('authenticated /sayachan returns explicit 502 when Sayachan Core bridge fai
           'content-type': 'application/json'
         },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: 'hello failure route' }],
-          runtimeControls: {
-            lastUserMessage: 'hello failure route'
-          }
+          text: 'hello failure route'
         })
       });
       const body = await response.json();
@@ -397,8 +462,9 @@ test('authenticated /sayachan returns explicit 502 when Sayachan Core bridge fai
       assert.deepEqual(body, { error: 'Sayachan Core request failed' });
     } finally {
       restoreCoreTurnRunner();
-      restoreMemoryContextBuilder();
-      restoreProductContextBuilder();
+      restoreChatPersistenceAvailabilityCheck();
+      restoreHostCapabilityManifestBuilder();
+      restoreFocusSnapshotBuilder();
     }
   });
 });
