@@ -674,6 +674,20 @@ test('authenticated /sayachan/stream proxies Sayachan Core v4 SSE events', async
       yield {
         packetType: 'sayachan_turn_stream_event',
         version: 1,
+        type: 'assistant_delta',
+        delta: 'streamed ',
+        text: 'streamed '
+      };
+      yield {
+        packetType: 'sayachan_turn_stream_event',
+        version: 1,
+        type: 'assistant_delta',
+        delta: 'v4 reply',
+        text: 'streamed v4 reply'
+      };
+      yield {
+        packetType: 'sayachan_turn_stream_event',
+        version: 1,
         type: 'completed',
         turn_id: 'turn-stream',
         response: {
@@ -734,12 +748,14 @@ test('authenticated /sayachan/stream proxies Sayachan Core v4 SSE events', async
       assert.equal(loadedToken, 'sayachan-v4-stream-session');
       assert.equal(response.status, 200);
       assert.equal(response.headers.get('content-type'), 'text/event-stream; charset=utf-8');
-      assert.deepEqual(events.map((event) => event.event), ['assistant_progress', 'tool_status', 'completed']);
-      assert.deepEqual(events.map((event) => event.data.type), ['assistant_progress', 'tool_status', 'completed']);
+      assert.deepEqual(events.map((event) => event.event), ['assistant_progress', 'tool_status', 'assistant_delta', 'assistant_delta', 'completed']);
+      assert.deepEqual(events.map((event) => event.data.type), ['assistant_progress', 'tool_status', 'assistant_delta', 'assistant_delta', 'completed']);
       assert.equal(events[0].data.item.text, '我先回看一下相关笔记。');
       assert.equal(events[1].data.item.text, '读取笔记：Streaming note');
-      assert.equal(events[2].data.reply, 'streamed v4 reply');
-      assert.equal(events[2].data.turnActivity.defaultCollapsed, true);
+      assert.equal(events[2].data.delta, 'streamed ');
+      assert.equal(events[3].data.text, 'streamed v4 reply');
+      assert.equal(events[4].data.reply, 'streamed v4 reply');
+      assert.equal(events[4].data.turnActivity.defaultCollapsed, true);
       assert.equal(capturedCoreRequest.options.stream, true);
       assert.equal(capturedCoreRequest.host.authorized_context.host_tool_channel.authorization.token, 'sayachan-v4-stream-session');
     } finally {

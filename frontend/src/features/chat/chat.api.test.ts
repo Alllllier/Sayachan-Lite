@@ -218,10 +218,13 @@ describe('chat api boundary', () => {
 
   it('streams v4 Sayachan activity events before completion', async () => {
     const activityTexts: string[] = []
+    const deltas: string[] = []
     let completedActivityDefaultCollapsed: boolean | undefined
     mockedFetch().mockResolvedValue(streamResponse([
       'event: assistant_progress\ndata: {"packetType":"saya_desk_sayachan_stream_event","version":1,"type":"assistant_progress","item":{"itemId":"turn-1:activity:1","kind":"assistant_progress","status":"planned","text":"我先回看一下相关笔记。","display":"collapse_item","canonicalMessage":false,"capability":"saya_desk.get_note_content","sourceTrace":["resolver.activity"]}}\n\n',
       'event: tool_status\ndata: {"packetType":"saya_desk_sayachan_stream_event","version":1,"type":"tool_status","item":{"itemId":"turn-1:activity:2","kind":"tool_status","status":"completed","text":"读取笔记：Tool notes","display":"collapse_item","canonicalMessage":false,"capability":"saya_desk.get_note_content","sourceTrace":["resolver.activity","runtime.execute_host_tools"]}}\n\n',
+      'event: assistant_delta\ndata: {"packetType":"saya_desk_sayachan_stream_event","version":1,"type":"assistant_delta","delta":"总结","text":"总结"}\n\n',
+      'event: assistant_delta\ndata: {"packetType":"saya_desk_sayachan_stream_event","version":1,"type":"assistant_delta","delta":"好了。","text":"总结好了。"}\n\n',
       'event: completed\ndata: {"packetType":"saya_desk_sayachan_stream_event","version":1,"type":"completed","reply":"总结好了。","turnId":"turn-1","turnActivity":{"defaultCollapsed":true,"items":[{"itemId":"turn-1:activity:1","kind":"assistant_progress","status":"planned","text":"我先回看一下相关笔记。","display":"collapse_item","canonicalMessage":false,"capability":"saya_desk.get_note_content","sourceTrace":["resolver.activity"]},{"itemId":"turn-1:activity:2","kind":"tool_status","status":"completed","text":"读取笔记：Tool notes","display":"collapse_item","canonicalMessage":false,"capability":"saya_desk.get_note_content","sourceTrace":["resolver.activity","runtime.execute_host_tools"]}]}}\n\n'
     ]))
 
@@ -232,6 +235,7 @@ describe('chat api boundary', () => {
         debug: true
       },
       {
+        onDelta: delta => deltas.push(delta),
         onActivity: item => activityTexts.push(item.text),
         onCompleted: (_reply, event) => {
           completedActivityDefaultCollapsed = event.turnActivity?.defaultCollapsed
@@ -258,6 +262,7 @@ describe('chat api boundary', () => {
       body: expect.any(String)
     })
     expect(activityTexts).toEqual(['我先回看一下相关笔记。', '读取笔记：Tool notes'])
+    expect(deltas).toEqual(['总结', '好了。'])
     expect(completedActivityDefaultCollapsed).toBe(true)
     expect(JSON.parse(String(mockedFetch().mock.calls[0][1]?.body))).toEqual({
       text: '帮我看这篇笔记',

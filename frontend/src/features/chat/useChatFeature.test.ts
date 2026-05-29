@@ -411,6 +411,20 @@ describe('useChatFeature orchestration', () => {
         item: firstActivity
       })
       expect(feature.getMessageTurnActivity(1)?.defaultCollapsed).toBe(false)
+      handlers?.onDelta?.('V4 ', {
+        packetType: 'saya_desk_sayachan_stream_event',
+        version: 1,
+        type: 'assistant_delta',
+        delta: 'V4 ',
+        text: 'V4 '
+      })
+      handlers?.onDelta?.('Done', {
+        packetType: 'saya_desk_sayachan_stream_event',
+        version: 1,
+        type: 'assistant_delta',
+        delta: 'Done',
+        text: 'V4 Done'
+      })
       handlers?.onCompleted?.('V4 Done', {
         packetType: 'saya_desk_sayachan_stream_event',
         version: 1,
@@ -430,6 +444,7 @@ describe('useChatFeature orchestration', () => {
       focus: { type: 'project', id: 'project-1' },
       debug: true
     }, expect.objectContaining({
+      onDelta: expect.any(Function),
       onActivity: expect.any(Function),
       onCompleted: expect.any(Function)
     }))
@@ -437,6 +452,7 @@ describe('useChatFeature orchestration', () => {
     expect(streamChat).not.toHaveBeenCalled()
     expect(sendChat).not.toHaveBeenCalled()
     expect(chatStore.appendMessage).toHaveBeenNthCalledWith(2, { role: 'assistant', content: '' })
+    expect(chatStore.updateMessageContent).toHaveBeenCalledWith(1, 'V4 ')
     expect(chatStore.updateMessageContent).toHaveBeenCalledWith(1, 'V4 Done')
     expect(feature.getMessageTurnActivity(1)).toEqual({
       defaultCollapsed: true,

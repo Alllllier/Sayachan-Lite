@@ -64,6 +64,7 @@ type StreamChatHandlers = {
 }
 
 type StreamSayachanHandlers = {
+  onDelta?: (delta: string, event: Extract<SayaDeskSayachanStreamEventDto, { type: 'assistant_delta' }>) => void
   onActivity?: (item: SayaDeskSayachanTurnActivityItemDto, event: SayaDeskSayachanStreamEventDto) => void
   onCompleted?: (reply: string, event: Extract<SayaDeskSayachanStreamEventDto, { type: 'completed' }>) => void
 }
@@ -359,6 +360,11 @@ export async function streamSayachan(
 
       if (event.type === 'assistant_progress' || event.type === 'tool_status' || event.type === 'capability_notice') {
         handlers.onActivity?.(event.item, event)
+        continue
+      }
+
+      if (event.type === 'assistant_delta') {
+        handlers.onDelta?.(event.delta, event)
         continue
       }
 

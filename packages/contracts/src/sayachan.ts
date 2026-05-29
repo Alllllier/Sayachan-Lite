@@ -218,6 +218,13 @@ export const sayaDeskSayachanStreamEventSchema = z.discriminatedUnion('type', [
   z.object({
     packetType: z.literal('saya_desk_sayachan_stream_event').default('saya_desk_sayachan_stream_event'),
     version: z.literal(1).default(1),
+    type: z.literal('assistant_delta'),
+    delta: z.string(),
+    text: z.string()
+  }).strict(),
+  z.object({
+    packetType: z.literal('saya_desk_sayachan_stream_event').default('saya_desk_sayachan_stream_event'),
+    version: z.literal(1).default(1),
     type: z.literal('completed'),
     reply: z.string().min(1),
     turnId: z.string().min(1).optional(),

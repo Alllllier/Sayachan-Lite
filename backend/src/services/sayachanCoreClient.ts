@@ -62,6 +62,13 @@ const coreTurnStreamEventSchema = z.discriminatedUnion('type', [
   z.object({
     packetType: z.literal('sayachan_turn_stream_event').optional(),
     version: z.literal(1).optional(),
+    type: z.literal('assistant_delta'),
+    delta: z.string(),
+    text: z.string()
+  }).strict(),
+  z.object({
+    packetType: z.literal('sayachan_turn_stream_event').optional(),
+    version: z.literal(1).optional(),
     type: z.literal('completed'),
     turn_id: z.string(),
     response: coreMessageSchema,

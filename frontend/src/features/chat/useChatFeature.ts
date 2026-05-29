@@ -354,6 +354,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
         if (runtimeControls.chatStreamingEnabled) {
           isStreamingReply.value = true
           const activityItems: SayaDeskSayachanTurnActivityItemDto[] = []
+          let streamedReply = ''
           const projectStreamingActivity = (defaultCollapsed: boolean): SayachanTurnActivity => ({
             defaultCollapsed,
             items: [...activityItems]
@@ -368,6 +369,11 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           }
 
           const { reply, turnActivity, sayachanDebugTrace } = await streamSayachan(sayachanRequest, {
+            onDelta: (delta) => {
+              streamedReply += delta
+              chatStore.updateMessageContent(pendingIndex, streamedReply)
+              scrollToBottom()
+            },
             onActivity: (item) => {
               upsertActivityItem(item)
               setMessageTurnActivity(pendingIndex, projectStreamingActivity(false))

@@ -456,6 +456,16 @@ function projectStreamEvent(event: SayachanCoreTurnStreamEvent): SayaDeskSayacha
     });
   }
 
+  if (event.type === 'assistant_delta') {
+    return sayaDeskSayachanStreamEventSchema.parse({
+      packetType: 'saya_desk_sayachan_stream_event',
+      version: 1,
+      type: 'assistant_delta',
+      delta: event.delta,
+      text: event.text
+    });
+  }
+
   if (event.type === 'completed') {
     const coreResponse = coreCompletedEventResponse(event);
     return sayaDeskSayachanStreamEventSchema.parse({
