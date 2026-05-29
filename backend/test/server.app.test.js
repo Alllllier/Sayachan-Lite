@@ -129,6 +129,32 @@ test('sayachan host search expression normalizes safe term arrays', () => {
   );
 });
 
+test('sayachan host tool endpoint uses Render external URL before localhost fallback', () => {
+  const originalHostToolUrl = process.env.SAYACHAN_HOST_TOOL_URL;
+  const originalBackendInternalUrl = process.env.SAYACHAN_BACKEND_INTERNAL_URL;
+  const originalRenderExternalUrl = process.env.RENDER_EXTERNAL_URL;
+
+  try {
+    delete process.env.SAYACHAN_HOST_TOOL_URL;
+    delete process.env.SAYACHAN_BACKEND_INTERNAL_URL;
+    process.env.RENDER_EXTERNAL_URL = 'https://sayachan-lite.onrender.com/';
+
+    assert.equal(
+      sayachanService.__test__.configuredHostToolEndpoint(),
+      'https://sayachan-lite.onrender.com/sayachan/tools/execute'
+    );
+  } finally {
+    if (originalHostToolUrl === undefined) delete process.env.SAYACHAN_HOST_TOOL_URL;
+    else process.env.SAYACHAN_HOST_TOOL_URL = originalHostToolUrl;
+
+    if (originalBackendInternalUrl === undefined) delete process.env.SAYACHAN_BACKEND_INTERNAL_URL;
+    else process.env.SAYACHAN_BACKEND_INTERNAL_URL = originalBackendInternalUrl;
+
+    if (originalRenderExternalUrl === undefined) delete process.env.RENDER_EXTERNAL_URL;
+    else process.env.RENDER_EXTERNAL_URL = originalRenderExternalUrl;
+  }
+});
+
 test('allowedOrigins supports comma-separated FRONTEND_ORIGINS', () => {
   const originalEnv = { ...process.env };
 

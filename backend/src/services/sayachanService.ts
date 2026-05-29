@@ -74,7 +74,9 @@ function configuredHostToolEndpoint(): string {
 
   const defaultPort = process.env.PORT || '3001';
   const baseUrl = (
-    process.env.SAYACHAN_BACKEND_INTERNAL_URL || `http://127.0.0.1:${defaultPort}`
+    process.env.SAYACHAN_BACKEND_INTERNAL_URL
+      || process.env.RENDER_EXTERNAL_URL
+      || `http://127.0.0.1:${defaultPort}`
   ).replace(/\/+$/, '');
   return `${baseUrl}/sayachan/tools/execute`;
 }
