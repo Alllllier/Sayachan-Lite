@@ -359,18 +359,88 @@ test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply 
         },
         turn_activity: {
           default_collapsed: true,
-          items: [{
-            item_id: 'turn-route-smoke:activity:1',
-            kind: 'assistant_progress',
-            status: 'unavailable',
-            text: '这个需要回看项目里的记录；我现在还没法直接翻到，会先按当前对话判断。',
-            display: 'collapse_item',
-            canonical_message: false,
-            capability: 'saya_desk.list_project_tasks',
-            source_trace: ['resolver.activity', 'resolver.tool_intent']
-          }]
+          items: [
+            {
+              item_id: 'turn-route-smoke:activity:1',
+              kind: 'assistant_progress',
+              status: 'planned',
+              text: '我先回看一下项目里的记录。',
+              display: 'collapse_item',
+              canonical_message: false,
+              capability: 'saya_desk.list_project_tasks',
+              source_trace: ['resolver.activity', 'runtime.step_planner_contract']
+            },
+            {
+              item_id: 'turn-route-smoke:activity:2',
+              kind: 'tool_status',
+              status: 'completed',
+              text: '读取项目任务',
+              display: 'collapse_item',
+              canonical_message: false,
+              capability: 'saya_desk.list_project_tasks',
+              source_trace: ['resolver.activity', 'runtime.execute_host_tools']
+            }
+          ]
         },
-        debug: null
+        debug: {
+          runtime: 'cognition-runtime',
+          provider: 'openai',
+          provider_model: 'gpt-5.5',
+          provider_response_id: 'resp-v4',
+          semantics: {
+            task_shape: { value: 'task_request', confidence: 0.8, reason: 'asks for work' },
+            product_context_need: { value: 'host_context_available', confidence: 0.8, reason: 'context exists' },
+            vulnerability_signal: { active: false, confidence: 0.2, reason: 'none' },
+            repair_need: { active: false, confidence: 0.2, reason: 'none' },
+            face_saving_need: { active: false, confidence: 0.2, reason: 'none' },
+            edge_suitability: { value: 'neutral', confidence: 0.7, reason: 'direct' },
+            state_triggers: []
+          },
+          judgment_signals: [{
+            name: 'task_shape',
+            value: 'task_request',
+            confidence: 0.8,
+            reason: 'asks for work'
+          }],
+          stage_summaries: [{
+            stage_name: 'build_semantics',
+            status: 'completed',
+            notes: ['Built semantics.'],
+            source_trace: ['semantics.builder']
+          }],
+          resolver_notes: ['Agent steps recorded: 1; statuses: completed'],
+          response_plan: {
+            selected_turn_shape: 'direct_reply',
+            interaction_posture: 'general_presence',
+            context_use: 'host_context_available',
+            state_attention: [],
+            voice_pressure: 'neutral',
+            provider_focus: 'reply_to_current_user_turn',
+            reason_codes: ['resolver:v0_signal_consumer'],
+            source_trace: ['resolver.turn_plan']
+          },
+          source_trace: ['runtime.cognition_runtime'],
+          internal_candidate_summary: {
+            state_patch_candidate_count: 1,
+            memory_candidate_count: 0,
+            tool_step_proposal_count: 1,
+            agent_step_count: 1,
+            tool_intent_candidate_count: 1,
+            host_tool_result_count: 1,
+            tool_result_card_count: 1,
+            turn_activity_item_count: 2,
+            state_patch_targets: ['short_term_interaction_state'],
+            memory_candidate_kinds: [],
+            tool_step_proposal_kinds: ['host_tool_step'],
+            tool_step_proposal_statuses: ['accepted'],
+            agent_step_kinds: ['host_tool_step'],
+            agent_step_statuses: ['completed'],
+            tool_intent_capabilities: ['saya_desk.list_project_tasks'],
+            host_tool_result_statuses: ['completed'],
+            tool_result_card_statuses: ['completed'],
+            turn_activity_kinds: ['assistant_progress', 'tool_status']
+          }
+        }
       };
     });
 
@@ -407,20 +477,91 @@ test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply 
         turnId: 'turn-route-smoke',
         turnActivity: {
           defaultCollapsed: true,
-          items: [{
-            itemId: 'turn-route-smoke:activity:1',
-            kind: 'assistant_progress',
-            status: 'unavailable',
-            text: '这个需要回看项目里的记录；我现在还没法直接翻到，会先按当前对话判断。',
-            display: 'collapse_item',
-            canonicalMessage: false,
-            capability: 'saya_desk.list_project_tasks',
-            sourceTrace: ['resolver.activity', 'resolver.tool_intent']
-          }]
+          items: [
+            {
+              itemId: 'turn-route-smoke:activity:1',
+              kind: 'assistant_progress',
+              status: 'planned',
+              text: '我先回看一下项目里的记录。',
+              display: 'collapse_item',
+              canonicalMessage: false,
+              capability: 'saya_desk.list_project_tasks',
+              sourceTrace: ['resolver.activity', 'runtime.step_planner_contract']
+            },
+            {
+              itemId: 'turn-route-smoke:activity:2',
+              kind: 'tool_status',
+              status: 'completed',
+              text: '读取项目任务',
+              display: 'collapse_item',
+              canonicalMessage: false,
+              capability: 'saya_desk.list_project_tasks',
+              sourceTrace: ['resolver.activity', 'runtime.execute_host_tools']
+            }
+          ]
         },
         trace: {
           traceId: 'turn-route-smoke',
           debugAvailable: true
+        },
+        debugTrace: {
+          runtime: 'cognition-runtime',
+          provider: 'openai',
+          providerModel: 'gpt-5.5',
+          providerResponseId: 'resp-v4',
+          semantics: {
+            taskShape: { value: 'task_request', confidence: 0.8, reason: 'asks for work' },
+            productContextNeed: { value: 'host_context_available', confidence: 0.8, reason: 'context exists' },
+            vulnerabilitySignal: { active: false, confidence: 0.2, reason: 'none' },
+            repairNeed: { active: false, confidence: 0.2, reason: 'none' },
+            faceSavingNeed: { active: false, confidence: 0.2, reason: 'none' },
+            edgeSuitability: { value: 'neutral', confidence: 0.7, reason: 'direct' },
+            stateTriggers: []
+          },
+          judgmentSignals: [{
+            name: 'task_shape',
+            value: 'task_request',
+            confidence: 0.8,
+            reason: 'asks for work'
+          }],
+          stageSummaries: [{
+            stageName: 'build_semantics',
+            status: 'completed',
+            notes: ['Built semantics.'],
+            sourceTrace: ['semantics.builder']
+          }],
+          resolverNotes: ['Agent steps recorded: 1; statuses: completed'],
+          responsePlan: {
+            selectedTurnShape: 'direct_reply',
+            interactionPosture: 'general_presence',
+            contextUse: 'host_context_available',
+            stateAttention: [],
+            voicePressure: 'neutral',
+            providerFocus: 'reply_to_current_user_turn',
+            reasonCodes: ['resolver:v0_signal_consumer'],
+            sourceTrace: ['resolver.turn_plan']
+          },
+          sourceTrace: ['runtime.cognition_runtime'],
+          internalCandidateSummary: {
+            statePatchCandidateCount: 1,
+            memoryCandidateCount: 0,
+            toolStepProposalCount: 1,
+            agentStepCount: 1,
+            toolIntentCandidateCount: 1,
+            hostToolResultCount: 1,
+            toolResultCardCount: 1,
+            turnActivityItemCount: 2,
+            statePatchTargets: ['short_term_interaction_state'],
+            memoryCandidateKinds: [],
+            toolStepProposalKinds: ['host_tool_step'],
+            toolStepProposalStatuses: ['accepted'],
+            agentStepKinds: ['host_tool_step'],
+            agentStepStatuses: ['completed'],
+            toolIntentCapabilities: ['saya_desk.list_project_tasks'],
+            hostToolResultStatuses: ['completed'],
+            toolResultCardStatuses: ['completed'],
+            turnActivityKinds: ['assistant_progress', 'tool_status']
+          }
         }
       });
       assert.equal(capturedCoreRequest.host.host_id, 'saya-desk');

@@ -1,5 +1,6 @@
 import {
   type SayaDeskSayachanFocusDto,
+  type SayaDeskSayachanDebugTraceDto,
   type SayaDeskSayachanResponseDto,
   type SayaDeskSayachanTurnActivityDto,
   type SayaDeskSayachanRequestDto,
@@ -32,6 +33,7 @@ type FocusSnapshotBuilder = (
 ) => Promise<SayaDeskAuthorizedFocusSnapshot | null>;
 type HostCapabilityManifestBuilder = () => SayaDeskHostCapabilityManifest;
 type ChatPersistenceAvailabilityCheck = () => boolean;
+type UnknownRecord = Record<string, unknown>;
 type SayachanExecutionOptions = {
   userId?: ObjectId | null;
   userRole?: string | null;
@@ -191,6 +193,187 @@ function projectTurnActivity(coreResponse: SayachanCoreTurnResponse): SayaDeskSa
   };
 }
 
+function asRecord(value: unknown): UnknownRecord | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as UnknownRecord
+    : null;
+}
+
+function debugString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function debugNullableString(value: unknown): string | null | undefined {
+  if (value === null) return null;
+  if (typeof value === 'string') return value;
+  return undefined;
+}
+
+function debugNumber(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function debugStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
+function debugStatus(value: unknown): 'completed' | 'skipped' | 'failed' {
+  return value === 'skipped' || value === 'failed' ? value : 'completed';
+}
+
+function projectConfidenceSignal(value: unknown): SayaDeskSayachanDebugTraceDto['semantics']['taskShape'] {
+  const raw = asRecord(value);
+  return {
+    value: debugString(raw?.value, 'unknown'),
+    confidence: debugNumber(raw?.confidence),
+    reason: debugString(raw?.reason)
+  };
+}
+
+function projectBooleanSignal(value: unknown): SayaDeskSayachanDebugTraceDto['semantics']['vulnerabilitySignal'] {
+  const raw = asRecord(value);
+  return {
+    active: raw?.active === true,
+    confidence: debugNumber(raw?.confidence),
+    reason: debugString(raw?.reason)
+  };
+}
+
+function projectStateTriggers(value: unknown): SayaDeskSayachanDebugTraceDto['semantics']['stateTriggers'] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map(item => {
+    const raw = asRecord(item);
+    return {
+      name: debugString(raw?.name, 'unknown'),
+      target: debugString(raw?.target, 'unknown'),
+      confidence: debugNumber(raw?.confidence),
+      reason: debugString(raw?.reason)
+    };
+  });
+}
+
+function projectSemantics(value: unknown): SayaDeskSayachanDebugTraceDto['semantics'] | null {
+  const raw = asRecord(value);
+  if (!raw) {
+    return null;
+  }
+
+  return {
+    taskShape: projectConfidenceSignal(raw.task_shape),
+    productContextNeed: projectConfidenceSignal(raw.product_context_need),
+    vulnerabilitySignal: projectBooleanSignal(raw.vulnerability_signal),
+    repairNeed: projectBooleanSignal(raw.repair_need),
+    faceSavingNeed: projectBooleanSignal(raw.face_saving_need),
+    edgeSuitability: projectConfidenceSignal(raw.edge_suitability),
+    stateTriggers: projectStateTriggers(raw.state_triggers)
+  };
+}
+
+function projectTraceSignals(value: unknown): SayaDeskSayachanDebugTraceDto['judgmentSignals'] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map(item => {
+    const raw = asRecord(item);
+    return {
+      name: debugString(raw?.name, 'unknown'),
+      value: debugString(raw?.value, 'unknown'),
+      confidence: debugNumber(raw?.confidence),
+      reason: debugString(raw?.reason)
+    };
+  });
+}
+
+function projectStageSummaries(value: unknown): SayaDeskSayachanDebugTraceDto['stageSummaries'] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map(item => {
+    const raw = asRecord(item);
+    return {
+      stageName: debugString(raw?.stage_name, 'unknown'),
+      status: debugStatus(raw?.status),
+      notes: debugStringArray(raw?.notes),
+      sourceTrace: debugStringArray(raw?.source_trace)
+    };
+  });
+}
+
+function projectResponsePlan(value: unknown): SayaDeskSayachanDebugTraceDto['responsePlan'] {
+  const raw = asRecord(value);
+  if (!raw) {
+    return undefined;
+  }
+
+  return {
+    selectedTurnShape: debugString(raw.selected_turn_shape, 'unknown'),
+    interactionPosture: debugString(raw.interaction_posture, 'unknown'),
+    contextUse: debugString(raw.context_use, 'unknown'),
+    stateAttention: debugStringArray(raw.state_attention),
+    voicePressure: debugString(raw.voice_pressure, 'unknown'),
+    providerFocus: debugString(raw.provider_focus, 'unknown'),
+    reasonCodes: debugStringArray(raw.reason_codes),
+    sourceTrace: debugStringArray(raw.source_trace)
+  };
+}
+
+function projectInternalCandidateSummary(value: unknown): SayaDeskSayachanDebugTraceDto['internalCandidateSummary'] {
+  const raw = asRecord(value);
+  return {
+    statePatchCandidateCount: debugNumber(raw?.state_patch_candidate_count),
+    memoryCandidateCount: debugNumber(raw?.memory_candidate_count),
+    toolStepProposalCount: debugNumber(raw?.tool_step_proposal_count),
+    agentStepCount: debugNumber(raw?.agent_step_count),
+    toolIntentCandidateCount: debugNumber(raw?.tool_intent_candidate_count),
+    hostToolResultCount: debugNumber(raw?.host_tool_result_count),
+    toolResultCardCount: debugNumber(raw?.tool_result_card_count),
+    turnActivityItemCount: debugNumber(raw?.turn_activity_item_count),
+    statePatchTargets: debugStringArray(raw?.state_patch_targets),
+    memoryCandidateKinds: debugStringArray(raw?.memory_candidate_kinds),
+    toolStepProposalKinds: debugStringArray(raw?.tool_step_proposal_kinds),
+    toolStepProposalStatuses: debugStringArray(raw?.tool_step_proposal_statuses),
+    agentStepKinds: debugStringArray(raw?.agent_step_kinds),
+    agentStepStatuses: debugStringArray(raw?.agent_step_statuses),
+    toolIntentCapabilities: debugStringArray(raw?.tool_intent_capabilities),
+    hostToolResultStatuses: debugStringArray(raw?.host_tool_result_statuses),
+    toolResultCardStatuses: debugStringArray(raw?.tool_result_card_statuses),
+    turnActivityKinds: debugStringArray(raw?.turn_activity_kinds)
+  };
+}
+
+function projectDebugTrace(coreResponse: SayachanCoreTurnResponse): SayaDeskSayachanDebugTraceDto | undefined {
+  const raw = asRecord(coreResponse.debug);
+  if (!raw) {
+    return undefined;
+  }
+
+  const semantics = projectSemantics(raw.semantics);
+  if (!semantics) {
+    return undefined;
+  }
+
+  return {
+    runtime: debugString(raw.runtime, 'unknown'),
+    provider: debugString(raw.provider, 'unknown'),
+    providerModel: debugString(raw.provider_model, 'unknown'),
+    providerResponseId: debugNullableString(raw.provider_response_id),
+    semantics,
+    judgmentSignals: projectTraceSignals(raw.judgment_signals),
+    stageSummaries: projectStageSummaries(raw.stage_summaries),
+    resolverNotes: debugStringArray(raw.resolver_notes),
+    responsePlan: projectResponsePlan(raw.response_plan),
+    sourceTrace: debugStringArray(raw.source_trace),
+    internalCandidateSummary: projectInternalCandidateSummary(raw.internal_candidate_summary)
+  };
+}
+
 async function persistAssistantReply(
   preparedTurn: PreparedPersistentTurn,
   coreResponse: SayachanCoreTurnResponse,
@@ -223,7 +406,8 @@ export async function chat(request: SayaDeskSayachanRequestDto, options: Sayacha
       trace: {
         traceId: coreResponse.trace.trace_id,
         debugAvailable: coreResponse.trace.debug_available
-      }
+      },
+      debugTrace: projectDebugTrace(coreResponse)
     });
     await persistAssistantReply(preparedTurn, coreResponse, options);
     return parsed;

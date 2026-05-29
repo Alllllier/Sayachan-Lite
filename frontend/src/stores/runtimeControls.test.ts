@@ -186,6 +186,70 @@ describe('runtimeControls store behavior locks', () => {
 
     store.clearLatestDebugTrace()
     expect(store.latestDebugTrace).toBeNull()
+    expect(store.latestSayachanDebugTrace).toBeNull()
     expect(store.modeDecisionHistory).toHaveLength(1)
+  })
+
+  it('tracks v4 Sayachan debug trace separately from the v3 trace shape', () => {
+    const store = createRuntimeStore()
+    const trace = {
+      runtime: 'cognition-runtime',
+      provider: 'openai',
+      providerModel: 'gpt-5.5',
+      providerResponseId: 'resp-v4',
+      semantics: {
+        taskShape: { value: 'task_request', confidence: 0.8, reason: 'asks for work' },
+        productContextNeed: { value: 'host_context_available', confidence: 0.8, reason: 'context exists' },
+        vulnerabilitySignal: { active: false, confidence: 0.2, reason: 'none' },
+        repairNeed: { active: false, confidence: 0.2, reason: 'none' },
+        faceSavingNeed: { active: false, confidence: 0.2, reason: 'none' },
+        edgeSuitability: { value: 'neutral', confidence: 0.7, reason: 'direct' },
+        stateTriggers: []
+      },
+      judgmentSignals: [],
+      stageSummaries: [],
+      resolverNotes: [],
+      responsePlan: {
+        selectedTurnShape: 'direct_reply',
+        interactionPosture: 'general_presence',
+        contextUse: 'host_context_available',
+        stateAttention: [],
+        voicePressure: 'neutral',
+        providerFocus: 'reply_to_current_user_turn',
+        reasonCodes: ['resolver:v0_signal_consumer'],
+        sourceTrace: ['resolver.turn_plan']
+      },
+      sourceTrace: [],
+      internalCandidateSummary: {
+        statePatchCandidateCount: 1,
+        memoryCandidateCount: 0,
+        toolStepProposalCount: 1,
+        agentStepCount: 1,
+        toolIntentCandidateCount: 1,
+        hostToolResultCount: 1,
+        toolResultCardCount: 1,
+        turnActivityItemCount: 2,
+        statePatchTargets: ['short_term_interaction_state'],
+        memoryCandidateKinds: [],
+        toolStepProposalKinds: ['host_tool_step'],
+        toolStepProposalStatuses: ['accepted'],
+        agentStepKinds: ['host_tool_step'],
+        agentStepStatuses: ['completed'],
+        toolIntentCapabilities: ['saya_desk.search_product_context'],
+        hostToolResultStatuses: ['completed'],
+        toolResultCardStatuses: ['completed'],
+        turnActivityKinds: ['assistant_progress', 'tool_status']
+      }
+    }
+
+    store.setLatestSayachanDebugTrace(trace)
+
+    expect(store.latestSayachanDebugTrace).toEqual(trace)
+    expect(store.latestDebugTrace).toBeNull()
+
+    store.setCoreVersion('v4')
+
+    expect(store.latestSayachanDebugTrace).toBeNull()
+    expect(store.latestDebugTrace).toBeNull()
   })
 })

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, reactive, computed } from 'vue'
-import type { ChatConvergenceMode, ChatDebugTraceDto, ChatPersonalityBaseline } from '@sayachan/contracts'
+import type { ChatConvergenceMode, ChatDebugTraceDto, ChatPersonalityBaseline, SayaDeskSayachanDebugTraceDto } from '@sayachan/contracts'
 
 type ChatDebugModeTrace = NonNullable<ChatDebugTraceDto['mode']>
 export type ChatCoreVersion = 'v3' | 'v4'
@@ -35,6 +35,7 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
   const savedDebugTrace = localStorage.getItem(LS_DEBUG_TRACE_KEY)
   const debugTraceEnabled = ref(savedDebugTrace === null ? true : savedDebugTrace !== 'false')
   const latestDebugTrace = ref<ChatDebugTraceDto | null>(null)
+  const latestSayachanDebugTrace = ref<SayaDeskSayachanDebugTraceDto | null>(null)
   const modeDecisionHistory = ref<ChatDebugModeTrace[]>([])
 
   const savedWarmth = localStorage.getItem(LS_WARMTH_KEY)
@@ -102,6 +103,7 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
 
     coreVersion.value = value
     localStorage.setItem(LS_CORE_VERSION_KEY, value)
+    clearLatestDebugTrace()
     if (value === 'v4') {
       setChatStreamingEnabled(false)
     }
@@ -149,8 +151,13 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
     }
   }
 
+  function setLatestSayachanDebugTrace(value: SayaDeskSayachanDebugTraceDto | null | undefined): void {
+    latestSayachanDebugTrace.value = value || null
+  }
+
   function clearLatestDebugTrace(): void {
     latestDebugTrace.value = null
+    latestSayachanDebugTrace.value = null
   }
 
   return {
@@ -159,6 +166,7 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
     chatStreamingEnabled,
     debugTraceEnabled,
     latestDebugTrace,
+    latestSayachanDebugTrace,
     modeDecisionHistory,
     futureSlots,
     personalityConfig,
@@ -170,6 +178,7 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
     setChatStreamingEnabled,
     setDebugTraceEnabled,
     setLatestDebugTrace,
+    setLatestSayachanDebugTrace,
     clearLatestDebugTrace
   }
 })

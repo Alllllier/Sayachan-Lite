@@ -16,6 +16,7 @@ import type {
   ChatRuntimePayloadDto,
   ChatSessionResponseDto,
   ChatSourceReceiptDto,
+  SayaDeskSayachanDebugTraceDto,
   SayaDeskSayachanFocusDto,
   SayaDeskSayachanResponseDto,
   SayaDeskSayachanSurface
@@ -70,6 +71,7 @@ type SendSayachanInput = {
 export type SayachanTurnActivity = NonNullable<SayaDeskSayachanResponseDto['turnActivity']>
 export type SayachanChatResponse = ChatResponseDto & {
   turnActivity?: SayachanTurnActivity
+  sayachanDebugTrace?: SayaDeskSayachanDebugTraceDto
 }
 
 function publicChatResponse(data: ChatResponseDto): ChatResponseDto {
@@ -165,7 +167,8 @@ export async function sendSayachan(input: SendSayachanInput): Promise<SayachanCh
     const data = assertApiResponse(await res.json() as unknown, sayaDeskSayachanResponseSchema, 'sayachan')
     return {
       reply: data.reply,
-      ...(data.turnActivity ? { turnActivity: data.turnActivity } : {})
+      ...(data.turnActivity ? { turnActivity: data.turnActivity } : {}),
+      ...(data.debugTrace ? { sayachanDebugTrace: data.debugTrace } : {})
     }
   } catch {
     throw new Error('Empty or invalid reply from Sayachan')

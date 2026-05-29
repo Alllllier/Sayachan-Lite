@@ -28,7 +28,6 @@ export const sayaDeskSayachanOptionsSchema = z.object({
 export const sayaDeskSayachanTurnActivityItemKindValues = [
   'assistant_progress',
   'tool_status',
-  'tool_result_summary',
   'capability_notice'
 ] as const
 
@@ -112,11 +111,101 @@ export const sayaDeskSayachanTraceSchema = z.object({
   debugAvailable: z.boolean().optional()
 }).strict()
 
+export const sayaDeskSayachanConfidenceSignalSchema = z.object({
+  value: z.string().min(1),
+  confidence: z.number(),
+  reason: z.string()
+}).strict()
+
+export const sayaDeskSayachanBooleanSignalSchema = z.object({
+  active: z.boolean(),
+  confidence: z.number(),
+  reason: z.string()
+}).strict()
+
+export const sayaDeskSayachanStateTriggerSchema = z.object({
+  name: z.string().min(1),
+  target: z.string().min(1),
+  confidence: z.number(),
+  reason: z.string()
+}).strict()
+
+export const sayaDeskSayachanSemanticsTraceSchema = z.object({
+  taskShape: sayaDeskSayachanConfidenceSignalSchema,
+  productContextNeed: sayaDeskSayachanConfidenceSignalSchema,
+  vulnerabilitySignal: sayaDeskSayachanBooleanSignalSchema,
+  repairNeed: sayaDeskSayachanBooleanSignalSchema,
+  faceSavingNeed: sayaDeskSayachanBooleanSignalSchema,
+  edgeSuitability: sayaDeskSayachanConfidenceSignalSchema,
+  stateTriggers: z.array(sayaDeskSayachanStateTriggerSchema).optional()
+}).strict()
+
+export const sayaDeskSayachanTraceSignalSchema = z.object({
+  name: z.string().min(1),
+  value: z.string().min(1),
+  confidence: z.number(),
+  reason: z.string()
+}).strict()
+
+export const sayaDeskSayachanStageSummarySchema = z.object({
+  stageName: z.string().min(1),
+  status: z.enum(['completed', 'skipped', 'failed']),
+  notes: z.array(z.string()),
+  sourceTrace: z.array(z.string())
+}).strict()
+
+export const sayaDeskSayachanResponsePlanTraceSchema = z.object({
+  selectedTurnShape: z.string().min(1),
+  interactionPosture: z.string().min(1),
+  contextUse: z.string().min(1),
+  stateAttention: z.array(z.string()),
+  voicePressure: z.string().min(1),
+  providerFocus: z.string().min(1),
+  reasonCodes: z.array(z.string()),
+  sourceTrace: z.array(z.string())
+}).strict()
+
+export const sayaDeskSayachanInternalCandidateSummarySchema = z.object({
+  statePatchCandidateCount: z.number(),
+  memoryCandidateCount: z.number(),
+  toolStepProposalCount: z.number(),
+  agentStepCount: z.number(),
+  toolIntentCandidateCount: z.number(),
+  hostToolResultCount: z.number(),
+  toolResultCardCount: z.number(),
+  turnActivityItemCount: z.number(),
+  statePatchTargets: z.array(z.string()),
+  memoryCandidateKinds: z.array(z.string()),
+  toolStepProposalKinds: z.array(z.string()),
+  toolStepProposalStatuses: z.array(z.string()),
+  agentStepKinds: z.array(z.string()),
+  agentStepStatuses: z.array(z.string()),
+  toolIntentCapabilities: z.array(z.string()),
+  hostToolResultStatuses: z.array(z.string()),
+  toolResultCardStatuses: z.array(z.string()),
+  turnActivityKinds: z.array(z.string())
+}).strict()
+
+export const sayaDeskSayachanDebugTraceSchema = z.object({
+  runtime: z.string().min(1),
+  provider: z.string().min(1),
+  providerModel: z.string().min(1),
+  providerResponseId: z.string().nullable().optional(),
+  semantics: sayaDeskSayachanSemanticsTraceSchema,
+  judgmentSignals: z.array(sayaDeskSayachanTraceSignalSchema),
+  stageSummaries: z.array(sayaDeskSayachanStageSummarySchema),
+  resolverNotes: z.array(z.string()),
+  responsePlan: sayaDeskSayachanResponsePlanTraceSchema.nullable().optional(),
+  sourceTrace: z.array(z.string()),
+  internalCandidateSummary: sayaDeskSayachanInternalCandidateSummarySchema
+}).strict()
+
 export const sayaDeskSayachanResponseSchema = z.object({
   reply: z.string().min(1),
   turnId: z.string().min(1).optional(),
   turnActivity: sayaDeskSayachanTurnActivitySchema.optional(),
-  trace: sayaDeskSayachanTraceSchema.optional()
+  trace: sayaDeskSayachanTraceSchema.optional(),
+  debugTrace: sayaDeskSayachanDebugTraceSchema.optional()
 }).strict()
 
 export type SayaDeskSayachanSurface = (typeof sayaDeskSayachanSurfaceValues)[number]
@@ -125,6 +214,7 @@ export type SayaDeskHostToolCapability = (typeof sayaDeskHostToolCapabilityValue
 export type SayaDeskSayachanFocusDto = z.infer<typeof sayaDeskSayachanFocusSchema>
 export type SayaDeskSayachanTurnActivityItemDto = z.infer<typeof sayaDeskSayachanTurnActivityItemSchema>
 export type SayaDeskSayachanTurnActivityDto = z.infer<typeof sayaDeskSayachanTurnActivitySchema>
+export type SayaDeskSayachanDebugTraceDto = z.infer<typeof sayaDeskSayachanDebugTraceSchema>
 export type SayaDeskHostToolExecutionRequestDto = z.infer<typeof sayaDeskHostToolExecutionRequestSchema>
 export type SayaDeskHostToolExecutionResultDto = z.infer<typeof sayaDeskHostToolExecutionResultSchema>
 export type SayaDeskSayachanRequestDto = z.infer<typeof sayaDeskSayachanRequestSchema>

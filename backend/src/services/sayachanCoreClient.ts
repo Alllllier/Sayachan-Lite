@@ -18,7 +18,6 @@ const coreTurnActivityItemSchema = z.object({
   kind: z.enum([
     'assistant_progress',
     'tool_status',
-    'tool_result_summary',
     'capability_notice'
   ]),
   status: z.enum([

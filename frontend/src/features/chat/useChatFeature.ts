@@ -342,7 +342,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
         chatStore.appendMessage({ role: 'assistant', content: '' })
         scrollToBottom()
 
-        const { reply, turnActivity } = await sendSayachan({
+        const { reply, turnActivity, sayachanDebugTrace } = await sendSayachan({
           text,
           focus: focusForTurn
             ? { type: focusForTurn.type, id: focusForTurn.id }
@@ -351,6 +351,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
         })
         chatStore.updateMessageContent(pendingMessageIndexForTurn, reply)
         setMessageTurnActivity(pendingMessageIndexForTurn, turnActivity)
+        runtimeControls.setLatestSayachanDebugTrace(sayachanDebugTrace)
         chatStore.setProviderState(undefined)
         scrollToBottom()
         return

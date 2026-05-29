@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, nextTick, onMounted, watch } from 'vue'
-import type { ChatDebugTraceDto, SayaDeskSayachanTurnActivityItemDto } from '@sayachan/contracts'
+import type { ChatDebugTraceDto, SayaDeskSayachanDebugTraceDto, SayaDeskSayachanTurnActivityItemDto } from '@sayachan/contracts'
 import avatarUrl from '../assets/avatar/sayachan-avatar.jpg'
 import { useChatFeature } from '../features/chat/useChatFeature.js'
 import { useAuthStore } from '../stores/auth'
@@ -20,6 +20,9 @@ type DebugMemoryCandidateTrace = NonNullable<ChatDebugTraceDto['memoryCandidate'
 type DebugGovernanceTrace = NonNullable<ChatDebugTraceDto['governance']>
 type DebugJudgmentTrace = NonNullable<ChatDebugTraceDto['judgment']>[number]
 type DebugJudgmentSummary = NonNullable<DebugJudgmentTrace['judgments']>[string]
+type SayachanDebugSemantics = SayaDeskSayachanDebugTraceDto['semantics']
+type SayachanDebugSignal = SayachanDebugSemantics['taskShape']
+type SayachanDebugBooleanSignal = SayachanDebugSemantics['vulnerabilitySignal']
 
 const messageListRef = ref<HTMLElement | null>(null)
 const personalityBaselineOptions: PersonalityBaselineOption[] = ['warm', 'strict', 'haraguro']
@@ -120,6 +123,11 @@ const debugProviderUsageTrace = computed<DebugProviderUsageTrace | null>(() => r
 const debugMemoryTrace = computed<DebugMemoryTrace | null>(() => runtimeControls.latestDebugTrace?.memory || null)
 const debugMemoryCandidateTrace = computed<DebugMemoryCandidateTrace | null>(() => runtimeControls.latestDebugTrace?.memoryCandidate || null)
 const debugGovernanceTrace = computed<DebugGovernanceTrace | null>(() => runtimeControls.latestDebugTrace?.governance || null)
+const sayachanDebugTrace = computed<SayaDeskSayachanDebugTraceDto | null>(() => runtimeControls.latestSayachanDebugTrace || null)
+const sayachanDebugSemantics = computed<SayachanDebugSemantics | null>(() => sayachanDebugTrace.value?.semantics || null)
+const sayachanDebugResponsePlan = computed(() => sayachanDebugTrace.value?.responsePlan || null)
+const sayachanDebugInternalSummary = computed(() => sayachanDebugTrace.value?.internalCandidateSummary || null)
+const sayachanDebugStageSummaries = computed(() => sayachanDebugTrace.value?.stageSummaries || [])
 
 function sendCurrentMessage(): Promise<void> {
   return handleSend()
@@ -241,6 +249,25 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
   if (!judgment?.targetShape) return t('chat.debugEmpty')
   return `${judgment.targetShape}${judgment.basis ? ` · ${judgment.basis}` : ''}`
 }
+
+function sayachanDebugProviderLabel(trace: SayaDeskSayachanDebugTraceDto): string {
+  return [trace.provider, trace.providerModel].filter(Boolean).join(' · ') || t('chat.debugEmpty')
+}
+
+function sayachanDebugSignalLabel(signal: SayachanDebugSignal | null | undefined): string {
+  if (!signal) return t('chat.debugEmpty')
+  return `${signal.value} · ${debugConfidence(signal.confidence)}`
+}
+
+function sayachanDebugBooleanSignalLabel(signal: SayachanDebugBooleanSignal | null | undefined): string {
+  if (!signal) return t('chat.debugEmpty')
+  return `${signal.active ? 'active' : 'inactive'} · ${debugConfidence(signal.confidence)}`
+}
+
+function debugCompactList(values: string[] | undefined): string {
+  if (!values || values.length === 0) return t('chat.debugEmpty')
+  return values.slice(0, 5).join(', ')
+}
 </script>
 
 <template>
@@ -287,14 +314,6 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
             :class="msg.role"
           >
             <div v-if="msg.role === 'assistant'" class="chat-assistant-stack">
-              <div
-                v-if="isPendingAssistantMessage(idx)"
-                class="chat-pending-meta"
-                role="status"
-              >
-                <span class="chat-pending-dot"></span>
-                <span>{{ t('chat.pendingMeta') }}</span>
-              </div>
               <details
                 v-if="hasMessageTurnActivity(idx)"
                 class="chat-turn-activity"
@@ -318,8 +337,17 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
               <div
                 class="chat-bubble markdown-body"
                 :class="{ 'chat-bubble--empty': !msg.content && isPendingAssistantMessage(idx) }"
-                v-html="msg.content ? renderMarkdown(msg.content) : ''"
-              ></div>
+              >
+                <div
+                  v-if="isPendingAssistantMessage(idx)"
+                  class="chat-pending-meta"
+                  role="status"
+                >
+                  <span class="chat-pending-dot"></span>
+                  <span>{{ t('chat.pendingMeta') }}</span>
+                </div>
+                <div v-if="msg.content" v-html="renderMarkdown(msg.content)"></div>
+              </div>
               <div
                 v-if="getMessageSourceReceipts(idx).length > 0"
                 class="chat-source-receipts"
@@ -382,9 +410,6 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
           </div>
           <div v-if="toolStatusText" class="chat-message assistant">
             <div class="chat-bubble chat-bubble--thinking">{{ toolStatusText }}</div>
-          </div>
-          <div v-if="chatStore.isSending && !isStreamingReply && !toolStatusText" class="chat-message assistant">
-            <div class="chat-bubble chat-bubble--thinking">{{ runtimeControls.personalityConfig.toneLabel }} &middot; {{ t('chat.thinking') }}</div>
           </div>
         </div>
 
@@ -470,7 +495,7 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
             </div>
           </div>
 
-          <div class="runtime-section">
+          <div v-if="runtimeControls.coreVersion === 'v3'" class="runtime-section">
             <div class="runtime-section-title">{{ t('chat.personalityBaseline') }}</div>
             <div class="runtime-radio-list">
               <label
@@ -494,7 +519,7 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
             </div>
           </div>
 
-          <div class="runtime-section">
+          <div v-if="runtimeControls.coreVersion === 'v3'" class="runtime-section">
             <div class="runtime-section-title">{{ t('chat.traitAdjustments') }}</div>
 
             <div class="runtime-trait">
@@ -558,7 +583,9 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
             <div class="runtime-toggle-row">
               <div>
                 <div class="runtime-section-title runtime-section-title--inline">{{ t('chat.debugTrace') }}</div>
-                <div class="runtime-toggle-caption">{{ t('chat.debugTraceCaption') }}</div>
+                <div class="runtime-toggle-caption">
+                  {{ runtimeControls.coreVersion === 'v4' ? t('chat.debugTraceCaptionV4') : t('chat.debugTraceCaptionV3') }}
+                </div>
               </div>
               <button
                 class="runtime-toggle"
@@ -573,6 +600,7 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
             </div>
 
             <div v-if="runtimeControls.debugTraceEnabled" class="runtime-debug-console">
+              <template v-if="runtimeControls.coreVersion === 'v3'">
               <div class="runtime-debug-block runtime-debug-block--judgment">
                 <div class="runtime-debug-title">{{ t('chat.debugInternalJudgment') }}</div>
                 <div v-if="!hasDebugInternalJudgment" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
@@ -749,6 +777,87 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
                   <span>{{ source.title }}</span>
                 </div>
               </div>
+              </template>
+
+              <template v-else>
+                <div class="runtime-debug-block">
+                  <div class="runtime-debug-title">{{ t('chat.debugV4Runtime') }}</div>
+                  <div v-if="!sayachanDebugTrace" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
+                  <template v-else>
+                    <div class="runtime-debug-line">
+                      <span>runtime</span>
+                      <span>{{ sayachanDebugTrace.runtime }}</span>
+                    </div>
+                    <div class="runtime-debug-line">
+                      <span>{{ t('chat.debugUsageProvider') }}</span>
+                      <span>{{ sayachanDebugProviderLabel(sayachanDebugTrace) }}</span>
+                    </div>
+                    <div class="runtime-debug-line">
+                      <span>response id</span>
+                      <span>{{ sayachanDebugTrace.providerResponseId || t('chat.debugEmpty') }}</span>
+                    </div>
+                  </template>
+                </div>
+
+                <div class="runtime-debug-block">
+                  <div class="runtime-debug-title">{{ t('chat.debugV4Semantics') }}</div>
+                  <div v-if="!sayachanDebugSemantics" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
+                  <template v-else>
+                    <div class="runtime-debug-line">
+                      <span>{{ t('chat.debugTaskShape') }}</span>
+                      <span>{{ sayachanDebugSignalLabel(sayachanDebugSemantics.taskShape) }}</span>
+                    </div>
+                    <div class="runtime-debug-line">
+                      <span>{{ t('chat.debugResponseFocus') }}</span>
+                      <span>{{ sayachanDebugResponsePlan?.providerFocus || t('chat.debugEmpty') }}</span>
+                    </div>
+                    <div class="runtime-debug-line">
+                      <span>{{ t('chat.debugProductContext') }}</span>
+                      <span>{{ sayachanDebugSignalLabel(sayachanDebugSemantics.productContextNeed) }}</span>
+                    </div>
+                    <div class="runtime-debug-line">
+                      <span>{{ t('chat.debugVulnerability') }}</span>
+                      <span>{{ sayachanDebugBooleanSignalLabel(sayachanDebugSemantics.vulnerabilitySignal) }}</span>
+                    </div>
+                    <div class="runtime-debug-line">
+                      <span>{{ t('chat.debugRepair') }}</span>
+                      <span>{{ sayachanDebugBooleanSignalLabel(sayachanDebugSemantics.repairNeed) }}</span>
+                    </div>
+                  </template>
+                </div>
+
+                <div class="runtime-debug-block">
+                  <div class="runtime-debug-title">{{ t('chat.debugV4Candidates') }}</div>
+                  <div v-if="!sayachanDebugInternalSummary" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
+                  <template v-else>
+                    <div class="runtime-debug-line">
+                      <span>{{ t('chat.debugRequested') }}</span>
+                      <span>{{ sayachanDebugInternalSummary.toolStepProposalCount }} steps / {{ sayachanDebugInternalSummary.toolIntentCandidateCount }} intents</span>
+                    </div>
+                    <div class="runtime-debug-line">
+                      <span>{{ t('chat.debugExecuted') }}</span>
+                      <span>{{ sayachanDebugInternalSummary.agentStepCount }} steps / {{ sayachanDebugInternalSummary.hostToolResultCount }} results</span>
+                    </div>
+                    <div class="runtime-debug-line">
+                      <span>{{ t('chat.debugStatus') }}</span>
+                      <span>{{ debugCompactList(sayachanDebugInternalSummary.agentStepStatuses) }}</span>
+                    </div>
+                    <div class="runtime-debug-line">
+                      <span>{{ t('chat.debugTools') }}</span>
+                      <span>{{ debugCompactList(sayachanDebugInternalSummary.toolIntentCapabilities) }}</span>
+                    </div>
+                  </template>
+                </div>
+
+                <div class="runtime-debug-block">
+                  <div class="runtime-debug-title">{{ t('chat.debugV4Stages') }}</div>
+                  <div v-if="sayachanDebugStageSummaries.length === 0" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
+                  <div v-for="stage in sayachanDebugStageSummaries" :key="stage.stageName" class="runtime-debug-line">
+                    <span>{{ stage.stageName }}</span>
+                    <span>{{ stage.status }}</span>
+                  </div>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -945,12 +1054,9 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
   align-items: center;
   gap: 6px;
   max-width: 100%;
-  padding: 5px 8px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--action-primary) 8%, var(--surface-card));
   color: var(--text-muted);
-  font-size: 11px;
-  line-height: 1.3;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .chat-pending-dot {
