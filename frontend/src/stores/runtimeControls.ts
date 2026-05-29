@@ -28,9 +28,7 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
   const personalityBaseline = ref(initialBaseline)
   const savedStreaming = localStorage.getItem(LS_STREAMING_KEY)
   const chatStreamingEnabled = ref(
-    initialCoreVersion === 'v4'
-      ? false
-      : savedStreaming === null ? true : savedStreaming !== 'false'
+    savedStreaming === null ? true : savedStreaming !== 'false'
   )
   const savedDebugTrace = localStorage.getItem(LS_DEBUG_TRACE_KEY)
   const debugTraceEnabled = ref(savedDebugTrace === null ? true : savedDebugTrace !== 'false')
@@ -104,9 +102,6 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
     coreVersion.value = value
     localStorage.setItem(LS_CORE_VERSION_KEY, value)
     clearLatestDebugTrace()
-    if (value === 'v4') {
-      setChatStreamingEnabled(false)
-    }
   }
 
   function setBaseline(value: unknown): void {
@@ -132,7 +127,7 @@ export const useRuntimeControls = defineStore('runtimeControls', () => {
   }
 
   function setChatStreamingEnabled(value: unknown): void {
-    chatStreamingEnabled.value = coreVersion.value === 'v4' ? false : value === true
+    chatStreamingEnabled.value = value === true
     localStorage.setItem(LS_STREAMING_KEY, String(chatStreamingEnabled.value))
   }
 

@@ -65,16 +65,16 @@ describe('runtimeControls store behavior locks', () => {
     expect(store.personalityConfig.label).toBe('温暖')
   })
 
-  it('forces non-streaming mode when the v4 core path is selected', () => {
+  it('allows streaming mode on both v3 and v4 core paths', () => {
     const store = createRuntimeStore({
       [LS_CORE_VERSION_KEY]: 'v4',
       [LS_STREAMING_KEY]: 'true'
     })
 
     expect(store.coreVersion).toBe('v4')
-    expect(store.chatStreamingEnabled).toBe(false)
+    expect(store.chatStreamingEnabled).toBe(true)
 
-    store.setChatStreamingEnabled(true)
+    store.setChatStreamingEnabled(false)
     expect(store.chatStreamingEnabled).toBe(false)
     expect(localStorage.setItem).toHaveBeenCalledWith(LS_STREAMING_KEY, 'false')
 
@@ -87,9 +87,8 @@ describe('runtimeControls store behavior locks', () => {
 
     store.setCoreVersion('v4')
     expect(store.coreVersion).toBe('v4')
-    expect(store.chatStreamingEnabled).toBe(false)
+    expect(store.chatStreamingEnabled).toBe(true)
     expect(localStorage.setItem).toHaveBeenCalledWith(LS_CORE_VERSION_KEY, 'v4')
-    expect(localStorage.setItem).toHaveBeenCalledWith(LS_STREAMING_KEY, 'false')
   })
 
   it('updates and persists only valid personality baselines', () => {

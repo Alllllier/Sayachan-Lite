@@ -208,6 +208,34 @@ export const sayaDeskSayachanResponseSchema = z.object({
   debugTrace: sayaDeskSayachanDebugTraceSchema.optional()
 }).strict()
 
+export const sayaDeskSayachanStreamEventSchema = z.discriminatedUnion('type', [
+  z.object({
+    packetType: z.literal('saya_desk_sayachan_stream_event').default('saya_desk_sayachan_stream_event'),
+    version: z.literal(1).default(1),
+    type: z.enum(sayaDeskSayachanTurnActivityItemKindValues),
+    item: sayaDeskSayachanTurnActivityItemSchema
+  }).strict(),
+  z.object({
+    packetType: z.literal('saya_desk_sayachan_stream_event').default('saya_desk_sayachan_stream_event'),
+    version: z.literal(1).default(1),
+    type: z.literal('completed'),
+    reply: z.string().min(1),
+    turnId: z.string().min(1).optional(),
+    turnActivity: sayaDeskSayachanTurnActivitySchema.optional(),
+    trace: sayaDeskSayachanTraceSchema.optional(),
+    debugTrace: sayaDeskSayachanDebugTraceSchema.optional()
+  }).strict(),
+  z.object({
+    packetType: z.literal('saya_desk_sayachan_stream_event').default('saya_desk_sayachan_stream_event'),
+    version: z.literal(1).default(1),
+    type: z.literal('error'),
+    error: z.object({
+      code: z.string().min(1).optional(),
+      message: z.string().min(1).optional()
+    }).strict().optional()
+  }).strict()
+])
+
 export type SayaDeskSayachanSurface = (typeof sayaDeskSayachanSurfaceValues)[number]
 export type SayaDeskSayachanFocusType = (typeof sayaDeskSayachanFocusTypeValues)[number]
 export type SayaDeskHostToolCapability = (typeof sayaDeskHostToolCapabilityValues)[number]
@@ -215,6 +243,7 @@ export type SayaDeskSayachanFocusDto = z.infer<typeof sayaDeskSayachanFocusSchem
 export type SayaDeskSayachanTurnActivityItemDto = z.infer<typeof sayaDeskSayachanTurnActivityItemSchema>
 export type SayaDeskSayachanTurnActivityDto = z.infer<typeof sayaDeskSayachanTurnActivitySchema>
 export type SayaDeskSayachanDebugTraceDto = z.infer<typeof sayaDeskSayachanDebugTraceSchema>
+export type SayaDeskSayachanStreamEventDto = z.infer<typeof sayaDeskSayachanStreamEventSchema>
 export type SayaDeskHostToolExecutionRequestDto = z.infer<typeof sayaDeskHostToolExecutionRequestSchema>
 export type SayaDeskHostToolExecutionResultDto = z.infer<typeof sayaDeskHostToolExecutionResultSchema>
 export type SayaDeskSayachanRequestDto = z.infer<typeof sayaDeskSayachanRequestSchema>

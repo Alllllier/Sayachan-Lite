@@ -3,7 +3,8 @@ import { assertApiResponse } from '../../services/apiResponse'
 import {
   chatResponseSchema,
   chatSessionResponseSchema,
-  sayaDeskSayachanResponseSchema
+  sayaDeskSayachanResponseSchema,
+  sayaDeskSayachanStreamEventSchema
 } from '@sayachan/contracts'
 import type {
   ChatContextDto,
@@ -19,6 +20,8 @@ import type {
   SayaDeskSayachanDebugTraceDto,
   SayaDeskSayachanFocusDto,
   SayaDeskSayachanResponseDto,
+  SayaDeskSayachanStreamEventDto,
+  SayaDeskSayachanTurnActivityItemDto,
   SayaDeskSayachanSurface
 } from '@sayachan/contracts'
 
@@ -58,6 +61,11 @@ type StreamChatHandlers = {
   onDelta?: (delta: string, event: ChatStreamEvent) => void
   onCompleted?: (reply: string, event: ChatStreamEvent) => void
   onToolStatus?: (event: ChatStreamEvent) => void
+}
+
+type StreamSayachanHandlers = {
+  onActivity?: (item: SayaDeskSayachanTurnActivityItemDto, event: SayaDeskSayachanStreamEventDto) => void
+  onCompleted?: (reply: string, event: Extract<SayaDeskSayachanStreamEventDto, { type: 'completed' }>) => void
 }
 
 type SendSayachanInput = {
@@ -199,7 +207,7 @@ export async function startNewChatSession(): Promise<ChatSessionResponseDto> {
   return assertApiResponse(await res.json() as unknown, chatSessionResponseSchema, 'new chat session')
 }
 
-function parseSseBlock(block: string): ChatStreamEvent | null {
+function parseSsePayload(block: string): unknown | null {
   const dataLines = block
     .split('\n')
     .filter(line => line.startsWith('data: '))
@@ -209,7 +217,11 @@ function parseSseBlock(block: string): ChatStreamEvent | null {
     return null
   }
 
-  return JSON.parse(dataLines.join('\n')) as ChatStreamEvent
+  return JSON.parse(dataLines.join('\n')) as unknown
+}
+
+function parseSseBlock(block: string): ChatStreamEvent | null {
+  return parseSsePayload(block) as ChatStreamEvent | null
 }
 
 export async function streamChat(
@@ -298,4 +310,76 @@ export async function streamChat(
   }
 
   throw new Error('Chat stream ended before completion')
+}
+
+export async function streamSayachan(
+  input: SendSayachanInput,
+  handlers: StreamSayachanHandlers = {}
+): Promise<SayachanChatResponse> {
+  const focus = input.focus
+    ? { type: input.focus.type, id: input.focus.id }
+    : null
+  const res = await apiFetch(`${API_BASE}/sayachan/stream`, {
+    method: 'POST',
+    headers: {
+      Accept: 'text/event-stream',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      text: input.text,
+      surface: input.surface || surfaceForSayachanFocus(focus),
+      focus,
+      ...(input.conversationId ? { conversationId: input.conversationId } : {}),
+      ...(typeof input.debug === 'boolean' ? { options: { debug: input.debug } } : {})
+    })
+  })
+
+  if (!res.ok) {
+    throw new Error(`Sayachan stream request failed: ${res.status}`)
+  }
+
+  if (!res.body) {
+    throw new Error('Sayachan stream response did not include a readable body')
+  }
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    buffer += decoder.decode(value, { stream: !done })
+    const blocks = buffer.split('\n\n')
+    buffer = blocks.pop() || ''
+
+    for (const block of blocks) {
+      const payload = parseSsePayload(block.trim())
+      if (!payload) continue
+      const event = assertApiResponse(payload, sayaDeskSayachanStreamEventSchema, 'sayachan stream')
+
+      if (event.type === 'assistant_progress' || event.type === 'tool_status' || event.type === 'capability_notice') {
+        handlers.onActivity?.(event.item, event)
+        continue
+      }
+
+      if (event.type === 'completed') {
+        handlers.onCompleted?.(event.reply, event)
+        return {
+          reply: event.reply,
+          ...(event.turnActivity ? { turnActivity: event.turnActivity } : {}),
+          ...(event.debugTrace ? { sayachanDebugTrace: event.debugTrace } : {})
+        }
+      }
+
+      if (event.type === 'error') {
+        throw new Error(event.error?.message || 'Sayachan stream failed')
+      }
+    }
+
+    if (done) {
+      break
+    }
+  }
+
+  throw new Error('Sayachan stream ended before completion')
 }

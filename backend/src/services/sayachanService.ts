@@ -2,9 +2,12 @@ import {
   type SayaDeskSayachanFocusDto,
   type SayaDeskSayachanDebugTraceDto,
   type SayaDeskSayachanResponseDto,
+  type SayaDeskSayachanStreamEventDto,
+  type SayaDeskSayachanTurnActivityItemDto,
   type SayaDeskSayachanTurnActivityDto,
   type SayaDeskSayachanRequestDto,
-  sayaDeskSayachanResponseSchema
+  sayaDeskSayachanResponseSchema,
+  sayaDeskSayachanStreamEventSchema
 } from '@sayachan/contracts';
 import mongoose from 'mongoose';
 import { BadRequestError, HttpError } from '../http/httpErrors.js';
@@ -21,12 +24,16 @@ import {
 } from './sayachanHostContextService.js';
 import {
   postSayachanCoreTurn,
+  postSayachanCoreTurnStream,
   type SayachanCoreConversationMessage,
   type SayachanCoreTurnRequest,
-  type SayachanCoreTurnResponse
+  type SayachanCoreTurnResponse,
+  type SayachanCoreTurnStreamEvent
 } from './sayachanCoreClient.js';
 
 type SayachanCoreTurnRunner = typeof postSayachanCoreTurn;
+type SayachanCoreTurnStreamRunner = typeof postSayachanCoreTurnStream;
+type SayachanCoreTurnActivityItem = NonNullable<NonNullable<SayachanCoreTurnResponse['turn_activity']>['items']>[number];
 type FocusSnapshotBuilder = (
   focus: SayaDeskSayachanFocusDto | null | undefined,
   userId: ObjectId | null | undefined
@@ -42,6 +49,7 @@ type SayachanExecutionOptions = {
 type PreparedPersistentTurn = Awaited<ReturnType<typeof preparePersistentTextTurn>>;
 
 let runCoreTurn: SayachanCoreTurnRunner = postSayachanCoreTurn;
+let runCoreTurnStream: SayachanCoreTurnStreamRunner = postSayachanCoreTurnStream;
 let focusSnapshotBuilder: FocusSnapshotBuilder = buildSayaDeskFocusSnapshot;
 let hostCapabilityManifestBuilder: HostCapabilityManifestBuilder = buildSayaDeskHostCapabilityManifest;
 let chatPersistenceAvailabilityCheck: ChatPersistenceAvailabilityCheck = defaultChatPersistenceAvailabilityCheck;
@@ -143,7 +151,8 @@ function coreRequest(
   request: SayaDeskSayachanRequestDto,
   preparedTurn: PreparedPersistentTurn,
   authorizedContext: Record<string, unknown> | undefined,
-  options: SayachanExecutionOptions
+  options: SayachanExecutionOptions,
+  stream = false
 ): SayachanCoreTurnRequest {
   const text = latestUserText(request, preparedTurn);
   if (!text) {
@@ -167,8 +176,21 @@ function coreRequest(
     },
     options: {
       debug: request.options?.debug === true && canReturnDebugTrace(options),
-      stream: false
+      stream
     }
+  };
+}
+
+function projectTurnActivityItem(item: SayachanCoreTurnActivityItem): SayaDeskSayachanTurnActivityItemDto {
+  return {
+    itemId: item.item_id,
+    kind: item.kind,
+    status: item.status,
+    text: item.text,
+    display: item.display,
+    canonicalMessage: item.canonical_message,
+    ...(item.capability ? { capability: item.capability } : {}),
+    sourceTrace: item.source_trace
   };
 }
 
@@ -180,16 +202,7 @@ function projectTurnActivity(coreResponse: SayachanCoreTurnResponse): SayaDeskSa
 
   return {
     defaultCollapsed: activity.default_collapsed,
-    items: activity.items.map(item => ({
-      itemId: item.item_id,
-      kind: item.kind,
-      status: item.status,
-      text: item.text,
-      display: item.display,
-      canonicalMessage: item.canonical_message,
-      ...(item.capability ? { capability: item.capability } : {}),
-      sourceTrace: item.source_trace
-    }))
+    items: activity.items.map(projectTurnActivityItem)
   };
 }
 
@@ -423,12 +436,112 @@ export async function chat(request: SayaDeskSayachanRequestDto, options: Sayacha
   }
 }
 
+function coreCompletedEventResponse(event: Extract<SayachanCoreTurnStreamEvent, { type: 'completed' }>): SayachanCoreTurnResponse {
+  return {
+    turn_id: event.turn_id,
+    response: event.response,
+    turn_activity: event.turn_activity,
+    trace: event.trace,
+    debug: event.debug
+  };
+}
+
+function projectStreamEvent(event: SayachanCoreTurnStreamEvent): SayaDeskSayachanStreamEventDto {
+  if (event.type === 'assistant_progress' || event.type === 'tool_status' || event.type === 'capability_notice') {
+    return sayaDeskSayachanStreamEventSchema.parse({
+      packetType: 'saya_desk_sayachan_stream_event',
+      version: 1,
+      type: event.type,
+      item: projectTurnActivityItem(event.item)
+    });
+  }
+
+  if (event.type === 'completed') {
+    const coreResponse = coreCompletedEventResponse(event);
+    return sayaDeskSayachanStreamEventSchema.parse({
+      packetType: 'saya_desk_sayachan_stream_event',
+      version: 1,
+      type: 'completed',
+      reply: coreResponse.response.content,
+      turnId: coreResponse.turn_id,
+      turnActivity: projectTurnActivity(coreResponse),
+      trace: {
+        traceId: coreResponse.trace.trace_id,
+        debugAvailable: coreResponse.trace.debug_available
+      },
+      debugTrace: projectDebugTrace(coreResponse)
+    });
+  }
+
+  if (event.type === 'error') {
+    return sayaDeskSayachanStreamEventSchema.parse({
+      packetType: 'saya_desk_sayachan_stream_event',
+      version: 1,
+      type: 'error',
+      error: {
+        code: event.error.code || 'SAYACHAN_CORE_STREAM_ERROR',
+        message: event.error.message || 'Sayachan Core stream failed'
+      }
+    });
+  }
+
+  return sayaDeskSayachanStreamEventSchema.parse({
+    packetType: 'saya_desk_sayachan_stream_event',
+    version: 1,
+    type: 'error',
+    error: {
+      code: 'SAYACHAN_CORE_STREAM_ERROR',
+      message: 'Sayachan Core stream failed'
+    }
+  });
+}
+
+export async function* chatStream(request: SayaDeskSayachanRequestDto, options: SayachanExecutionOptions = {}): AsyncIterable<SayaDeskSayachanStreamEventDto> {
+  const preparedTurn = options.userId && chatPersistenceAvailabilityCheck()
+    ? await preparePersistentTextTurn({ text: request.text }, { userId: options.userId })
+    : null;
+  const authorizedContext = await buildAuthorizedContext(request, options);
+  const turnRequest = coreRequest(request, preparedTurn, authorizedContext, options, true);
+
+  try {
+    for await (const event of runCoreTurnStream(turnRequest)) {
+      const projected = projectStreamEvent(event);
+      if (projected.type === 'completed') {
+        await persistAssistantReply(preparedTurn, coreCompletedEventResponse(event as Extract<SayachanCoreTurnStreamEvent, { type: 'completed' }>), options);
+      }
+      yield projected;
+    }
+  } catch (error) {
+    if (error instanceof BadRequestError) {
+      throw error;
+    }
+
+    console.error('[Sayachan Route] Core stream failed:', errorMessage(error));
+    yield sayaDeskSayachanStreamEventSchema.parse({
+      packetType: 'saya_desk_sayachan_stream_event',
+      version: 1,
+      type: 'error',
+      error: {
+        code: 'SAYACHAN_CORE_STREAM_FAILED',
+        message: 'Sayachan Core stream failed'
+      }
+    });
+  }
+}
+
 export const __test__ = {
   setCoreTurnRunnerForTest(runner: SayachanCoreTurnRunner) {
     const previous = runCoreTurn;
     runCoreTurn = runner;
     return () => {
       runCoreTurn = previous;
+    };
+  },
+  setCoreTurnStreamRunnerForTest(runner: SayachanCoreTurnStreamRunner) {
+    const previous = runCoreTurnStream;
+    runCoreTurnStream = runner;
+    return () => {
+      runCoreTurnStream = previous;
     };
   },
   setFocusSnapshotBuilderForTest(builder: FocusSnapshotBuilder) {
@@ -457,5 +570,6 @@ export const __test__ = {
 
 export default {
   chat,
+  chatStream,
   __test__
 };

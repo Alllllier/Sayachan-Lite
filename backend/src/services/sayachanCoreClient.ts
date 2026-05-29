@@ -48,6 +48,39 @@ const coreTurnResponseSchema = z.object({
   debug: z.unknown().optional().nullable()
 }).strict();
 
+const coreTurnStreamEventSchema = z.discriminatedUnion('type', [
+  z.object({
+    packetType: z.literal('sayachan_turn_stream_event').optional(),
+    version: z.literal(1).optional(),
+    type: z.enum([
+      'assistant_progress',
+      'tool_status',
+      'capability_notice'
+    ]),
+    item: coreTurnActivityItemSchema
+  }).strict(),
+  z.object({
+    packetType: z.literal('sayachan_turn_stream_event').optional(),
+    version: z.literal(1).optional(),
+    type: z.literal('completed'),
+    turn_id: z.string(),
+    response: coreMessageSchema,
+    turn_activity: coreTurnActivitySchema.nullable().optional(),
+    trace: coreTraceSchema,
+    debug: z.unknown().optional().nullable()
+  }).strict(),
+  z.object({
+    packetType: z.literal('sayachan_turn_stream_event').optional(),
+    version: z.literal(1).optional(),
+    type: z.literal('error'),
+    error: z.object({
+      code: z.string().optional(),
+      message: z.string().optional(),
+      path: z.array(z.union([z.string(), z.number()])).optional()
+    }).strict()
+  }).strict()
+]);
+
 export type SayachanCoreConversationMessage = {
   role: 'user' | 'assistant';
   content: string;
@@ -71,11 +104,12 @@ export type SayachanCoreTurnRequest = {
   };
   options?: {
     debug?: boolean;
-    stream?: false;
+    stream?: boolean;
   };
 };
 
 export type SayachanCoreTurnResponse = z.infer<typeof coreTurnResponseSchema>;
+export type SayachanCoreTurnStreamEvent = z.infer<typeof coreTurnStreamEventSchema>;
 type CoreFetchInit = NonNullable<Parameters<typeof fetch>[1]>;
 
 function configuredCoreUrl(): string {
@@ -126,13 +160,75 @@ export async function postSayachanCoreTurn(
   return parsed.data;
 }
 
+function parseSseBlock(block: string): SayachanCoreTurnStreamEvent | null {
+  const dataLines = block
+    .split('\n')
+    .filter(line => line.startsWith('data: '))
+    .map(line => line.slice('data: '.length));
+
+  if (dataLines.length === 0) {
+    return null;
+  }
+
+  return coreTurnStreamEventSchema.parse(JSON.parse(dataLines.join('\n')));
+}
+
+export async function* postSayachanCoreTurnStream(
+  request: SayachanCoreTurnRequest
+): AsyncIterable<SayachanCoreTurnStreamEvent> {
+  const coreUrl = configuredCoreUrl();
+  const response = await fetchWithTimeout(`${coreUrl}/v1/turns/stream`, {
+    method: 'POST',
+    headers: {
+      Accept: 'text/event-stream',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(request)
+  }, configuredTimeoutMs());
+
+  if (!response.ok) {
+    throw new Error(`Sayachan Core stream request failed with status ${response.status}`);
+  }
+
+  if (!response.body) {
+    throw new Error('Sayachan Core stream response did not include a readable body');
+  }
+
+  const streamBody = response.body as ReadableStream<Uint8Array>;
+  const reader = streamBody.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const chunk = await reader.read();
+    const done = chunk.done;
+    const value = chunk.value;
+    buffer += decoder.decode(value, { stream: !done });
+    const blocks = buffer.split('\n\n');
+    buffer = blocks.pop() || '';
+
+    for (const block of blocks) {
+      const event = parseSseBlock(block.trim());
+      if (event) {
+        yield event;
+      }
+    }
+
+    if (done) {
+      break;
+    }
+  }
+}
+
 export const __test__ = {
   configuredCoreUrl,
   configuredTimeoutMs,
-  coreTurnResponseSchema
+  coreTurnResponseSchema,
+  coreTurnStreamEventSchema
 };
 
 export default {
   postSayachanCoreTurn,
+  postSayachanCoreTurnStream,
   __test__
 };

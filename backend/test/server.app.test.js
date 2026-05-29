@@ -599,6 +599,158 @@ test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply 
   });
 });
 
+test('authenticated /sayachan/stream proxies Sayachan Core v4 SSE events', async () => {
+  const app = createApp({
+    corsOrigins: ['http://localhost:5173'],
+    trustProxy: false
+  });
+  let loadedToken;
+  let capturedCoreRequest;
+  const focusSnapshot = {
+    packetType: 'saya_desk_focus_snapshot',
+    version: 1,
+    source: 'saya_desk_authorized_focus',
+    type: 'note',
+    id: '000000000000000000000301',
+    title: 'Streaming note'
+  };
+  const hostCapabilities = {
+    packetType: 'saya_desk_host_capability_manifest',
+    version: 1,
+    status: 'declared_only',
+    tools: [{
+      name: 'saya_desk.get_note_content',
+      risk: 'read_only',
+      requiresConfirmation: false,
+      execution: 'host_tool_channel'
+    }]
+  };
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'loadUserForSession',
+      value: async (token) => {
+        loadedToken = token;
+        return { _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' };
+      }
+    }
+  ], async () => {
+    const restoreFocusSnapshotBuilder = sayachanService.__test__.setFocusSnapshotBuilderForTest(async () => focusSnapshot);
+    const restoreHostCapabilityManifestBuilder = sayachanService.__test__.setHostCapabilityManifestBuilderForTest(() => hostCapabilities);
+    const restoreChatPersistenceAvailabilityCheck = sayachanService.__test__.setChatPersistenceAvailabilityCheckForTest(() => false);
+    const restoreCoreTurnStreamRunner = sayachanService.__test__.setCoreTurnStreamRunnerForTest(async function* (request) {
+      capturedCoreRequest = request;
+      yield {
+        packetType: 'sayachan_turn_stream_event',
+        version: 1,
+        type: 'assistant_progress',
+        item: {
+          item_id: 'turn-stream:activity:1',
+          kind: 'assistant_progress',
+          status: 'planned',
+          text: '我先回看一下相关笔记。',
+          display: 'collapse_item',
+          canonical_message: false,
+          capability: 'saya_desk.get_note_content',
+          source_trace: ['resolver.activity']
+        }
+      };
+      yield {
+        packetType: 'sayachan_turn_stream_event',
+        version: 1,
+        type: 'tool_status',
+        item: {
+          item_id: 'turn-stream:activity:2',
+          kind: 'tool_status',
+          status: 'completed',
+          text: '读取笔记：Streaming note',
+          display: 'collapse_item',
+          canonical_message: false,
+          capability: 'saya_desk.get_note_content',
+          source_trace: ['resolver.activity', 'runtime.execute_host_tools']
+        }
+      };
+      yield {
+        packetType: 'sayachan_turn_stream_event',
+        version: 1,
+        type: 'completed',
+        turn_id: 'turn-stream',
+        response: {
+          role: 'assistant',
+          content: 'streamed v4 reply'
+        },
+        turn_activity: {
+          default_collapsed: true,
+          items: [
+            {
+              item_id: 'turn-stream:activity:1',
+              kind: 'assistant_progress',
+              status: 'planned',
+              text: '我先回看一下相关笔记。',
+              display: 'collapse_item',
+              canonical_message: false,
+              capability: 'saya_desk.get_note_content',
+              source_trace: ['resolver.activity']
+            },
+            {
+              item_id: 'turn-stream:activity:2',
+              kind: 'tool_status',
+              status: 'completed',
+              text: '读取笔记：Streaming note',
+              display: 'collapse_item',
+              canonical_message: false,
+              capability: 'saya_desk.get_note_content',
+              source_trace: ['resolver.activity', 'runtime.execute_host_tools']
+            }
+          ]
+        },
+        trace: {
+          trace_id: 'turn-stream',
+          debug_available: true
+        },
+        debug: null
+      };
+    });
+
+    try {
+      const response = await requestKoaApp(app, '/sayachan/stream', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer sayachan-v4-stream-session',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: 'stream this v4 note',
+          surface: 'note-detail',
+          focus: {
+            type: 'note',
+            id: '000000000000000000000301'
+          }
+        })
+      });
+      const events = parseSseEvents(await response.text());
+
+      assert.equal(loadedToken, 'sayachan-v4-stream-session');
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get('content-type'), 'text/event-stream; charset=utf-8');
+      assert.deepEqual(events.map((event) => event.event), ['assistant_progress', 'tool_status', 'completed']);
+      assert.deepEqual(events.map((event) => event.data.type), ['assistant_progress', 'tool_status', 'completed']);
+      assert.equal(events[0].data.item.text, '我先回看一下相关笔记。');
+      assert.equal(events[1].data.item.text, '读取笔记：Streaming note');
+      assert.equal(events[2].data.reply, 'streamed v4 reply');
+      assert.equal(events[2].data.turnActivity.defaultCollapsed, true);
+      assert.equal(capturedCoreRequest.options.stream, true);
+      assert.equal(capturedCoreRequest.host.authorized_context.host_tool_channel.authorization.token, 'sayachan-v4-stream-session');
+    } finally {
+      restoreCoreTurnStreamRunner();
+      restoreChatPersistenceAvailabilityCheck();
+      restoreHostCapabilityManifestBuilder();
+      restoreFocusSnapshotBuilder();
+    }
+  });
+});
+
 test('authenticated /sayachan rejects legacy v3-shaped body', async () => {
   const app = createApp({
     corsOrigins: ['http://localhost:5173'],

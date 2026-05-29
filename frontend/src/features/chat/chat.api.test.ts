@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildChatRuntimePayload, loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat } from './chat.api.js'
+import { buildChatRuntimePayload, loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat, streamSayachan } from './chat.api.js'
 import type { ChatContextDto } from '@sayachan/contracts'
 
 const emptyContext: ChatContextDto = {}
@@ -212,6 +212,57 @@ describe('chat api boundary', () => {
       text: '晚上好',
       surface: 'project-detail',
       focus: { type: 'project', id: 'project-1' },
+      options: { debug: true }
+    })
+  })
+
+  it('streams v4 Sayachan activity events before completion', async () => {
+    const activityTexts: string[] = []
+    let completedActivityDefaultCollapsed: boolean | undefined
+    mockedFetch().mockResolvedValue(streamResponse([
+      'event: assistant_progress\ndata: {"packetType":"saya_desk_sayachan_stream_event","version":1,"type":"assistant_progress","item":{"itemId":"turn-1:activity:1","kind":"assistant_progress","status":"planned","text":"我先回看一下相关笔记。","display":"collapse_item","canonicalMessage":false,"capability":"saya_desk.get_note_content","sourceTrace":["resolver.activity"]}}\n\n',
+      'event: tool_status\ndata: {"packetType":"saya_desk_sayachan_stream_event","version":1,"type":"tool_status","item":{"itemId":"turn-1:activity:2","kind":"tool_status","status":"completed","text":"读取笔记：Tool notes","display":"collapse_item","canonicalMessage":false,"capability":"saya_desk.get_note_content","sourceTrace":["resolver.activity","runtime.execute_host_tools"]}}\n\n',
+      'event: completed\ndata: {"packetType":"saya_desk_sayachan_stream_event","version":1,"type":"completed","reply":"总结好了。","turnId":"turn-1","turnActivity":{"defaultCollapsed":true,"items":[{"itemId":"turn-1:activity:1","kind":"assistant_progress","status":"planned","text":"我先回看一下相关笔记。","display":"collapse_item","canonicalMessage":false,"capability":"saya_desk.get_note_content","sourceTrace":["resolver.activity"]},{"itemId":"turn-1:activity:2","kind":"tool_status","status":"completed","text":"读取笔记：Tool notes","display":"collapse_item","canonicalMessage":false,"capability":"saya_desk.get_note_content","sourceTrace":["resolver.activity","runtime.execute_host_tools"]}]}}\n\n'
+    ]))
+
+    await expect(streamSayachan(
+      {
+        text: '帮我看这篇笔记',
+        focus: { type: 'note', id: 'note-1' },
+        debug: true
+      },
+      {
+        onActivity: item => activityTexts.push(item.text),
+        onCompleted: (_reply, event) => {
+          completedActivityDefaultCollapsed = event.turnActivity?.defaultCollapsed
+        }
+      }
+    )).resolves.toEqual({
+      reply: '总结好了。',
+      turnActivity: {
+        defaultCollapsed: true,
+        items: [
+          expect.objectContaining({ text: '我先回看一下相关笔记。' }),
+          expect.objectContaining({ text: '读取笔记：Tool notes' })
+        ]
+      }
+    })
+
+    expect(fetch).toHaveBeenCalledWith('http://localhost:3001/sayachan/stream', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        Accept: 'text/event-stream',
+        'Content-Type': 'application/json'
+      },
+      body: expect.any(String)
+    })
+    expect(activityTexts).toEqual(['我先回看一下相关笔记。', '读取笔记：Tool notes'])
+    expect(completedActivityDefaultCollapsed).toBe(true)
+    expect(JSON.parse(String(mockedFetch().mock.calls[0][1]?.body))).toEqual({
+      text: '帮我看这篇笔记',
+      surface: 'note-detail',
+      focus: { type: 'note', id: 'note-1' },
       options: { debug: true }
     })
   })

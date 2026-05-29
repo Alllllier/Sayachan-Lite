@@ -133,6 +133,10 @@ function sendCurrentMessage(): Promise<void> {
   return handleSend()
 }
 
+function toggleStreamingMode(): void {
+  runtimeControls.setChatStreamingEnabled(!runtimeControls.chatStreamingEnabled)
+}
+
 function sourceTypeLabel(type: string): string {
   if (type === 'project') return t('chat.sourceProject')
   if (type === 'note') return t('chat.sourceNote')
@@ -486,9 +490,7 @@ function debugCompactList(values: string[] | undefined): string {
                 type="button"
                 role="switch"
                 :aria-checked="runtimeControls.chatStreamingEnabled"
-                :aria-disabled="runtimeControls.coreVersion === 'v4'"
-                :disabled="runtimeControls.coreVersion === 'v4'"
-                @click="runtimeControls.setChatStreamingEnabled(!runtimeControls.chatStreamingEnabled)"
+                @click="toggleStreamingMode"
               >
                 <span class="runtime-toggle-thumb"></span>
               </button>

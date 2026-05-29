@@ -1,9 +1,9 @@
 import { computed, nextTick, ref, watch } from 'vue'
-import type { ChatContextDto, ChatFocusDto, ChatMemoryCandidateDto, ChatMessageDto, ChatSourceReceiptDto } from '@sayachan/contracts'
+import type { ChatContextDto, ChatFocusDto, ChatMemoryCandidateDto, ChatMessageDto, ChatSourceReceiptDto, SayaDeskSayachanTurnActivityItemDto } from '@sayachan/contracts'
 import { useChatStore } from '../../stores/chat'
 import { useRuntimeControls } from '../../stores/runtimeControls'
 import { createMemoryEntry } from '../memory/memory.api.js'
-import { loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat, type ChatStreamEvent, type ChatProviderState, type SayachanTurnActivity } from './chat.api.js'
+import { loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat, streamSayachan, type ChatStreamEvent, type ChatProviderState, type SayachanTurnActivity } from './chat.api.js'
 import {
   canSendChatMessage,
   getChatFallbackReply,
@@ -338,19 +338,63 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
 
       if (runtimeControls.coreVersion === 'v4') {
         pendingMessageIndexForTurn = chatStore.messages.length
+        const pendingIndex = pendingMessageIndexForTurn
         pendingAssistantMessageIndex.value = pendingMessageIndexForTurn
         chatStore.appendMessage({ role: 'assistant', content: '' })
         scrollToBottom()
 
-        const { reply, turnActivity, sayachanDebugTrace } = await sendSayachan({
+        const sayachanRequest = {
           text,
           focus: focusForTurn
             ? { type: focusForTurn.type, id: focusForTurn.id }
             : null,
           debug: runtimeControls.debugTraceEnabled
-        })
-        chatStore.updateMessageContent(pendingMessageIndexForTurn, reply)
-        setMessageTurnActivity(pendingMessageIndexForTurn, turnActivity)
+        }
+
+        if (runtimeControls.chatStreamingEnabled) {
+          isStreamingReply.value = true
+          const activityItems: SayaDeskSayachanTurnActivityItemDto[] = []
+          const projectStreamingActivity = (defaultCollapsed: boolean): SayachanTurnActivity => ({
+            defaultCollapsed,
+            items: [...activityItems]
+          })
+          const upsertActivityItem = (item: SayaDeskSayachanTurnActivityItemDto): void => {
+            const existingIndex = activityItems.findIndex(current => current.itemId === item.itemId)
+            if (existingIndex >= 0) {
+              activityItems[existingIndex] = item
+            } else {
+              activityItems.push(item)
+            }
+          }
+
+          const { reply, turnActivity, sayachanDebugTrace } = await streamSayachan(sayachanRequest, {
+            onActivity: (item) => {
+              upsertActivityItem(item)
+              setMessageTurnActivity(pendingIndex, projectStreamingActivity(false))
+              scrollToBottom()
+            },
+            onCompleted: (reply, event) => {
+              chatStore.updateMessageContent(pendingIndex, reply)
+              setMessageTurnActivity(
+                pendingIndex,
+                event.turnActivity || projectStreamingActivity(true)
+              )
+              runtimeControls.setLatestSayachanDebugTrace(event.debugTrace)
+              scrollToBottom()
+            }
+          })
+
+          chatStore.updateMessageContent(pendingIndex, reply)
+          setMessageTurnActivity(pendingIndex, turnActivity || projectStreamingActivity(true))
+          runtimeControls.setLatestSayachanDebugTrace(sayachanDebugTrace)
+          chatStore.setProviderState(undefined)
+          scrollToBottom()
+          return
+        }
+
+        const { reply, turnActivity, sayachanDebugTrace } = await sendSayachan(sayachanRequest)
+        chatStore.updateMessageContent(pendingIndex, reply)
+        setMessageTurnActivity(pendingIndex, turnActivity)
         runtimeControls.setLatestSayachanDebugTrace(sayachanDebugTrace)
         chatStore.setProviderState(undefined)
         scrollToBottom()

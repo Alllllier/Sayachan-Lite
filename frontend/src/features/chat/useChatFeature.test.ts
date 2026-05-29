@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChatFeature } from './useChatFeature.js'
-import { loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat } from './chat.api.js'
+import { loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat, streamSayachan } from './chat.api.js'
 import { createMemoryEntry } from '../memory/memory.api.js'
 import type { ChatFocusDto, ChatMessageDto } from '@sayachan/contracts'
 
@@ -22,7 +22,8 @@ vi.mock('./chat.api.js', () => ({
   sendChat: vi.fn(),
   sendSayachan: vi.fn(),
   startNewChatSession: vi.fn(),
-  streamChat: vi.fn()
+  streamChat: vi.fn(),
+  streamSayachan: vi.fn()
 }))
 
 vi.mock('../memory/memory.api.js', () => ({
@@ -34,6 +35,7 @@ const sendChatMock = vi.mocked(sendChat)
 const sendSayachanMock = vi.mocked(sendSayachan)
 const startNewChatSessionMock = vi.mocked(startNewChatSession)
 const streamChatMock = vi.mocked(streamChat)
+const streamSayachanMock = vi.mocked(streamSayachan)
 const createMemoryEntryMock = vi.mocked(createMemoryEntry)
 
 type ChatStoreMock = ReturnType<typeof createChatStore>
@@ -139,6 +141,7 @@ describe('useChatFeature orchestration', () => {
     sendSayachanMock.mockResolvedValue({ reply: 'V4 Done' })
     startNewChatSessionMock.mockResolvedValue({ messages: [] })
     streamChatMock.mockResolvedValue({ reply: 'Done' })
+    streamSayachanMock.mockResolvedValue({ reply: 'V4 Done' })
     createMemoryEntryMock.mockResolvedValue({
       _id: 'memory-1',
       type: 'preference',
@@ -319,7 +322,7 @@ describe('useChatFeature orchestration', () => {
       status: 'in_progress',
       source: 'user_focus_button'
     }
-    sendSayachanMock.mockResolvedValue({
+    const streamResponse: Awaited<ReturnType<typeof streamSayachan>> = {
       reply: 'V4 Done',
       sayachanDebugTrace: {
         runtime: 'cognition-runtime',
@@ -395,17 +398,42 @@ describe('useChatFeature orchestration', () => {
           }
         ]
       }
-    })
+    }
     const feature = useChatFeature()
+    streamSayachanMock.mockImplementation(async (_input, handlers) => {
+      const turnActivity = streamResponse.turnActivity
+      if (!turnActivity) throw new Error('test stream activity missing')
+      const firstActivity = turnActivity.items[0]
+      handlers?.onActivity?.(firstActivity, {
+        packetType: 'saya_desk_sayachan_stream_event',
+        version: 1,
+        type: 'assistant_progress',
+        item: firstActivity
+      })
+      expect(feature.getMessageTurnActivity(1)?.defaultCollapsed).toBe(false)
+      handlers?.onCompleted?.('V4 Done', {
+        packetType: 'saya_desk_sayachan_stream_event',
+        version: 1,
+        type: 'completed',
+        reply: 'V4 Done',
+        turnActivity,
+        debugTrace: streamResponse.sayachanDebugTrace
+      })
+      return streamResponse
+    })
     feature.inputValue.value = '晚上好'
 
     await feature.handleSend()
 
-    expect(sendSayachan).toHaveBeenCalledWith({
+    expect(streamSayachan).toHaveBeenCalledWith({
       text: '晚上好',
       focus: { type: 'project', id: 'project-1' },
       debug: true
-    })
+    }, expect.objectContaining({
+      onActivity: expect.any(Function),
+      onCompleted: expect.any(Function)
+    }))
+    expect(sendSayachan).not.toHaveBeenCalled()
     expect(streamChat).not.toHaveBeenCalled()
     expect(sendChat).not.toHaveBeenCalled()
     expect(chatStore.appendMessage).toHaveBeenNthCalledWith(2, { role: 'assistant', content: '' })
@@ -452,6 +480,35 @@ describe('useChatFeature orchestration', () => {
         agentStepStatuses: ['completed']
       })
     }))
+    expect(chatStore.setProviderState).toHaveBeenCalledWith(undefined)
+    expect(chatStore.setSending).toHaveBeenLastCalledWith(false)
+  })
+
+  it('routes v4 turns through the non-streaming Sayachan gateway when streaming is disabled', async () => {
+    runtimeControls.coreVersion = 'v4'
+    runtimeControls.chatStreamingEnabled = false
+    chatStore.activeFocus = {
+      type: 'note',
+      id: 'note-1',
+      title: 'Streaming switch wiring',
+      summary: 'Toggle regression',
+      source: 'user_focus_button'
+    }
+    const feature = useChatFeature()
+    feature.inputValue.value = '检查一下流式开关'
+
+    await feature.handleSend()
+
+    expect(sendSayachan).toHaveBeenCalledWith({
+      text: '检查一下流式开关',
+      focus: { type: 'note', id: 'note-1' },
+      debug: true
+    })
+    expect(streamSayachan).not.toHaveBeenCalled()
+    expect(streamChat).not.toHaveBeenCalled()
+    expect(sendChat).not.toHaveBeenCalled()
+    expect(chatStore.appendMessage).toHaveBeenNthCalledWith(2, { role: 'assistant', content: '' })
+    expect(chatStore.updateMessageContent).toHaveBeenCalledWith(1, 'V4 Done')
     expect(chatStore.setProviderState).toHaveBeenCalledWith(undefined)
     expect(chatStore.setSending).toHaveBeenLastCalledWith(false)
   })
