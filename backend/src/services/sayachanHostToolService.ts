@@ -17,12 +17,23 @@ type RuntimeDocument = {
 };
 
 type ToolArgs = Record<string, unknown>;
+type SearchDomain = 'notes' | 'projects' | 'tasks';
+type SearchMatchMode = 'any' | 'all';
+type SearchExpression = {
+  query: string;
+  terms: string[];
+  matchMode: SearchMatchMode;
+  domains: SearchDomain[];
+};
 type HexStringLike = {
   toHexString: () => string;
 };
 
 const CONTENT_LIMIT = 6000;
 const SEARCH_RESULT_LIMIT = 5;
+const SEARCH_TERM_LIMIT = 6;
+const SEARCH_TERM_CHAR_LIMIT = 40;
+const SEARCH_DOMAINS: SearchDomain[] = ['notes', 'projects', 'tasks'];
 const TASK_RESULT_LIMIT = 40;
 
 function isDatabaseReady(): boolean {
@@ -87,6 +98,76 @@ function focusArg(args: ToolArgs): { type?: string; id?: string } {
 function argumentString(args: ToolArgs, key: string): string | undefined {
   const value = args[key];
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function normalizedSearchTerm(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const normalized = value.replace(/\s+/g, ' ').trim();
+  if (!normalized) {
+    return undefined;
+  }
+  return normalized.slice(0, SEARCH_TERM_CHAR_LIMIT).trim();
+}
+
+function uniqueValues<T>(values: T[]): T[] {
+  return values.filter((value, index) => values.indexOf(value) === index);
+}
+
+function argumentStringArray(args: ToolArgs, key: string): string[] {
+  const value = args[key];
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return uniqueValues(value.map(normalizedSearchTerm).filter((item): item is string => Boolean(item)))
+    .slice(0, SEARCH_TERM_LIMIT);
+}
+
+function normalizedSearchDomains(value: unknown): SearchDomain[] {
+  if (!Array.isArray(value)) {
+    return SEARCH_DOMAINS;
+  }
+  const domains = uniqueValues(
+    value.filter((item): item is SearchDomain => (
+      typeof item === 'string' && (SEARCH_DOMAINS as string[]).includes(item)
+    ))
+  );
+  return domains.length ? domains : SEARCH_DOMAINS;
+}
+
+function normalizedSearchMatchMode(value: unknown): SearchMatchMode {
+  return value === 'all' ? 'all' : 'any';
+}
+
+function searchTerms(args: ToolArgs): string[] {
+  const explicitTerms = argumentStringArray(args, 'terms');
+  if (explicitTerms.length) {
+    return explicitTerms;
+  }
+
+  return uniqueValues([
+    normalizedSearchTerm(args.query),
+    normalizedSearchTerm(args.text)
+  ].filter((item): item is string => Boolean(item))).slice(0, SEARCH_TERM_LIMIT);
+}
+
+function buildSearchExpression(args: ToolArgs): SearchExpression | null {
+  const terms = searchTerms(args);
+  if (!terms.length) {
+    return null;
+  }
+
+  const query = normalizedSearchTerm(args.query)
+    || normalizedSearchTerm(args.text)
+    || terms.join(' ');
+
+  return {
+    query,
+    terms,
+    matchMode: normalizedSearchMatchMode(args.matchMode),
+    domains: normalizedSearchDomains(args.domains)
+  };
 }
 
 function objectIdFromText(value: string | undefined, source: string): ObjectId | null {
@@ -309,32 +390,67 @@ function escapedRegex(value: string): RegExp {
   return new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
 }
 
+function searchFieldFilter(
+  fields: string[],
+  patterns: RegExp[],
+  matchMode: SearchMatchMode
+): Record<string, unknown> {
+  if (matchMode === 'all') {
+    return {
+      $and: patterns.map(pattern => ({
+        $or: fields.map(field => ({ [field]: pattern }))
+      }))
+    };
+  }
+
+  return {
+    $or: fields.flatMap(field => patterns.map(pattern => ({ [field]: pattern })))
+  };
+}
+
+function domainSelected(expression: SearchExpression, domain: SearchDomain): boolean {
+  return expression.domains.includes(domain);
+}
+
+function searchResultSummary(expression: SearchExpression, count: number): string {
+  if (expression.terms.length <= 1) {
+    return `Found ${count} item(s) for "${expression.query}".`;
+  }
+  return `Found ${count} item(s) for terms "${expression.terms.join('", "')}".`;
+}
+
 async function searchProductContext(
   request: SayaDeskHostToolExecutionRequestDto,
   userId: ObjectId
 ): Promise<SayaDeskHostToolExecutionResultDto> {
-  const query = argumentString(request.arguments, 'query') || argumentString(request.arguments, 'text');
-  if (!query) {
+  const expression = buildSearchExpression(request.arguments);
+  if (!expression) {
     return denied(request, 'HOST_TOOL_MISSING_QUERY', 'No search query was provided.');
   }
-  const pattern = escapedRegex(query);
+  const patterns = expression.terms.map(escapedRegex);
 
   const [notes, projects, tasks] = await Promise.all([
-    Note.find(combineFilters(
-      buildArchiveFilter('false'),
-      { userId },
-      { $or: [{ title: pattern }, { content: pattern }] }
-    )).sort({ updatedAt: -1 }).limit(SEARCH_RESULT_LIMIT),
-    Project.find(combineFilters(
-      buildArchiveFilter('false'),
-      { userId },
-      { $or: [{ name: pattern }, { summary: pattern }] }
-    )).sort({ updatedAt: -1 }).limit(SEARCH_RESULT_LIMIT),
-    Task.find(combineFilters(
-      buildArchiveFilter('false'),
-      { userId },
-      { title: pattern }
-    )).sort({ updatedAt: -1 }).limit(SEARCH_RESULT_LIMIT)
+    domainSelected(expression, 'notes')
+      ? Note.find(combineFilters(
+          buildArchiveFilter('false'),
+          { userId },
+          searchFieldFilter(['title', 'content'], patterns, expression.matchMode)
+        )).sort({ updatedAt: -1 }).limit(SEARCH_RESULT_LIMIT)
+      : Promise.resolve([]),
+    domainSelected(expression, 'projects')
+      ? Project.find(combineFilters(
+          buildArchiveFilter('false'),
+          { userId },
+          searchFieldFilter(['name', 'summary'], patterns, expression.matchMode)
+        )).sort({ updatedAt: -1 }).limit(SEARCH_RESULT_LIMIT)
+      : Promise.resolve([]),
+    domainSelected(expression, 'tasks')
+      ? Task.find(combineFilters(
+          buildArchiveFilter('false'),
+          { userId },
+          searchFieldFilter(['title'], patterns, expression.matchMode)
+        )).sort({ updatedAt: -1 }).limit(SEARCH_RESULT_LIMIT)
+      : Promise.resolve([])
   ]);
 
   const noteResults = notes.map(note => {
@@ -381,12 +497,13 @@ async function searchProductContext(
     result: {
       packetType: 'saya_desk_host_tool_result',
       version: 1,
-      query,
+      query: expression.query,
+      search: expression,
       notes: noteResults,
       projects: projectResults,
       tasks: taskResults
     },
-    resultSummary: `Found ${sourceReceipts.length} item(s) for "${query}".`,
+    resultSummary: searchResultSummary(expression, sourceReceipts.length),
     sourceReceipts,
     truncated: false,
     sourceTrace: sourceTrace(request, 'search_product_context')
@@ -434,6 +551,7 @@ export async function executeHostTool(
 }
 
 export const __test__ = {
+  buildSearchExpression,
   isDatabaseReady
 };
 

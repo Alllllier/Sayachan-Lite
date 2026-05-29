@@ -97,6 +97,38 @@ function withPatchedMethods(patches, run) {
     });
 }
 
+test('sayachan host search expression normalizes safe term arrays', () => {
+  assert.deepEqual(
+    sayachanHostToolService.__test__.buildSearchExpression({
+      query: '猫咪',
+      text: '备用文本',
+      terms: [' 猫 ', '猫咪', '猫', '', 42],
+      matchMode: 'any',
+      domains: ['notes', 'unknown', 'tasks']
+    }),
+    {
+      query: '猫咪',
+      terms: ['猫', '猫咪'],
+      matchMode: 'any',
+      domains: ['notes', 'tasks']
+    }
+  );
+
+  assert.deepEqual(
+    sayachanHostToolService.__test__.buildSearchExpression({
+      query: '猫咪',
+      matchMode: 'unsupported',
+      domains: ['unknown']
+    }),
+    {
+      query: '猫咪',
+      terms: ['猫咪'],
+      matchMode: 'any',
+      domains: ['notes', 'projects', 'tasks']
+    }
+  );
+});
+
 test('allowedOrigins supports comma-separated FRONTEND_ORIGINS', () => {
   const originalEnv = { ...process.env };
 
