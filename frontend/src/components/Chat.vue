@@ -171,12 +171,8 @@ function turnActivityItems(index: number): SayaDeskSayachanTurnActivityItemDto[]
   return getMessageTurnActivity(index)?.items || []
 }
 
-function turnActivityNarrationItems(index: number): SayaDeskSayachanTurnActivityItemDto[] {
-  return turnActivityItems(index).filter(item => item.kind !== 'tool_status')
-}
-
-function turnActivityToolItems(index: number): SayaDeskSayachanTurnActivityItemDto[] {
-  return turnActivityItems(index).filter(item => item.kind === 'tool_status')
+function isTurnActivityToolItem(item: SayaDeskSayachanTurnActivityItemDto): boolean {
+  return item.kind === 'tool_status'
 }
 
 function isMessageTurnActivityLive(index: number): boolean {
@@ -336,69 +332,62 @@ function debugCompactList(values: string[] | undefined): string {
                 :class="{ 'chat-turn-activity-live--active': isMessageTurnActivityLive(idx) }"
               >
                 <template v-if="isMessageTurnActivityLive(idx)">
-                  <div
-                    v-if="turnActivityNarrationItems(idx).length > 0"
-                    class="chat-activity-bubble-list"
-                  >
-                    <div
-                      v-for="item in turnActivityNarrationItems(idx)"
+                  <div class="chat-activity-sequence">
+                    <template
+                      v-for="item in turnActivityItems(idx)"
                       :key="item.itemId"
-                      class="chat-activity-bubble"
-                      :class="`chat-activity-bubble--${item.status}`"
                     >
-                      {{ item.text }}
-                    </div>
-                  </div>
-                  <div v-else class="chat-activity-bubble chat-activity-bubble--planned">
-                    {{ t('chat.pendingMeta') }}
-                  </div>
-                  <div
-                    v-if="turnActivityToolItems(idx).length > 0"
-                    class="chat-tool-chip-list"
-                  >
-                    <span
-                      v-for="item in turnActivityToolItems(idx)"
-                      :key="item.itemId"
-                      class="chat-tool-chip"
-                      :class="`chat-tool-chip--${item.status}`"
-                    >
-                      <span class="chat-tool-chip-status">{{ turnActivityStatusLabel(item.status) }}</span>
-                      <span class="chat-tool-chip-text">{{ item.text }}</span>
-                    </span>
+                      <div
+                        v-if="isTurnActivityToolItem(item)"
+                        class="chat-tool-chip-list"
+                      >
+                        <span
+                          class="chat-tool-chip"
+                          :class="`chat-tool-chip--${item.status}`"
+                        >
+                          <span class="chat-tool-chip-status">{{ turnActivityStatusLabel(item.status) }}</span>
+                          <span class="chat-tool-chip-text">{{ item.text }}</span>
+                        </span>
+                      </div>
+                      <div
+                        v-else
+                        class="chat-bubble chat-activity-bubble"
+                        :class="`chat-activity-bubble--${item.status}`"
+                      >
+                        {{ item.text }}
+                      </div>
+                    </template>
                   </div>
                 </template>
                 <details v-else class="chat-turn-activity">
                   <summary class="chat-turn-activity-summary">
                     <span>{{ turnActivitySummary(idx) }}</span>
                   </summary>
-                  <div class="chat-turn-activity-content">
-                    <div
-                      v-if="turnActivityNarrationItems(idx).length > 0"
-                      class="chat-activity-bubble-list"
+                  <div class="chat-turn-activity-content chat-activity-sequence">
+                    <template
+                      v-for="item in turnActivityItems(idx)"
+                      :key="item.itemId"
                     >
                       <div
-                        v-for="item in turnActivityNarrationItems(idx)"
-                        :key="item.itemId"
-                        class="chat-activity-bubble"
+                        v-if="isTurnActivityToolItem(item)"
+                        class="chat-tool-chip-list"
+                      >
+                        <span
+                          class="chat-tool-chip"
+                          :class="`chat-tool-chip--${item.status}`"
+                        >
+                          <span class="chat-tool-chip-status">{{ turnActivityStatusLabel(item.status) }}</span>
+                          <span class="chat-tool-chip-text">{{ item.text }}</span>
+                        </span>
+                      </div>
+                      <div
+                        v-else
+                        class="chat-bubble chat-activity-bubble"
                         :class="`chat-activity-bubble--${item.status}`"
                       >
                         {{ item.text }}
                       </div>
-                    </div>
-                    <div
-                      v-if="turnActivityToolItems(idx).length > 0"
-                      class="chat-tool-chip-list"
-                    >
-                      <span
-                        v-for="item in turnActivityToolItems(idx)"
-                        :key="item.itemId"
-                        class="chat-tool-chip"
-                        :class="`chat-tool-chip--${item.status}`"
-                      >
-                        <span class="chat-tool-chip-status">{{ turnActivityStatusLabel(item.status) }}</span>
-                        <span class="chat-tool-chip-text">{{ item.text }}</span>
-                      </span>
-                    </div>
+                    </template>
                   </div>
                 </details>
               </div>
@@ -1151,10 +1140,7 @@ function debugCompactList(values: string[] | undefined): string {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 5px;
-  color: var(--text-secondary);
-  font-size: 11px;
-  line-height: 1.35;
+  gap: 6px;
 }
 
 .chat-turn-activity-live--active {
@@ -1163,17 +1149,15 @@ function debugCompactList(values: string[] | undefined): string {
 
 .chat-turn-activity {
   width: 100%;
-  border: 1px solid color-mix(in srgb, var(--action-primary) 18%, var(--border-default));
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--action-primary) 5%, var(--surface-card));
-  overflow: hidden;
 }
 
 .chat-turn-activity-summary {
   cursor: pointer;
   list-style: none;
-  padding: 6px 8px;
+  padding: 1px 2px 5px;
   color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.35;
   user-select: none;
 }
 
@@ -1193,35 +1177,24 @@ function debugCompactList(values: string[] | undefined): string {
 }
 
 .chat-turn-activity-content {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 0 8px 8px;
+  padding-bottom: 2px;
 }
 
-.chat-activity-bubble-list {
+.chat-activity-sequence {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 5px;
+  gap: 6px;
   width: 100%;
 }
 
 .chat-activity-bubble {
   max-width: 100%;
-  padding: 8px 10px;
-  border: 1px solid color-mix(in srgb, var(--action-primary) 16%, var(--border-default));
-  border-radius: 14px 14px 14px 4px;
-  background: var(--surface-panel);
-  color: var(--text-primary);
-  font-size: 12px;
-  line-height: 1.45;
-  word-break: break-word;
 }
 
 .chat-activity-bubble--failed,
 .chat-activity-bubble--unavailable {
-  border-color: color-mix(in srgb, var(--action-danger) 24%, var(--border-default));
+  outline: 1px solid color-mix(in srgb, var(--action-danger) 24%, transparent);
 }
 
 .chat-tool-chip-list {
@@ -1229,6 +1202,8 @@ function debugCompactList(values: string[] | undefined): string {
   flex-wrap: wrap;
   gap: 5px;
   max-width: 100%;
+  padding-left: 6px;
+  margin: 2px 0 4px;
 }
 
 .chat-tool-chip {
@@ -1237,7 +1212,6 @@ function debugCompactList(values: string[] | undefined): string {
   gap: 5px;
   max-width: 100%;
   padding: 3px 7px;
-  border: 1px solid color-mix(in srgb, var(--action-primary) 18%, var(--border-default));
   border-radius: 999px;
   background: color-mix(in srgb, var(--action-primary) 5%, var(--surface-card));
   color: var(--text-secondary);
@@ -1247,7 +1221,6 @@ function debugCompactList(values: string[] | undefined): string {
 
 .chat-tool-chip--failed,
 .chat-tool-chip--unavailable {
-  border-color: color-mix(in srgb, var(--action-danger) 26%, var(--border-default));
   background: color-mix(in srgb, var(--action-danger) 6%, var(--surface-card));
 }
 

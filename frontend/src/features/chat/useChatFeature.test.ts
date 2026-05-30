@@ -404,13 +404,25 @@ describe('useChatFeature orchestration', () => {
       const turnActivity = streamResponse.turnActivity
       if (!turnActivity) throw new Error('test stream activity missing')
       const firstActivity = turnActivity.items[0]
+      const partialActivity = {
+        ...firstActivity,
+        text: '我先回看'
+      }
+      handlers?.onActivity?.(partialActivity, {
+        packetType: 'saya_desk_sayachan_stream_event',
+        version: 1,
+        type: 'assistant_progress',
+        item: partialActivity
+      })
+      expect(feature.getMessageTurnActivity(1)?.defaultCollapsed).toBe(false)
+      expect(feature.getMessageTurnActivity(1)?.items).toEqual([partialActivity])
       handlers?.onActivity?.(firstActivity, {
         packetType: 'saya_desk_sayachan_stream_event',
         version: 1,
         type: 'assistant_progress',
         item: firstActivity
       })
-      expect(feature.getMessageTurnActivity(1)?.defaultCollapsed).toBe(false)
+      expect(feature.getMessageTurnActivity(1)?.items).toEqual([firstActivity])
       handlers?.onDelta?.('V4 ', {
         packetType: 'saya_desk_sayachan_stream_event',
         version: 1,

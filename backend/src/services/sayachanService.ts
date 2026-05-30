@@ -28,13 +28,16 @@ import {
 } from './sayachanHostContextService.js';
 import {
   postSayachanCoreTurnAdvance,
+  postSayachanCoreTurnAdvanceStream,
   type SayachanCoreAdvanceTurnRequest,
   type SayachanCoreConversationMessage,
-  type SayachanCoreTurnAdvanceResult
+  type SayachanCoreTurnAdvanceResult,
+  type SayachanCoreTurnAdvanceStreamEvent
 } from './sayachanCoreClient.js';
 import { executeHostTool } from './sayachanHostToolService.js';
 
 type SayachanCoreTurnAdvanceRunner = typeof postSayachanCoreTurnAdvance;
+type SayachanCoreTurnAdvanceStreamRunner = typeof postSayachanCoreTurnAdvanceStream;
 type FocusSnapshotBuilder = (
   focus: SayaDeskSayachanFocusDto | null | undefined,
   userId: ObjectId | null | undefined
@@ -50,6 +53,7 @@ type PreparedPersistentTurn = Awaited<ReturnType<typeof preparePersistentTextTur
 const MAX_ADVANCE_ITERATIONS = 8;
 
 let runCoreTurnAdvance: SayachanCoreTurnAdvanceRunner = postSayachanCoreTurnAdvance;
+let runCoreTurnAdvanceStream: SayachanCoreTurnAdvanceStreamRunner = postSayachanCoreTurnAdvanceStream;
 let focusSnapshotBuilder: FocusSnapshotBuilder = buildSayaDeskFocusSnapshot;
 let hostCapabilityManifestBuilder: HostCapabilityManifestBuilder = buildSayaDeskHostCapabilityManifest;
 let chatPersistenceAvailabilityCheck: ChatPersistenceAvailabilityCheck = defaultChatPersistenceAvailabilityCheck;
@@ -260,6 +264,22 @@ function toolStatusActivityItem(
   };
 }
 
+function streamedActivityItem(
+  itemId: string,
+  text: string,
+  sourceTrace?: string[]
+): SayaDeskSayachanTurnActivityItemDto {
+  return {
+    itemId,
+    kind: 'assistant_progress',
+    status: 'planned',
+    text: text || '...',
+    display: 'collapse_item',
+    canonicalMessage: false,
+    sourceTrace: sourceTrace || ['sayachan_core_advance_stream']
+  };
+}
+
 function deniedToolOutputForProposal(
   proposal: SayaDeskSayachanToolProposalDto,
   code: string,
@@ -456,7 +476,6 @@ async function* streamAdvanceLoop(
   startRequest: SayaDeskSayachanAdvanceTurnRequestDto,
   options: SayachanExecutionOptions
 ): AsyncIterable<SayaDeskSayachanStreamEventDto> {
-  let coreResult = await runCoreTurnAdvance(startRequest);
   const activityItems: SayaDeskSayachanTurnActivityItemDto[] = [];
   let activityIndex = 0;
   let streamedText = '';
@@ -470,15 +489,113 @@ async function* streamAdvanceLoop(
       : undefined
   );
 
+  let advanceRequest: SayaDeskSayachanAdvanceTurnRequestDto = startRequest;
   for (let iteration = 1; iteration <= MAX_ADVANCE_ITERATIONS; iteration += 1) {
-    for (const item of advanceActivityItems(coreResult, nextActivityIndex)) {
-      activityItems.push(item);
+    const shouldStreamFinalDeltas = Boolean(advanceRequest.turnCursor)
+      || (advanceRequest.hostToolManifest?.tools.length || 0) === 0;
+    const bufferedFinalDeltas: string[] = [];
+    let coreResult: SayachanCoreTurnAdvanceResult | null = null;
+    let toolCallStarted = false;
+    let streamedActivityId: string | null = null;
+    let streamedActivityText = '';
+    let streamedActivitySourceTrace: string[] | undefined;
+
+    const ensureStreamedActivity = (text: string): SayaDeskSayachanTurnActivityItemDto => {
+      if (!streamedActivityId) {
+        streamedActivityId = `stream-activity:${nextActivityIndex()}`;
+      }
+      streamedActivityText = text;
+      const item = streamedActivityItem(
+        streamedActivityId,
+        streamedActivityText,
+        streamedActivitySourceTrace
+      );
+      const existingIndex = activityItems.findIndex(current => current.itemId === item.itemId);
+      if (existingIndex >= 0) {
+        activityItems[existingIndex] = item;
+      } else {
+        activityItems.push(item);
+      }
+      return item;
+    };
+
+    for await (const event of runCoreTurnAdvanceStream(advanceRequest)) {
+      if (event.type === 'tool_call_started') {
+        toolCallStarted = true;
+        if (bufferedFinalDeltas.length > 0) {
+          const item = ensureStreamedActivity(bufferedFinalDeltas.join(''));
+          yield activityStreamEvent(item);
+          bufferedFinalDeltas.length = 0;
+        }
+        continue;
+      }
+
+      if (event.type === 'assistant_delta') {
+        if (toolCallStarted) {
+          const item = ensureStreamedActivity(streamedActivityText + event.delta);
+          yield activityStreamEvent(item);
+        } else if (shouldStreamFinalDeltas) {
+          streamedText += event.delta;
+          yield assistantDeltaStreamEvent(event.delta, streamedText);
+        } else {
+          bufferedFinalDeltas.push(event.delta);
+        }
+        continue;
+      }
+
+      if (event.type === 'completed') {
+        coreResult = event.result;
+        continue;
+      }
+
+      if (event.type === 'error') {
+        throw new Error(event.error.message);
+      }
+    }
+
+    if (!coreResult) {
+      throw new Error('Sayachan Core advance stream ended before completion');
+    }
+
+    if (coreResult.status === 'needs_host_action' && bufferedFinalDeltas.length > 0) {
+      const item = ensureStreamedActivity(bufferedFinalDeltas.join(''));
       yield activityStreamEvent(item);
+      bufferedFinalDeltas.length = 0;
+    } else if (bufferedFinalDeltas.length > 0) {
+      for (const delta of bufferedFinalDeltas) {
+        streamedText += delta;
+        yield assistantDeltaStreamEvent(delta, streamedText);
+      }
+      bufferedFinalDeltas.length = 0;
+    }
+
+    for (const item of advanceActivityItems(coreResult, nextActivityIndex)) {
+      if (streamedActivityId && item.kind === 'assistant_progress') {
+        streamedActivitySourceTrace = item.sourceTrace;
+        const updatedItem = streamedActivityItem(
+          streamedActivityId,
+          item.text,
+          item.sourceTrace
+        );
+        const existingIndex = activityItems.findIndex(current => current.itemId === updatedItem.itemId);
+        const existingItem = existingIndex >= 0 ? activityItems[existingIndex] : undefined;
+        if (existingIndex >= 0) {
+          activityItems[existingIndex] = updatedItem;
+        } else {
+          activityItems.push(updatedItem);
+        }
+        if (!existingItem || existingItem.text !== updatedItem.text) {
+          yield activityStreamEvent(updatedItem);
+        }
+      } else {
+        activityItems.push(item);
+        yield activityStreamEvent(item);
+      }
     }
 
     if (coreResult.status === 'completed' || coreResult.status === 'blocked' || coreResult.status === 'failed') {
       const reply = finalAdvanceText(coreResult);
-      if (reply) {
+      if (!streamedText && reply) {
         streamedText += reply;
         yield assistantDeltaStreamEvent(reply, streamedText);
       }
@@ -499,13 +616,13 @@ async function* streamAdvanceLoop(
       yield activityStreamEvent(item);
     }
 
-    coreResult = await runCoreTurnAdvance({
+    advanceRequest = {
       host: startRequest.host,
       conversation: startRequest.conversation,
       options: startRequest.options,
       turnCursor: coreResult.turnCursor,
       toolOutputs
-    });
+    };
   }
 
   throw new Error(`Sayachan Core advance loop exceeded ${MAX_ADVANCE_ITERATIONS} iteration(s)`);
@@ -587,6 +704,13 @@ export const __test__ = {
     runCoreTurnAdvance = runner;
     return () => {
       runCoreTurnAdvance = previous;
+    };
+  },
+  setCoreTurnAdvanceStreamRunnerForTest(runner: SayachanCoreTurnAdvanceStreamRunner) {
+    const previous = runCoreTurnAdvanceStream;
+    runCoreTurnAdvanceStream = runner;
+    return () => {
+      runCoreTurnAdvanceStream = previous;
     };
   },
   setFocusSnapshotBuilderForTest(builder: FocusSnapshotBuilder) {

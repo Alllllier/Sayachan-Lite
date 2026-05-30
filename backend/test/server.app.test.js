@@ -534,32 +534,44 @@ test('authenticated /sayachan/stream emits host-orchestrated advance events', as
     const restoreFocusSnapshotBuilder = sayachanService.__test__.setFocusSnapshotBuilderForTest(async () => focusSnapshot);
     const restoreHostCapabilityManifestBuilder = sayachanService.__test__.setHostCapabilityManifestBuilderForTest(() => hostCapabilities);
     const restoreChatPersistenceAvailabilityCheck = sayachanService.__test__.setChatPersistenceAvailabilityCheckForTest(() => false);
-    const restoreCoreTurnAdvanceRunner = sayachanService.__test__.setCoreTurnAdvanceRunnerForTest(async (request) => {
+    const restoreCoreTurnAdvanceStreamRunner = sayachanService.__test__.setCoreTurnAdvanceStreamRunnerForTest(async function* (request) {
       capturedCoreRequest = request;
-      return {
-        turnId: 'turn-stream',
-        advanceId: 'adv-stream',
-        status: 'completed',
-        assistantOutput: [
-          {
-            outputId: 'turn-stream:activity-output:1',
-            kind: 'activity_text',
-            text: '我先回看一下相关笔记。',
-            canonicalMessage: false,
-            sourceTrace: ['provider.activity']
-          },
-          {
-            outputId: 'turn-stream:final:1',
-            kind: 'final_text',
-            text: 'streamed v4 reply',
-            canonicalMessage: true,
-            sourceTrace: ['provider.final']
+      yield {
+        packetType: 'sayachan_turn_advance_stream_event',
+        version: 1,
+        type: 'assistant_delta',
+        delta: 'streamed ',
+        text: 'streamed '
+      };
+      yield {
+        packetType: 'sayachan_turn_advance_stream_event',
+        version: 1,
+        type: 'assistant_delta',
+        delta: 'v4 reply',
+        text: 'streamed v4 reply'
+      };
+      yield {
+        packetType: 'sayachan_turn_advance_stream_event',
+        version: 1,
+        type: 'completed',
+        result: {
+          turnId: 'turn-stream',
+          advanceId: 'adv-stream',
+          status: 'completed',
+          assistantOutput: [
+            {
+              outputId: 'turn-stream:final:1',
+              kind: 'final_text',
+              text: 'streamed v4 reply',
+              canonicalMessage: true,
+              sourceTrace: ['provider.final']
+            }
+          ],
+          toolProposals: [],
+          trace: {
+            traceId: 'turn-stream',
+            debugAvailable: true
           }
-        ],
-        toolProposals: [],
-        trace: {
-          traceId: 'turn-stream',
-          debugAvailable: true
         }
       };
     });
@@ -585,18 +597,182 @@ test('authenticated /sayachan/stream emits host-orchestrated advance events', as
       assert.equal(loadedToken, 'sayachan-v4-stream-session');
       assert.equal(response.status, 200);
       assert.equal(response.headers.get('content-type'), 'text/event-stream; charset=utf-8');
-      assert.deepEqual(events.map((event) => event.event), ['assistant_progress', 'assistant_delta', 'completed']);
-      assert.deepEqual(events.map((event) => event.data.type), ['assistant_progress', 'assistant_delta', 'completed']);
-      assert.equal(events[0].data.item.text, '我先回看一下相关笔记。');
-      assert.equal(events[1].data.delta, 'streamed v4 reply');
+      assert.deepEqual(events.map((event) => event.event), ['assistant_delta', 'assistant_delta', 'completed']);
+      assert.deepEqual(events.map((event) => event.data.type), ['assistant_delta', 'assistant_delta', 'completed']);
+      assert.equal(events[0].data.delta, 'streamed ');
+      assert.equal(events[1].data.delta, 'v4 reply');
       assert.equal(events[1].data.text, 'streamed v4 reply');
       assert.equal(events[2].data.reply, 'streamed v4 reply');
-      assert.equal(events[2].data.turnActivity.defaultCollapsed, true);
+      assert.equal(events[2].data.turnActivity, undefined);
       assert.deepEqual(capturedCoreRequest.host.authorizedContext, { focus: focusSnapshot });
       assert.deepEqual(capturedCoreRequest.hostToolManifest, hostCapabilities);
       assert.equal(Object.hasOwn(capturedCoreRequest.options, 'stream'), false);
     } finally {
-      restoreCoreTurnAdvanceRunner();
+      restoreCoreTurnAdvanceStreamRunner();
+      restoreChatPersistenceAvailabilityCheck();
+      restoreHostCapabilityManifestBuilder();
+      restoreFocusSnapshotBuilder();
+    }
+  });
+});
+
+test('authenticated /sayachan/stream streams tool activity before host execution', async () => {
+  const app = createApp({
+    corsOrigins: ['http://localhost:5173'],
+    trustProxy: false
+  });
+  const capturedCoreRequests = [];
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'loadUserForSession',
+      value: async () => ({ _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' })
+    }
+  ], async () => {
+    const restoreFocusSnapshotBuilder = sayachanService.__test__.setFocusSnapshotBuilderForTest(async () => null);
+    const restoreHostCapabilityManifestBuilder = sayachanService.__test__.setHostCapabilityManifestBuilderForTest(() => ({
+      packetType: 'saya_desk_host_capability_manifest',
+      version: 1,
+      status: 'declared_only',
+      tools: [{
+        name: 'saya_desk.get_note_content',
+        label: '读取笔记内容',
+        description: 'Read authorized note content by note id.',
+        parameterSchema: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            noteId: { type: 'string', minLength: 1 }
+          }
+        },
+        resultSummary: 'Returns clipped note content and source receipt.'
+      }]
+    }));
+    const restoreChatPersistenceAvailabilityCheck = sayachanService.__test__.setChatPersistenceAvailabilityCheckForTest(() => false);
+    const restoreCoreTurnAdvanceStreamRunner = sayachanService.__test__.setCoreTurnAdvanceStreamRunnerForTest(async function* (request) {
+      capturedCoreRequests.push(request);
+      if (!request.turnCursor) {
+        yield {
+          packetType: 'sayachan_turn_advance_stream_event',
+          version: 1,
+          type: 'tool_call_started',
+          itemId: 'provider-tool-1',
+          outputIndex: 0,
+          providerToolName: 'saya_desk_get_note_content',
+          providerCallId: 'provider-call-1'
+        };
+        yield {
+          packetType: 'sayachan_turn_advance_stream_event',
+          version: 1,
+          type: 'assistant_delta',
+          delta: '我先',
+          text: '我先'
+        };
+        yield {
+          packetType: 'sayachan_turn_advance_stream_event',
+          version: 1,
+          type: 'assistant_delta',
+          delta: '回看一下相关笔记。',
+          text: '我先回看一下相关笔记。'
+        };
+        yield {
+          packetType: 'sayachan_turn_advance_stream_event',
+          version: 1,
+          type: 'completed',
+          result: {
+            turnId: 'turn-tool-stream',
+            advanceId: 'turn-tool-stream:advance:1',
+            turnCursor: 'cursor-tool-stream',
+            status: 'needs_host_action',
+            assistantOutput: [{
+              outputId: 'turn-tool-stream:assistant-output:1',
+              kind: 'activity_text',
+              text: '我先回看一下相关笔记。',
+              canonicalMessage: true,
+              sourceTrace: ['provider.activity']
+            }],
+            toolProposals: [{
+              proposalId: 'turn-tool-stream:tool-proposal:1',
+              providerCallId: 'provider-call-1',
+              providerToolName: 'saya_desk_get_note_content',
+              capability: 'saya_desk.get_note_content',
+              arguments: {},
+              label: '读取笔记内容',
+              sourceTrace: ['provider.native_function_call']
+            }],
+            trace: {
+              traceId: 'turn-tool-stream',
+              debugAvailable: false
+            }
+          }
+        };
+        return;
+      }
+
+      yield {
+        packetType: 'sayachan_turn_advance_stream_event',
+        version: 1,
+        type: 'assistant_delta',
+        delta: '这次没有读到笔记内容。',
+        text: '这次没有读到笔记内容。'
+      };
+      yield {
+        packetType: 'sayachan_turn_advance_stream_event',
+        version: 1,
+        type: 'completed',
+        result: {
+          turnId: 'turn-tool-stream',
+          advanceId: 'turn-tool-stream:advance:2',
+          status: 'completed',
+          assistantOutput: [{
+            outputId: 'turn-tool-stream:assistant-output:2',
+            kind: 'final_text',
+            text: '这次没有读到笔记内容。',
+            canonicalMessage: true,
+            sourceTrace: ['provider.final']
+          }],
+          toolProposals: [],
+          trace: {
+            traceId: 'turn-tool-stream',
+            debugAvailable: false
+          }
+        }
+      };
+    });
+
+    try {
+      const response = await requestKoaApp(app, '/sayachan/stream', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer sayachan-v4-tool-stream-session',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: '帮我看看这篇笔记内容',
+          surface: 'note-detail'
+        })
+      });
+      const events = parseSseEvents(await response.text());
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(
+        events.map((event) => event.event),
+        ['assistant_progress', 'assistant_progress', 'tool_status', 'assistant_delta', 'completed']
+      );
+      assert.equal(events[0].data.item.text, '我先');
+      assert.equal(events[1].data.item.text, '我先回看一下相关笔记。');
+      assert.equal(events[0].data.item.itemId, events[1].data.item.itemId);
+      assert.equal(events[2].data.item.kind, 'tool_status');
+      assert.equal(events[3].data.delta, '这次没有读到笔记内容。');
+      assert.equal(events[4].data.reply, '这次没有读到笔记内容。');
+      assert.equal(events[4].data.turnActivity.items.length, 2);
+      assert.equal(capturedCoreRequests.length, 2);
+      assert.equal(capturedCoreRequests[1].turnCursor, 'cursor-tool-stream');
+      assert.equal(capturedCoreRequests[1].toolOutputs[0].providerCallId, 'provider-call-1');
+      assert.ok(['denied', 'unavailable'].includes(capturedCoreRequests[1].toolOutputs[0].status));
+    } finally {
+      restoreCoreTurnAdvanceStreamRunner();
       restoreChatPersistenceAvailabilityCheck();
       restoreHostCapabilityManifestBuilder();
       restoreFocusSnapshotBuilder();
