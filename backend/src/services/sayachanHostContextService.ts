@@ -207,10 +207,7 @@ export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityMan
             }
           }
         },
-        resultSummary: 'Returns matched notes, projects, and tasks with compact excerpts and source receipts.',
-        risk: 'read_only',
-        requiresConfirmation: false,
-        execution: 'host_gateway_route'
+        resultSummary: 'Returns matched notes, projects, and tasks with compact excerpts and source receipts.'
       },
       {
         name: 'saya_desk.get_project_context',
@@ -223,10 +220,7 @@ export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityMan
             projectId: { type: 'string', minLength: 1 }
           }
         },
-        resultSummary: 'Returns a compact authorized project context snapshot.',
-        risk: 'read_only',
-        requiresConfirmation: false,
-        execution: 'host_gateway_route'
+        resultSummary: 'Returns a compact authorized project context snapshot.'
       },
       {
         name: 'saya_desk.list_project_tasks',
@@ -239,10 +233,7 @@ export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityMan
             projectId: { type: 'string', minLength: 1 }
           }
         },
-        resultSummary: 'Returns project task titles, statuses, and compact metadata.',
-        risk: 'read_only',
-        requiresConfirmation: false,
-        execution: 'host_gateway_route'
+        resultSummary: 'Returns project task titles, statuses, and compact metadata.'
       },
       {
         name: 'saya_desk.get_note_content',
@@ -255,10 +246,7 @@ export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityMan
             noteId: { type: 'string', minLength: 1 }
           }
         },
-        resultSummary: 'Returns note title, clipped content, updated time, and source receipt.',
-        risk: 'read_only',
-        requiresConfirmation: false,
-        execution: 'host_gateway_route'
+        resultSummary: 'Returns note title, clipped content, updated time, and source receipt.'
       }
     ]
   });

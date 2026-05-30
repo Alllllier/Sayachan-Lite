@@ -62,11 +62,6 @@ export const sayaDeskSayachanTurnActivitySchema = z.object({
 }).strict()
 
 export const sayaDeskHostToolRiskValues = ['read_only', 'write', 'external_effect', 'unknown'] as const
-export const sayaDeskHostToolExecutionValues = [
-  'future_tool_lane',
-  'host_gateway_route',
-  'host_tool_channel'
-] as const
 export const sayaDeskHostToolExecutionStatusValues = ['completed', 'denied', 'failed', 'unavailable'] as const
 
 export const sayaDeskHostToolCapabilityDeclarationSchema = z.object({
@@ -74,10 +69,7 @@ export const sayaDeskHostToolCapabilityDeclarationSchema = z.object({
   label: z.string().min(1),
   description: z.string().min(1),
   parameterSchema: z.record(z.string(), z.unknown()).default({}),
-  resultSummary: z.string().min(1).optional(),
-  risk: z.enum(sayaDeskHostToolRiskValues),
-  requiresConfirmation: z.boolean(),
-  execution: z.enum(sayaDeskHostToolExecutionValues)
+  resultSummary: z.string().min(1).optional()
 }).strict()
 
 export const sayaDeskHostCapabilityManifestSchema = z.object({
@@ -120,6 +112,120 @@ export const sayaDeskHostToolExecutionResultSchema = z.object({
   error: sayaDeskHostToolExecutionErrorSchema.optional(),
   sourceTrace: z.array(z.string()).optional()
 }).strict()
+
+export const sayaDeskSayachanAssistantOutputKindValues = ['activity_text', 'final_text'] as const
+export const sayaDeskSayachanTurnAdvanceStatusValues = [
+  'completed',
+  'needs_host_action',
+  'blocked',
+  'failed'
+] as const
+
+export const sayaDeskSayachanAssistantOutputItemSchema = z.object({
+  outputId: z.string().min(1),
+  kind: z.enum(sayaDeskSayachanAssistantOutputKindValues),
+  text: z.string().min(1),
+  canonicalMessage: z.boolean().default(false),
+  sourceTrace: z.array(z.string()).default([])
+}).strict()
+
+export const sayaDeskSayachanToolProposalSchema = z.object({
+  proposalId: z.string().min(1),
+  providerCallId: z.string().min(1),
+  providerToolName: z.string().min(1),
+  capability: z.enum(sayaDeskHostToolCapabilityValues),
+  arguments: z.record(z.string(), z.unknown()).default({}),
+  label: z.string().min(1).optional(),
+  sourceTrace: z.array(z.string()).default([])
+}).strict()
+
+export const sayaDeskSayachanToolOutputSchema = z.object({
+  proposalId: z.string().min(1).optional(),
+  providerCallId: z.string().min(1),
+  capability: z.enum(sayaDeskHostToolCapabilityValues),
+  status: z.enum(sayaDeskHostToolExecutionStatusValues),
+  result: z.unknown().optional(),
+  resultSummary: z.string().min(1).optional(),
+  sourceReceipts: z.array(sayaDeskHostToolSourceReceiptSchema).default([]),
+  truncated: z.boolean().default(false),
+  error: sayaDeskHostToolExecutionErrorSchema.optional(),
+  sourceTrace: z.array(z.string()).default([])
+}).strict()
+
+export const sayaDeskSayachanAdvanceConversationMessageSchema = z.object({
+  role: z.enum(['user', 'assistant', 'system', 'tool']),
+  content: z.string().min(1)
+}).strict()
+
+export const sayaDeskSayachanAdvanceConversationSchema = z.object({
+  conversationId: z.string().min(1).nullable().optional(),
+  sessionId: z.string().min(1).nullable().optional(),
+  recentMessages: z.array(sayaDeskSayachanAdvanceConversationMessageSchema).default([])
+}).strict()
+
+export const sayaDeskSayachanAdvanceHostSchema = z.object({
+  hostId: z.literal('saya-desk'),
+  surface: z.enum(sayaDeskSayachanSurfaceValues).default('workspace-chat'),
+  hostUserId: z.string().min(1).nullable().optional(),
+  coreSubjectId: z.string().min(1).nullable().optional(),
+  locale: z.string().min(1).nullable().optional(),
+  timezone: z.string().min(1).nullable().optional(),
+  authorizedContext: z.record(z.string(), z.unknown()).default({})
+}).strict()
+
+export const sayaDeskSayachanAdvanceTurnInputSchema = z.object({
+  text: z.string().trim().min(1)
+}).strict()
+
+export const sayaDeskSayachanAdvanceTurnRequestSchema = z.object({
+  host: sayaDeskSayachanAdvanceHostSchema,
+  conversation: sayaDeskSayachanAdvanceConversationSchema.default({ recentMessages: [] }),
+  options: sayaDeskSayachanOptionsSchema.default({}),
+  input: sayaDeskSayachanAdvanceTurnInputSchema.optional(),
+  turnCursor: z.string().min(1).optional(),
+  toolOutputs: z.array(sayaDeskSayachanToolOutputSchema).default([]),
+  hostToolManifest: sayaDeskHostCapabilityManifestSchema.optional()
+}).strict().superRefine((value, ctx) => {
+  const hasInput = value.input !== undefined
+  const hasCursor = value.turnCursor !== undefined
+  if (hasInput === hasCursor) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Advance turn request requires exactly one of input or turnCursor.',
+      path: ['turnCursor']
+    })
+  }
+  if (value.toolOutputs.length > 0 && !hasCursor) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'toolOutputs can only continue an existing turnCursor.',
+      path: ['toolOutputs']
+    })
+  }
+})
+
+export const sayaDeskSayachanTurnAdvanceResultSchema = z.object({
+  turnId: z.string().min(1),
+  advanceId: z.string().min(1),
+  turnCursor: z.string().min(1).nullable().optional(),
+  status: z.enum(sayaDeskSayachanTurnAdvanceStatusValues),
+  assistantOutput: z.array(sayaDeskSayachanAssistantOutputItemSchema).default([]),
+  toolProposals: z.array(sayaDeskSayachanToolProposalSchema).default([]),
+  turnActivity: sayaDeskSayachanTurnActivitySchema.optional(),
+  trace: z.object({
+    traceId: z.string().min(1),
+    debugAvailable: z.boolean().optional()
+  }).strict().optional(),
+  debugTrace: z.record(z.string(), z.unknown()).optional()
+}).strict().superRefine((value, ctx) => {
+  if (value.status === 'needs_host_action' && value.toolProposals.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'needs_host_action requires at least one tool proposal.',
+      path: ['toolProposals']
+    })
+  }
+})
 
 export const sayaDeskSayachanRequestSchema = z.object({
   text: z.string().trim().min(1),
@@ -278,5 +384,10 @@ export type SayaDeskHostToolCapabilityDeclarationDto = z.infer<typeof sayaDeskHo
 export type SayaDeskHostCapabilityManifestDto = z.infer<typeof sayaDeskHostCapabilityManifestSchema>
 export type SayaDeskHostToolExecutionRequestDto = z.infer<typeof sayaDeskHostToolExecutionRequestSchema>
 export type SayaDeskHostToolExecutionResultDto = z.infer<typeof sayaDeskHostToolExecutionResultSchema>
+export type SayaDeskSayachanAssistantOutputItemDto = z.infer<typeof sayaDeskSayachanAssistantOutputItemSchema>
+export type SayaDeskSayachanToolProposalDto = z.infer<typeof sayaDeskSayachanToolProposalSchema>
+export type SayaDeskSayachanToolOutputDto = z.infer<typeof sayaDeskSayachanToolOutputSchema>
+export type SayaDeskSayachanAdvanceTurnRequestDto = z.infer<typeof sayaDeskSayachanAdvanceTurnRequestSchema>
+export type SayaDeskSayachanTurnAdvanceResultDto = z.infer<typeof sayaDeskSayachanTurnAdvanceResultSchema>
 export type SayaDeskSayachanRequestDto = z.infer<typeof sayaDeskSayachanRequestSchema>
 export type SayaDeskSayachanResponseDto = z.infer<typeof sayaDeskSayachanResponseSchema>
