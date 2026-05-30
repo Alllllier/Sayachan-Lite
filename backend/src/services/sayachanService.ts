@@ -1,8 +1,13 @@
 import {
+  type SayaDeskHostToolExecutionRequestDto,
+  type SayaDeskHostToolExecutionResultDto,
+  type SayaDeskSayachanAdvanceTurnRequestDto,
   type SayaDeskSayachanFocusDto,
   type SayaDeskSayachanDebugTraceDto,
   type SayaDeskSayachanResponseDto,
   type SayaDeskSayachanStreamEventDto,
+  type SayaDeskSayachanToolOutputDto,
+  type SayaDeskSayachanToolProposalDto,
   type SayaDeskSayachanTurnActivityItemDto,
   type SayaDeskSayachanTurnActivityDto,
   type SayaDeskSayachanRequestDto,
@@ -23,15 +28,20 @@ import {
   type SayaDeskHostCapabilityManifest
 } from './sayachanHostContextService.js';
 import {
+  postSayachanCoreTurnAdvance,
   postSayachanCoreTurn,
   postSayachanCoreTurnStream,
+  type SayachanCoreAdvanceTurnRequest,
   type SayachanCoreConversationMessage,
+  type SayachanCoreTurnAdvanceResult,
   type SayachanCoreTurnRequest,
   type SayachanCoreTurnResponse,
   type SayachanCoreTurnStreamEvent
 } from './sayachanCoreClient.js';
+import { executeHostTool } from './sayachanHostToolService.js';
 
 type SayachanCoreTurnRunner = typeof postSayachanCoreTurn;
+type SayachanCoreTurnAdvanceRunner = typeof postSayachanCoreTurnAdvance;
 type SayachanCoreTurnStreamRunner = typeof postSayachanCoreTurnStream;
 type SayachanCoreTurnActivityItem = NonNullable<NonNullable<SayachanCoreTurnResponse['turn_activity']>['items']>[number];
 type FocusSnapshotBuilder = (
@@ -48,7 +58,10 @@ type SayachanExecutionOptions = {
 };
 type PreparedPersistentTurn = Awaited<ReturnType<typeof preparePersistentTextTurn>>;
 
+const MAX_ADVANCE_ITERATIONS = 8;
+
 let runCoreTurn: SayachanCoreTurnRunner = postSayachanCoreTurn;
+let runCoreTurnAdvance: SayachanCoreTurnAdvanceRunner = postSayachanCoreTurnAdvance;
 let runCoreTurnStream: SayachanCoreTurnStreamRunner = postSayachanCoreTurnStream;
 let focusSnapshotBuilder: FocusSnapshotBuilder = buildSayaDeskFocusSnapshot;
 let hostCapabilityManifestBuilder: HostCapabilityManifestBuilder = buildSayaDeskHostCapabilityManifest;
@@ -108,6 +121,14 @@ async function buildAuthorizedContext(
   }
 
   return Object.keys(authorizedContext).length > 0 ? authorizedContext : undefined;
+}
+
+async function buildAdvanceAuthorizedContext(
+  request: SayaDeskSayachanRequestDto,
+  options: SayachanExecutionOptions
+): Promise<Record<string, unknown> | undefined> {
+  const focusSnapshot = await focusSnapshotBuilder(request.focus, options.userId);
+  return focusSnapshot ? { focus: focusSnapshot } : undefined;
 }
 
 function latestUserText(request: SayaDeskSayachanRequestDto, preparedTurn: PreparedPersistentTurn): string {
@@ -183,6 +204,40 @@ function coreRequest(
   };
 }
 
+function coreAdvanceStartRequest(
+  request: SayaDeskSayachanRequestDto,
+  preparedTurn: PreparedPersistentTurn,
+  authorizedContext: Record<string, unknown> | undefined,
+  options: SayachanExecutionOptions
+): SayachanCoreAdvanceTurnRequest {
+  const text = latestUserText(request, preparedTurn);
+  if (!text) {
+    throw new BadRequestError('Chat message is required', {
+      code: 'MISSING_CHAT_MESSAGE',
+      source: 'request.body.messages'
+    });
+  }
+
+  return {
+    host: {
+      hostId: 'saya-desk',
+      surface: request.surface,
+      ...(options.userId ? { hostUserId: options.userId.toHexString() } : {}),
+      authorizedContext: authorizedContext || {}
+    },
+    input: { text },
+    conversation: {
+      conversationId: request.conversationId || (preparedTurn ? recordId(preparedTurn.conversation) : undefined),
+      recentMessages: messagesForCore(request, preparedTurn)
+    },
+    options: {
+      debug: request.options?.debug === true && canReturnDebugTrace(options)
+    },
+    toolOutputs: [],
+    hostToolManifest: hostCapabilityManifestBuilder()
+  };
+}
+
 function projectTurnActivityItem(item: SayachanCoreTurnActivityItem): SayaDeskSayachanTurnActivityItemDto {
   return {
     itemId: item.item_id,
@@ -206,6 +261,267 @@ function projectTurnActivity(coreResponse: SayachanCoreTurnResponse): SayaDeskSa
     defaultCollapsed: activity.default_collapsed,
     items: activity.items.map(projectTurnActivityItem)
   };
+}
+
+function projectAdvanceTrace(coreResult: SayachanCoreTurnAdvanceResult): SayaDeskSayachanResponseDto['trace'] {
+  if (!coreResult.trace) {
+    return undefined;
+  }
+  return {
+    traceId: coreResult.trace.traceId,
+    debugAvailable: coreResult.trace.debugAvailable
+  };
+}
+
+function finalAdvanceText(coreResult: SayachanCoreTurnAdvanceResult): string {
+  return coreResult.assistantOutput.find(output => output.kind === 'final_text')?.text
+    || coreResult.assistantOutput.at(-1)?.text
+    || '这次没有拿到可用回复。';
+}
+
+function activityStatusFromToolStatus(
+  status: SayaDeskHostToolExecutionResultDto['status']
+): SayaDeskSayachanTurnActivityItemDto['status'] {
+  if (status === 'denied') {
+    return 'skipped';
+  }
+  return status;
+}
+
+function toolActivityText(
+  proposal: SayaDeskSayachanToolProposalDto,
+  result: SayaDeskHostToolExecutionResultDto
+): string {
+  const label = proposal.label || proposal.capability;
+  const title = result.sourceReceipts?.[0]?.title;
+  return title ? `${label}：${title}` : label;
+}
+
+function advanceActivityItems(
+  coreResult: SayachanCoreTurnAdvanceResult,
+  nextIndex: () => number
+): SayaDeskSayachanTurnActivityItemDto[] {
+  return coreResult.assistantOutput
+    .filter(output => output.kind === 'activity_text')
+    .map(output => ({
+      itemId: `${coreResult.turnId}:activity:${nextIndex()}`,
+      kind: 'assistant_progress',
+      status: 'planned',
+      text: output.text,
+      display: 'collapse_item',
+      canonicalMessage: false,
+      sourceTrace: output.sourceTrace
+    }));
+}
+
+function toolStatusActivityItem(
+  turnId: string,
+  proposal: SayaDeskSayachanToolProposalDto,
+  result: SayaDeskHostToolExecutionResultDto,
+  nextIndex: () => number
+): SayaDeskSayachanTurnActivityItemDto {
+  return {
+    itemId: `${turnId}:activity:${nextIndex()}`,
+    kind: 'tool_status',
+    status: activityStatusFromToolStatus(result.status),
+    text: toolActivityText(proposal, result),
+    display: 'collapse_item',
+    canonicalMessage: false,
+    capability: proposal.capability,
+    sourceTrace: result.sourceTrace || proposal.sourceTrace
+  };
+}
+
+function deniedToolOutputForProposal(
+  proposal: SayaDeskSayachanToolProposalDto,
+  code: string,
+  message: string
+): SayaDeskSayachanToolOutputDto {
+  return {
+    proposalId: proposal.proposalId,
+    providerCallId: proposal.providerCallId,
+    capability: proposal.capability,
+    status: 'denied',
+    resultSummary: message,
+    sourceReceipts: [],
+    truncated: false,
+    error: { code, message },
+    sourceTrace: [
+      'saya_desk_host_orchestrator',
+      'host_tool_denied',
+      ...proposal.sourceTrace
+    ]
+  };
+}
+
+function failedToolOutputForProposal(
+  proposal: SayaDeskSayachanToolProposalDto,
+  error: unknown
+): SayaDeskSayachanToolOutputDto {
+  const message = errorMessage(error);
+  return {
+    proposalId: proposal.proposalId,
+    providerCallId: proposal.providerCallId,
+    capability: proposal.capability,
+    status: 'failed',
+    resultSummary: 'Host tool execution failed.',
+    sourceReceipts: [],
+    truncated: false,
+    error: {
+      code: 'HOST_TOOL_EXECUTION_FAILED',
+      message
+    },
+    sourceTrace: [
+      'saya_desk_host_orchestrator',
+      'host_tool_failed',
+      ...proposal.sourceTrace
+    ]
+  };
+}
+
+function hostToolRequestForProposal(
+  proposal: SayaDeskSayachanToolProposalDto,
+  turnId: string,
+  options: SayachanExecutionOptions
+): SayaDeskHostToolExecutionRequestDto | null {
+  if (!options.userId) {
+    return null;
+  }
+  return {
+    requestId: proposal.proposalId,
+    turnId,
+    hostId: 'saya-desk',
+    hostUserId: options.userId.toHexString(),
+    capability: proposal.capability,
+    arguments: proposal.arguments,
+    risk: 'read_only',
+    requiresConfirmation: false,
+    sourceTrace: [
+      'saya_desk_host_orchestrator',
+      ...proposal.sourceTrace
+    ]
+  };
+}
+
+function toolOutputFromExecutionResult(
+  proposal: SayaDeskSayachanToolProposalDto,
+  result: SayaDeskHostToolExecutionResultDto
+): SayaDeskSayachanToolOutputDto {
+  return {
+    proposalId: proposal.proposalId,
+    providerCallId: proposal.providerCallId,
+    capability: result.capability,
+    status: result.status,
+    ...(result.result !== undefined ? { result: result.result } : {}),
+    ...(result.resultSummary ? { resultSummary: result.resultSummary } : {}),
+    sourceReceipts: result.sourceReceipts || [],
+    truncated: result.truncated === true,
+    ...(result.error ? { error: result.error } : {}),
+    sourceTrace: result.sourceTrace || []
+  };
+}
+
+function executionResultFromToolOutput(
+  proposal: SayaDeskSayachanToolProposalDto,
+  output: SayaDeskSayachanToolOutputDto
+): SayaDeskHostToolExecutionResultDto {
+  return {
+    requestId: proposal.proposalId,
+    capability: output.capability,
+    status: output.status,
+    ...(output.result !== undefined ? { result: output.result } : {}),
+    ...(output.resultSummary ? { resultSummary: output.resultSummary } : {}),
+    sourceReceipts: output.sourceReceipts,
+    truncated: output.truncated,
+    ...(output.error ? { error: output.error } : {}),
+    sourceTrace: output.sourceTrace
+  };
+}
+
+async function executeToolProposal(
+  proposal: SayaDeskSayachanToolProposalDto,
+  turnId: string,
+  options: SayachanExecutionOptions
+): Promise<{
+  result: SayaDeskHostToolExecutionResultDto;
+  output: SayaDeskSayachanToolOutputDto;
+}> {
+  const request = hostToolRequestForProposal(proposal, turnId, options);
+  if (!request || !options.userId) {
+    const output = deniedToolOutputForProposal(
+      proposal,
+      'HOST_TOOL_USER_MISSING',
+      'Host user identity is not available for this tool request.'
+    );
+    return {
+      result: executionResultFromToolOutput(proposal, output),
+      output
+    };
+  }
+
+  try {
+    const result = await executeHostTool(request, { userId: options.userId });
+    return {
+      result,
+      output: toolOutputFromExecutionResult(proposal, result)
+    };
+  } catch (error) {
+    const output = failedToolOutputForProposal(proposal, error);
+    return {
+      result: executionResultFromToolOutput(proposal, output),
+      output
+    };
+  }
+}
+
+async function runAdvanceLoop(
+  startRequest: SayaDeskSayachanAdvanceTurnRequestDto,
+  options: SayachanExecutionOptions
+): Promise<{
+  coreResult: SayachanCoreTurnAdvanceResult;
+  turnActivity?: SayaDeskSayachanTurnActivityDto;
+}> {
+  let coreResult = await runCoreTurnAdvance(startRequest);
+  const activityItems: SayaDeskSayachanTurnActivityItemDto[] = [];
+  let activityIndex = 0;
+  const nextActivityIndex = () => {
+    activityIndex += 1;
+    return activityIndex;
+  };
+
+  for (let iteration = 1; iteration <= MAX_ADVANCE_ITERATIONS; iteration += 1) {
+    activityItems.push(...advanceActivityItems(coreResult, nextActivityIndex));
+
+    if (coreResult.status === 'completed' || coreResult.status === 'blocked' || coreResult.status === 'failed') {
+      return {
+        coreResult,
+        turnActivity: activityItems.length
+          ? { defaultCollapsed: true, items: activityItems }
+          : undefined
+      };
+    }
+
+    if (!coreResult.turnCursor) {
+      throw new Error('Sayachan Core requested host action without a turn cursor');
+    }
+
+    const toolOutputs: SayaDeskSayachanToolOutputDto[] = [];
+    for (const proposal of coreResult.toolProposals) {
+      const { result, output } = await executeToolProposal(proposal, coreResult.turnId, options);
+      toolOutputs.push(output);
+      activityItems.push(toolStatusActivityItem(coreResult.turnId, proposal, result, nextActivityIndex));
+    }
+
+    coreResult = await runCoreTurnAdvance({
+      host: startRequest.host,
+      conversation: startRequest.conversation,
+      options: startRequest.options,
+      turnCursor: coreResult.turnCursor,
+      toolOutputs
+    });
+  }
+
+  throw new Error(`Sayachan Core advance loop exceeded ${MAX_ADVANCE_ITERATIONS} iteration(s)`);
 }
 
 function asRecord(value: unknown): UnknownRecord | null {
@@ -405,26 +721,39 @@ async function persistAssistantReply(
   }
 }
 
+async function persistAssistantText(
+  preparedTurn: PreparedPersistentTurn,
+  reply: string,
+  options: SayachanExecutionOptions
+): Promise<void> {
+  if (!preparedTurn || !options.userId) {
+    return;
+  }
+
+  try {
+    await appendAssistantMessage(preparedTurn, reply, {}, { userId: options.userId });
+  } catch (error) {
+    console.error('[Sayachan Route] Chat persistence assistant append failed:', errorMessage(error));
+  }
+}
+
 export async function chat(request: SayaDeskSayachanRequestDto, options: SayachanExecutionOptions = {}): Promise<SayaDeskSayachanResponseDto> {
   const preparedTurn = options.userId && chatPersistenceAvailabilityCheck()
     ? await preparePersistentTextTurn({ text: request.text }, { userId: options.userId })
     : null;
-  const authorizedContext = await buildAuthorizedContext(request, options);
-  const turnRequest = coreRequest(request, preparedTurn, authorizedContext, options);
+  const authorizedContext = await buildAdvanceAuthorizedContext(request, options);
+  const turnRequest = coreAdvanceStartRequest(request, preparedTurn, authorizedContext, options);
 
   try {
-    const coreResponse = await runCoreTurn(turnRequest);
+    const { coreResult, turnActivity } = await runAdvanceLoop(turnRequest, options);
+    const reply = finalAdvanceText(coreResult);
     const parsed = sayaDeskSayachanResponseSchema.parse({
-      reply: coreResponse.response.content,
-      turnId: coreResponse.turn_id,
-      turnActivity: projectTurnActivity(coreResponse),
-      trace: {
-        traceId: coreResponse.trace.trace_id,
-        debugAvailable: coreResponse.trace.debug_available
-      },
-      debugTrace: projectDebugTrace(coreResponse)
+      reply,
+      turnId: coreResult.turnId,
+      turnActivity,
+      trace: projectAdvanceTrace(coreResult)
     });
-    await persistAssistantReply(preparedTurn, coreResponse, options);
+    await persistAssistantText(preparedTurn, reply, options);
     return parsed;
   } catch (error) {
     if (error instanceof BadRequestError) {
@@ -547,6 +876,13 @@ export const __test__ = {
     runCoreTurn = runner;
     return () => {
       runCoreTurn = previous;
+    };
+  },
+  setCoreTurnAdvanceRunnerForTest(runner: SayachanCoreTurnAdvanceRunner) {
+    const previous = runCoreTurnAdvance;
+    runCoreTurnAdvance = runner;
+    return () => {
+      runCoreTurnAdvance = previous;
     };
   },
   setCoreTurnStreamRunnerForTest(runner: SayachanCoreTurnStreamRunner) {
