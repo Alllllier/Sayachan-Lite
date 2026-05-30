@@ -90,51 +90,17 @@ describe('chat api boundary', () => {
       debugTrace: {
         runtime: 'cognition-runtime',
         provider: 'openai',
-        providerModel: 'gpt-5.5',
-        providerResponseId: 'resp-v4',
-        semantics: {
-          taskShape: { value: 'task_request', confidence: 0.8, reason: 'asks for work' },
-          productContextNeed: { value: 'host_context_available', confidence: 0.8, reason: 'context exists' },
-          vulnerabilitySignal: { active: false, confidence: 0.2, reason: 'none' },
-          repairNeed: { active: false, confidence: 0.2, reason: 'none' },
-          faceSavingNeed: { active: false, confidence: 0.2, reason: 'none' },
-          edgeSuitability: { value: 'neutral', confidence: 0.7, reason: 'direct' },
-          stateTriggers: []
-        },
-        judgmentSignals: [],
-        stageSummaries: [],
-        resolverNotes: [],
-        responsePlan: {
-          selectedTurnShape: 'direct_reply',
-          interactionPosture: 'general_presence',
-          contextUse: 'host_context_available',
-          stateAttention: [],
-          voicePressure: 'neutral',
-          providerFocus: 'reply_to_current_user_turn',
-          reasonCodes: ['resolver:v0_signal_consumer'],
-          sourceTrace: ['resolver.turn_plan']
-        },
-        sourceTrace: [],
-        internalCandidateSummary: {
-          statePatchCandidateCount: 1,
-          memoryCandidateCount: 0,
-          toolStepProposalCount: 1,
-          agentStepCount: 1,
-          toolIntentCandidateCount: 1,
-          hostToolResultCount: 1,
-          toolResultCardCount: 1,
-          turnActivityItemCount: 2,
-          statePatchTargets: ['short_term_interaction_state'],
-          memoryCandidateKinds: [],
-          toolStepProposalKinds: ['host_tool_step'],
-          toolStepProposalStatuses: ['accepted'],
-          agentStepKinds: ['host_tool_step'],
-          agentStepStatuses: ['completed'],
-          toolIntentCapabilities: ['saya_desk.list_project_tasks'],
-          hostToolResultStatuses: ['completed'],
-          toolResultCardStatuses: ['completed'],
-          turnActivityKinds: ['assistant_progress', 'tool_status']
-        }
+        provider_model: 'gpt-5.5',
+        provider_response_id: 'resp-v4',
+        advance_kind: 'user_input_advance',
+        participation_profile: { name: 'user_input_advance' },
+        stage_summaries: [{
+          stage_name: 'compile_provider_request',
+          status: 'completed',
+          notes: ['Compiled provider request.'],
+          source_trace: ['compiler.prompt']
+        }],
+        source_trace: ['runtime.advance_turn']
       },
       turnActivity: {
         defaultCollapsed: true,
@@ -171,9 +137,9 @@ describe('chat api boundary', () => {
       reply: '晚上好。',
       sayachanDebugTrace: expect.objectContaining({
         runtime: 'cognition-runtime',
-        responsePlan: expect.objectContaining({
-          providerFocus: 'reply_to_current_user_turn'
-        })
+        provider_model: 'gpt-5.5',
+        provider_response_id: 'resp-v4',
+        advance_kind: 'user_input_advance'
       }),
       turnActivity: {
         defaultCollapsed: true,

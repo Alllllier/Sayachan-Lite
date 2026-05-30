@@ -20,9 +20,6 @@ type DebugMemoryCandidateTrace = NonNullable<ChatDebugTraceDto['memoryCandidate'
 type DebugGovernanceTrace = NonNullable<ChatDebugTraceDto['governance']>
 type DebugJudgmentTrace = NonNullable<ChatDebugTraceDto['judgment']>[number]
 type DebugJudgmentSummary = NonNullable<DebugJudgmentTrace['judgments']>[string]
-type SayachanDebugSemantics = NonNullable<SayaDeskSayachanDebugTraceDto['semantics']>
-type SayachanDebugSignal = SayachanDebugSemantics['taskShape']
-type SayachanDebugBooleanSignal = SayachanDebugSemantics['vulnerabilitySignal']
 type SayachanDebugStageSummary = {
   stageName: string
   status: string
@@ -128,23 +125,16 @@ const debugMemoryTrace = computed<DebugMemoryTrace | null>(() => runtimeControls
 const debugMemoryCandidateTrace = computed<DebugMemoryCandidateTrace | null>(() => runtimeControls.latestDebugTrace?.memoryCandidate || null)
 const debugGovernanceTrace = computed<DebugGovernanceTrace | null>(() => runtimeControls.latestDebugTrace?.governance || null)
 const sayachanDebugTrace = computed<SayaDeskSayachanDebugTraceDto | null>(() => runtimeControls.latestSayachanDebugTrace || null)
-const sayachanDebugSemantics = computed<SayachanDebugSemantics | null>(() => sayachanDebugTrace.value?.semantics || null)
-const sayachanDebugResponsePlan = computed(() => sayachanDebugTrace.value?.responsePlan || null)
-const sayachanDebugInternalSummary = computed(() => sayachanDebugTrace.value?.internalCandidateSummary || null)
 const sayachanDebugStageSummaries = computed<SayachanDebugStageSummary[]>(() => {
   const trace = sayachanDebugTrace.value
   if (!trace) return []
-  const summaries = trace.stageSummaries || trace.stage_summaries || []
+  const summaries = trace.stage_summaries || []
   return summaries.map(stage => ({
-    stageName: 'stageName' in stage ? stage.stageName : stage.stage_name,
+    stageName: stage.stage_name,
     status: stage.status
   }))
 })
-const sayachanDebugAdvanceKind = computed(() => (
-  sayachanDebugTrace.value?.advanceKind ||
-  sayachanDebugTrace.value?.advance_kind ||
-  t('chat.debugEmpty')
-))
+const sayachanDebugAdvanceKind = computed(() => sayachanDebugTrace.value?.advance_kind || t('chat.debugEmpty'))
 
 function sendCurrentMessage(): Promise<void> {
   return handleSend()
@@ -280,26 +270,11 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
 }
 
 function sayachanDebugProviderLabel(trace: SayaDeskSayachanDebugTraceDto): string {
-  return [trace.provider, trace.providerModel || trace.provider_model].filter(Boolean).join(' · ') || t('chat.debugEmpty')
+  return [trace.provider, trace.provider_model].filter(Boolean).join(' · ') || t('chat.debugEmpty')
 }
 
 function sayachanDebugResponseId(trace: SayaDeskSayachanDebugTraceDto): string {
-  return trace.providerResponseId || trace.provider_response_id || t('chat.debugEmpty')
-}
-
-function sayachanDebugSignalLabel(signal: SayachanDebugSignal | null | undefined): string {
-  if (!signal) return t('chat.debugEmpty')
-  return `${signal.value} · ${debugConfidence(signal.confidence)}`
-}
-
-function sayachanDebugBooleanSignalLabel(signal: SayachanDebugBooleanSignal | null | undefined): string {
-  if (!signal) return t('chat.debugEmpty')
-  return `${signal.active ? 'active' : 'inactive'} · ${debugConfidence(signal.confidence)}`
-}
-
-function debugCompactList(values: string[] | undefined): string {
-  if (!values || values.length === 0) return t('chat.debugEmpty')
-  return values.slice(0, 5).join(', ')
+  return trace.provider_response_id || t('chat.debugEmpty')
 }
 </script>
 
@@ -875,56 +850,6 @@ function debugCompactList(values: string[] | undefined): string {
                     <div class="runtime-debug-line">
                       <span>advance</span>
                       <span>{{ sayachanDebugAdvanceKind }}</span>
-                    </div>
-                  </template>
-                </div>
-
-                <div class="runtime-debug-block">
-                  <div class="runtime-debug-title">{{ t('chat.debugV4Semantics') }}</div>
-                  <div v-if="!sayachanDebugSemantics" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
-                  <template v-else>
-                    <div class="runtime-debug-line">
-                      <span>{{ t('chat.debugTaskShape') }}</span>
-                      <span>{{ sayachanDebugSignalLabel(sayachanDebugSemantics.taskShape) }}</span>
-                    </div>
-                    <div class="runtime-debug-line">
-                      <span>{{ t('chat.debugResponseFocus') }}</span>
-                      <span>{{ sayachanDebugResponsePlan?.providerFocus || t('chat.debugEmpty') }}</span>
-                    </div>
-                    <div class="runtime-debug-line">
-                      <span>{{ t('chat.debugProductContext') }}</span>
-                      <span>{{ sayachanDebugSignalLabel(sayachanDebugSemantics.productContextNeed) }}</span>
-                    </div>
-                    <div class="runtime-debug-line">
-                      <span>{{ t('chat.debugVulnerability') }}</span>
-                      <span>{{ sayachanDebugBooleanSignalLabel(sayachanDebugSemantics.vulnerabilitySignal) }}</span>
-                    </div>
-                    <div class="runtime-debug-line">
-                      <span>{{ t('chat.debugRepair') }}</span>
-                      <span>{{ sayachanDebugBooleanSignalLabel(sayachanDebugSemantics.repairNeed) }}</span>
-                    </div>
-                  </template>
-                </div>
-
-                <div class="runtime-debug-block">
-                  <div class="runtime-debug-title">{{ t('chat.debugV4Candidates') }}</div>
-                  <div v-if="!sayachanDebugInternalSummary" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
-                  <template v-else>
-                    <div class="runtime-debug-line">
-                      <span>{{ t('chat.debugRequested') }}</span>
-                      <span>{{ sayachanDebugInternalSummary.toolStepProposalCount }} steps / {{ sayachanDebugInternalSummary.toolIntentCandidateCount }} intents</span>
-                    </div>
-                    <div class="runtime-debug-line">
-                      <span>{{ t('chat.debugExecuted') }}</span>
-                      <span>{{ sayachanDebugInternalSummary.agentStepCount }} steps / {{ sayachanDebugInternalSummary.hostToolResultCount }} results</span>
-                    </div>
-                    <div class="runtime-debug-line">
-                      <span>{{ t('chat.debugStatus') }}</span>
-                      <span>{{ debugCompactList(sayachanDebugInternalSummary.agentStepStatuses) }}</span>
-                    </div>
-                    <div class="runtime-debug-line">
-                      <span>{{ t('chat.debugTools') }}</span>
-                      <span>{{ debugCompactList(sayachanDebugInternalSummary.toolIntentCapabilities) }}</span>
                     </div>
                   </template>
                 </div>

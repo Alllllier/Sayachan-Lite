@@ -408,7 +408,7 @@ test('authenticated /sayachan reaches Sayachan Core v4 advance bridge and return
         },
         debugTrace: {
           runtime: 'cognition-runtime',
-          participationProfile: { name: 'user_input_advance' }
+          participation_profile: { name: 'user_input_advance' }
         }
       };
     });
@@ -464,7 +464,7 @@ test('authenticated /sayachan reaches Sayachan Core v4 advance bridge and return
         },
         debugTrace: {
           runtime: 'cognition-runtime',
-          participationProfile: { name: 'user_input_advance' }
+          participation_profile: { name: 'user_input_advance' }
         }
       });
       assert.equal(capturedCoreRequest.host.hostId, 'saya-desk');

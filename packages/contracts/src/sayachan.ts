@@ -240,106 +240,20 @@ export const sayaDeskSayachanTraceSchema = z.object({
   debugAvailable: z.boolean().optional()
 }).strict()
 
-export const sayaDeskSayachanConfidenceSignalSchema = z.object({
-  value: z.string().min(1),
-  confidence: z.number(),
-  reason: z.string()
-}).strict()
-
-export const sayaDeskSayachanBooleanSignalSchema = z.object({
-  active: z.boolean(),
-  confidence: z.number(),
-  reason: z.string()
-}).strict()
-
-export const sayaDeskSayachanStateTriggerSchema = z.object({
-  name: z.string().min(1),
-  target: z.string().min(1),
-  confidence: z.number(),
-  reason: z.string()
-}).strict()
-
-export const sayaDeskSayachanSemanticsTraceSchema = z.object({
-  taskShape: sayaDeskSayachanConfidenceSignalSchema,
-  productContextNeed: sayaDeskSayachanConfidenceSignalSchema,
-  vulnerabilitySignal: sayaDeskSayachanBooleanSignalSchema,
-  repairNeed: sayaDeskSayachanBooleanSignalSchema,
-  faceSavingNeed: sayaDeskSayachanBooleanSignalSchema,
-  edgeSuitability: sayaDeskSayachanConfidenceSignalSchema,
-  stateTriggers: z.array(sayaDeskSayachanStateTriggerSchema).optional()
-}).strict()
-
-export const sayaDeskSayachanTraceSignalSchema = z.object({
-  name: z.string().min(1),
-  value: z.string().min(1),
-  confidence: z.number(),
-  reason: z.string()
-}).strict()
-
-export const sayaDeskSayachanStageSummarySchema = z.object({
-  stageName: z.string().min(1),
-  status: z.enum(['completed', 'skipped', 'failed']),
-  notes: z.array(z.string()),
-  sourceTrace: z.array(z.string())
-}).strict()
-
-export const sayaDeskSayachanResponsePlanTraceSchema = z.object({
-  selectedTurnShape: z.string().min(1),
-  interactionPosture: z.string().min(1),
-  contextUse: z.string().min(1),
-  stateAttention: z.array(z.string()),
-  voicePressure: z.string().min(1),
-  providerFocus: z.string().min(1),
-  reasonCodes: z.array(z.string()),
-  sourceTrace: z.array(z.string())
-}).strict()
-
-export const sayaDeskSayachanInternalCandidateSummarySchema = z.object({
-  statePatchCandidateCount: z.number(),
-  memoryCandidateCount: z.number(),
-  toolStepProposalCount: z.number(),
-  agentStepCount: z.number(),
-  toolIntentCandidateCount: z.number(),
-  hostToolResultCount: z.number(),
-  toolResultCardCount: z.number(),
-  turnActivityItemCount: z.number(),
-  statePatchTargets: z.array(z.string()),
-  memoryCandidateKinds: z.array(z.string()),
-  toolStepProposalKinds: z.array(z.string()),
-  toolStepProposalStatuses: z.array(z.string()),
-  agentStepKinds: z.array(z.string()),
-  agentStepStatuses: z.array(z.string()),
-  toolIntentCapabilities: z.array(z.string()),
-  hostToolResultStatuses: z.array(z.string()),
-  toolResultCardStatuses: z.array(z.string()),
-  turnActivityKinds: z.array(z.string())
-}).strict()
-
 export const sayaDeskSayachanDebugTraceSchema = z.object({
   runtime: z.string().min(1),
   provider: z.string().min(1).optional(),
-  providerModel: z.string().min(1).optional(),
   provider_model: z.string().min(1).optional(),
-  providerResponseId: z.string().nullable().optional(),
   provider_response_id: z.string().nullable().optional(),
-  advanceKind: z.string().min(1).optional(),
   advance_kind: z.string().min(1).optional(),
-  participationProfile: z.record(z.string(), z.unknown()).optional(),
   participation_profile: z.record(z.string(), z.unknown()).optional(),
-  semantics: sayaDeskSayachanSemanticsTraceSchema.optional(),
-  judgmentSignals: z.array(sayaDeskSayachanTraceSignalSchema).optional(),
-  stageSummaries: z.array(sayaDeskSayachanStageSummarySchema).optional(),
   stage_summaries: z.array(z.object({
     stage_name: z.string().min(1),
     status: z.enum(['completed', 'skipped', 'failed']),
     notes: z.array(z.string()),
     source_trace: z.array(z.string())
   }).strict()).optional(),
-  resolverNotes: z.array(z.string()).optional(),
-  responsePlan: sayaDeskSayachanResponsePlanTraceSchema.nullable().optional(),
-  sourceTrace: z.array(z.string()).optional(),
-  source_trace: z.array(z.string()).optional(),
-  internalCandidateSummary: sayaDeskSayachanInternalCandidateSummarySchema.optional()
+  source_trace: z.array(z.string()).optional()
 }).passthrough()
 
 export const sayaDeskSayachanResponseSchema = z.object({
