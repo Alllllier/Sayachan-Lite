@@ -182,7 +182,8 @@ function completedStreamEvent(
     reply,
     turnId: coreResult.turnId,
     turnActivity,
-    trace: projectAdvanceTrace(coreResult)
+    trace: projectAdvanceTrace(coreResult),
+    debugTrace: coreResult.debugTrace
   });
 }
 
@@ -631,14 +632,17 @@ async function* streamAdvanceLoop(
 async function persistAssistantText(
   preparedTurn: PreparedPersistentTurn,
   reply: string,
-  options: SayachanExecutionOptions
+  options: SayachanExecutionOptions,
+  result: {
+    turnActivity?: SayaDeskSayachanTurnActivityDto;
+  } = {}
 ): Promise<void> {
   if (!preparedTurn || !options.userId) {
     return;
   }
 
   try {
-    await appendAssistantMessage(preparedTurn, reply, {}, { userId: options.userId });
+    await appendAssistantMessage(preparedTurn, reply, result, { userId: options.userId });
   } catch (error) {
     console.error('[Sayachan Route] Chat persistence assistant append failed:', errorMessage(error));
   }
@@ -658,9 +662,10 @@ export async function chat(request: SayaDeskSayachanRequestDto, options: Sayacha
       reply,
       turnId: coreResult.turnId,
       turnActivity,
-      trace: projectAdvanceTrace(coreResult)
+      trace: projectAdvanceTrace(coreResult),
+      debugTrace: coreResult.debugTrace
     });
-    await persistAssistantText(preparedTurn, reply, options);
+    await persistAssistantText(preparedTurn, reply, options, { turnActivity });
     return parsed;
   } catch (error) {
     if (error instanceof BadRequestError) {
@@ -684,7 +689,9 @@ export async function* chatStream(request: SayaDeskSayachanRequestDto, options: 
   try {
     for await (const event of streamAdvanceLoop(turnRequest, options)) {
       if (event.type === 'completed') {
-        await persistAssistantText(preparedTurn, event.reply, options);
+        await persistAssistantText(preparedTurn, event.reply, options, {
+          turnActivity: event.turnActivity
+        });
       }
       yield event;
     }

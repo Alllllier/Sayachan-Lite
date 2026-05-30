@@ -20,9 +20,13 @@ type DebugMemoryCandidateTrace = NonNullable<ChatDebugTraceDto['memoryCandidate'
 type DebugGovernanceTrace = NonNullable<ChatDebugTraceDto['governance']>
 type DebugJudgmentTrace = NonNullable<ChatDebugTraceDto['judgment']>[number]
 type DebugJudgmentSummary = NonNullable<DebugJudgmentTrace['judgments']>[string]
-type SayachanDebugSemantics = SayaDeskSayachanDebugTraceDto['semantics']
+type SayachanDebugSemantics = NonNullable<SayaDeskSayachanDebugTraceDto['semantics']>
 type SayachanDebugSignal = SayachanDebugSemantics['taskShape']
 type SayachanDebugBooleanSignal = SayachanDebugSemantics['vulnerabilitySignal']
+type SayachanDebugStageSummary = {
+  stageName: string
+  status: string
+}
 
 const messageListRef = ref<HTMLElement | null>(null)
 const personalityBaselineOptions: PersonalityBaselineOption[] = ['warm', 'strict', 'haraguro']
@@ -127,7 +131,20 @@ const sayachanDebugTrace = computed<SayaDeskSayachanDebugTraceDto | null>(() => 
 const sayachanDebugSemantics = computed<SayachanDebugSemantics | null>(() => sayachanDebugTrace.value?.semantics || null)
 const sayachanDebugResponsePlan = computed(() => sayachanDebugTrace.value?.responsePlan || null)
 const sayachanDebugInternalSummary = computed(() => sayachanDebugTrace.value?.internalCandidateSummary || null)
-const sayachanDebugStageSummaries = computed(() => sayachanDebugTrace.value?.stageSummaries || [])
+const sayachanDebugStageSummaries = computed<SayachanDebugStageSummary[]>(() => {
+  const trace = sayachanDebugTrace.value
+  if (!trace) return []
+  const summaries = trace.stageSummaries || trace.stage_summaries || []
+  return summaries.map(stage => ({
+    stageName: 'stageName' in stage ? stage.stageName : stage.stage_name,
+    status: stage.status
+  }))
+})
+const sayachanDebugAdvanceKind = computed(() => (
+  sayachanDebugTrace.value?.advanceKind ||
+  sayachanDebugTrace.value?.advance_kind ||
+  t('chat.debugEmpty')
+))
 
 function sendCurrentMessage(): Promise<void> {
   return handleSend()
@@ -263,7 +280,11 @@ function debugOutputShapeLabel(judgment: DebugJudgmentSummary | null): string {
 }
 
 function sayachanDebugProviderLabel(trace: SayaDeskSayachanDebugTraceDto): string {
-  return [trace.provider, trace.providerModel].filter(Boolean).join(' · ') || t('chat.debugEmpty')
+  return [trace.provider, trace.providerModel || trace.provider_model].filter(Boolean).join(' · ') || t('chat.debugEmpty')
+}
+
+function sayachanDebugResponseId(trace: SayaDeskSayachanDebugTraceDto): string {
+  return trace.providerResponseId || trace.provider_response_id || t('chat.debugEmpty')
 }
 
 function sayachanDebugSignalLabel(signal: SayachanDebugSignal | null | undefined): string {
@@ -849,7 +870,11 @@ function debugCompactList(values: string[] | undefined): string {
                     </div>
                     <div class="runtime-debug-line">
                       <span>response id</span>
-                      <span>{{ sayachanDebugTrace.providerResponseId || t('chat.debugEmpty') }}</span>
+                      <span>{{ sayachanDebugResponseId(sayachanDebugTrace) }}</span>
+                    </div>
+                    <div class="runtime-debug-line">
+                      <span>advance</span>
+                      <span>{{ sayachanDebugAdvanceKind }}</span>
                     </div>
                   </template>
                 </div>

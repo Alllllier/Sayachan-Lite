@@ -83,7 +83,7 @@ export async function postSayachanCoreTurnAdvance(
 ): Promise<SayachanCoreTurnAdvanceResult> {
   const normalizedRequest = sayaDeskSayachanAdvanceTurnRequestSchema.parse(request);
   const coreUrl = configuredCoreUrl();
-  const response = await fetchWithTimeout(`${coreUrl}/v2/advance`, {
+  const response = await fetchWithTimeout(`${coreUrl}/v4/advance`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(normalizedRequest)
@@ -119,7 +119,7 @@ export async function* postSayachanCoreTurnAdvanceStream(
 ): AsyncIterable<SayachanCoreTurnAdvanceStreamEvent> {
   const normalizedRequest = sayaDeskSayachanAdvanceTurnRequestSchema.parse(request);
   const coreUrl = configuredCoreUrl();
-  const response = await fetchWithTimeout(`${coreUrl}/v2/advance/stream`, {
+  const response = await fetchWithTimeout(`${coreUrl}/v4/advance/stream`, {
     method: 'POST',
     headers: {
       Accept: 'text/event-stream',

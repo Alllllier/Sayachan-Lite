@@ -317,17 +317,30 @@ export const sayaDeskSayachanInternalCandidateSummarySchema = z.object({
 
 export const sayaDeskSayachanDebugTraceSchema = z.object({
   runtime: z.string().min(1),
-  provider: z.string().min(1),
-  providerModel: z.string().min(1),
+  provider: z.string().min(1).optional(),
+  providerModel: z.string().min(1).optional(),
+  provider_model: z.string().min(1).optional(),
   providerResponseId: z.string().nullable().optional(),
-  semantics: sayaDeskSayachanSemanticsTraceSchema,
-  judgmentSignals: z.array(sayaDeskSayachanTraceSignalSchema),
-  stageSummaries: z.array(sayaDeskSayachanStageSummarySchema),
-  resolverNotes: z.array(z.string()),
+  provider_response_id: z.string().nullable().optional(),
+  advanceKind: z.string().min(1).optional(),
+  advance_kind: z.string().min(1).optional(),
+  participationProfile: z.record(z.string(), z.unknown()).optional(),
+  participation_profile: z.record(z.string(), z.unknown()).optional(),
+  semantics: sayaDeskSayachanSemanticsTraceSchema.optional(),
+  judgmentSignals: z.array(sayaDeskSayachanTraceSignalSchema).optional(),
+  stageSummaries: z.array(sayaDeskSayachanStageSummarySchema).optional(),
+  stage_summaries: z.array(z.object({
+    stage_name: z.string().min(1),
+    status: z.enum(['completed', 'skipped', 'failed']),
+    notes: z.array(z.string()),
+    source_trace: z.array(z.string())
+  }).strict()).optional(),
+  resolverNotes: z.array(z.string()).optional(),
   responsePlan: sayaDeskSayachanResponsePlanTraceSchema.nullable().optional(),
-  sourceTrace: z.array(z.string()),
-  internalCandidateSummary: sayaDeskSayachanInternalCandidateSummarySchema
-}).strict()
+  sourceTrace: z.array(z.string()).optional(),
+  source_trace: z.array(z.string()).optional(),
+  internalCandidateSummary: sayaDeskSayachanInternalCandidateSummarySchema.optional()
+}).passthrough()
 
 export const sayaDeskSayachanResponseSchema = z.object({
   reply: z.string().min(1),

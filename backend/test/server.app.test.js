@@ -461,6 +461,10 @@ test('authenticated /sayachan reaches Sayachan Core v4 advance bridge and return
         trace: {
           traceId: 'turn-route-smoke',
           debugAvailable: true
+        },
+        debugTrace: {
+          runtime: 'cognition-runtime',
+          participationProfile: { name: 'user_input_advance' }
         }
       });
       assert.equal(capturedCoreRequest.host.hostId, 'saya-desk');
@@ -571,6 +575,22 @@ test('authenticated /sayachan/stream emits host-orchestrated advance events', as
           trace: {
             traceId: 'turn-stream',
             debugAvailable: true
+          },
+          debugTrace: {
+            runtime: 'cognition-runtime',
+            provider: 'openai',
+            provider_model: 'gpt-5-nano',
+            provider_response_id: 'resp-stream',
+            advance_kind: 'user_input_advance',
+            stage_summaries: [
+              {
+                stage_name: 'compile_provider_request',
+                status: 'completed',
+                notes: ['compiled'],
+                source_trace: ['compiler.prompt']
+              }
+            ],
+            source_trace: ['runtime.cognition_runtime']
           }
         }
       };
@@ -604,6 +624,8 @@ test('authenticated /sayachan/stream emits host-orchestrated advance events', as
       assert.equal(events[1].data.text, 'streamed v4 reply');
       assert.equal(events[2].data.reply, 'streamed v4 reply');
       assert.equal(events[2].data.turnActivity, undefined);
+      assert.equal(events[2].data.debugTrace.provider_model, 'gpt-5-nano');
+      assert.equal(events[2].data.debugTrace.stage_summaries[0].stage_name, 'compile_provider_request');
       assert.deepEqual(capturedCoreRequest.host.authorizedContext, { focus: focusSnapshot });
       assert.deepEqual(capturedCoreRequest.hostToolManifest, hostCapabilities);
       assert.equal(Object.hasOwn(capturedCoreRequest.options, 'stream'), false);

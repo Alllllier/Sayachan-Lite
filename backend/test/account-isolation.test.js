@@ -1589,6 +1589,31 @@ test('AI chat session endpoint returns current-user persisted messages', async (
                       role: 'assistant',
                       content: 'restored answer',
                       sourceReceipts: [{ type: 'project', title: 'Sayachan' }],
+                      turnActivity: {
+                        defaultCollapsed: true,
+                        items: [
+                          {
+                            itemId: 'message-612:activity:1',
+                            kind: 'assistant_progress',
+                            status: 'planned',
+                            text: '我先回看一下相关内容。',
+                            display: 'collapse_item',
+                            canonicalMessage: false,
+                            capability: 'saya_desk.search_product_context',
+                            sourceTrace: ['resolver.activity']
+                          },
+                          {
+                            itemId: 'message-612:activity:2',
+                            kind: 'tool_status',
+                            status: 'completed',
+                            text: '搜索工作区内容：Sayachan',
+                            display: 'collapse_item',
+                            canonicalMessage: false,
+                            capability: 'saya_desk.search_product_context',
+                            sourceTrace: ['runtime.execute_host_tools']
+                          }
+                        ]
+                      },
                       createdAt: new Date('2026-05-22T00:01:00.000Z')
                     }),
                     createDoc({
@@ -1618,6 +1643,23 @@ test('AI chat session endpoint returns current-user persisted messages', async (
       ]);
       assert.deepEqual(session.messages[0].focusSnapshot, { type: 'project', title: 'AI Core' });
       assert.deepEqual(session.messages[1].sourceReceipts, [{ type: 'project', title: 'Sayachan' }]);
+      assert.equal(session.messages[1].turnActivity.defaultCollapsed, true);
+      assert.deepEqual(session.messages[1].turnActivity.items.map(item => ({
+        kind: item.kind,
+        status: item.status,
+        text: item.text
+      })), [
+        {
+          kind: 'assistant_progress',
+          status: 'planned',
+          text: '我先回看一下相关内容。'
+        },
+        {
+          kind: 'tool_status',
+          status: 'completed',
+          text: '搜索工作区内容：Sayachan'
+        }
+      ]);
     });
   } finally {
     restoreChatPersistence();

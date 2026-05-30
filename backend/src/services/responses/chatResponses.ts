@@ -102,6 +102,6 @@ export function toChatMessageDto(message: unknown): ChatMessageDto | undefined {
     content: publicContent(normalized.content),
     createdAt: publicIsoString(normalized.createdAt)
   };
-  copyIfPresent(normalized, dto, ['focusSnapshot', 'sourceReceipts', 'memoryCandidate']);
+  copyIfPresent(normalized, dto, ['focusSnapshot', 'sourceReceipts', 'memoryCandidate', 'turnActivity']);
   return chatMessageSchema.parse(dto);
 }

@@ -53,6 +53,58 @@ const focusSnapshotSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
+const turnActivityItemSchema = new mongoose.Schema({
+  itemId: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  kind: {
+    type: String,
+    enum: ['assistant_progress', 'tool_status', 'capability_notice'],
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['planned', 'started', 'completed', 'skipped', 'unavailable', 'failed'],
+    required: true
+  },
+  text: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  display: {
+    type: String,
+    enum: ['collapse_item', 'inline_during_turn'],
+    required: true
+  },
+  canonicalMessage: {
+    type: Boolean,
+    required: true
+  },
+  capability: {
+    type: String,
+    default: undefined,
+    trim: true
+  },
+  sourceTrace: {
+    type: [String],
+    default: undefined
+  }
+}, { _id: false });
+
+const turnActivitySchema = new mongoose.Schema({
+  defaultCollapsed: {
+    type: Boolean,
+    required: true
+  },
+  items: {
+    type: [turnActivityItemSchema],
+    required: true
+  }
+}, { _id: false });
+
 const chatMessageSchema = new mongoose.Schema({
   conversationId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -87,6 +139,10 @@ const chatMessageSchema = new mongoose.Schema({
   },
   focusSnapshot: {
     type: focusSnapshotSchema,
+    default: undefined
+  },
+  turnActivity: {
+    type: turnActivitySchema,
     default: undefined
   }
 }, {

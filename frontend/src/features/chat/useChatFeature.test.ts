@@ -169,6 +169,31 @@ describe('useChatFeature orchestration', () => {
 
   it('hydrates the current persisted chat session once', async () => {
     const scrollToBottom = vi.fn()
+    const persistedTurnActivity = {
+      defaultCollapsed: true,
+      items: [
+        {
+          itemId: 'message-2:activity:1',
+          kind: 'assistant_progress' as const,
+          status: 'planned' as const,
+          text: '我先回看一下相关笔记。',
+          display: 'collapse_item' as const,
+          canonicalMessage: false as const,
+          capability: 'saya_desk.get_note_content',
+          sourceTrace: ['resolver.activity']
+        },
+        {
+          itemId: 'message-2:activity:2',
+          kind: 'tool_status' as const,
+          status: 'completed' as const,
+          text: '读取笔记：Tool notes',
+          display: 'collapse_item' as const,
+          canonicalMessage: false as const,
+          capability: 'saya_desk.get_note_content',
+          sourceTrace: ['resolver.activity', 'runtime.execute_host_tools']
+        }
+      ]
+    }
     loadChatSessionMock.mockResolvedValue({
       messages: [
         {
@@ -186,7 +211,8 @@ describe('useChatFeature orchestration', () => {
             type: 'preference',
             content: 'Use plain language first.',
             source: 'assistant_suggested_user_approved'
-          }
+          },
+          turnActivity: persistedTurnActivity
         }
       ],
       providerState: {
@@ -213,12 +239,13 @@ describe('useChatFeature orchestration', () => {
         role: 'assistant',
         content: '我看到了。',
         sourceReceipts: [{ type: 'note', title: 'Tool notes' }],
-          memoryCandidate: {
-            type: 'preference',
-            content: 'Use plain language first.',
-            source: 'assistant_suggested_user_approved'
-          }
-        }
+        memoryCandidate: {
+          type: 'preference',
+          content: 'Use plain language first.',
+          source: 'assistant_suggested_user_approved'
+        },
+        turnActivity: persistedTurnActivity
+      }
     ], {
       strategy: 'previous_response',
       lastResponseId: 'resp-session',
@@ -227,6 +254,7 @@ describe('useChatFeature orchestration', () => {
     expect(feature.getMessageFocusSnapshot(0)).toEqual({ type: 'note', title: 'Tool notes' })
     expect(feature.getMessageSourceReceipts(1)).toEqual([{ type: 'note', title: 'Tool notes' }])
     expect(feature.getMessageMemoryCandidate(1)?.status).toBe('pending')
+    expect(feature.getMessageTurnActivity(1)).toEqual(persistedTurnActivity)
     expect(scrollToBottom).toHaveBeenCalled()
   })
 

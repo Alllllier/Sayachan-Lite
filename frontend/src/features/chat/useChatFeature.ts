@@ -136,7 +136,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
   }
 
   function getMessageTurnActivity(index: number): SayachanTurnActivity | undefined {
-    return turnActivitiesByMessageIndex.value[index]
+    return turnActivitiesByMessageIndex.value[index] || chatStore.messages[index]?.turnActivity
   }
 
   function isPendingAssistantMessage(index: number): boolean {
@@ -212,6 +212,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     const focusSnapshots: Record<number, ChatFocusSnapshot> = {}
     const sourceReceipts: Record<number, ChatSourceReceiptDto[]> = {}
     const memoryCandidates: Record<number, ChatMemoryCandidateState> = {}
+    const turnActivities: Record<number, SayachanTurnActivity> = {}
 
     messages.forEach((message, index) => {
       if (message.focusSnapshot) {
@@ -226,11 +227,15 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           status: 'pending'
         }
       }
+      if (message.turnActivity && message.turnActivity.items.length > 0) {
+        turnActivities[index] = message.turnActivity
+      }
     })
 
     focusSnapshotsByMessageIndex.value = focusSnapshots
     sourceReceiptsByMessageIndex.value = sourceReceipts
     memoryCandidatesByMessageIndex.value = memoryCandidates
+    turnActivitiesByMessageIndex.value = turnActivities
   }
 
   async function loadCurrentSession(): Promise<void> {

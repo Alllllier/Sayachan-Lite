@@ -4,6 +4,7 @@ import {
   chatProviderStateSchema,
   chatSessionResponseSchema,
   chatSourceReceiptSchema,
+  sayaDeskSayachanTurnActivitySchema,
   type ChatMessageDto,
   type ChatProviderStateSource,
   type ChatProviderStateStrategy,
@@ -89,6 +90,11 @@ function normalizeSourceReceipts(value: unknown) {
 function normalizeMemoryCandidate(value: unknown) {
   const parsed = chatMemoryCandidateSchema.safeParse(value);
   return parsed.success ? parsed.data : undefined;
+}
+
+function normalizeTurnActivity(value: unknown) {
+  const parsed = sayaDeskSayachanTurnActivitySchema.safeParse(value);
+  return parsed.success && parsed.data.items.length > 0 ? parsed.data : undefined;
 }
 
 function coreMessagesFromDtos(messages: ChatMessageDto[]): ChatMessageDto[] {
@@ -252,6 +258,7 @@ export async function appendAssistantMessage(
     providerState?: unknown;
     sourceReceipts?: unknown;
     memoryCandidate?: unknown;
+    turnActivity?: unknown;
   },
   { userId }: ServiceOptions
 ): Promise<ChatMessageDto | undefined> {
@@ -264,7 +271,8 @@ export async function appendAssistantMessage(
     content: reply,
     providerState,
     sourceReceipts: normalizeSourceReceipts(result.sourceReceipts),
-    memoryCandidate: normalizeMemoryCandidate(result.memoryCandidate)
+    memoryCandidate: normalizeMemoryCandidate(result.memoryCandidate),
+    turnActivity: normalizeTurnActivity(result.turnActivity)
   });
   await touchConversation(conversationId, userId, providerState);
   return toChatMessageDto(message);

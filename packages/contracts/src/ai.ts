@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { sayaDeskSayachanTurnActivitySchema } from './sayachan.js'
 
 export const chatPersonalityBaselineValues = ['warm', 'strict', 'haraguro'] as const
 export const chatConvergenceModeValues = ['explore', 'guided', 'decisive'] as const
@@ -88,6 +89,7 @@ export const chatMessageSchema = z.object({
   focusSnapshot: chatMessageFocusSnapshotSchema.optional(),
   sourceReceipts: z.array(chatSourceReceiptSchema).optional(),
   memoryCandidate: chatMemoryCandidateSchema.optional(),
+  turnActivity: sayaDeskSayachanTurnActivitySchema.optional(),
   createdAt: z.string().optional()
 })
 
