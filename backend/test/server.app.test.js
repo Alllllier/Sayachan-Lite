@@ -82,7 +82,7 @@ function productContextFixture() {
   };
 }
 
-test('SayaDesk host capability manifest exposes normalized read-only tool contracts', () => {
+test('SayaDesk host capability manifest exposes provider-facing tool contracts', () => {
   const manifest = buildSayaDeskHostCapabilityManifest();
 
   assert.equal(manifest.packetType, 'saya_desk_host_capability_manifest');
@@ -91,12 +91,12 @@ test('SayaDesk host capability manifest exposes normalized read-only tool contra
   assert.equal(manifest.tools.length, 4);
 
   for (const tool of manifest.tools) {
-    assert.equal(tool.risk, 'read_only');
-    assert.equal(tool.requiresConfirmation, false);
-    assert.equal(tool.execution, 'host_gateway_route');
     assert.equal(typeof tool.label, 'string');
     assert.equal(typeof tool.description, 'string');
     assert.equal(typeof tool.parameterSchema, 'object');
+    assert.equal(Object.hasOwn(tool, 'risk'), false);
+    assert.equal(Object.hasOwn(tool, 'requiresConfirmation'), false);
+    assert.equal(Object.hasOwn(tool, 'execution'), false);
     assert.equal(Object.hasOwn(tool, 'endpoint'), false);
     assert.equal(Object.hasOwn(tool, 'authorization'), false);
   }
@@ -154,32 +154,6 @@ test('sayachan host search expression normalizes safe term arrays', () => {
       domains: ['notes', 'projects', 'tasks']
     }
   );
-});
-
-test('sayachan host tool endpoint uses Render external URL before localhost fallback', () => {
-  const originalHostToolUrl = process.env.SAYACHAN_HOST_TOOL_URL;
-  const originalBackendInternalUrl = process.env.SAYACHAN_BACKEND_INTERNAL_URL;
-  const originalRenderExternalUrl = process.env.RENDER_EXTERNAL_URL;
-
-  try {
-    delete process.env.SAYACHAN_HOST_TOOL_URL;
-    delete process.env.SAYACHAN_BACKEND_INTERNAL_URL;
-    process.env.RENDER_EXTERNAL_URL = 'https://sayachan-lite.onrender.com/';
-
-    assert.equal(
-      sayachanService.__test__.configuredHostToolEndpoint(),
-      'https://sayachan-lite.onrender.com/sayachan/tools/execute'
-    );
-  } finally {
-    if (originalHostToolUrl === undefined) delete process.env.SAYACHAN_HOST_TOOL_URL;
-    else process.env.SAYACHAN_HOST_TOOL_URL = originalHostToolUrl;
-
-    if (originalBackendInternalUrl === undefined) delete process.env.SAYACHAN_BACKEND_INTERNAL_URL;
-    else process.env.SAYACHAN_BACKEND_INTERNAL_URL = originalBackendInternalUrl;
-
-    if (originalRenderExternalUrl === undefined) delete process.env.RENDER_EXTERNAL_URL;
-    else process.env.RENDER_EXTERNAL_URL = originalRenderExternalUrl;
-  }
 });
 
 test('allowedOrigins supports comma-separated FRONTEND_ORIGINS', () => {
@@ -347,7 +321,7 @@ test('authenticated /ai/chat reaches controlled private-core chat path and retur
   });
 });
 
-test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply shape', async () => {
+test('authenticated /sayachan reaches Sayachan Core v4 advance bridge and returns reply shape', async () => {
   const app = createApp({
     corsOrigins: ['http://localhost:5173'],
     trustProxy: false
@@ -375,9 +349,16 @@ test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply 
     status: 'declared_only',
     tools: [{
       name: 'saya_desk.search_product_context',
-      risk: 'read_only',
-      requiresConfirmation: false,
-      execution: 'future_tool_lane'
+      label: '搜索工作区内容',
+      description: 'Search authorized SayaDesk notes, projects, and tasks.',
+      parameterSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          query: { type: 'string', minLength: 1 }
+        }
+      },
+      resultSummary: 'Returns compact authorized workspace matches.'
     }]
   };
 
@@ -398,101 +379,36 @@ test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply 
     });
     const restoreHostCapabilityManifestBuilder = sayachanService.__test__.setHostCapabilityManifestBuilderForTest(() => hostCapabilities);
     const restoreChatPersistenceAvailabilityCheck = sayachanService.__test__.setChatPersistenceAvailabilityCheckForTest(() => false);
-    const restoreCoreTurnRunner = sayachanService.__test__.setCoreTurnRunnerForTest(async (request) => {
+    const restoreCoreTurnAdvanceRunner = sayachanService.__test__.setCoreTurnAdvanceRunnerForTest(async (request) => {
       capturedCoreRequest = request;
       return {
-        turn_id: 'turn-route-smoke',
-        response: {
-          role: 'assistant',
-          content: 'sayachan v4 bridge ok'
-        },
-        trace: {
-          trace_id: 'turn-route-smoke',
-          debug_available: true
-        },
-        turn_activity: {
-          default_collapsed: true,
-          items: [
-            {
-              item_id: 'turn-route-smoke:activity:1',
-              kind: 'assistant_progress',
-              status: 'planned',
-              text: '我先回看一下项目里的记录。',
-              display: 'collapse_item',
-              canonical_message: false,
-              capability: 'saya_desk.list_project_tasks',
-              source_trace: ['resolver.activity', 'runtime.step_planner_contract']
-            },
-            {
-              item_id: 'turn-route-smoke:activity:2',
-              kind: 'tool_status',
-              status: 'completed',
-              text: '读取项目任务',
-              display: 'collapse_item',
-              canonical_message: false,
-              capability: 'saya_desk.list_project_tasks',
-              source_trace: ['resolver.activity', 'runtime.execute_host_tools']
-            }
-          ]
-        },
-        debug: {
-          runtime: 'cognition-runtime',
-          provider: 'openai',
-          provider_model: 'gpt-5.5',
-          provider_response_id: 'resp-v4',
-          semantics: {
-            task_shape: { value: 'task_request', confidence: 0.8, reason: 'asks for work' },
-            product_context_need: { value: 'host_context_available', confidence: 0.8, reason: 'context exists' },
-            vulnerability_signal: { active: false, confidence: 0.2, reason: 'none' },
-            repair_need: { active: false, confidence: 0.2, reason: 'none' },
-            face_saving_need: { active: false, confidence: 0.2, reason: 'none' },
-            edge_suitability: { value: 'neutral', confidence: 0.7, reason: 'direct' },
-            state_triggers: []
+        turnId: 'turn-route-smoke',
+        advanceId: 'adv-route-smoke',
+        status: 'completed',
+        assistantOutput: [
+          {
+            outputId: 'turn-route-smoke:activity-output:1',
+            kind: 'activity_text',
+            text: '我先回看一下项目里的记录。',
+            canonicalMessage: false,
+            sourceTrace: ['provider.activity']
           },
-          judgment_signals: [{
-            name: 'task_shape',
-            value: 'task_request',
-            confidence: 0.8,
-            reason: 'asks for work'
-          }],
-          stage_summaries: [{
-            stage_name: 'build_semantics',
-            status: 'completed',
-            notes: ['Built semantics.'],
-            source_trace: ['semantics.builder']
-          }],
-          resolver_notes: ['Agent steps recorded: 1; statuses: completed'],
-          response_plan: {
-            selected_turn_shape: 'direct_reply',
-            interaction_posture: 'general_presence',
-            context_use: 'host_context_available',
-            state_attention: [],
-            voice_pressure: 'neutral',
-            provider_focus: 'reply_to_current_user_turn',
-            reason_codes: ['resolver:v0_signal_consumer'],
-            source_trace: ['resolver.turn_plan']
-          },
-          source_trace: ['runtime.cognition_runtime'],
-          internal_candidate_summary: {
-            state_patch_candidate_count: 1,
-            memory_candidate_count: 0,
-            tool_step_proposal_count: 1,
-            agent_step_count: 1,
-            tool_intent_candidate_count: 1,
-            host_tool_result_count: 1,
-            tool_result_card_count: 1,
-            turn_activity_item_count: 2,
-            state_patch_targets: ['short_term_interaction_state'],
-            memory_candidate_kinds: [],
-            tool_step_proposal_kinds: ['host_tool_step'],
-            tool_step_proposal_statuses: ['accepted'],
-            agent_step_kinds: ['host_tool_step'],
-            agent_step_statuses: ['completed'],
-            tool_intent_capabilities: ['saya_desk.list_project_tasks'],
-            host_tool_result_statuses: ['completed'],
-            tool_result_card_statuses: ['completed'],
-            turn_activity_kinds: ['assistant_progress', 'tool_status']
+          {
+            outputId: 'turn-route-smoke:final:1',
+            kind: 'final_text',
+            text: 'sayachan v4 advance ok',
+            canonicalMessage: true,
+            sourceTrace: ['provider.final']
           }
+        ],
+        toolProposals: [],
+        trace: {
+          traceId: 'turn-route-smoke',
+          debugAvailable: true
+        },
+        debugTrace: {
+          runtime: 'cognition-runtime',
+          participationProfile: { name: 'user_input_advance' }
         }
       };
     });
@@ -526,7 +442,7 @@ test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply 
       });
       assert.equal(response.status, 200);
       assert.deepEqual(body, {
-        reply: 'sayachan v4 bridge ok',
+        reply: 'sayachan v4 advance ok',
         turnId: 'turn-route-smoke',
         turnActivity: {
           defaultCollapsed: true,
@@ -538,113 +454,32 @@ test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply 
               text: '我先回看一下项目里的记录。',
               display: 'collapse_item',
               canonicalMessage: false,
-              capability: 'saya_desk.list_project_tasks',
-              sourceTrace: ['resolver.activity', 'runtime.step_planner_contract']
-            },
-            {
-              itemId: 'turn-route-smoke:activity:2',
-              kind: 'tool_status',
-              status: 'completed',
-              text: '读取项目任务',
-              display: 'collapse_item',
-              canonicalMessage: false,
-              capability: 'saya_desk.list_project_tasks',
-              sourceTrace: ['resolver.activity', 'runtime.execute_host_tools']
+              sourceTrace: ['provider.activity']
             }
           ]
         },
         trace: {
           traceId: 'turn-route-smoke',
           debugAvailable: true
-        },
-        debugTrace: {
-          runtime: 'cognition-runtime',
-          provider: 'openai',
-          providerModel: 'gpt-5.5',
-          providerResponseId: 'resp-v4',
-          semantics: {
-            taskShape: { value: 'task_request', confidence: 0.8, reason: 'asks for work' },
-            productContextNeed: { value: 'host_context_available', confidence: 0.8, reason: 'context exists' },
-            vulnerabilitySignal: { active: false, confidence: 0.2, reason: 'none' },
-            repairNeed: { active: false, confidence: 0.2, reason: 'none' },
-            faceSavingNeed: { active: false, confidence: 0.2, reason: 'none' },
-            edgeSuitability: { value: 'neutral', confidence: 0.7, reason: 'direct' },
-            stateTriggers: []
-          },
-          judgmentSignals: [{
-            name: 'task_shape',
-            value: 'task_request',
-            confidence: 0.8,
-            reason: 'asks for work'
-          }],
-          stageSummaries: [{
-            stageName: 'build_semantics',
-            status: 'completed',
-            notes: ['Built semantics.'],
-            sourceTrace: ['semantics.builder']
-          }],
-          resolverNotes: ['Agent steps recorded: 1; statuses: completed'],
-          responsePlan: {
-            selectedTurnShape: 'direct_reply',
-            interactionPosture: 'general_presence',
-            contextUse: 'host_context_available',
-            stateAttention: [],
-            voicePressure: 'neutral',
-            providerFocus: 'reply_to_current_user_turn',
-            reasonCodes: ['resolver:v0_signal_consumer'],
-            sourceTrace: ['resolver.turn_plan']
-          },
-          sourceTrace: ['runtime.cognition_runtime'],
-          internalCandidateSummary: {
-            statePatchCandidateCount: 1,
-            memoryCandidateCount: 0,
-            toolStepProposalCount: 1,
-            agentStepCount: 1,
-            toolIntentCandidateCount: 1,
-            hostToolResultCount: 1,
-            toolResultCardCount: 1,
-            turnActivityItemCount: 2,
-            statePatchTargets: ['short_term_interaction_state'],
-            memoryCandidateKinds: [],
-            toolStepProposalKinds: ['host_tool_step'],
-            toolStepProposalStatuses: ['accepted'],
-            agentStepKinds: ['host_tool_step'],
-            agentStepStatuses: ['completed'],
-            toolIntentCapabilities: ['saya_desk.list_project_tasks'],
-            hostToolResultStatuses: ['completed'],
-            toolResultCardStatuses: ['completed'],
-            turnActivityKinds: ['assistant_progress', 'tool_status']
-          }
         }
       });
-      assert.equal(capturedCoreRequest.host.host_id, 'saya-desk');
+      assert.equal(capturedCoreRequest.host.hostId, 'saya-desk');
       assert.equal(capturedCoreRequest.host.surface, 'project-detail');
-      assert.equal(capturedCoreRequest.host.host_user_id, '000000000000000000000001');
+      assert.equal(capturedCoreRequest.host.hostUserId, '000000000000000000000001');
       assert.equal(capturedCoreRequest.input.text, 'hello from v4 route');
-      assert.deepEqual(capturedCoreRequest.conversation.recent_messages, [
+      assert.deepEqual(capturedCoreRequest.conversation.recentMessages, [
         { role: 'user', content: 'hello from v4 route' }
       ]);
-      assert.deepEqual(capturedCoreRequest.host.authorized_context.focus, focusSnapshot);
-      assert.deepEqual(capturedCoreRequest.host.authorized_context.host_capabilities, hostCapabilities);
-      assert.equal(
-        capturedCoreRequest.host.authorized_context.host_tool_channel.packetType,
-        'saya_desk_host_tool_channel'
-      );
-      assert.equal(
-        capturedCoreRequest.host.authorized_context.host_tool_channel.endpoint,
-        'http://127.0.0.1:3001/sayachan/tools/execute'
-      );
-      assert.deepEqual(capturedCoreRequest.host.authorized_context.host_tool_channel.authorization, {
-        type: 'bearer',
-        token: 'sayachan-v4-session'
-      });
-      assert.equal(Object.hasOwn(capturedCoreRequest.host.authorized_context, 'productContext'), false);
-      assert.equal(Object.hasOwn(capturedCoreRequest.host.authorized_context, 'memoryContext'), false);
-      assert.equal(Object.hasOwn(capturedCoreRequest.host.authorized_context, 'chatFocus'), false);
+      assert.deepEqual(capturedCoreRequest.host.authorizedContext, { focus: focusSnapshot });
+      assert.deepEqual(capturedCoreRequest.hostToolManifest, hostCapabilities);
+      assert.equal(Object.hasOwn(capturedCoreRequest.host.authorizedContext, 'host_capabilities'), false);
+      assert.equal(Object.hasOwn(capturedCoreRequest.host.authorizedContext, 'productContext'), false);
+      assert.equal(Object.hasOwn(capturedCoreRequest.host.authorizedContext, 'memoryContext'), false);
+      assert.equal(Object.hasOwn(capturedCoreRequest.host.authorizedContext, 'chatFocus'), false);
       assert.equal(capturedCoreRequest.options.debug, true);
-      assert.equal(capturedCoreRequest.options.stream, false);
+      assert.equal(Object.hasOwn(capturedCoreRequest.options, 'stream'), false);
     } finally {
-      restoreCoreTurnRunner();
+      restoreCoreTurnAdvanceRunner();
       restoreChatPersistenceAvailabilityCheck();
       restoreHostCapabilityManifestBuilder();
       restoreFocusSnapshotBuilder();
@@ -652,7 +487,7 @@ test('authenticated /sayachan reaches Sayachan Core v4 bridge and returns reply 
   });
 });
 
-test('authenticated /sayachan/stream proxies Sayachan Core v4 SSE events', async () => {
+test('authenticated /sayachan/stream emits host-orchestrated advance events', async () => {
   const app = createApp({
     corsOrigins: ['http://localhost:5173'],
     trustProxy: false
@@ -673,9 +508,16 @@ test('authenticated /sayachan/stream proxies Sayachan Core v4 SSE events', async
     status: 'declared_only',
     tools: [{
       name: 'saya_desk.get_note_content',
-      risk: 'read_only',
-      requiresConfirmation: false,
-      execution: 'host_tool_channel'
+      label: '读取笔记内容',
+      description: 'Read authorized note content by note id.',
+      parameterSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          noteId: { type: 'string', minLength: 1 }
+        }
+      },
+      resultSummary: 'Returns clipped note content and source receipt.'
     }]
   };
 
@@ -692,91 +534,33 @@ test('authenticated /sayachan/stream proxies Sayachan Core v4 SSE events', async
     const restoreFocusSnapshotBuilder = sayachanService.__test__.setFocusSnapshotBuilderForTest(async () => focusSnapshot);
     const restoreHostCapabilityManifestBuilder = sayachanService.__test__.setHostCapabilityManifestBuilderForTest(() => hostCapabilities);
     const restoreChatPersistenceAvailabilityCheck = sayachanService.__test__.setChatPersistenceAvailabilityCheckForTest(() => false);
-    const restoreCoreTurnStreamRunner = sayachanService.__test__.setCoreTurnStreamRunnerForTest(async function* (request) {
+    const restoreCoreTurnAdvanceRunner = sayachanService.__test__.setCoreTurnAdvanceRunnerForTest(async (request) => {
       capturedCoreRequest = request;
-      yield {
-        packetType: 'sayachan_turn_stream_event',
-        version: 1,
-        type: 'assistant_progress',
-        item: {
-          item_id: 'turn-stream:activity:1',
-          kind: 'assistant_progress',
-          status: 'planned',
-          text: '我先回看一下相关笔记。',
-          display: 'collapse_item',
-          canonical_message: false,
-          capability: 'saya_desk.get_note_content',
-          source_trace: ['resolver.activity']
-        }
-      };
-      yield {
-        packetType: 'sayachan_turn_stream_event',
-        version: 1,
-        type: 'tool_status',
-        item: {
-          item_id: 'turn-stream:activity:2',
-          kind: 'tool_status',
-          status: 'completed',
-          text: '读取笔记：Streaming note',
-          display: 'collapse_item',
-          canonical_message: false,
-          capability: 'saya_desk.get_note_content',
-          source_trace: ['resolver.activity', 'runtime.execute_host_tools']
-        }
-      };
-      yield {
-        packetType: 'sayachan_turn_stream_event',
-        version: 1,
-        type: 'assistant_delta',
-        delta: 'streamed ',
-        text: 'streamed '
-      };
-      yield {
-        packetType: 'sayachan_turn_stream_event',
-        version: 1,
-        type: 'assistant_delta',
-        delta: 'v4 reply',
-        text: 'streamed v4 reply'
-      };
-      yield {
-        packetType: 'sayachan_turn_stream_event',
-        version: 1,
-        type: 'completed',
-        turn_id: 'turn-stream',
-        response: {
-          role: 'assistant',
-          content: 'streamed v4 reply'
-        },
-        turn_activity: {
-          default_collapsed: true,
-          items: [
-            {
-              item_id: 'turn-stream:activity:1',
-              kind: 'assistant_progress',
-              status: 'planned',
-              text: '我先回看一下相关笔记。',
-              display: 'collapse_item',
-              canonical_message: false,
-              capability: 'saya_desk.get_note_content',
-              source_trace: ['resolver.activity']
-            },
-            {
-              item_id: 'turn-stream:activity:2',
-              kind: 'tool_status',
-              status: 'completed',
-              text: '读取笔记：Streaming note',
-              display: 'collapse_item',
-              canonical_message: false,
-              capability: 'saya_desk.get_note_content',
-              source_trace: ['resolver.activity', 'runtime.execute_host_tools']
-            }
-          ]
-        },
+      return {
+        turnId: 'turn-stream',
+        advanceId: 'adv-stream',
+        status: 'completed',
+        assistantOutput: [
+          {
+            outputId: 'turn-stream:activity-output:1',
+            kind: 'activity_text',
+            text: '我先回看一下相关笔记。',
+            canonicalMessage: false,
+            sourceTrace: ['provider.activity']
+          },
+          {
+            outputId: 'turn-stream:final:1',
+            kind: 'final_text',
+            text: 'streamed v4 reply',
+            canonicalMessage: true,
+            sourceTrace: ['provider.final']
+          }
+        ],
+        toolProposals: [],
         trace: {
-          trace_id: 'turn-stream',
-          debug_available: true
-        },
-        debug: null
+          traceId: 'turn-stream',
+          debugAvailable: true
+        }
       };
     });
 
@@ -801,18 +585,18 @@ test('authenticated /sayachan/stream proxies Sayachan Core v4 SSE events', async
       assert.equal(loadedToken, 'sayachan-v4-stream-session');
       assert.equal(response.status, 200);
       assert.equal(response.headers.get('content-type'), 'text/event-stream; charset=utf-8');
-      assert.deepEqual(events.map((event) => event.event), ['assistant_progress', 'tool_status', 'assistant_delta', 'assistant_delta', 'completed']);
-      assert.deepEqual(events.map((event) => event.data.type), ['assistant_progress', 'tool_status', 'assistant_delta', 'assistant_delta', 'completed']);
+      assert.deepEqual(events.map((event) => event.event), ['assistant_progress', 'assistant_delta', 'completed']);
+      assert.deepEqual(events.map((event) => event.data.type), ['assistant_progress', 'assistant_delta', 'completed']);
       assert.equal(events[0].data.item.text, '我先回看一下相关笔记。');
-      assert.equal(events[1].data.item.text, '读取笔记：Streaming note');
-      assert.equal(events[2].data.delta, 'streamed ');
-      assert.equal(events[3].data.text, 'streamed v4 reply');
-      assert.equal(events[4].data.reply, 'streamed v4 reply');
-      assert.equal(events[4].data.turnActivity.defaultCollapsed, true);
-      assert.equal(capturedCoreRequest.options.stream, true);
-      assert.equal(capturedCoreRequest.host.authorized_context.host_tool_channel.authorization.token, 'sayachan-v4-stream-session');
+      assert.equal(events[1].data.delta, 'streamed v4 reply');
+      assert.equal(events[1].data.text, 'streamed v4 reply');
+      assert.equal(events[2].data.reply, 'streamed v4 reply');
+      assert.equal(events[2].data.turnActivity.defaultCollapsed, true);
+      assert.deepEqual(capturedCoreRequest.host.authorizedContext, { focus: focusSnapshot });
+      assert.deepEqual(capturedCoreRequest.hostToolManifest, hostCapabilities);
+      assert.equal(Object.hasOwn(capturedCoreRequest.options, 'stream'), false);
     } finally {
-      restoreCoreTurnStreamRunner();
+      restoreCoreTurnAdvanceRunner();
       restoreChatPersistenceAvailabilityCheck();
       restoreHostCapabilityManifestBuilder();
       restoreFocusSnapshotBuilder();
@@ -1030,7 +814,7 @@ test('authenticated /sayachan returns explicit 502 when Sayachan Core bridge fai
       tools: []
     }));
     const restoreChatPersistenceAvailabilityCheck = sayachanService.__test__.setChatPersistenceAvailabilityCheckForTest(() => false);
-    const restoreCoreTurnRunner = sayachanService.__test__.setCoreTurnRunnerForTest(async () => {
+    const restoreCoreTurnAdvanceRunner = sayachanService.__test__.setCoreTurnAdvanceRunnerForTest(async () => {
       throw new Error('controlled core failure');
     });
 
@@ -1050,7 +834,7 @@ test('authenticated /sayachan returns explicit 502 when Sayachan Core bridge fai
       assert.equal(response.status, 502);
       assert.deepEqual(body, { error: 'Sayachan Core request failed' });
     } finally {
-      restoreCoreTurnRunner();
+      restoreCoreTurnAdvanceRunner();
       restoreChatPersistenceAvailabilityCheck();
       restoreHostCapabilityManifestBuilder();
       restoreFocusSnapshotBuilder();
