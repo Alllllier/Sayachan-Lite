@@ -171,6 +171,18 @@ function turnActivityItems(index: number): SayaDeskSayachanTurnActivityItemDto[]
   return getMessageTurnActivity(index)?.items || []
 }
 
+function turnActivityNarrationItems(index: number): SayaDeskSayachanTurnActivityItemDto[] {
+  return turnActivityItems(index).filter(item => item.kind !== 'tool_status')
+}
+
+function turnActivityToolItems(index: number): SayaDeskSayachanTurnActivityItemDto[] {
+  return turnActivityItems(index).filter(item => item.kind === 'tool_status')
+}
+
+function isMessageTurnActivityLive(index: number): boolean {
+  return getMessageTurnActivity(index)?.defaultCollapsed === false
+}
+
 function turnActivitySummary(index: number): string {
   return t('chat.turnActivitySummary', {
     count: getMessageTurnActivity(index)?.items.length || 0
@@ -318,26 +330,78 @@ function debugCompactList(values: string[] | undefined): string {
             :class="msg.role"
           >
             <div v-if="msg.role === 'assistant'" class="chat-assistant-stack">
-              <details
+              <div
                 v-if="hasMessageTurnActivity(idx)"
-                class="chat-turn-activity"
-                :open="getMessageTurnActivity(idx)?.defaultCollapsed === false"
+                class="chat-turn-activity-live"
+                :class="{ 'chat-turn-activity-live--active': isMessageTurnActivityLive(idx) }"
               >
-                <summary class="chat-turn-activity-summary">
-                  <span>{{ turnActivitySummary(idx) }}</span>
-                </summary>
-                <div class="chat-turn-activity-list">
+                <template v-if="isMessageTurnActivityLive(idx)">
                   <div
-                    v-for="item in turnActivityItems(idx)"
-                    :key="item.itemId"
-                    class="chat-turn-activity-item"
-                    :class="`chat-turn-activity-item--${item.status}`"
+                    v-if="turnActivityNarrationItems(idx).length > 0"
+                    class="chat-activity-bubble-list"
                   >
-                    <span class="chat-turn-activity-status">{{ turnActivityStatusLabel(item.status) }}</span>
-                    <span class="chat-turn-activity-text">{{ item.text }}</span>
+                    <div
+                      v-for="item in turnActivityNarrationItems(idx)"
+                      :key="item.itemId"
+                      class="chat-activity-bubble"
+                      :class="`chat-activity-bubble--${item.status}`"
+                    >
+                      {{ item.text }}
+                    </div>
                   </div>
-                </div>
-              </details>
+                  <div v-else class="chat-activity-bubble chat-activity-bubble--planned">
+                    {{ t('chat.pendingMeta') }}
+                  </div>
+                  <div
+                    v-if="turnActivityToolItems(idx).length > 0"
+                    class="chat-tool-chip-list"
+                  >
+                    <span
+                      v-for="item in turnActivityToolItems(idx)"
+                      :key="item.itemId"
+                      class="chat-tool-chip"
+                      :class="`chat-tool-chip--${item.status}`"
+                    >
+                      <span class="chat-tool-chip-status">{{ turnActivityStatusLabel(item.status) }}</span>
+                      <span class="chat-tool-chip-text">{{ item.text }}</span>
+                    </span>
+                  </div>
+                </template>
+                <details v-else class="chat-turn-activity">
+                  <summary class="chat-turn-activity-summary">
+                    <span>{{ turnActivitySummary(idx) }}</span>
+                  </summary>
+                  <div class="chat-turn-activity-content">
+                    <div
+                      v-if="turnActivityNarrationItems(idx).length > 0"
+                      class="chat-activity-bubble-list"
+                    >
+                      <div
+                        v-for="item in turnActivityNarrationItems(idx)"
+                        :key="item.itemId"
+                        class="chat-activity-bubble"
+                        :class="`chat-activity-bubble--${item.status}`"
+                      >
+                        {{ item.text }}
+                      </div>
+                    </div>
+                    <div
+                      v-if="turnActivityToolItems(idx).length > 0"
+                      class="chat-tool-chip-list"
+                    >
+                      <span
+                        v-for="item in turnActivityToolItems(idx)"
+                        :key="item.itemId"
+                        class="chat-tool-chip"
+                        :class="`chat-tool-chip--${item.status}`"
+                      >
+                        <span class="chat-tool-chip-status">{{ turnActivityStatusLabel(item.status) }}</span>
+                        <span class="chat-tool-chip-text">{{ item.text }}</span>
+                      </span>
+                    </div>
+                  </div>
+                </details>
+              </div>
               <div
                 class="chat-bubble markdown-body"
                 :class="{ 'chat-bubble--empty': !msg.content && isPendingAssistantMessage(idx) }"
@@ -1082,20 +1146,34 @@ function debugCompactList(values: string[] | undefined): string {
   }
 }
 
+.chat-turn-activity-live {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.chat-turn-activity-live--active {
+  margin-bottom: 1px;
+}
+
 .chat-turn-activity {
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--action-primary) 18%, var(--border-default));
   border-radius: 8px;
   background: color-mix(in srgb, var(--action-primary) 5%, var(--surface-card));
-  color: var(--text-secondary);
-  font-size: 11px;
-  line-height: 1.35;
+  overflow: hidden;
 }
 
 .chat-turn-activity-summary {
   cursor: pointer;
   list-style: none;
   padding: 6px 8px;
+  color: var(--text-muted);
   user-select: none;
 }
 
@@ -1114,28 +1192,75 @@ function debugCompactList(values: string[] | undefined): string {
   transform: rotate(90deg);
 }
 
-.chat-turn-activity-list {
+.chat-turn-activity-content {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
   padding: 0 8px 8px;
 }
 
-.chat-turn-activity-item {
+.chat-activity-bubble-list {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 5px;
+  width: 100%;
 }
 
-.chat-turn-activity-status {
+.chat-activity-bubble {
+  max-width: 100%;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--action-primary) 16%, var(--border-default));
+  border-radius: 14px 14px 14px 4px;
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  font-size: 12px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.chat-activity-bubble--failed,
+.chat-activity-bubble--unavailable {
+  border-color: color-mix(in srgb, var(--action-danger) 24%, var(--border-default));
+}
+
+.chat-tool-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 100%;
+}
+
+.chat-tool-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 3px 7px;
+  border: 1px solid color-mix(in srgb, var(--action-primary) 18%, var(--border-default));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--action-primary) 5%, var(--surface-card));
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.chat-tool-chip--failed,
+.chat-tool-chip--unavailable {
+  border-color: color-mix(in srgb, var(--action-danger) 26%, var(--border-default));
+  background: color-mix(in srgb, var(--action-danger) 6%, var(--surface-card));
+}
+
+.chat-tool-chip-status {
   flex: 0 0 auto;
   color: var(--text-muted);
 }
 
-.chat-turn-activity-text {
+.chat-tool-chip-text {
   min-width: 0;
-  color: var(--text-primary);
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chat-assistant-stack {
