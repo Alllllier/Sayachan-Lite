@@ -5,6 +5,7 @@ import authService from '../dist/services/authService.js';
 import aiService from '../dist/services/aiService.js';
 import sayachanService from '../dist/services/sayachanService.js';
 import sayachanHostToolService from '../dist/services/sayachanHostToolService.js';
+import { buildSayaDeskHostCapabilityManifest } from '../dist/services/sayachanHostContextService.js';
 import { allowedOrigins, createApp } from '../dist/server.js';
 
 function listen(app) {
@@ -80,6 +81,32 @@ function productContextFixture() {
     omitted: []
   };
 }
+
+test('SayaDesk host capability manifest exposes normalized read-only tool contracts', () => {
+  const manifest = buildSayaDeskHostCapabilityManifest();
+
+  assert.equal(manifest.packetType, 'saya_desk_host_capability_manifest');
+  assert.equal(manifest.version, 1);
+  assert.equal(manifest.status, 'executable');
+  assert.equal(manifest.tools.length, 4);
+
+  for (const tool of manifest.tools) {
+    assert.equal(tool.risk, 'read_only');
+    assert.equal(tool.requiresConfirmation, false);
+    assert.equal(tool.execution, 'host_gateway_route');
+    assert.equal(typeof tool.label, 'string');
+    assert.equal(typeof tool.description, 'string');
+    assert.equal(typeof tool.parameterSchema, 'object');
+    assert.equal(Object.hasOwn(tool, 'endpoint'), false);
+    assert.equal(Object.hasOwn(tool, 'authorization'), false);
+  }
+
+  const search = manifest.tools.find((tool) => tool.name === 'saya_desk.search_product_context');
+  assert.ok(search);
+  assert.equal(search.parameterSchema.type, 'object');
+  assert.equal(search.parameterSchema.additionalProperties, false);
+  assert.deepEqual(search.parameterSchema.properties.matchMode.enum, ['any', 'all']);
+});
 
 function withPatchedMethods(patches, run) {
   const originals = patches.map(({ target, key }) => ({ target, key, value: target[key] }));

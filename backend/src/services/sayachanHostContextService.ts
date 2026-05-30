@@ -1,4 +1,8 @@
-import type { SayaDeskSayachanFocusDto } from '@sayachan/contracts';
+import {
+  sayaDeskHostCapabilityManifestSchema,
+  type SayaDeskHostCapabilityManifestDto,
+  type SayaDeskSayachanFocusDto
+} from '@sayachan/contracts';
 import type { ObjectId } from '../domain/objectIds.js';
 import { toObjectId } from '../domain/objectIds.js';
 import {
@@ -37,17 +41,7 @@ export type SayaDeskAuthorizedFocusSnapshot = {
   updatedAt?: string | null;
 };
 
-export type SayaDeskHostCapabilityManifest = {
-  packetType: 'saya_desk_host_capability_manifest';
-  version: 1;
-  status: 'declared_only' | 'executable';
-  tools: Array<{
-    name: string;
-    risk: 'read_only';
-    requiresConfirmation: false;
-    execution: 'future_tool_lane' | 'host_gateway_route';
-  }>;
-};
+export type SayaDeskHostCapabilityManifest = SayaDeskHostCapabilityManifestDto;
 
 function isDatabaseReady(): boolean {
   return [Note, Project, Task].every((model) => Number(model.db.readyState) === 1);
@@ -187,37 +181,87 @@ export async function buildSayaDeskFocusSnapshot(
 }
 
 export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityManifest {
-  return {
+  return sayaDeskHostCapabilityManifestSchema.parse({
     packetType: 'saya_desk_host_capability_manifest',
     version: 1,
     status: 'executable',
     tools: [
       {
         name: 'saya_desk.search_product_context',
+        label: '搜索工作区内容',
+        description: 'Search authorized SayaDesk notes, projects, and tasks by short user-facing terms.',
+        parameterSchema: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            query: { type: 'string', minLength: 1 },
+            terms: {
+              type: 'array',
+              items: { type: 'string', minLength: 1 },
+              maxItems: 6
+            },
+            matchMode: { type: 'string', enum: ['any', 'all'] },
+            domains: {
+              type: 'array',
+              items: { type: 'string', enum: ['notes', 'projects', 'tasks'] }
+            }
+          }
+        },
+        resultSummary: 'Returns matched notes, projects, and tasks with compact excerpts and source receipts.',
         risk: 'read_only',
         requiresConfirmation: false,
         execution: 'host_gateway_route'
       },
       {
         name: 'saya_desk.get_project_context',
+        label: '读取项目上下文',
+        description: 'Read the authorized project summary and current focus metadata.',
+        parameterSchema: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            projectId: { type: 'string', minLength: 1 }
+          }
+        },
+        resultSummary: 'Returns a compact authorized project context snapshot.',
         risk: 'read_only',
         requiresConfirmation: false,
         execution: 'host_gateway_route'
       },
       {
         name: 'saya_desk.list_project_tasks',
+        label: '读取项目任务',
+        description: 'List authorized active tasks for a project.',
+        parameterSchema: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            projectId: { type: 'string', minLength: 1 }
+          }
+        },
+        resultSummary: 'Returns project task titles, statuses, and compact metadata.',
         risk: 'read_only',
         requiresConfirmation: false,
         execution: 'host_gateway_route'
       },
       {
         name: 'saya_desk.get_note_content',
+        label: '读取笔记内容',
+        description: 'Read authorized note content by note id or current note focus.',
+        parameterSchema: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            noteId: { type: 'string', minLength: 1 }
+          }
+        },
+        resultSummary: 'Returns note title, clipped content, updated time, and source receipt.',
         risk: 'read_only',
         requiresConfirmation: false,
         execution: 'host_gateway_route'
       }
     ]
-  };
+  });
 }
 
 export default {
