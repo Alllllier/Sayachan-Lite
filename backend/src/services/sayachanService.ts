@@ -263,6 +263,50 @@ function projectTurnActivity(coreResponse: SayachanCoreTurnResponse): SayaDeskSa
   };
 }
 
+function activityStreamEvent(item: SayaDeskSayachanTurnActivityItemDto): SayaDeskSayachanStreamEventDto {
+  return sayaDeskSayachanStreamEventSchema.parse({
+    packetType: 'saya_desk_sayachan_stream_event',
+    version: 1,
+    type: item.kind,
+    item
+  });
+}
+
+function assistantDeltaStreamEvent(delta: string, text: string): SayaDeskSayachanStreamEventDto {
+  return sayaDeskSayachanStreamEventSchema.parse({
+    packetType: 'saya_desk_sayachan_stream_event',
+    version: 1,
+    type: 'assistant_delta',
+    delta,
+    text
+  });
+}
+
+function completedStreamEvent(
+  reply: string,
+  coreResult: SayachanCoreTurnAdvanceResult,
+  turnActivity?: SayaDeskSayachanTurnActivityDto
+): SayaDeskSayachanStreamEventDto {
+  return sayaDeskSayachanStreamEventSchema.parse({
+    packetType: 'saya_desk_sayachan_stream_event',
+    version: 1,
+    type: 'completed',
+    reply,
+    turnId: coreResult.turnId,
+    turnActivity,
+    trace: projectAdvanceTrace(coreResult)
+  });
+}
+
+function errorStreamEvent(code: string, message: string): SayaDeskSayachanStreamEventDto {
+  return sayaDeskSayachanStreamEventSchema.parse({
+    packetType: 'saya_desk_sayachan_stream_event',
+    version: 1,
+    type: 'error',
+    error: { code, message }
+  });
+}
+
 function projectAdvanceTrace(coreResult: SayachanCoreTurnAdvanceResult): SayaDeskSayachanResponseDto['trace'] {
   if (!coreResult.trace) {
     return undefined;
@@ -510,6 +554,65 @@ async function runAdvanceLoop(
       const { result, output } = await executeToolProposal(proposal, coreResult.turnId, options);
       toolOutputs.push(output);
       activityItems.push(toolStatusActivityItem(coreResult.turnId, proposal, result, nextActivityIndex));
+    }
+
+    coreResult = await runCoreTurnAdvance({
+      host: startRequest.host,
+      conversation: startRequest.conversation,
+      options: startRequest.options,
+      turnCursor: coreResult.turnCursor,
+      toolOutputs
+    });
+  }
+
+  throw new Error(`Sayachan Core advance loop exceeded ${MAX_ADVANCE_ITERATIONS} iteration(s)`);
+}
+
+async function* streamAdvanceLoop(
+  startRequest: SayaDeskSayachanAdvanceTurnRequestDto,
+  options: SayachanExecutionOptions
+): AsyncIterable<SayaDeskSayachanStreamEventDto> {
+  let coreResult = await runCoreTurnAdvance(startRequest);
+  const activityItems: SayaDeskSayachanTurnActivityItemDto[] = [];
+  let activityIndex = 0;
+  let streamedText = '';
+  const nextActivityIndex = () => {
+    activityIndex += 1;
+    return activityIndex;
+  };
+  const currentTurnActivity = (): SayaDeskSayachanTurnActivityDto | undefined => (
+    activityItems.length
+      ? { defaultCollapsed: true, items: [...activityItems] }
+      : undefined
+  );
+
+  for (let iteration = 1; iteration <= MAX_ADVANCE_ITERATIONS; iteration += 1) {
+    for (const item of advanceActivityItems(coreResult, nextActivityIndex)) {
+      activityItems.push(item);
+      yield activityStreamEvent(item);
+    }
+
+    if (coreResult.status === 'completed' || coreResult.status === 'blocked' || coreResult.status === 'failed') {
+      const reply = finalAdvanceText(coreResult);
+      if (reply) {
+        streamedText += reply;
+        yield assistantDeltaStreamEvent(reply, streamedText);
+      }
+      yield completedStreamEvent(reply, coreResult, currentTurnActivity());
+      return;
+    }
+
+    if (!coreResult.turnCursor) {
+      throw new Error('Sayachan Core requested host action without a turn cursor');
+    }
+
+    const toolOutputs: SayaDeskSayachanToolOutputDto[] = [];
+    for (const proposal of coreResult.toolProposals) {
+      const { result, output } = await executeToolProposal(proposal, coreResult.turnId, options);
+      toolOutputs.push(output);
+      const item = toolStatusActivityItem(coreResult.turnId, proposal, result, nextActivityIndex);
+      activityItems.push(item);
+      yield activityStreamEvent(item);
     }
 
     coreResult = await runCoreTurnAdvance({
@@ -841,16 +944,15 @@ export async function* chatStream(request: SayaDeskSayachanRequestDto, options: 
   const preparedTurn = options.userId && chatPersistenceAvailabilityCheck()
     ? await preparePersistentTextTurn({ text: request.text }, { userId: options.userId })
     : null;
-  const authorizedContext = await buildAuthorizedContext(request, options);
-  const turnRequest = coreRequest(request, preparedTurn, authorizedContext, options, true);
+  const authorizedContext = await buildAdvanceAuthorizedContext(request, options);
+  const turnRequest = coreAdvanceStartRequest(request, preparedTurn, authorizedContext, options);
 
   try {
-    for await (const event of runCoreTurnStream(turnRequest)) {
-      const projected = projectStreamEvent(event);
-      if (projected.type === 'completed') {
-        await persistAssistantReply(preparedTurn, coreCompletedEventResponse(event as Extract<SayachanCoreTurnStreamEvent, { type: 'completed' }>), options);
+    for await (const event of streamAdvanceLoop(turnRequest, options)) {
+      if (event.type === 'completed') {
+        await persistAssistantText(preparedTurn, event.reply, options);
       }
-      yield projected;
+      yield event;
     }
   } catch (error) {
     if (error instanceof BadRequestError) {
@@ -858,15 +960,7 @@ export async function* chatStream(request: SayaDeskSayachanRequestDto, options: 
     }
 
     console.error('[Sayachan Route] Core stream failed:', errorMessage(error));
-    yield sayaDeskSayachanStreamEventSchema.parse({
-      packetType: 'saya_desk_sayachan_stream_event',
-      version: 1,
-      type: 'error',
-      error: {
-        code: 'SAYACHAN_CORE_STREAM_FAILED',
-        message: 'Sayachan Core stream failed'
-      }
-    });
+    yield errorStreamEvent('SAYACHAN_CORE_STREAM_FAILED', 'Sayachan Core stream failed');
   }
 }
 
