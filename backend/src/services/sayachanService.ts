@@ -221,11 +221,19 @@ function activityStatusFromToolStatus(
   return status;
 }
 
+function capabilityActivityLabel(capability: SayaDeskSayachanToolProposalDto['capability']): string {
+  if (capability === 'saya_desk.search_product_context') return '搜索工作区内容';
+  if (capability === 'saya_desk.get_project_context') return '读取项目上下文';
+  if (capability === 'saya_desk.list_project_tasks') return '读取项目任务';
+  if (capability === 'saya_desk.get_note_content') return '读取笔记内容';
+  return capability;
+}
+
 function toolActivityText(
   proposal: SayaDeskSayachanToolProposalDto,
   result: SayaDeskHostToolExecutionResultDto
 ): string {
-  const label = proposal.label || proposal.capability;
+  const label = capabilityActivityLabel(proposal.capability);
   const title = result.sourceReceipts?.[0]?.title;
   return title ? `${label}：${title}` : label;
 }

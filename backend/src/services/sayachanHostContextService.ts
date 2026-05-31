@@ -188,7 +188,6 @@ export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityMan
     tools: [
       {
         name: 'saya_desk.search_product_context',
-        label: '搜索工作区内容',
         description: 'Search authorized SayaDesk notes, projects, and tasks by short user-facing terms.',
         parameterSchema: {
           type: 'object',
@@ -211,7 +210,6 @@ export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityMan
       },
       {
         name: 'saya_desk.get_project_context',
-        label: '读取项目上下文',
         description: 'Read the authorized project summary and current focus metadata.',
         parameterSchema: {
           type: 'object',
@@ -224,7 +222,6 @@ export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityMan
       },
       {
         name: 'saya_desk.list_project_tasks',
-        label: '读取项目任务',
         description: 'List authorized active tasks for a project.',
         parameterSchema: {
           type: 'object',
@@ -237,7 +234,6 @@ export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityMan
       },
       {
         name: 'saya_desk.get_note_content',
-        label: '读取笔记内容',
         description: 'Read authorized note content by note id or current note focus.',
         parameterSchema: {
           type: 'object',

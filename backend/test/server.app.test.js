@@ -91,9 +91,9 @@ test('SayaDesk host capability manifest exposes provider-facing tool contracts',
   assert.equal(manifest.tools.length, 4);
 
   for (const tool of manifest.tools) {
-    assert.equal(typeof tool.label, 'string');
     assert.equal(typeof tool.description, 'string');
     assert.equal(typeof tool.parameterSchema, 'object');
+    assert.equal(Object.hasOwn(tool, 'label'), false);
     assert.equal(Object.hasOwn(tool, 'risk'), false);
     assert.equal(Object.hasOwn(tool, 'requiresConfirmation'), false);
     assert.equal(Object.hasOwn(tool, 'execution'), false);
@@ -349,7 +349,6 @@ test('authenticated /sayachan reaches Sayachan Core v4 advance bridge and return
     status: 'declared_only',
     tools: [{
       name: 'saya_desk.search_product_context',
-      label: '搜索工作区内容',
       description: 'Search authorized SayaDesk notes, projects, and tasks.',
       parameterSchema: {
         type: 'object',
@@ -390,14 +389,12 @@ test('authenticated /sayachan reaches Sayachan Core v4 advance bridge and return
             outputId: 'turn-route-smoke:activity-output:1',
             kind: 'activity_text',
             text: '我先回看一下项目里的记录。',
-            canonicalMessage: false,
             sourceTrace: ['provider.activity']
           },
           {
             outputId: 'turn-route-smoke:final:1',
             kind: 'final_text',
             text: 'sayachan v4 advance ok',
-            canonicalMessage: true,
             sourceTrace: ['provider.final']
           }
         ],
@@ -512,7 +509,6 @@ test('authenticated /sayachan/stream emits host-orchestrated advance events', as
     status: 'declared_only',
     tools: [{
       name: 'saya_desk.get_note_content',
-      label: '读取笔记内容',
       description: 'Read authorized note content by note id.',
       parameterSchema: {
         type: 'object',
@@ -567,7 +563,6 @@ test('authenticated /sayachan/stream emits host-orchestrated advance events', as
               outputId: 'turn-stream:final:1',
               kind: 'final_text',
               text: 'streamed v4 reply',
-              canonicalMessage: true,
               sourceTrace: ['provider.final']
             }
           ],
@@ -659,7 +654,6 @@ test('authenticated /sayachan/stream streams tool activity before host execution
       status: 'declared_only',
       tools: [{
         name: 'saya_desk.get_note_content',
-        label: '读取笔记内容',
         description: 'Read authorized note content by note id.',
         parameterSchema: {
           type: 'object',
@@ -711,7 +705,6 @@ test('authenticated /sayachan/stream streams tool activity before host execution
               outputId: 'turn-tool-stream:assistant-output:1',
               kind: 'activity_text',
               text: '我先回看一下相关笔记。',
-              canonicalMessage: true,
               sourceTrace: ['provider.activity']
             }],
             toolProposals: [{
@@ -720,7 +713,6 @@ test('authenticated /sayachan/stream streams tool activity before host execution
               providerToolName: 'saya_desk_get_note_content',
               capability: 'saya_desk.get_note_content',
               arguments: {},
-              label: '读取笔记内容',
               sourceTrace: ['provider.native_function_call']
             }],
             trace: {
@@ -751,7 +743,6 @@ test('authenticated /sayachan/stream streams tool activity before host execution
             outputId: 'turn-tool-stream:assistant-output:2',
             kind: 'final_text',
             text: '这次没有读到笔记内容。',
-            canonicalMessage: true,
             sourceTrace: ['provider.final']
           }],
           toolProposals: [],

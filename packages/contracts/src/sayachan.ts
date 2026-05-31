@@ -66,7 +66,6 @@ export const sayaDeskHostToolExecutionStatusValues = ['completed', 'denied', 'fa
 
 export const sayaDeskHostToolCapabilityDeclarationSchema = z.object({
   name: z.enum(sayaDeskHostToolCapabilityValues),
-  label: z.string().min(1),
   description: z.string().min(1),
   parameterSchema: z.record(z.string(), z.unknown()).default({}),
   resultSummary: z.string().min(1).optional()
@@ -125,7 +124,6 @@ export const sayaDeskSayachanAssistantOutputItemSchema = z.object({
   outputId: z.string().min(1),
   kind: z.enum(sayaDeskSayachanAssistantOutputKindValues),
   text: z.string().min(1),
-  canonicalMessage: z.boolean().default(false),
   sourceTrace: z.array(z.string()).default([])
 }).strict()
 
@@ -135,7 +133,6 @@ export const sayaDeskSayachanToolProposalSchema = z.object({
   providerToolName: z.string().min(1),
   capability: z.enum(sayaDeskHostToolCapabilityValues),
   arguments: z.record(z.string(), z.unknown()).default({}),
-  label: z.string().min(1).optional(),
   sourceTrace: z.array(z.string()).default([])
 }).strict()
 
