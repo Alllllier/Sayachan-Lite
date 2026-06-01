@@ -271,6 +271,36 @@ test('sayachan list notes tool chip omits individual note title', () => {
   );
 });
 
+test('sayachan search tool chip shows the searched query', () => {
+  assert.equal(
+    sayachanService.__test__.toolActivityText(
+      {
+        capability: 'saya_desk.search_product_context',
+        arguments: {
+          query: '猫咪 饮水'
+        }
+      },
+      {
+        sourceReceipts: [{ type: 'note', title: '猫咪饮水观察' }]
+      }
+    ),
+    '搜索工作区内容：猫咪 饮水'
+  );
+
+  assert.equal(
+    sayachanService.__test__.toolActivityText(
+      {
+        capability: 'saya_desk.search_product_context',
+        arguments: {}
+      },
+      {
+        sourceReceipts: [{ type: 'note', title: '猫咪饮水观察' }]
+      }
+    ),
+    '搜索工作区内容'
+  );
+});
+
 test('allowedOrigins supports comma-separated FRONTEND_ORIGINS', () => {
   const originalEnv = { ...process.env };
 

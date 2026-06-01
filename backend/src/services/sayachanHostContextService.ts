@@ -188,20 +188,30 @@ export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityMan
     tools: [
       {
         name: 'saya_desk.search_product_context',
-        description: 'Search authorized SayaDesk notes, projects, and tasks by short user-facing terms.',
+        description: 'Search authorized SayaDesk notes, projects, and tasks when the user provides clear search terms or a specific lookup target.',
         parameterSchema: {
           type: 'object',
           additionalProperties: false,
           properties: {
-            query: { type: 'string', minLength: 1 },
+            query: {
+              type: 'string',
+              minLength: 1,
+              description: 'A compact human-readable search summary.'
+            },
             terms: {
               type: 'array',
+              description: 'Separate short search terms for matching. Use ["alpha", "beta"], not ["alpha beta"].',
               items: { type: 'string', minLength: 1 },
               maxItems: 6
             },
-            matchMode: { type: 'string', enum: ['any', 'all'] },
+            matchMode: {
+              type: 'string',
+              enum: ['any', 'all'],
+              description: 'any means broad recall where any term may match; all means strict matching where every term should match.'
+            },
             domains: {
               type: 'array',
+              description: 'Host object types to search.',
               items: { type: 'string', enum: ['notes', 'projects', 'tasks'] }
             }
           }
@@ -210,7 +220,7 @@ export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityMan
       },
       {
         name: 'saya_desk.list_notes',
-        description: 'Browse authorized SayaDesk notes when the user asks what notes exist or what they wrote recently.',
+        description: 'Browse authorized SayaDesk notes without requiring a search keyword. Use for note inventory, recent notes, or broad workspace browsing.',
         parameterSchema: {
           type: 'object',
           additionalProperties: false,
@@ -223,7 +233,7 @@ export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityMan
       },
       {
         name: 'saya_desk.get_project_context',
-        description: 'Read the authorized project summary and current focus metadata.',
+        description: 'Read one authorized project summary and current focus metadata when a project is selected or a projectId is known.',
         parameterSchema: {
           type: 'object',
           additionalProperties: false,
@@ -235,7 +245,7 @@ export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityMan
       },
       {
         name: 'saya_desk.list_project_tasks',
-        description: 'List authorized active tasks for a project.',
+        description: 'List authorized active tasks for one project when a project is selected or a projectId is known.',
         parameterSchema: {
           type: 'object',
           additionalProperties: false,

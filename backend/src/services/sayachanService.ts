@@ -235,6 +235,12 @@ function toolActivityText(
   result: SayaDeskHostToolExecutionResultDto
 ): string {
   const label = capabilityActivityLabel(proposal.capability);
+  if (proposal.capability === 'saya_desk.search_product_context') {
+    const query = typeof proposal.arguments.query === 'string'
+      ? proposal.arguments.query.trim()
+      : '';
+    return query ? `${label}：${query}` : label;
+  }
   if (proposal.capability === 'saya_desk.list_notes') {
     return label;
   }
