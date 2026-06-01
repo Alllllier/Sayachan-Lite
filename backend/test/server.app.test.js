@@ -6,6 +6,9 @@ import aiService from '../dist/services/aiService.js';
 import sayachanService from '../dist/services/sayachanService.js';
 import sayachanHostToolService from '../dist/services/sayachanHostToolService.js';
 import { buildSayaDeskHostCapabilityManifest } from '../dist/services/sayachanHostContextService.js';
+import Note from '../dist/models/Note.js';
+import Project from '../dist/models/Project.js';
+import Task from '../dist/models/Task.js';
 import { allowedOrigins, createApp } from '../dist/server.js';
 
 function listen(app) {
@@ -82,13 +85,22 @@ function productContextFixture() {
   };
 }
 
+function createRuntimeDoc(data) {
+  return {
+    ...data,
+    toObject() {
+      return { ...data };
+    }
+  };
+}
+
 test('SayaDesk host capability manifest exposes provider-facing tool contracts', () => {
   const manifest = buildSayaDeskHostCapabilityManifest();
 
   assert.equal(manifest.packetType, 'saya_desk_host_capability_manifest');
   assert.equal(manifest.version, 1);
   assert.equal(manifest.status, 'executable');
-  assert.equal(manifest.tools.length, 4);
+  assert.equal(manifest.tools.length, 5);
 
   for (const tool of manifest.tools) {
     assert.equal(typeof tool.description, 'string');
@@ -106,6 +118,12 @@ test('SayaDesk host capability manifest exposes provider-facing tool contracts',
   assert.equal(search.parameterSchema.type, 'object');
   assert.equal(search.parameterSchema.additionalProperties, false);
   assert.deepEqual(search.parameterSchema.properties.matchMode.enum, ['any', 'all']);
+  const listNotes = manifest.tools.find((tool) => tool.name === 'saya_desk.list_notes');
+  assert.ok(listNotes);
+  assert.equal(listNotes.parameterSchema.type, 'object');
+  assert.equal(listNotes.parameterSchema.additionalProperties, false);
+  assert.deepEqual(listNotes.parameterSchema.properties.sortBy.enum, ['updatedAt', 'createdAt']);
+  assert.equal(listNotes.parameterSchema.properties.limit.maximum, 30);
 });
 
 function withPatchedMethods(patches, run) {
@@ -153,6 +171,103 @@ test('sayachan host search expression normalizes safe term arrays', () => {
       matchMode: 'any',
       domains: ['notes', 'projects', 'tasks']
     }
+  );
+});
+
+test('sayachan host list notes tool returns recent compact notes for current user', async () => {
+  const seen = {};
+
+  await withPatchedMethods([
+    { target: Note.db, key: 'readyState', value: 1 },
+    { target: Project.db, key: 'readyState', value: 1 },
+    { target: Task.db, key: 'readyState', value: 1 },
+    {
+      target: Note,
+      key: 'find',
+      value: (query) => {
+        seen.query = query;
+        return {
+          sort(sort) {
+            seen.sort = sort;
+            return {
+              limit(limit) {
+                seen.limit = limit;
+                return Promise.resolve([
+                  createRuntimeDoc({
+                    _id: '000000000000000000000101',
+                    title: '吃饭',
+                    content: '啦'.repeat(400),
+                    createdAt: new Date('2026-05-01T00:00:00.000Z'),
+                    updatedAt: new Date('2026-05-02T00:00:00.000Z')
+                  }),
+                  createRuntimeDoc({
+                    _id: '000000000000000000000102',
+                    title: '生日',
+                    content: '我的生日是 xxxx，到时候要请朋友吃饭',
+                    createdAt: new Date('2026-05-03T00:00:00.000Z'),
+                    updatedAt: new Date('2026-05-04T00:00:00.000Z')
+                  })
+                ]);
+              }
+            };
+          }
+        };
+      }
+    }
+  ], async () => {
+    const result = await sayachanHostToolService.executeHostTool({
+      requestId: 'tool-request-list-notes',
+      turnId: 'turn-1',
+      hostId: 'saya-desk',
+      hostUserId: '000000000000000000000001',
+      capability: 'saya_desk.list_notes',
+      arguments: {
+        sortBy: 'createdAt',
+        limit: 1_000
+      },
+      risk: 'read_only',
+      requiresConfirmation: false,
+      sourceTrace: ['test']
+    }, {
+      userId: {
+        toHexString: () => '000000000000000000000001'
+      }
+    });
+
+    assert.equal(result.status, 'completed');
+    assert.equal(result.capability, 'saya_desk.list_notes');
+    assert.deepEqual(seen.query.$and[0], { archived: { $ne: true } });
+    assert.equal(seen.query.$and[1].userId.toHexString(), '000000000000000000000001');
+    assert.deepEqual(seen.sort, { createdAt: -1 });
+    assert.equal(seen.limit, 31);
+    assert.equal(result.result.notes.length, 2);
+    assert.equal(result.result.notes[0].title, '吃饭');
+    assert.equal(result.result.notes[0].excerpt.length, 302);
+    assert.ok(result.result.notes[0].excerpt.endsWith('...'));
+    assert.equal(result.result.notes[1].title, '生日');
+    assert.equal(result.result.sortBy, 'createdAt');
+    assert.equal(result.result.limit, 30);
+    assert.equal(result.resultSummary, 'Listed 2 note(s).');
+    assert.deepEqual(result.sourceReceipts, [
+      { type: 'note', title: '吃饭' },
+      { type: 'note', title: '生日' }
+    ]);
+    assert.equal(result.truncated, false);
+    assert.deepEqual(result.sourceTrace, ['sayachan_host_tool_service', 'list_notes', 'test']);
+  });
+});
+
+test('sayachan list notes tool chip omits individual note title', () => {
+  assert.equal(
+    sayachanService.__test__.toolActivityText(
+      {
+        capability: 'saya_desk.list_notes'
+      },
+      {
+        sourceReceipts: [{ type: 'note', title: 'E2E-Inventory-随手记' }]
+      }
+    ),
+    '查看笔记列表'
   );
 });
 

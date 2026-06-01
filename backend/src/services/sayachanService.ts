@@ -223,6 +223,7 @@ function activityStatusFromToolStatus(
 
 function capabilityActivityLabel(capability: SayaDeskSayachanToolProposalDto['capability']): string {
   if (capability === 'saya_desk.search_product_context') return '搜索工作区内容';
+  if (capability === 'saya_desk.list_notes') return '查看笔记列表';
   if (capability === 'saya_desk.get_project_context') return '读取项目上下文';
   if (capability === 'saya_desk.list_project_tasks') return '读取项目任务';
   if (capability === 'saya_desk.get_note_content') return '读取笔记内容';
@@ -234,6 +235,9 @@ function toolActivityText(
   result: SayaDeskHostToolExecutionResultDto
 ): string {
   const label = capabilityActivityLabel(proposal.capability);
+  if (proposal.capability === 'saya_desk.list_notes') {
+    return label;
+  }
   const title = result.sourceReceipts?.[0]?.title;
   return title ? `${label}：${title}` : label;
 }
@@ -748,7 +752,8 @@ export const __test__ = {
     return () => {
       chatPersistenceAvailabilityCheck = previous;
     };
-  }
+  },
+  toolActivityText
 };
 
 export default {

@@ -19,6 +19,7 @@ type RuntimeDocument = {
 type ToolArgs = Record<string, unknown>;
 type SearchDomain = 'notes' | 'projects' | 'tasks';
 type SearchMatchMode = 'any' | 'all';
+type NoteListSortBy = 'updatedAt' | 'createdAt';
 type SearchExpression = {
   query: string;
   terms: string[];
@@ -34,6 +35,8 @@ const SEARCH_RESULT_LIMIT = 5;
 const SEARCH_TERM_LIMIT = 6;
 const SEARCH_TERM_CHAR_LIMIT = 40;
 const SEARCH_DOMAINS: SearchDomain[] = ['notes', 'projects', 'tasks'];
+const NOTE_LIST_DEFAULT_LIMIT = 20;
+const NOTE_LIST_MAX_LIMIT = 30;
 const TASK_RESULT_LIMIT = 40;
 
 function isDatabaseReady(): boolean {
@@ -122,6 +125,32 @@ function argumentStringArray(args: ToolArgs, key: string): string[] {
   }
   return uniqueValues(value.map(normalizedSearchTerm).filter((item): item is string => Boolean(item)))
     .slice(0, SEARCH_TERM_LIMIT);
+}
+
+function argumentInteger(
+  args: ToolArgs,
+  key: string,
+  options: {
+    fallback: number;
+    min: number;
+    max: number;
+  }
+): number {
+  const { fallback, min, max } = options;
+  const value = args[key];
+  const parsed = typeof value === 'number'
+    ? value
+    : typeof value === 'string'
+      ? Number.parseInt(value, 10)
+      : Number.NaN;
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(min, Math.trunc(parsed)));
+}
+
+function noteListSortBy(args: ToolArgs): NoteListSortBy {
+  return args.sortBy === 'createdAt' ? 'createdAt' : 'updatedAt';
 }
 
 function normalizedSearchDomains(value: unknown): SearchDomain[] {
@@ -338,6 +367,48 @@ async function getProjectContext(
   });
 }
 
+async function listNotes(
+  request: SayaDeskHostToolExecutionRequestDto,
+  userId: ObjectId
+): Promise<SayaDeskHostToolExecutionResultDto> {
+  const sortBy = noteListSortBy(request.arguments);
+  const limit = argumentInteger(request.arguments, 'limit', {
+    fallback: NOTE_LIST_DEFAULT_LIMIT,
+    min: 1,
+    max: NOTE_LIST_MAX_LIMIT
+  });
+  const notes = await Note.find(combineFilters(
+    buildArchiveFilter('false'),
+    { userId }
+  )).sort({ [sortBy]: -1 }).limit(limit + 1);
+  const visibleNotes = notes.slice(0, limit).map(note => {
+    const normalized = plainObject(asRuntimeDocument(note));
+    const title = stringValue(normalized.title, 'Untitled note');
+    return {
+      id: stringValue(normalized._id),
+      title,
+      excerpt: clipText(normalized.content, 300).text,
+      createdAt: isoString(normalized.createdAt),
+      updatedAt: isoString(normalized.updatedAt)
+    };
+  });
+
+  return toolResult(request, {
+    status: 'completed',
+    result: {
+      packetType: 'saya_desk_host_tool_result',
+      version: 1,
+      notes: visibleNotes,
+      sortBy,
+      limit
+    },
+    resultSummary: `Listed ${visibleNotes.length} note(s).`,
+    sourceReceipts: visibleNotes.map(note => ({ type: 'note', title: note.title })),
+    truncated: notes.length > limit,
+    sourceTrace: sourceTrace(request, 'list_notes')
+  });
+}
+
 async function listProjectTasks(
   request: SayaDeskHostToolExecutionRequestDto,
   userId: ObjectId
@@ -527,6 +598,7 @@ export async function executeHostTool(
 
   const handlers: Record<SayaDeskHostToolCapability, () => Promise<SayaDeskHostToolExecutionResultDto>> = {
     'saya_desk.search_product_context': () => searchProductContext(request, userId),
+    'saya_desk.list_notes': () => listNotes(request, userId),
     'saya_desk.get_project_context': () => getProjectContext(request, userId),
     'saya_desk.list_project_tasks': () => listProjectTasks(request, userId),
     'saya_desk.get_note_content': () => getNoteContent(request, userId)

@@ -209,6 +209,19 @@ export function buildSayaDeskHostCapabilityManifest(): SayaDeskHostCapabilityMan
         resultSummary: 'Returns matched notes, projects, and tasks with compact excerpts and source receipts.'
       },
       {
+        name: 'saya_desk.list_notes',
+        description: 'Browse authorized SayaDesk notes when the user asks what notes exist or what they wrote recently.',
+        parameterSchema: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            sortBy: { type: 'string', enum: ['updatedAt', 'createdAt'] },
+            limit: { type: 'integer', minimum: 1, maximum: 30 }
+          }
+        },
+        resultSummary: 'Returns recent note titles, compact excerpts, timestamps, and source receipts.'
+      },
+      {
         name: 'saya_desk.get_project_context',
         description: 'Read the authorized project summary and current focus metadata.',
         parameterSchema: {

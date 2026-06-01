@@ -11,6 +11,7 @@ export const sayaDeskSayachanSurfaceValues = [
 export const sayaDeskSayachanFocusTypeValues = ['note', 'project', 'task'] as const
 export const sayaDeskHostToolCapabilityValues = [
   'saya_desk.search_product_context',
+  'saya_desk.list_notes',
   'saya_desk.get_project_context',
   'saya_desk.list_project_tasks',
   'saya_desk.get_note_content'
