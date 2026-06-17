@@ -17,6 +17,7 @@ import type {
   ChatRuntimePayloadDto,
   ChatSessionResponseDto,
   ChatSourceReceiptDto,
+  SayaDeskSayachanCandidateProposalDto,
   SayaDeskSayachanDebugTraceDto,
   SayaDeskSayachanFocusDto,
   SayaDeskSayachanResponseDto,
@@ -78,8 +79,10 @@ type SendSayachanInput = {
 }
 
 export type SayachanTurnActivity = NonNullable<SayaDeskSayachanResponseDto['turnActivity']>
+export type SayachanCandidateProposal = SayaDeskSayachanCandidateProposalDto
 export type SayachanChatResponse = ChatResponseDto & {
   turnActivity?: SayachanTurnActivity
+  candidateProposals?: SayachanCandidateProposal[]
   sayachanDebugTrace?: SayaDeskSayachanDebugTraceDto
 }
 
@@ -177,6 +180,7 @@ export async function sendSayachan(input: SendSayachanInput): Promise<SayachanCh
     return {
       reply: data.reply,
       ...(data.turnActivity ? { turnActivity: data.turnActivity } : {}),
+      ...(data.candidateProposals?.length ? { candidateProposals: data.candidateProposals } : {}),
       ...(data.debugTrace ? { sayachanDebugTrace: data.debugTrace } : {})
     }
   } catch {
@@ -373,6 +377,7 @@ export async function streamSayachan(
         return {
           reply: event.reply,
           ...(event.turnActivity ? { turnActivity: event.turnActivity } : {}),
+          ...(event.candidateProposals?.length ? { candidateProposals: event.candidateProposals } : {}),
           ...(event.debugTrace ? { sayachanDebugTrace: event.debugTrace } : {})
         }
       }

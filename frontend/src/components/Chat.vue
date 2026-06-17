@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, nextTick, onMounted, watch } from 'vue'
-import type { ChatDebugTraceDto, SayaDeskSayachanDebugTraceDto, SayaDeskSayachanTurnActivityItemDto } from '@sayachan/contracts'
+import type { ChatDebugTraceDto, SayaDeskSayachanCandidateProposalDto, SayaDeskSayachanDebugTraceDto, SayaDeskSayachanTurnActivityItemDto } from '@sayachan/contracts'
 import avatarUrl from '../assets/avatar/sayachan-avatar.jpg'
 import { useChatFeature } from '../features/chat/useChatFeature.js'
 import { useAuthStore } from '../stores/auth'
@@ -54,9 +54,11 @@ const {
   getMessageTurnActivity,
   isPendingAssistantMessage,
   getMessageMemoryCandidate,
+  getMessageCandidateProposals,
   getMessageFocusSnapshot,
   acceptMemoryCandidate,
   dismissMemoryCandidate,
+  dismissCandidateProposal,
   chatInputDisabled,
   chatSendButtonLabel,
   openPopup,
@@ -154,6 +156,13 @@ function sourceTypeLabel(type: string): string {
 function memoryCandidateTypeLabel(type?: string): string {
   if (type === 'continuity_hint') return t('settings.memoryTypeContinuity')
   return t('settings.memoryTypePreference')
+}
+
+function candidateProposalKindLabel(kind: SayaDeskSayachanCandidateProposalDto['kind']): string {
+  if (kind === 'relationship_sediment') return t('chat.candidateKindRelationshipSediment')
+  if (kind === 'character_state') return t('chat.candidateKindCharacterState')
+  if (kind === 'reflection_artifact') return t('chat.candidateKindReflectionArtifact')
+  return t('chat.candidateKindMemory')
 }
 
 function memoryCandidateSaveLabel(index: number): string {
@@ -451,6 +460,36 @@ function sayachanDebugResponseId(trace: SayaDeskSayachanDebugTraceDto): string {
                   >
                     {{ t('chat.memoryCandidateDismiss') }}
                   </button>
+                </div>
+              </div>
+              <div
+                v-if="getMessageCandidateProposals(idx).length > 0"
+                class="chat-candidate-proposals"
+              >
+                <div
+                  v-for="proposal in getMessageCandidateProposals(idx)"
+                  :key="proposal.proposalId"
+                  class="chat-memory-candidate chat-candidate-proposal"
+                >
+                  <div class="chat-memory-candidate-header">
+                    <span>{{ t('chat.candidateProposalTitle') }}</span>
+                    <span>{{ candidateProposalKindLabel(proposal.kind) }}</span>
+                  </div>
+                  <div class="chat-memory-candidate-content">
+                    {{ proposal.content }}
+                  </div>
+                  <div v-if="proposal.reason" class="chat-memory-candidate-reason">
+                    {{ proposal.reason }}
+                  </div>
+                  <div class="chat-memory-candidate-actions">
+                    <button
+                      type="button"
+                      class="chat-memory-action"
+                      @click="dismissCandidateProposal(idx, proposal.proposalId)"
+                    >
+                      {{ t('chat.memoryCandidateDismiss') }}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1256,6 +1295,13 @@ function sayachanDebugResponseId(trace: SayaDeskSayachanDebugTraceDto): string {
 
 .chat-source-type::after {
   content: " · ";
+}
+
+.chat-candidate-proposals {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
 }
 
 .chat-memory-candidate {

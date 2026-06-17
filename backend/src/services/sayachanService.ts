@@ -175,12 +175,14 @@ function completedStreamEvent(
   coreResult: SayachanCoreTurnAdvanceResult,
   turnActivity?: SayaDeskSayachanTurnActivityDto
 ): SayaDeskSayachanStreamEventDto {
+  const candidateProposals = coreResult.candidateProposals || [];
   return sayaDeskSayachanStreamEventSchema.parse({
     packetType: 'saya_desk_sayachan_stream_event',
     version: 1,
     type: 'completed',
     reply,
     turnId: coreResult.turnId,
+    ...(candidateProposals.length > 0 ? { candidateProposals } : {}),
     turnActivity,
     trace: projectAdvanceTrace(coreResult),
     debugTrace: coreResult.debugTrace
@@ -676,9 +678,11 @@ export async function chat(request: SayaDeskSayachanRequestDto, options: Sayacha
   try {
     const { coreResult, turnActivity } = await runAdvanceLoop(turnRequest, options);
     const reply = finalAdvanceText(coreResult);
+    const candidateProposals = coreResult.candidateProposals || [];
     const parsed = sayaDeskSayachanResponseSchema.parse({
       reply,
       turnId: coreResult.turnId,
+      ...(candidateProposals.length > 0 ? { candidateProposals } : {}),
       turnActivity,
       trace: projectAdvanceTrace(coreResult),
       debugTrace: coreResult.debugTrace

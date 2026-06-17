@@ -1,5 +1,5 @@
 import { computed, nextTick, ref, watch } from 'vue'
-import type { ChatContextDto, ChatFocusDto, ChatMemoryCandidateDto, ChatMessageDto, ChatSourceReceiptDto, SayaDeskSayachanTurnActivityItemDto } from '@sayachan/contracts'
+import type { ChatContextDto, ChatFocusDto, ChatMemoryCandidateDto, ChatMessageDto, ChatSourceReceiptDto, SayaDeskSayachanCandidateProposalDto, SayaDeskSayachanTurnActivityItemDto } from '@sayachan/contracts'
 import { useChatStore } from '../../stores/chat'
 import { useRuntimeControls } from '../../stores/runtimeControls'
 import { createMemoryEntry } from '../memory/memory.api.js'
@@ -61,6 +61,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
   const focusSnapshotsByMessageIndex = ref<Record<number, ChatFocusSnapshot>>({})
   const sourceReceiptsByMessageIndex = ref<Record<number, ChatSourceReceiptDto[]>>({})
   const memoryCandidatesByMessageIndex = ref<Record<number, ChatMemoryCandidateState>>({})
+  const sayachanCandidateProposalsByMessageIndex = ref<Record<number, SayaDeskSayachanCandidateProposalDto[]>>({})
   const turnActivitiesByMessageIndex = ref<Record<number, SayachanTurnActivity>>({})
 
   watch(
@@ -70,6 +71,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
         focusSnapshotsByMessageIndex.value = {}
         sourceReceiptsByMessageIndex.value = {}
         memoryCandidatesByMessageIndex.value = {}
+        sayachanCandidateProposalsByMessageIndex.value = {}
         turnActivitiesByMessageIndex.value = {}
         pendingAssistantMessageIndex.value = null
       }
@@ -156,6 +158,27 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
 
   function getMessageMemoryCandidate(index: number): ChatMemoryCandidateState | undefined {
     return memoryCandidatesByMessageIndex.value[index]
+  }
+
+  function setMessageCandidateProposals(index: number | null, proposals?: SayaDeskSayachanCandidateProposalDto[]): void {
+    if (index === null || !proposals || proposals.length === 0) return
+    sayachanCandidateProposalsByMessageIndex.value = {
+      ...sayachanCandidateProposalsByMessageIndex.value,
+      [index]: proposals
+    }
+  }
+
+  function getMessageCandidateProposals(index: number): SayaDeskSayachanCandidateProposalDto[] {
+    return sayachanCandidateProposalsByMessageIndex.value[index] || []
+  }
+
+  function dismissCandidateProposal(index: number, proposalId: string): void {
+    const current = sayachanCandidateProposalsByMessageIndex.value[index] || []
+    const next = current.filter(proposal => proposal.proposalId !== proposalId)
+    sayachanCandidateProposalsByMessageIndex.value = {
+      ...sayachanCandidateProposalsByMessageIndex.value,
+      [index]: next
+    }
   }
 
   function updateMemoryCandidateStatus(index: number, status: ChatMemoryCandidateState['status']): void {
@@ -268,6 +291,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
       focusSnapshotsByMessageIndex.value = {}
       sourceReceiptsByMessageIndex.value = {}
       memoryCandidatesByMessageIndex.value = {}
+      sayachanCandidateProposalsByMessageIndex.value = {}
       turnActivitiesByMessageIndex.value = {}
       pendingAssistantMessageIndex.value = null
       runtimeControls.clearLatestDebugTrace()
@@ -373,7 +397,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
             }
           }
 
-          const { reply, turnActivity, sayachanDebugTrace } = await streamSayachan(sayachanRequest, {
+          const { reply, turnActivity, candidateProposals, sayachanDebugTrace } = await streamSayachan(sayachanRequest, {
             onDelta: (delta) => {
               streamedReply += delta
               chatStore.updateMessageContent(pendingIndex, streamedReply)
@@ -390,6 +414,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
                 pendingIndex,
                 event.turnActivity || projectStreamingActivity(true)
               )
+              setMessageCandidateProposals(pendingIndex, event.candidateProposals)
               runtimeControls.setLatestSayachanDebugTrace(event.debugTrace)
               scrollToBottom()
             }
@@ -397,15 +422,17 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
 
           chatStore.updateMessageContent(pendingIndex, reply)
           setMessageTurnActivity(pendingIndex, turnActivity || projectStreamingActivity(true))
+          setMessageCandidateProposals(pendingIndex, candidateProposals)
           runtimeControls.setLatestSayachanDebugTrace(sayachanDebugTrace)
           chatStore.setProviderState(undefined)
           scrollToBottom()
           return
         }
 
-        const { reply, turnActivity, sayachanDebugTrace } = await sendSayachan(sayachanRequest)
+        const { reply, turnActivity, candidateProposals, sayachanDebugTrace } = await sendSayachan(sayachanRequest)
         chatStore.updateMessageContent(pendingIndex, reply)
         setMessageTurnActivity(pendingIndex, turnActivity)
+        setMessageCandidateProposals(pendingIndex, candidateProposals)
         runtimeControls.setLatestSayachanDebugTrace(sayachanDebugTrace)
         chatStore.setProviderState(undefined)
         scrollToBottom()
@@ -496,6 +523,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     focusSnapshotsByMessageIndex,
     sourceReceiptsByMessageIndex,
     memoryCandidatesByMessageIndex,
+    sayachanCandidateProposalsByMessageIndex,
     turnActivitiesByMessageIndex,
     chatInputDisabled,
     chatSendButtonLabel,
@@ -503,9 +531,11 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     getMessageTurnActivity,
     isPendingAssistantMessage,
     getMessageMemoryCandidate,
+    getMessageCandidateProposals,
     getMessageFocusSnapshot,
     acceptMemoryCandidate,
     dismissMemoryCandidate,
+    dismissCandidateProposal,
     openPopup,
     closePopup,
     togglePanel,

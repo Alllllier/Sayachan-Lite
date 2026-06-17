@@ -87,6 +87,15 @@ describe('chat api boundary', () => {
         traceId: 'trace-1',
         debugAvailable: true
       },
+      candidateProposals: [{
+        proposalId: 'candidate-1',
+        kind: 'memory',
+        content: 'User likes concise architecture summaries.',
+        reason: 'Useful future preference.',
+        confidence: 0.78,
+        userConfirmationRequired: true,
+        sourceTrace: ['runtime.v4_3.closeout']
+      }],
       debugTrace: {
         runtime: 'cognition-runtime',
         provider: 'openai',
@@ -135,6 +144,15 @@ describe('chat api boundary', () => {
       debug: true
     })).resolves.toEqual({
       reply: '晚上好。',
+      candidateProposals: [{
+        proposalId: 'candidate-1',
+        kind: 'memory',
+        content: 'User likes concise architecture summaries.',
+        reason: 'Useful future preference.',
+        confidence: 0.78,
+        userConfirmationRequired: true,
+        sourceTrace: ['runtime.v4_3.closeout']
+      }],
       sayachanDebugTrace: expect.objectContaining({
         runtime: 'cognition-runtime',
         provider_model: 'gpt-5.5',
@@ -191,7 +209,7 @@ describe('chat api boundary', () => {
       'event: tool_status\ndata: {"packetType":"saya_desk_sayachan_stream_event","version":1,"type":"tool_status","item":{"itemId":"turn-1:activity:2","kind":"tool_status","status":"completed","text":"读取笔记：Tool notes","display":"collapse_item","canonicalMessage":false,"capability":"saya_desk.get_note_content","sourceTrace":["resolver.activity","runtime.execute_host_tools"]}}\n\n',
       'event: assistant_delta\ndata: {"packetType":"saya_desk_sayachan_stream_event","version":1,"type":"assistant_delta","delta":"总结","text":"总结"}\n\n',
       'event: assistant_delta\ndata: {"packetType":"saya_desk_sayachan_stream_event","version":1,"type":"assistant_delta","delta":"好了。","text":"总结好了。"}\n\n',
-      'event: completed\ndata: {"packetType":"saya_desk_sayachan_stream_event","version":1,"type":"completed","reply":"总结好了。","turnId":"turn-1","turnActivity":{"defaultCollapsed":true,"items":[{"itemId":"turn-1:activity:1","kind":"assistant_progress","status":"planned","text":"我先回看一下相关笔记。","display":"collapse_item","canonicalMessage":false,"capability":"saya_desk.get_note_content","sourceTrace":["resolver.activity"]},{"itemId":"turn-1:activity:2","kind":"tool_status","status":"completed","text":"读取笔记：Tool notes","display":"collapse_item","canonicalMessage":false,"capability":"saya_desk.get_note_content","sourceTrace":["resolver.activity","runtime.execute_host_tools"]}]}}\n\n'
+      'event: completed\ndata: {"packetType":"saya_desk_sayachan_stream_event","version":1,"type":"completed","reply":"总结好了。","turnId":"turn-1","candidateProposals":[{"proposalId":"candidate-stream-1","kind":"relationship_sediment","content":"User asked Sayachan to inspect notes directly.","reason":"Relevant to future host-tool behavior.","confidence":0.69,"userConfirmationRequired":true,"sourceTrace":["runtime.v4_3.closeout"]}],"turnActivity":{"defaultCollapsed":true,"items":[{"itemId":"turn-1:activity:1","kind":"assistant_progress","status":"planned","text":"我先回看一下相关笔记。","display":"collapse_item","canonicalMessage":false,"capability":"saya_desk.get_note_content","sourceTrace":["resolver.activity"]},{"itemId":"turn-1:activity:2","kind":"tool_status","status":"completed","text":"读取笔记：Tool notes","display":"collapse_item","canonicalMessage":false,"capability":"saya_desk.get_note_content","sourceTrace":["resolver.activity","runtime.execute_host_tools"]}]}}\n\n'
     ]))
 
     await expect(streamSayachan(
@@ -209,6 +227,15 @@ describe('chat api boundary', () => {
       }
     )).resolves.toEqual({
       reply: '总结好了。',
+      candidateProposals: [{
+        proposalId: 'candidate-stream-1',
+        kind: 'relationship_sediment',
+        content: 'User asked Sayachan to inspect notes directly.',
+        reason: 'Relevant to future host-tool behavior.',
+        confidence: 0.69,
+        userConfirmationRequired: true,
+        sourceTrace: ['runtime.v4_3.closeout']
+      }],
       turnActivity: {
         defaultCollapsed: true,
         items: [

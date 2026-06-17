@@ -544,6 +544,15 @@ test('authenticated /sayachan reaches Sayachan Core v4 advance bridge and return
           }
         ],
         toolProposals: [],
+        candidateProposals: [{
+          proposalId: 'candidate-route-smoke-1',
+          kind: 'memory',
+          content: 'User likes source receipts.',
+          reason: 'Useful future preference.',
+          confidence: 0.72,
+          userConfirmationRequired: true,
+          sourceTrace: ['runtime.v4_3.closeout']
+        }],
         trace: {
           traceId: 'turn-route-smoke',
           debugAvailable: true
@@ -586,6 +595,15 @@ test('authenticated /sayachan reaches Sayachan Core v4 advance bridge and return
       assert.deepEqual(body, {
         reply: 'sayachan v4 advance ok',
         turnId: 'turn-route-smoke',
+        candidateProposals: [{
+          proposalId: 'candidate-route-smoke-1',
+          kind: 'memory',
+          content: 'User likes source receipts.',
+          reason: 'Useful future preference.',
+          confidence: 0.72,
+          userConfirmationRequired: true,
+          sourceTrace: ['runtime.v4_3.closeout']
+        }],
         turnActivity: {
           defaultCollapsed: true,
           items: [
@@ -712,6 +730,15 @@ test('authenticated /sayachan/stream emits host-orchestrated advance events', as
             }
           ],
           toolProposals: [],
+          candidateProposals: [{
+            proposalId: 'candidate-stream-smoke-1',
+            kind: 'reflection_artifact',
+            content: 'Sayachan finished a streaming route smoke test.',
+            reason: 'Useful for runtime continuity testing.',
+            confidence: 0.66,
+            userConfirmationRequired: true,
+            sourceTrace: ['runtime.v4_3.closeout']
+          }],
           trace: {
             traceId: 'turn-stream',
             debugAvailable: true
@@ -763,6 +790,15 @@ test('authenticated /sayachan/stream emits host-orchestrated advance events', as
       assert.equal(events[1].data.delta, 'v4 reply');
       assert.equal(events[1].data.text, 'streamed v4 reply');
       assert.equal(events[2].data.reply, 'streamed v4 reply');
+      assert.deepEqual(events[2].data.candidateProposals, [{
+        proposalId: 'candidate-stream-smoke-1',
+        kind: 'reflection_artifact',
+        content: 'Sayachan finished a streaming route smoke test.',
+        reason: 'Useful for runtime continuity testing.',
+        confidence: 0.66,
+        userConfirmationRequired: true,
+        sourceTrace: ['runtime.v4_3.closeout']
+      }]);
       assert.equal(events[2].data.turnActivity, undefined);
       assert.equal(events[2].data.debugTrace.provider_model, 'gpt-5-nano');
       assert.equal(events[2].data.debugTrace.stage_summaries[0].stage_name, 'compile_provider_request');

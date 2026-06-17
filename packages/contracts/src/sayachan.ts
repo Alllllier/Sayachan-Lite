@@ -290,6 +290,7 @@ export const sayaDeskSayachanDebugTraceSchema = z.object({
 export const sayaDeskSayachanResponseSchema = z.object({
   reply: z.string().min(1),
   turnId: z.string().min(1).optional(),
+  candidateProposals: z.array(sayaDeskSayachanCandidateProposalSchema).optional(),
   turnActivity: sayaDeskSayachanTurnActivitySchema.optional(),
   trace: sayaDeskSayachanTraceSchema.optional(),
   debugTrace: sayaDeskSayachanDebugTraceSchema.optional()
@@ -315,6 +316,7 @@ export const sayaDeskSayachanStreamEventSchema = z.discriminatedUnion('type', [
     type: z.literal('completed'),
     reply: z.string().min(1),
     turnId: z.string().min(1).optional(),
+    candidateProposals: z.array(sayaDeskSayachanCandidateProposalSchema).optional(),
     turnActivity: sayaDeskSayachanTurnActivitySchema.optional(),
     trace: sayaDeskSayachanTraceSchema.optional(),
     debugTrace: sayaDeskSayachanDebugTraceSchema.optional()
