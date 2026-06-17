@@ -137,6 +137,38 @@ export const sayaDeskSayachanToolProposalSchema = z.object({
   sourceTrace: z.array(z.string()).default([])
 }).strict()
 
+export const sayaDeskSayachanCandidateObservedAffectSchema = z.object({
+  valence: z.number().min(0).max(1),
+  arousal: z.number().min(0).max(1),
+  confidence: z.number().min(0).max(1)
+}).strict()
+
+export const sayaDeskSayachanCandidateReflectionSchema = z.object({
+  content: z.string().min(1),
+  valence: z.number().min(0).max(1),
+  arousal: z.number().min(0).max(1),
+  confidence: z.number().min(0).max(1)
+}).strict()
+
+export const sayaDeskSayachanCandidateProposalKindValues = [
+  'memory',
+  'relationship_sediment',
+  'character_state',
+  'reflection_artifact'
+] as const
+
+export const sayaDeskSayachanCandidateProposalSchema = z.object({
+  proposalId: z.string().min(1),
+  kind: z.enum(sayaDeskSayachanCandidateProposalKindValues),
+  content: z.string().min(1),
+  reason: z.string().min(1),
+  confidence: z.number().min(0).max(1),
+  userConfirmationRequired: z.boolean().default(true),
+  observedAffect: sayaDeskSayachanCandidateObservedAffectSchema.nullable().optional(),
+  reflection: sayaDeskSayachanCandidateReflectionSchema.nullable().optional(),
+  sourceTrace: z.array(z.string()).default([])
+}).strict()
+
 export const sayaDeskSayachanToolOutputSchema = z.object({
   proposalId: z.string().min(1).optional(),
   providerCallId: z.string().min(1),
@@ -209,6 +241,7 @@ export const sayaDeskSayachanTurnAdvanceResultSchema = z.object({
   status: z.enum(sayaDeskSayachanTurnAdvanceStatusValues),
   assistantOutput: z.array(sayaDeskSayachanAssistantOutputItemSchema).default([]),
   toolProposals: z.array(sayaDeskSayachanToolProposalSchema).default([]),
+  candidateProposals: z.array(sayaDeskSayachanCandidateProposalSchema).default([]),
   turnActivity: sayaDeskSayachanTurnActivitySchema.optional(),
   trace: z.object({
     traceId: z.string().min(1),
@@ -311,6 +344,7 @@ export type SayaDeskHostToolExecutionRequestDto = z.infer<typeof sayaDeskHostToo
 export type SayaDeskHostToolExecutionResultDto = z.infer<typeof sayaDeskHostToolExecutionResultSchema>
 export type SayaDeskSayachanAssistantOutputItemDto = z.infer<typeof sayaDeskSayachanAssistantOutputItemSchema>
 export type SayaDeskSayachanToolProposalDto = z.infer<typeof sayaDeskSayachanToolProposalSchema>
+export type SayaDeskSayachanCandidateProposalDto = z.infer<typeof sayaDeskSayachanCandidateProposalSchema>
 export type SayaDeskSayachanToolOutputDto = z.infer<typeof sayaDeskSayachanToolOutputSchema>
 export type SayaDeskSayachanAdvanceTurnRequestDto = z.infer<typeof sayaDeskSayachanAdvanceTurnRequestSchema>
 export type SayaDeskSayachanTurnAdvanceResultDto = z.infer<typeof sayaDeskSayachanTurnAdvanceResultSchema>
