@@ -1,5 +1,8 @@
 import { z } from 'zod'
-import { sayaDeskSayachanTurnActivitySchema } from './sayachan.js'
+import {
+  sayaDeskSayachanCandidateProposalSchema,
+  sayaDeskSayachanTurnActivitySchema
+} from './sayachan.js'
 
 export const chatPersonalityBaselineValues = ['warm', 'strict', 'haraguro'] as const
 export const chatConvergenceModeValues = ['explore', 'guided', 'decisive'] as const
@@ -14,6 +17,7 @@ export const chatResponseStrategySourceValues = ['model_strategy', 'not_attempte
 export const chatFocusTypeValues = ['note', 'project'] as const
 export const chatMemoryCandidateTypeValues = ['preference', 'continuity_hint'] as const
 export const chatMemoryCandidateSourceValues = ['assistant_suggested_user_approved'] as const
+export const chatCandidateProposalStatusValues = ['pending', 'dismissed', 'accepted'] as const
 
 export const chatFocusSchema = z.object({
   type: z.enum(chatFocusTypeValues),
@@ -67,6 +71,15 @@ export const chatMemoryCandidateSchema = z.object({
   confidence: z.number().min(0).max(1).optional()
 }).strict()
 
+export const chatCandidateProposalSchema = sayaDeskSayachanCandidateProposalSchema.extend({
+  status: z.enum(chatCandidateProposalStatusValues).default('pending'),
+  decidedAt: z.string().optional()
+}).strict()
+
+export const chatCandidateProposalStatusUpdateSchema = z.object({
+  status: z.literal('dismissed')
+}).strict()
+
 export const chatResponseStrategySchema = z.object({
   resolvedAction: z.enum(chatResponseStrategyResolvedActionValues),
   expansionDecision: z.object({
@@ -89,6 +102,7 @@ export const chatMessageSchema = z.object({
   focusSnapshot: chatMessageFocusSnapshotSchema.optional(),
   sourceReceipts: z.array(chatSourceReceiptSchema).optional(),
   memoryCandidate: chatMemoryCandidateSchema.optional(),
+  candidateProposals: z.array(chatCandidateProposalSchema).optional(),
   turnActivity: sayaDeskSayachanTurnActivitySchema.optional(),
   createdAt: z.string().optional()
 })
@@ -331,6 +345,9 @@ export type ChatExpansionDecisionAction = (typeof chatExpansionDecisionActionVal
 export type ChatFocusDto = z.infer<typeof chatFocusSchema>
 export type ChatMessageFocusSnapshotDto = z.infer<typeof chatMessageFocusSnapshotSchema>
 export type ChatMemoryCandidateDto = z.infer<typeof chatMemoryCandidateSchema>
+export type ChatCandidateProposalStatus = (typeof chatCandidateProposalStatusValues)[number]
+export type ChatCandidateProposalDto = z.infer<typeof chatCandidateProposalSchema>
+export type ChatCandidateProposalStatusUpdateDto = z.infer<typeof chatCandidateProposalStatusUpdateSchema>
 export type ChatResponseStrategyDto = z.infer<typeof chatResponseStrategySchema>
 export type ChatProviderStateStrategy = (typeof chatProviderStateStrategyValues)[number]
 export type ChatProviderStateSource = (typeof chatProviderStateSourceValues)[number]

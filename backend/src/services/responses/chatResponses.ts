@@ -77,6 +77,27 @@ function copyIfPresent(source: Record<string, unknown>, target: Record<string, u
   }
 }
 
+function normalizedCandidateProposals(value: unknown): unknown {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  return value
+    .filter((proposal): proposal is Record<string, unknown> => (
+      typeof proposal === 'object' && proposal !== null
+    ))
+    .map((proposal) => {
+      const normalized = { ...proposal };
+      const decidedAt = publicIsoString(normalized.decidedAt);
+      if (decidedAt) {
+        normalized.decidedAt = decidedAt;
+      } else {
+        delete normalized.decidedAt;
+      }
+      return normalized;
+    });
+}
+
 export function toChatConversationDto(conversation: unknown): ChatConversationDto | undefined {
   if (!conversation) {
     return undefined;
@@ -103,5 +124,9 @@ export function toChatMessageDto(message: unknown): ChatMessageDto | undefined {
     createdAt: publicIsoString(normalized.createdAt)
   };
   copyIfPresent(normalized, dto, ['focusSnapshot', 'sourceReceipts', 'memoryCandidate', 'turnActivity']);
+  const candidateProposals = normalizedCandidateProposals(normalized.candidateProposals);
+  if (candidateProposals) {
+    dto.candidateProposals = candidateProposals;
+  }
   return chatMessageSchema.parse(dto);
 }

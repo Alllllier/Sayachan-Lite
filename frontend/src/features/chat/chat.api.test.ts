@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildChatRuntimePayload, loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat, streamSayachan } from './chat.api.js'
+import { buildChatRuntimePayload, loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat, streamSayachan, updateSayachanCandidateProposalStatus } from './chat.api.js'
 import type { ChatContextDto } from '@sayachan/contracts'
 
 const emptyContext: ChatContextDto = {}
@@ -263,6 +263,54 @@ describe('chat api boundary', () => {
       focus: { type: 'note', id: 'note-1' },
       options: { debug: true }
     })
+  })
+
+  it('updates a persisted Sayachan candidate proposal status', async () => {
+    mockedFetch().mockResolvedValue(jsonResponse({
+      _id: 'message-1',
+      role: 'assistant',
+      content: '记下来了。',
+      candidateProposals: [{
+        proposalId: 'candidate-1',
+        kind: 'memory',
+        content: 'User likes concise summaries.',
+        reason: 'Useful future preference.',
+        confidence: 0.72,
+        userConfirmationRequired: true,
+        sourceTrace: ['runtime.v4_3.closeout'],
+        status: 'dismissed'
+      }]
+    }))
+
+    await expect(updateSayachanCandidateProposalStatus(
+      'message-1',
+      'candidate-1',
+      'dismissed'
+    )).resolves.toEqual({
+      _id: 'message-1',
+      role: 'assistant',
+      content: '记下来了。',
+      candidateProposals: [{
+        proposalId: 'candidate-1',
+        kind: 'memory',
+        content: 'User likes concise summaries.',
+        reason: 'Useful future preference.',
+        confidence: 0.72,
+        userConfirmationRequired: true,
+        sourceTrace: ['runtime.v4_3.closeout'],
+        status: 'dismissed'
+      }]
+    })
+
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:3001/sayachan/candidates/message-1/candidate-1/status',
+      {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'dismissed' })
+      }
+    )
   })
 
   it('loads the persisted current chat session', async () => {

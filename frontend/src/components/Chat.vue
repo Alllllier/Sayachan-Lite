@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, nextTick, onMounted, watch } from 'vue'
-import type { ChatDebugTraceDto, SayaDeskSayachanCandidateProposalDto, SayaDeskSayachanDebugTraceDto, SayaDeskSayachanTurnActivityItemDto } from '@sayachan/contracts'
+import type { ChatCandidateProposalDto, ChatDebugTraceDto, SayaDeskSayachanDebugTraceDto, SayaDeskSayachanTurnActivityItemDto } from '@sayachan/contracts'
 import avatarUrl from '../assets/avatar/sayachan-avatar.jpg'
 import { useChatFeature } from '../features/chat/useChatFeature.js'
 import { useAuthStore } from '../stores/auth'
@@ -158,11 +158,44 @@ function memoryCandidateTypeLabel(type?: string): string {
   return t('settings.memoryTypePreference')
 }
 
-function candidateProposalKindLabel(kind: SayaDeskSayachanCandidateProposalDto['kind']): string {
+function candidateProposalKindLabel(kind: ChatCandidateProposalDto['kind']): string {
   if (kind === 'relationship_sediment') return t('chat.candidateKindRelationshipSediment')
   if (kind === 'character_state') return t('chat.candidateKindCharacterState')
   if (kind === 'reflection_artifact') return t('chat.candidateKindReflectionArtifact')
   return t('chat.candidateKindMemory')
+}
+
+function latestAssistantMessageIndex(): number {
+  for (let index = chatStore.messages.length - 1; index >= 0; index -= 1) {
+    if (chatStore.messages[index]?.role === 'assistant') return index
+  }
+  return -1
+}
+
+function pendingCandidateProposalCount(index: number): number {
+  return getMessageCandidateProposals(index).filter(proposal => proposal.status === 'pending').length
+}
+
+function dismissedCandidateProposalCount(index: number): number {
+  return getMessageCandidateProposals(index).filter(proposal => proposal.status === 'dismissed').length
+}
+
+function acceptedCandidateProposalCount(index: number): number {
+  return getMessageCandidateProposals(index).filter(proposal => proposal.status === 'accepted').length
+}
+
+function shouldExpandCandidateProposals(index: number): boolean {
+  return index === latestAssistantMessageIndex() && pendingCandidateProposalCount(index) > 0
+}
+
+function candidateProposalSummary(index: number): string {
+  const pending = pendingCandidateProposalCount(index)
+  const dismissed = dismissedCandidateProposalCount(index)
+  const accepted = acceptedCandidateProposalCount(index)
+  if (pending > 0) return t('chat.candidateProposalPendingSummary', { count: pending })
+  if (accepted > 0) return t('chat.candidateProposalAcceptedSummary', { count: accepted })
+  if (dismissed > 0) return t('chat.candidateProposalDismissedSummary', { count: dismissed })
+  return t('chat.candidateProposalSummary', { count: getMessageCandidateProposals(index).length })
 }
 
 function memoryCandidateSaveLabel(index: number): string {
@@ -467,30 +500,76 @@ function sayachanDebugResponseId(trace: SayaDeskSayachanDebugTraceDto): string {
                 class="chat-candidate-proposals"
               >
                 <div
-                  v-for="proposal in getMessageCandidateProposals(idx)"
-                  :key="proposal.proposalId"
-                  class="chat-memory-candidate chat-candidate-proposal"
+                  v-if="shouldExpandCandidateProposals(idx)"
+                  class="chat-candidate-proposal-list"
                 >
-                  <div class="chat-memory-candidate-header">
-                    <span>{{ t('chat.candidateProposalTitle') }}</span>
-                    <span>{{ candidateProposalKindLabel(proposal.kind) }}</span>
-                  </div>
-                  <div class="chat-memory-candidate-content">
-                    {{ proposal.content }}
-                  </div>
-                  <div v-if="proposal.reason" class="chat-memory-candidate-reason">
-                    {{ proposal.reason }}
-                  </div>
-                  <div class="chat-memory-candidate-actions">
-                    <button
-                      type="button"
-                      class="chat-memory-action"
-                      @click="dismissCandidateProposal(idx, proposal.proposalId)"
-                    >
-                      {{ t('chat.memoryCandidateDismiss') }}
-                    </button>
+                  <div
+                    v-for="proposal in getMessageCandidateProposals(idx)"
+                    :key="proposal.proposalId"
+                    class="chat-memory-candidate chat-candidate-proposal"
+                  >
+                    <div class="chat-memory-candidate-header">
+                      <span>{{ t('chat.candidateProposalTitle') }}</span>
+                      <span>{{ candidateProposalKindLabel(proposal.kind) }}</span>
+                    </div>
+                    <div class="chat-memory-candidate-content">
+                      {{ proposal.content }}
+                    </div>
+                    <div v-if="proposal.reason" class="chat-memory-candidate-reason">
+                      {{ proposal.reason }}
+                    </div>
+                    <div class="chat-memory-candidate-actions">
+                      <span v-if="proposal.status !== 'pending'" class="chat-memory-candidate-status">
+                        {{ proposal.status === 'dismissed' ? t('chat.candidateProposalDismissed') : t('chat.candidateProposalAccepted') }}
+                      </span>
+                      <button
+                        v-if="proposal.status === 'pending'"
+                        type="button"
+                        class="chat-memory-action"
+                        @click="dismissCandidateProposal(idx, proposal.proposalId)"
+                      >
+                        {{ t('chat.memoryCandidateDismiss') }}
+                      </button>
+                    </div>
                   </div>
                 </div>
+                <details
+                  v-else
+                  class="chat-candidate-proposal-details"
+                >
+                  <summary>{{ candidateProposalSummary(idx) }}</summary>
+                  <div class="chat-candidate-proposal-list">
+                    <div
+                      v-for="proposal in getMessageCandidateProposals(idx)"
+                      :key="proposal.proposalId"
+                      class="chat-memory-candidate chat-candidate-proposal"
+                    >
+                      <div class="chat-memory-candidate-header">
+                        <span>{{ t('chat.candidateProposalTitle') }}</span>
+                        <span>{{ candidateProposalKindLabel(proposal.kind) }}</span>
+                      </div>
+                      <div class="chat-memory-candidate-content">
+                        {{ proposal.content }}
+                      </div>
+                      <div v-if="proposal.reason" class="chat-memory-candidate-reason">
+                        {{ proposal.reason }}
+                      </div>
+                      <div class="chat-memory-candidate-actions">
+                        <span v-if="proposal.status !== 'pending'" class="chat-memory-candidate-status">
+                          {{ proposal.status === 'dismissed' ? t('chat.candidateProposalDismissed') : t('chat.candidateProposalAccepted') }}
+                        </span>
+                        <button
+                          v-if="proposal.status === 'pending'"
+                          type="button"
+                          class="chat-memory-action"
+                          @click="dismissCandidateProposal(idx, proposal.proposalId)"
+                        >
+                          {{ t('chat.memoryCandidateDismiss') }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </details>
               </div>
             </div>
             <div v-else class="chat-user-stack">
@@ -1302,6 +1381,29 @@ function sayachanDebugResponseId(trace: SayaDeskSayachanDebugTraceDto): string {
   flex-direction: column;
   gap: 8px;
   width: 100%;
+}
+
+.chat-candidate-proposal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.chat-candidate-proposal-details {
+  width: 100%;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.chat-candidate-proposal-details > summary {
+  cursor: pointer;
+  list-style-position: inside;
+  padding: 6px 0;
+}
+
+.chat-candidate-proposal-details[open] > summary {
+  margin-bottom: 4px;
 }
 
 .chat-memory-candidate {

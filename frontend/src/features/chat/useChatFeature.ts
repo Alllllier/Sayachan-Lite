@@ -1,9 +1,9 @@
 import { computed, nextTick, ref, watch } from 'vue'
-import type { ChatContextDto, ChatFocusDto, ChatMemoryCandidateDto, ChatMessageDto, ChatSourceReceiptDto, SayaDeskSayachanCandidateProposalDto, SayaDeskSayachanTurnActivityItemDto } from '@sayachan/contracts'
+import type { ChatCandidateProposalDto, ChatContextDto, ChatFocusDto, ChatMemoryCandidateDto, ChatMessageDto, ChatSourceReceiptDto, SayaDeskSayachanCandidateProposalDto, SayaDeskSayachanTurnActivityItemDto } from '@sayachan/contracts'
 import { useChatStore } from '../../stores/chat'
 import { useRuntimeControls } from '../../stores/runtimeControls'
 import { createMemoryEntry } from '../memory/memory.api.js'
-import { loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat, streamSayachan, type ChatStreamEvent, type ChatProviderState, type SayachanTurnActivity } from './chat.api.js'
+import { loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat, streamSayachan, updateSayachanCandidateProposalStatus, type ChatStreamEvent, type ChatProviderState, type SayachanTurnActivity } from './chat.api.js'
 import {
   canSendChatMessage,
   getChatFallbackReply,
@@ -61,7 +61,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
   const focusSnapshotsByMessageIndex = ref<Record<number, ChatFocusSnapshot>>({})
   const sourceReceiptsByMessageIndex = ref<Record<number, ChatSourceReceiptDto[]>>({})
   const memoryCandidatesByMessageIndex = ref<Record<number, ChatMemoryCandidateState>>({})
-  const sayachanCandidateProposalsByMessageIndex = ref<Record<number, SayaDeskSayachanCandidateProposalDto[]>>({})
+  const sayachanCandidateProposalsByMessageIndex = ref<Record<number, ChatCandidateProposalDto[]>>({})
   const turnActivitiesByMessageIndex = ref<Record<number, SayachanTurnActivity>>({})
 
   watch(
@@ -160,24 +160,65 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     return memoryCandidatesByMessageIndex.value[index]
   }
 
-  function setMessageCandidateProposals(index: number | null, proposals?: SayaDeskSayachanCandidateProposalDto[]): void {
-    if (index === null || !proposals || proposals.length === 0) return
-    sayachanCandidateProposalsByMessageIndex.value = {
-      ...sayachanCandidateProposalsByMessageIndex.value,
-      [index]: proposals
+  function patchMessage(index: number | null, patch: Partial<ChatMessageDto>): void {
+    if (index === null || !chatStore.messages[index]) return
+    chatStore.messages[index] = {
+      ...chatStore.messages[index],
+      ...patch
     }
   }
 
-  function getMessageCandidateProposals(index: number): SayaDeskSayachanCandidateProposalDto[] {
-    return sayachanCandidateProposalsByMessageIndex.value[index] || []
+  function asPersistedCandidateProposal(proposal: SayaDeskSayachanCandidateProposalDto | ChatCandidateProposalDto): ChatCandidateProposalDto {
+    return {
+      ...proposal,
+      status: 'status' in proposal && proposal.status ? proposal.status : 'pending'
+    }
   }
 
-  function dismissCandidateProposal(index: number, proposalId: string): void {
-    const current = sayachanCandidateProposalsByMessageIndex.value[index] || []
-    const next = current.filter(proposal => proposal.proposalId !== proposalId)
+  function setMessageCandidateProposals(index: number | null, proposals?: (SayaDeskSayachanCandidateProposalDto | ChatCandidateProposalDto)[]): void {
+    if (index === null || !proposals || proposals.length === 0) return
+    const next = proposals.map(asPersistedCandidateProposal)
     sayachanCandidateProposalsByMessageIndex.value = {
       ...sayachanCandidateProposalsByMessageIndex.value,
       [index]: next
+    }
+    patchMessage(index, { candidateProposals: next })
+  }
+
+  function getMessageCandidateProposals(index: number): ChatCandidateProposalDto[] {
+    return sayachanCandidateProposalsByMessageIndex.value[index] || []
+  }
+
+  async function dismissCandidateProposal(index: number, proposalId: string): Promise<void> {
+    const current = sayachanCandidateProposalsByMessageIndex.value[index] || []
+    const target = current.find(proposal => proposal.proposalId === proposalId)
+    if (!target || target.status !== 'pending') return
+    const next = current.map(proposal => proposal.proposalId === proposalId
+      ? { ...proposal, status: 'dismissed' as const }
+      : proposal
+    )
+    sayachanCandidateProposalsByMessageIndex.value = {
+      ...sayachanCandidateProposalsByMessageIndex.value,
+      [index]: next
+    }
+    patchMessage(index, { candidateProposals: next })
+
+    const messageId = chatStore.messages[index]?._id
+    if (!messageId) return
+
+    try {
+      const updated = await updateSayachanCandidateProposalStatus(messageId, proposalId, 'dismissed')
+      if (updated.candidateProposals) {
+        setMessageCandidateProposals(index, updated.candidateProposals)
+      }
+    } catch (error) {
+      const rolledBack = current.map(asPersistedCandidateProposal)
+      sayachanCandidateProposalsByMessageIndex.value = {
+        ...sayachanCandidateProposalsByMessageIndex.value,
+        [index]: rolledBack
+      }
+      patchMessage(index, { candidateProposals: rolledBack })
+      onSendError(error)
     }
   }
 
@@ -235,6 +276,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     const focusSnapshots: Record<number, ChatFocusSnapshot> = {}
     const sourceReceipts: Record<number, ChatSourceReceiptDto[]> = {}
     const memoryCandidates: Record<number, ChatMemoryCandidateState> = {}
+    const candidateProposals: Record<number, ChatCandidateProposalDto[]> = {}
     const turnActivities: Record<number, SayachanTurnActivity> = {}
 
     messages.forEach((message, index) => {
@@ -250,6 +292,9 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           status: 'pending'
         }
       }
+      if (message.candidateProposals && message.candidateProposals.length > 0) {
+        candidateProposals[index] = message.candidateProposals.map(asPersistedCandidateProposal)
+      }
       if (message.turnActivity && message.turnActivity.items.length > 0) {
         turnActivities[index] = message.turnActivity
       }
@@ -258,6 +303,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     focusSnapshotsByMessageIndex.value = focusSnapshots
     sourceReceiptsByMessageIndex.value = sourceReceipts
     memoryCandidatesByMessageIndex.value = memoryCandidates
+    sayachanCandidateProposalsByMessageIndex.value = candidateProposals
     turnActivitiesByMessageIndex.value = turnActivities
   }
 
@@ -397,7 +443,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
             }
           }
 
-          const { reply, turnActivity, candidateProposals, sayachanDebugTrace } = await streamSayachan(sayachanRequest, {
+          const { reply, messageId, turnActivity, candidateProposals, sayachanDebugTrace } = await streamSayachan(sayachanRequest, {
             onDelta: (delta) => {
               streamedReply += delta
               chatStore.updateMessageContent(pendingIndex, streamedReply)
@@ -410,6 +456,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
             },
             onCompleted: (reply, event) => {
               chatStore.updateMessageContent(pendingIndex, reply)
+              patchMessage(pendingIndex, { _id: event.messageId })
               setMessageTurnActivity(
                 pendingIndex,
                 event.turnActivity || projectStreamingActivity(true)
@@ -421,6 +468,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           })
 
           chatStore.updateMessageContent(pendingIndex, reply)
+          patchMessage(pendingIndex, { _id: messageId })
           setMessageTurnActivity(pendingIndex, turnActivity || projectStreamingActivity(true))
           setMessageCandidateProposals(pendingIndex, candidateProposals)
           runtimeControls.setLatestSayachanDebugTrace(sayachanDebugTrace)
@@ -429,8 +477,9 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
           return
         }
 
-        const { reply, turnActivity, candidateProposals, sayachanDebugTrace } = await sendSayachan(sayachanRequest)
+        const { reply, messageId, turnActivity, candidateProposals, sayachanDebugTrace } = await sendSayachan(sayachanRequest)
         chatStore.updateMessageContent(pendingIndex, reply)
+        patchMessage(pendingIndex, { _id: messageId })
         setMessageTurnActivity(pendingIndex, turnActivity)
         setMessageCandidateProposals(pendingIndex, candidateProposals)
         runtimeControls.setLatestSayachanDebugTrace(sayachanDebugTrace)

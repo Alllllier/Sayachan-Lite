@@ -1,6 +1,8 @@
 import {
   type AiChatRequestDto,
+  type ChatCandidateProposalStatusUpdateDto,
   chatMemoryCandidateSchema,
+  chatCandidateProposalSchema,
   chatProviderStateSchema,
   chatSessionResponseSchema,
   chatSourceReceiptSchema,
@@ -90,6 +92,11 @@ function normalizeSourceReceipts(value: unknown) {
 function normalizeMemoryCandidate(value: unknown) {
   const parsed = chatMemoryCandidateSchema.safeParse(value);
   return parsed.success ? parsed.data : undefined;
+}
+
+function normalizeCandidateProposals(value: unknown) {
+  const parsed = chatCandidateProposalSchema.array().safeParse(value);
+  return parsed.success && parsed.data.length > 0 ? parsed.data : undefined;
 }
 
 function normalizeTurnActivity(value: unknown) {
@@ -258,6 +265,7 @@ export async function appendAssistantMessage(
     providerState?: unknown;
     sourceReceipts?: unknown;
     memoryCandidate?: unknown;
+    candidateProposals?: unknown;
     turnActivity?: unknown;
   },
   { userId }: ServiceOptions
@@ -272,9 +280,35 @@ export async function appendAssistantMessage(
     providerState,
     sourceReceipts: normalizeSourceReceipts(result.sourceReceipts),
     memoryCandidate: normalizeMemoryCandidate(result.memoryCandidate),
+    candidateProposals: normalizeCandidateProposals(result.candidateProposals),
     turnActivity: normalizeTurnActivity(result.turnActivity)
   });
   await touchConversation(conversationId, userId, providerState);
+  return toChatMessageDto(message);
+}
+
+export async function updateCandidateProposalStatus(
+  messageId: ObjectId,
+  proposalId: string,
+  update: ChatCandidateProposalStatusUpdateDto,
+  { userId }: ServiceOptions
+): Promise<ChatMessageDto | undefined> {
+  const decidedAt = new Date();
+  const message = await ChatMessage.findOneAndUpdate(
+    {
+      _id: messageId,
+      userId,
+      role: 'assistant',
+      'candidateProposals.proposalId': proposalId
+    },
+    {
+      $set: {
+        'candidateProposals.$.status': update.status,
+        'candidateProposals.$.decidedAt': decidedAt
+      }
+    },
+    { new: true }
+  );
   return toChatMessageDto(message);
 }
 
@@ -290,5 +324,6 @@ export default {
   loadCurrentChatSession,
   preparePersistentTextTurn,
   preparePersistentChatTurn,
+  updateCandidateProposalStatus,
   __test__
 };

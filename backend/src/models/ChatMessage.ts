@@ -40,6 +40,93 @@ const memoryCandidateSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
+const candidateAffectSchema = new mongoose.Schema({
+  valence: {
+    type: Number,
+    required: true
+  },
+  arousal: {
+    type: Number,
+    required: true
+  },
+  confidence: {
+    type: Number,
+    required: true
+  }
+}, { _id: false });
+
+const candidateReflectionSchema = new mongoose.Schema({
+  content: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  valence: {
+    type: Number,
+    required: true
+  },
+  arousal: {
+    type: Number,
+    required: true
+  },
+  confidence: {
+    type: Number,
+    required: true
+  }
+}, { _id: false });
+
+const candidateProposalSchema = new mongoose.Schema({
+  proposalId: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  kind: {
+    type: String,
+    enum: ['memory', 'relationship_sediment', 'character_state', 'reflection_artifact'],
+    required: true
+  },
+  content: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  reason: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  confidence: {
+    type: Number,
+    required: true
+  },
+  userConfirmationRequired: {
+    type: Boolean,
+    default: true
+  },
+  observedAffect: {
+    type: candidateAffectSchema,
+    default: undefined
+  },
+  reflection: {
+    type: candidateReflectionSchema,
+    default: undefined
+  },
+  sourceTrace: {
+    type: [String],
+    default: undefined
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'dismissed', 'accepted'],
+    default: 'pending'
+  },
+  decidedAt: {
+    type: Date,
+    default: undefined
+  }
+}, { _id: false });
+
 const focusSnapshotSchema = new mongoose.Schema({
   type: {
     type: String,
@@ -135,6 +222,10 @@ const chatMessageSchema = new mongoose.Schema({
   },
   memoryCandidate: {
     type: memoryCandidateSchema,
+    default: undefined
+  },
+  candidateProposals: {
+    type: [candidateProposalSchema],
     default: undefined
   },
   focusSnapshot: {

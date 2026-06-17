@@ -1,6 +1,7 @@
 import {
   type SayaDeskHostToolExecutionRequestDto,
   type SayaDeskHostToolExecutionResultDto,
+  type ChatMessageDto,
   type SayaDeskSayachanAdvanceTurnRequestDto,
   type SayaDeskSayachanFocusDto,
   type SayaDeskSayachanResponseDto,
@@ -655,16 +656,18 @@ async function persistAssistantText(
   options: SayachanExecutionOptions,
   result: {
     turnActivity?: SayaDeskSayachanTurnActivityDto;
+    candidateProposals?: unknown;
   } = {}
-): Promise<void> {
+): Promise<ChatMessageDto | undefined> {
   if (!preparedTurn || !options.userId) {
-    return;
+    return undefined;
   }
 
   try {
-    await appendAssistantMessage(preparedTurn, reply, result, { userId: options.userId });
+    return await appendAssistantMessage(preparedTurn, reply, result, { userId: options.userId });
   } catch (error) {
     console.error('[Sayachan Route] Chat persistence assistant append failed:', errorMessage(error));
+    return undefined;
   }
 }
 
@@ -679,15 +682,16 @@ export async function chat(request: SayaDeskSayachanRequestDto, options: Sayacha
     const { coreResult, turnActivity } = await runAdvanceLoop(turnRequest, options);
     const reply = finalAdvanceText(coreResult);
     const candidateProposals = coreResult.candidateProposals || [];
+    const persistedMessage = await persistAssistantText(preparedTurn, reply, options, { turnActivity, candidateProposals });
     const parsed = sayaDeskSayachanResponseSchema.parse({
       reply,
+      ...(persistedMessage?._id ? { messageId: persistedMessage._id } : {}),
       turnId: coreResult.turnId,
       ...(candidateProposals.length > 0 ? { candidateProposals } : {}),
       turnActivity,
       trace: projectAdvanceTrace(coreResult),
       debugTrace: coreResult.debugTrace
     });
-    await persistAssistantText(preparedTurn, reply, options, { turnActivity });
     return parsed;
   } catch (error) {
     if (error instanceof BadRequestError) {
@@ -711,9 +715,15 @@ export async function* chatStream(request: SayaDeskSayachanRequestDto, options: 
   try {
     for await (const event of streamAdvanceLoop(turnRequest, options)) {
       if (event.type === 'completed') {
-        await persistAssistantText(preparedTurn, event.reply, options, {
-          turnActivity: event.turnActivity
+        const persistedMessage = await persistAssistantText(preparedTurn, event.reply, options, {
+          turnActivity: event.turnActivity,
+          candidateProposals: event.candidateProposals
         });
+        yield sayaDeskSayachanStreamEventSchema.parse({
+          ...event,
+          ...(persistedMessage?._id ? { messageId: persistedMessage._id } : {})
+        });
+        continue;
       }
       yield event;
     }

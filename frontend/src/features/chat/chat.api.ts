@@ -2,6 +2,7 @@ import { apiFetch, API_BASE } from '../../services/apiClient'
 import { assertApiResponse } from '../../services/apiResponse'
 import {
   chatResponseSchema,
+  chatMessageSchema,
   chatSessionResponseSchema,
   sayaDeskSayachanResponseSchema,
   sayaDeskSayachanStreamEventSchema
@@ -10,6 +11,7 @@ import type {
   ChatContextDto,
   ChatDebugTraceDto,
   ChatMemoryCandidateDto,
+  ChatCandidateProposalStatusUpdateDto,
   ChatMessageDto,
   ChatResponseDto,
   ChatResponseStrategyDto,
@@ -81,6 +83,7 @@ type SendSayachanInput = {
 export type SayachanTurnActivity = NonNullable<SayaDeskSayachanResponseDto['turnActivity']>
 export type SayachanCandidateProposal = SayaDeskSayachanCandidateProposalDto
 export type SayachanChatResponse = ChatResponseDto & {
+  messageId?: string
   turnActivity?: SayachanTurnActivity
   candidateProposals?: SayachanCandidateProposal[]
   sayachanDebugTrace?: SayaDeskSayachanDebugTraceDto
@@ -179,6 +182,7 @@ export async function sendSayachan(input: SendSayachanInput): Promise<SayachanCh
     const data = assertApiResponse(await res.json() as unknown, sayaDeskSayachanResponseSchema, 'sayachan')
     return {
       reply: data.reply,
+      ...(data.messageId ? { messageId: data.messageId } : {}),
       ...(data.turnActivity ? { turnActivity: data.turnActivity } : {}),
       ...(data.candidateProposals?.length ? { candidateProposals: data.candidateProposals } : {}),
       ...(data.debugTrace ? { sayachanDebugTrace: data.debugTrace } : {})
@@ -376,6 +380,7 @@ export async function streamSayachan(
         handlers.onCompleted?.(event.reply, event)
         return {
           reply: event.reply,
+          ...(event.messageId ? { messageId: event.messageId } : {}),
           ...(event.turnActivity ? { turnActivity: event.turnActivity } : {}),
           ...(event.candidateProposals?.length ? { candidateProposals: event.candidateProposals } : {}),
           ...(event.debugTrace ? { sayachanDebugTrace: event.debugTrace } : {})
@@ -393,4 +398,25 @@ export async function streamSayachan(
   }
 
   throw new Error('Sayachan stream ended before completion')
+}
+
+export async function updateSayachanCandidateProposalStatus(
+  messageId: string,
+  proposalId: string,
+  status: ChatCandidateProposalStatusUpdateDto['status']
+): Promise<ChatMessageDto> {
+  const res = await apiFetch(
+    `${API_BASE}/sayachan/candidates/${encodeURIComponent(messageId)}/${encodeURIComponent(proposalId)}/status`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    }
+  )
+
+  if (!res.ok) {
+    throw new Error(`Candidate proposal status update failed: ${res.status}`)
+  }
+
+  return assertApiResponse(await res.json() as unknown, chatMessageSchema, 'candidate proposal status update')
 }

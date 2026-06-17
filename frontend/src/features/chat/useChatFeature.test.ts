@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChatFeature } from './useChatFeature.js'
-import { loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat, streamSayachan } from './chat.api.js'
+import { loadChatSession, sendChat, sendSayachan, startNewChatSession, streamChat, streamSayachan, updateSayachanCandidateProposalStatus } from './chat.api.js'
 import { createMemoryEntry } from '../memory/memory.api.js'
 import type { ChatFocusDto, ChatMessageDto } from '@sayachan/contracts'
 
@@ -23,7 +23,8 @@ vi.mock('./chat.api.js', () => ({
   sendSayachan: vi.fn(),
   startNewChatSession: vi.fn(),
   streamChat: vi.fn(),
-  streamSayachan: vi.fn()
+  streamSayachan: vi.fn(),
+  updateSayachanCandidateProposalStatus: vi.fn()
 }))
 
 vi.mock('../memory/memory.api.js', () => ({
@@ -36,6 +37,7 @@ const sendSayachanMock = vi.mocked(sendSayachan)
 const startNewChatSessionMock = vi.mocked(startNewChatSession)
 const streamChatMock = vi.mocked(streamChat)
 const streamSayachanMock = vi.mocked(streamSayachan)
+const updateSayachanCandidateProposalStatusMock = vi.mocked(updateSayachanCandidateProposalStatus)
 const createMemoryEntryMock = vi.mocked(createMemoryEntry)
 
 type ChatStoreMock = ReturnType<typeof createChatStore>
@@ -142,6 +144,11 @@ describe('useChatFeature orchestration', () => {
     startNewChatSessionMock.mockResolvedValue({ messages: [] })
     streamChatMock.mockResolvedValue({ reply: 'Done' })
     streamSayachanMock.mockResolvedValue({ reply: 'V4 Done' })
+    updateSayachanCandidateProposalStatusMock.mockResolvedValue({
+      _id: 'message-2',
+      role: 'assistant',
+      content: 'V4 Done'
+    })
     createMemoryEntryMock.mockResolvedValue({
       _id: 'memory-1',
       type: 'preference',
@@ -212,6 +219,16 @@ describe('useChatFeature orchestration', () => {
             content: 'Use plain language first.',
             source: 'assistant_suggested_user_approved'
           },
+          candidateProposals: [{
+            proposalId: 'candidate-1',
+            kind: 'memory',
+            content: 'User prefers plain language.',
+            reason: 'Useful future preference.',
+            confidence: 0.82,
+            userConfirmationRequired: true,
+            sourceTrace: ['runtime.v4_3.closeout'],
+            status: 'pending'
+          }],
           turnActivity: persistedTurnActivity
         }
       ],
@@ -244,6 +261,16 @@ describe('useChatFeature orchestration', () => {
           content: 'Use plain language first.',
           source: 'assistant_suggested_user_approved'
         },
+        candidateProposals: [{
+          proposalId: 'candidate-1',
+          kind: 'memory',
+          content: 'User prefers plain language.',
+          reason: 'Useful future preference.',
+          confidence: 0.82,
+          userConfirmationRequired: true,
+          sourceTrace: ['runtime.v4_3.closeout'],
+          status: 'pending'
+        }],
         turnActivity: persistedTurnActivity
       }
     ], {
@@ -254,6 +281,16 @@ describe('useChatFeature orchestration', () => {
     expect(feature.getMessageFocusSnapshot(0)).toEqual({ type: 'note', title: 'Tool notes' })
     expect(feature.getMessageSourceReceipts(1)).toEqual([{ type: 'note', title: 'Tool notes' }])
     expect(feature.getMessageMemoryCandidate(1)?.status).toBe('pending')
+    expect(feature.getMessageCandidateProposals(1)).toEqual([{
+      proposalId: 'candidate-1',
+      kind: 'memory',
+      content: 'User prefers plain language.',
+      reason: 'Useful future preference.',
+      confidence: 0.82,
+      userConfirmationRequired: true,
+      sourceTrace: ['runtime.v4_3.closeout'],
+      status: 'pending'
+    }])
     expect(feature.getMessageTurnActivity(1)).toEqual(persistedTurnActivity)
     expect(scrollToBottom).toHaveBeenCalled()
   })
@@ -351,7 +388,17 @@ describe('useChatFeature orchestration', () => {
       source: 'user_focus_button'
     }
     const streamResponse: Awaited<ReturnType<typeof streamSayachan>> = {
+      messageId: 'message-v4-1',
       reply: 'V4 Done',
+      candidateProposals: [{
+        proposalId: 'candidate-v4-1',
+        kind: 'memory',
+        content: 'User likes v4 proposal persistence.',
+        reason: 'Useful future preference.',
+        confidence: 0.8,
+        userConfirmationRequired: true,
+        sourceTrace: ['runtime.v4_3.closeout']
+      }],
       sayachanDebugTrace: {
         runtime: 'cognition-runtime',
         provider: 'openai',
@@ -436,6 +483,8 @@ describe('useChatFeature orchestration', () => {
         version: 1,
         type: 'completed',
         reply: 'V4 Done',
+        messageId: 'message-v4-1',
+        candidateProposals: streamResponse.candidateProposals,
         turnActivity,
         debugTrace: streamResponse.sayachanDebugTrace
       })
@@ -486,6 +535,39 @@ describe('useChatFeature orchestration', () => {
       ]
     })
     expect(feature.isPendingAssistantMessage(1)).toBe(false)
+    expect(chatStore.messages[1]?._id).toBe('message-v4-1')
+    expect(feature.getMessageCandidateProposals(1)).toEqual([{
+      proposalId: 'candidate-v4-1',
+      kind: 'memory',
+      content: 'User likes v4 proposal persistence.',
+      reason: 'Useful future preference.',
+      confidence: 0.8,
+      userConfirmationRequired: true,
+      sourceTrace: ['runtime.v4_3.closeout'],
+      status: 'pending'
+    }])
+    updateSayachanCandidateProposalStatusMock.mockResolvedValue({
+      _id: 'message-v4-1',
+      role: 'assistant',
+      content: 'V4 Done',
+      candidateProposals: [{
+        proposalId: 'candidate-v4-1',
+        kind: 'memory',
+        content: 'User likes v4 proposal persistence.',
+        reason: 'Useful future preference.',
+        confidence: 0.8,
+        userConfirmationRequired: true,
+        sourceTrace: ['runtime.v4_3.closeout'],
+        status: 'dismissed'
+      }]
+    })
+    await feature.dismissCandidateProposal(1, 'candidate-v4-1')
+    expect(updateSayachanCandidateProposalStatus).toHaveBeenCalledWith(
+      'message-v4-1',
+      'candidate-v4-1',
+      'dismissed'
+    )
+    expect(feature.getMessageCandidateProposals(1)[0]?.status).toBe('dismissed')
     expect(runtimeControls.setLatestSayachanDebugTrace).toHaveBeenCalledWith(expect.objectContaining({
       runtime: 'cognition-runtime',
       provider: 'openai',

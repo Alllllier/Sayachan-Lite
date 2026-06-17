@@ -2,7 +2,10 @@ import Router from '@koa/router';
 import { once } from 'node:events';
 
 import {
+  chatCandidateProposalStatusUpdateSchema,
+  chatMessageSchema,
   sayaDeskSayachanRequestSchema,
+  type ChatCandidateProposalStatusUpdateDto,
   type SayaDeskSayachanRequestDto
 } from '@sayachan/contracts';
 import type {
@@ -11,8 +14,12 @@ import type {
 } from './routeTypes.js';
 import sayachanService from '../services/sayachanService.js';
 import { resolveCurrentUserId } from '../middleware/route/currentUser.js';
+import { requireCurrentUser } from '../middleware/route/currentUser.js';
+import { parseParamObjectId } from '../middleware/route/objectIdParsing.js';
 import { validateBody } from '../middleware/route/requestBodyValidation.js';
-import { validatedBody } from './routeState.js';
+import { objectId, validatedBody } from './routeState.js';
+import { NotFoundError } from '../http/httpErrors.js';
+import { updateCandidateProposalStatus } from '../services/chatPersistenceService.js';
 
 type SayachanState = AuthenticatedRouteState;
 type SayachanHandler = RouteHandler<SayachanState>;
@@ -24,6 +31,27 @@ const sayachanHandler: SayachanHandler = async (ctx) => {
     userId: resolveCurrentUserId(ctx),
     userRole: ctx.state.user?.role
   });
+};
+
+const updateCandidateProposalStatusHandler: SayachanHandler = async (ctx) => {
+  const proposalId = ctx.params.proposalId;
+  if (!proposalId) {
+    throw new NotFoundError('Candidate proposal not found', {
+      code: 'CANDIDATE_PROPOSAL_NOT_FOUND'
+    });
+  }
+  const message = await updateCandidateProposalStatus(
+    objectId(ctx, 'messageId'),
+    proposalId,
+    validatedBody<ChatCandidateProposalStatusUpdateDto>(ctx),
+    { userId: ctx.state.userId }
+  );
+  if (!message) {
+    throw new NotFoundError('Candidate proposal not found', {
+      code: 'CANDIDATE_PROPOSAL_NOT_FOUND'
+    });
+  }
+  ctx.body = chatMessageSchema.parse(message);
 };
 
 async function writeSseEvent(ctx: Parameters<SayachanHandler>[0], event: unknown): Promise<void> {
@@ -93,6 +121,13 @@ const sayachanStreamHandler: SayachanHandler = async (ctx) => {
 
 router.post('/sayachan', validateBody<SayaDeskSayachanRequestDto, SayachanState>(sayaDeskSayachanRequestSchema), sayachanHandler);
 router.post('/sayachan/stream', validateBody<SayaDeskSayachanRequestDto, SayachanState>(sayaDeskSayachanRequestSchema), sayachanStreamHandler);
+router.put(
+  '/sayachan/candidates/:messageId/:proposalId/status',
+  requireCurrentUser,
+  parseParamObjectId<SayachanState>('messageId'),
+  validateBody<ChatCandidateProposalStatusUpdateDto, SayachanState>(chatCandidateProposalStatusUpdateSchema),
+  updateCandidateProposalStatusHandler
+);
 
 const exportedRouter = Object.assign(router, {
   __test__: sayachanService.__test__
