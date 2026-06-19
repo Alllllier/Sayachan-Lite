@@ -751,10 +751,15 @@ export async function acceptMemoryCandidateProposal(
       code: 'UNSUPPORTED_CANDIDATE_PROPOSAL'
     });
   }
+  const {
+    status: _status,
+    decidedAt: _decidedAt,
+    ...coreCandidateProposal
+  } = proposal;
 
   const request: SayachanCoreAcceptMemoryCandidateRequest = {
     coreSubjectId: await ensureCoreSubjectIdForUser(options.userId, options.coreSubjectId),
-    candidateProposal: proposal,
+    candidateProposal: coreCandidateProposal,
     scope: 'core_subject',
     sensitivity: 'low',
     sourceRefs: [{

@@ -7,6 +7,7 @@ import aiService from '../dist/services/aiService.js';
 import sayachanService from '../dist/services/sayachanService.js';
 import sayachanHostToolService from '../dist/services/sayachanHostToolService.js';
 import { buildSayaDeskHostCapabilityManifest } from '../dist/services/sayachanHostContextService.js';
+import ChatMessage from '../dist/models/ChatMessage.js';
 import Note from '../dist/models/Note.js';
 import Project from '../dist/models/Project.js';
 import Task from '../dist/models/Task.js';
@@ -126,6 +127,30 @@ test('SayaDesk host capability manifest exposes provider-facing tool contracts',
   assert.equal(listNotes.parameterSchema.additionalProperties, false);
   assert.deepEqual(listNotes.parameterSchema.properties.sortBy.enum, ['updatedAt', 'createdAt']);
   assert.equal(listNotes.parameterSchema.properties.limit.maximum, 30);
+});
+
+test('ChatMessage candidate proposals preserve memory kind for acceptance', () => {
+  const message = new ChatMessage({
+    conversationId: new Types.ObjectId('000000000000000000000101'),
+    userId: new Types.ObjectId('000000000000000000000001'),
+    role: 'assistant',
+    content: 'memory candidate smoke',
+    candidateProposals: [{
+      proposalId: 'candidate-memory-kind-smoke',
+      kind: 'memory',
+      memoryKind: 'interaction_preference',
+      content: 'User prefers plain explanations.',
+      reason: 'The user explicitly asked for plain explanations.',
+      confidence: 0.84,
+      userConfirmationRequired: true,
+      sourceTrace: ['test.memory_kind']
+    }]
+  });
+
+  assert.equal(
+    message.toObject().candidateProposals[0].memoryKind,
+    'interaction_preference'
+  );
 });
 
 function withPatchedMethods(patches, run) {

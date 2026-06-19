@@ -86,6 +86,11 @@ const candidateProposalSchema = new mongoose.Schema({
     enum: ['memory', 'relationship_sediment', 'character_state', 'reflection_artifact'],
     required: true
   },
+  memoryKind: {
+    type: String,
+    enum: ['user_fact', 'user_preference', 'interaction_preference', 'important_event'],
+    default: undefined
+  },
   content: {
     type: String,
     required: true,
