@@ -222,6 +222,39 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     }
   }
 
+  async function acceptCandidateProposal(index: number, proposalId: string): Promise<void> {
+    const current = sayachanCandidateProposalsByMessageIndex.value[index] || []
+    const target = current.find(proposal => proposal.proposalId === proposalId)
+    if (!target || target.status !== 'pending') return
+    const next = current.map(proposal => proposal.proposalId === proposalId
+      ? { ...proposal, status: 'accepted' as const }
+      : proposal
+    )
+    sayachanCandidateProposalsByMessageIndex.value = {
+      ...sayachanCandidateProposalsByMessageIndex.value,
+      [index]: next
+    }
+    patchMessage(index, { candidateProposals: next })
+
+    const messageId = chatStore.messages[index]?._id
+    if (!messageId) return
+
+    try {
+      const updated = await updateSayachanCandidateProposalStatus(messageId, proposalId, 'accepted')
+      if (updated.candidateProposals) {
+        setMessageCandidateProposals(index, updated.candidateProposals)
+      }
+    } catch (error) {
+      const rolledBack = current.map(asPersistedCandidateProposal)
+      sayachanCandidateProposalsByMessageIndex.value = {
+        ...sayachanCandidateProposalsByMessageIndex.value,
+        [index]: rolledBack
+      }
+      patchMessage(index, { candidateProposals: rolledBack })
+      onSendError(error)
+    }
+  }
+
   function updateMemoryCandidateStatus(index: number, status: ChatMemoryCandidateState['status']): void {
     const current = memoryCandidatesByMessageIndex.value[index]
     if (!current) return
@@ -583,6 +616,7 @@ export function useChatFeature(options: ChatFeatureOptions = {}) {
     getMessageCandidateProposals,
     getMessageFocusSnapshot,
     acceptMemoryCandidate,
+    acceptCandidateProposal,
     dismissMemoryCandidate,
     dismissCandidateProposal,
     openPopup,

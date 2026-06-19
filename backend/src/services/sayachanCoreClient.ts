@@ -1,7 +1,15 @@
 import {
+  sayaDeskSayachanAcceptMemoryCandidateRequestSchema,
+  sayaDeskSayachanAcceptMemoryCandidateResultSchema,
   sayaDeskSayachanAdvanceTurnRequestSchema,
+  sayaDeskSayachanCreateCoreSubjectRequestSchema,
+  sayaDeskSayachanCreateCoreSubjectResultSchema,
   sayaDeskSayachanTurnAdvanceResultSchema,
+  type SayaDeskSayachanAcceptMemoryCandidateRequestDto,
+  type SayaDeskSayachanAcceptMemoryCandidateResultDto,
   type SayaDeskSayachanAdvanceTurnRequestDto,
+  type SayaDeskSayachanCreateCoreSubjectRequestDto,
+  type SayaDeskSayachanCreateCoreSubjectResultDto,
   type SayaDeskSayachanTurnAdvanceResultDto
 } from '@sayachan/contracts';
 import { z } from 'zod';
@@ -16,6 +24,10 @@ export type SayachanCoreConversationMessage = {
 
 export type SayachanCoreAdvanceTurnRequest = SayaDeskSayachanAdvanceTurnRequestDto;
 export type SayachanCoreTurnAdvanceResult = SayaDeskSayachanTurnAdvanceResultDto;
+export type SayachanCoreAcceptMemoryCandidateRequest = SayaDeskSayachanAcceptMemoryCandidateRequestDto;
+export type SayachanCoreAcceptMemoryCandidateResult = SayaDeskSayachanAcceptMemoryCandidateResultDto;
+export type SayachanCoreCreateSubjectRequest = SayaDeskSayachanCreateCoreSubjectRequestDto;
+export type SayachanCoreCreateSubjectResult = SayaDeskSayachanCreateCoreSubjectResultDto;
 const coreTurnAdvanceStreamEventSchema = z.discriminatedUnion('type', [
   z.object({
     packetType: z.literal('sayachan_turn_advance_stream_event').optional(),
@@ -101,6 +113,52 @@ export async function postSayachanCoreTurnAdvance(
   return parsed.data;
 }
 
+export async function postSayachanCoreAcceptMemoryCandidate(
+  request: SayachanCoreAcceptMemoryCandidateRequest
+): Promise<SayachanCoreAcceptMemoryCandidateResult> {
+  const normalizedRequest = sayaDeskSayachanAcceptMemoryCandidateRequestSchema.parse(request);
+  const coreUrl = configuredCoreUrl();
+  const response = await fetchWithTimeout(`${coreUrl}/v4/memory/candidates/accept`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(normalizedRequest)
+  }, configuredTimeoutMs());
+
+  if (!response.ok) {
+    throw new Error(`Sayachan Core memory candidate accept request failed with status ${response.status}`);
+  }
+
+  const parsed = sayaDeskSayachanAcceptMemoryCandidateResultSchema.safeParse(await response.json());
+  if (!parsed.success) {
+    throw new Error('Sayachan Core returned an invalid memory candidate accept result');
+  }
+
+  return parsed.data;
+}
+
+export async function postSayachanCoreSubject(
+  request: SayachanCoreCreateSubjectRequest = { subjectType: 'person' }
+): Promise<SayachanCoreCreateSubjectResult> {
+  const normalizedRequest = sayaDeskSayachanCreateCoreSubjectRequestSchema.parse(request);
+  const coreUrl = configuredCoreUrl();
+  const response = await fetchWithTimeout(`${coreUrl}/v4/core-subjects`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(normalizedRequest)
+  }, configuredTimeoutMs());
+
+  if (!response.ok) {
+    throw new Error(`Sayachan Core subject create request failed with status ${response.status}`);
+  }
+
+  const parsed = sayaDeskSayachanCreateCoreSubjectResultSchema.safeParse(await response.json());
+  if (!parsed.success) {
+    throw new Error('Sayachan Core returned an invalid core subject create result');
+  }
+
+  return parsed.data;
+}
+
 function parseSseBlock(block: string): SayachanCoreTurnAdvanceStreamEvent | null {
   const dataLines = block
     .split('\n')
@@ -170,6 +228,8 @@ export const __test__ = {
 };
 
 export default {
+  postSayachanCoreAcceptMemoryCandidate,
+  postSayachanCoreSubject,
   postSayachanCoreTurnAdvance,
   postSayachanCoreTurnAdvanceStream,
   __test__

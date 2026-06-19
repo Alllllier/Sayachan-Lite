@@ -6,6 +6,7 @@ export type CurrentUser = {
   _id?: unknown;
   role?: string;
   email?: string;
+  coreSubjectId?: string | null;
 };
 
 export type OptionalCurrentUserState = {

@@ -29,6 +29,11 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  coreSubjectId: {
+    type: String,
+    default: null,
+    index: true
+  },
   lastLoginAt: {
     type: Date,
     default: null

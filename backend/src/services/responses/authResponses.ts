@@ -18,6 +18,7 @@ export type UserAuthRecord = RuntimeDocument & {
   _id?: ObjectId | string;
   email?: string;
   role?: AuthRole;
+  coreSubjectId?: string | null;
   disabled?: boolean | null;
   passwordHash?: string;
   passwordSalt?: string;
@@ -90,6 +91,9 @@ export function toPublicUserDto(user: UserAuthRecord | null | undefined): Public
     _id: publicString(normalized._id),
     email: normalized.email,
     role: normalized.role,
+    ...(publicString(normalized.coreSubjectId) !== undefined
+      ? { coreSubjectId: publicString(normalized.coreSubjectId) }
+      : {}),
     disabled: normalized.disabled === true,
     createdAt: publicIsoString(normalized.createdAt),
     updatedAt: publicIsoString(normalized.updatedAt),

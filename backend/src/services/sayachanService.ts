@@ -1,6 +1,7 @@
 import {
   type SayaDeskHostToolExecutionRequestDto,
   type SayaDeskHostToolExecutionResultDto,
+  type ChatCandidateProposalDto,
   type ChatMessageDto,
   type SayaDeskSayachanAdvanceTurnRequestDto,
   type SayaDeskSayachanFocusDto,
@@ -28,17 +29,25 @@ import {
   type SayaDeskHostCapabilityManifest
 } from './sayachanHostContextService.js';
 import {
+  postSayachanCoreAcceptMemoryCandidate,
+  postSayachanCoreSubject,
   postSayachanCoreTurnAdvance,
   postSayachanCoreTurnAdvanceStream,
+  type SayachanCoreAcceptMemoryCandidateRequest,
+  type SayachanCoreAcceptMemoryCandidateResult,
   type SayachanCoreAdvanceTurnRequest,
+  type SayachanCoreCreateSubjectResult,
   type SayachanCoreConversationMessage,
   type SayachanCoreTurnAdvanceResult,
   type SayachanCoreTurnAdvanceStreamEvent
 } from './sayachanCoreClient.js';
 import { executeHostTool } from './sayachanHostToolService.js';
+import User from '../models/User.js';
 
 type SayachanCoreTurnAdvanceRunner = typeof postSayachanCoreTurnAdvance;
 type SayachanCoreTurnAdvanceStreamRunner = typeof postSayachanCoreTurnAdvanceStream;
+type SayachanCoreAcceptMemoryCandidateRunner = typeof postSayachanCoreAcceptMemoryCandidate;
+type SayachanCoreCreateSubjectRunner = typeof postSayachanCoreSubject;
 type FocusSnapshotBuilder = (
   focus: SayaDeskSayachanFocusDto | null | undefined,
   userId: ObjectId | null | undefined
@@ -48,6 +57,7 @@ type ChatPersistenceAvailabilityCheck = () => boolean;
 type SayachanExecutionOptions = {
   userId?: ObjectId | null;
   userRole?: string | null;
+  coreSubjectId?: string | null;
 };
 type PreparedPersistentTurn = Awaited<ReturnType<typeof preparePersistentTextTurn>>;
 
@@ -55,6 +65,8 @@ const MAX_ADVANCE_ITERATIONS = 8;
 
 let runCoreTurnAdvance: SayachanCoreTurnAdvanceRunner = postSayachanCoreTurnAdvance;
 let runCoreTurnAdvanceStream: SayachanCoreTurnAdvanceStreamRunner = postSayachanCoreTurnAdvanceStream;
+let runCoreAcceptMemoryCandidate: SayachanCoreAcceptMemoryCandidateRunner = postSayachanCoreAcceptMemoryCandidate;
+let runCoreCreateSubject: SayachanCoreCreateSubjectRunner = postSayachanCoreSubject;
 let focusSnapshotBuilder: FocusSnapshotBuilder = buildSayaDeskFocusSnapshot;
 let hostCapabilityManifestBuilder: HostCapabilityManifestBuilder = buildSayaDeskHostCapabilityManifest;
 let chatPersistenceAvailabilityCheck: ChatPersistenceAvailabilityCheck = defaultChatPersistenceAvailabilityCheck;
@@ -69,6 +81,58 @@ function canReturnDebugTrace(options: SayachanExecutionOptions): boolean {
 
 function defaultChatPersistenceAvailabilityCheck(): boolean {
   return Number(mongoose.connection.readyState) === 1;
+}
+
+async function ensureCoreSubjectIdForUser(
+  userId: ObjectId,
+  existingCoreSubjectId?: string | null
+): Promise<string> {
+  const normalizedExisting = typeof existingCoreSubjectId === 'string'
+    ? existingCoreSubjectId.trim()
+    : '';
+  if (normalizedExisting) {
+    return normalizedExisting;
+  }
+
+  const existingUser = await User.findById(userId).select('coreSubjectId');
+  const storedCoreSubjectId = typeof existingUser?.coreSubjectId === 'string'
+    ? existingUser.coreSubjectId.trim()
+    : '';
+  if (storedCoreSubjectId) {
+    return storedCoreSubjectId;
+  }
+
+  const created: SayachanCoreCreateSubjectResult = await runCoreCreateSubject({
+    subjectType: 'person'
+  });
+  const coreSubjectId = created.coreSubject.coreSubjectId;
+  const updatedUser = await User.findOneAndUpdate(
+    {
+      _id: userId,
+      $or: [
+        { coreSubjectId: null },
+        { coreSubjectId: { $exists: false } }
+      ]
+    },
+    { $set: { coreSubjectId } },
+    { new: true }
+  ).select('coreSubjectId');
+
+  if (typeof updatedUser?.coreSubjectId === 'string' && updatedUser.coreSubjectId.trim()) {
+    return updatedUser.coreSubjectId.trim();
+  }
+
+  const racedUser = await User.findById(userId).select('coreSubjectId');
+  const racedCoreSubjectId = typeof racedUser?.coreSubjectId === 'string'
+    ? racedUser.coreSubjectId.trim()
+    : '';
+  if (racedCoreSubjectId) {
+    return racedCoreSubjectId;
+  }
+
+  throw new BadRequestError('User is required to provision a Sayachan Core subject', {
+    code: 'SAYACHAN_CORE_SUBJECT_REQUIRES_USER'
+  });
 }
 
 async function buildAdvanceAuthorizedContext(
@@ -122,7 +186,8 @@ function coreAdvanceStartRequest(
   request: SayaDeskSayachanRequestDto,
   preparedTurn: PreparedPersistentTurn,
   authorizedContext: Record<string, unknown> | undefined,
-  options: SayachanExecutionOptions
+  options: SayachanExecutionOptions,
+  coreSubjectId?: string
 ): SayachanCoreAdvanceTurnRequest {
   const text = latestUserText(request, preparedTurn);
   if (!text) {
@@ -137,6 +202,7 @@ function coreAdvanceStartRequest(
       hostId: 'saya-desk',
       surface: request.surface,
       ...(options.userId ? { hostUserId: options.userId.toHexString() } : {}),
+      ...(coreSubjectId ? { coreSubjectId } : {}),
       authorizedContext: authorizedContext || {}
     },
     input: { text },
@@ -671,12 +737,46 @@ async function persistAssistantText(
   }
 }
 
+export async function acceptMemoryCandidateProposal(
+  proposal: ChatCandidateProposalDto,
+  options: SayachanExecutionOptions & { messageId: string }
+): Promise<SayachanCoreAcceptMemoryCandidateResult> {
+  if (!options.userId) {
+    throw new BadRequestError('User is required to accept memory candidates', {
+      code: 'SAYACHAN_MEMORY_ACCEPT_REQUIRES_USER'
+    });
+  }
+  if (proposal.kind !== 'memory' || !proposal.memoryKind) {
+    throw new BadRequestError('Only memory candidate proposals can be accepted', {
+      code: 'UNSUPPORTED_CANDIDATE_PROPOSAL'
+    });
+  }
+
+  const request: SayachanCoreAcceptMemoryCandidateRequest = {
+    coreSubjectId: await ensureCoreSubjectIdForUser(options.userId, options.coreSubjectId),
+    candidateProposal: proposal,
+    scope: 'core_subject',
+    sensitivity: 'low',
+    sourceRefs: [{
+      sourceId: `${options.messageId}:${proposal.proposalId}`,
+      sourceType: 'manual_review',
+      summary: 'User accepted the candidate proposal in SayaDesk.',
+      sourceTrace: ['saya_desk.sayachan_candidate_accept']
+    }]
+  };
+
+  return runCoreAcceptMemoryCandidate(request);
+}
+
 export async function chat(request: SayaDeskSayachanRequestDto, options: SayachanExecutionOptions = {}): Promise<SayaDeskSayachanResponseDto> {
   const preparedTurn = options.userId && chatPersistenceAvailabilityCheck()
     ? await preparePersistentTextTurn({ text: request.text }, { userId: options.userId })
     : null;
+  const coreSubjectId = options.userId
+    ? await ensureCoreSubjectIdForUser(options.userId, options.coreSubjectId)
+    : undefined;
   const authorizedContext = await buildAdvanceAuthorizedContext(request, options);
-  const turnRequest = coreAdvanceStartRequest(request, preparedTurn, authorizedContext, options);
+  const turnRequest = coreAdvanceStartRequest(request, preparedTurn, authorizedContext, options, coreSubjectId);
 
   try {
     const { coreResult, turnActivity } = await runAdvanceLoop(turnRequest, options);
@@ -709,8 +809,11 @@ export async function* chatStream(request: SayaDeskSayachanRequestDto, options: 
   const preparedTurn = options.userId && chatPersistenceAvailabilityCheck()
     ? await preparePersistentTextTurn({ text: request.text }, { userId: options.userId })
     : null;
+  const coreSubjectId = options.userId
+    ? await ensureCoreSubjectIdForUser(options.userId, options.coreSubjectId)
+    : undefined;
   const authorizedContext = await buildAdvanceAuthorizedContext(request, options);
-  const turnRequest = coreAdvanceStartRequest(request, preparedTurn, authorizedContext, options);
+  const turnRequest = coreAdvanceStartRequest(request, preparedTurn, authorizedContext, options, coreSubjectId);
 
   try {
     for await (const event of streamAdvanceLoop(turnRequest, options)) {
@@ -752,6 +855,20 @@ export const __test__ = {
       runCoreTurnAdvanceStream = previous;
     };
   },
+  setCoreAcceptMemoryCandidateRunnerForTest(runner: SayachanCoreAcceptMemoryCandidateRunner) {
+    const previous = runCoreAcceptMemoryCandidate;
+    runCoreAcceptMemoryCandidate = runner;
+    return () => {
+      runCoreAcceptMemoryCandidate = previous;
+    };
+  },
+  setCoreCreateSubjectRunnerForTest(runner: SayachanCoreCreateSubjectRunner) {
+    const previous = runCoreCreateSubject;
+    runCoreCreateSubject = runner;
+    return () => {
+      runCoreCreateSubject = previous;
+    };
+  },
   setFocusSnapshotBuilderForTest(builder: FocusSnapshotBuilder) {
     const previous = focusSnapshotBuilder;
     focusSnapshotBuilder = builder;
@@ -777,6 +894,7 @@ export const __test__ = {
 };
 
 export default {
+  acceptMemoryCandidateProposal,
   chat,
   chatStream,
   __test__

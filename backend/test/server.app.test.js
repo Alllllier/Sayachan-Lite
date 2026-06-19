@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { Types } from 'mongoose';
 
 import authService from '../dist/services/authService.js';
 import aiService from '../dist/services/aiService.js';
@@ -9,6 +10,7 @@ import { buildSayaDeskHostCapabilityManifest } from '../dist/services/sayachanHo
 import Note from '../dist/models/Note.js';
 import Project from '../dist/models/Project.js';
 import Task from '../dist/models/Task.js';
+import User from '../dist/models/User.js';
 import { allowedOrigins, createApp } from '../dist/server.js';
 
 function listen(app) {
@@ -360,7 +362,7 @@ test('createApp returns stable JSON 404 for unmatched routes', async () => {
     {
       target: authService,
       key: 'loadUserForSession',
-      value: async () => ({ _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' })
+      value: async () => ({ _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com', coreSubjectId: 'cs_core_failure_smoke' })
     }
   ], async () => {
     const response = await requestKoaApp(app, '/does-not-exist', {
@@ -512,7 +514,7 @@ test('authenticated /sayachan reaches Sayachan Core v4 advance bridge and return
       key: 'loadUserForSession',
       value: async (token) => {
         loadedToken = token;
-        return { _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' };
+        return { _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com', coreSubjectId: 'cs_route_smoke' };
       }
     }
   ], async () => {
@@ -651,6 +653,142 @@ test('authenticated /sayachan reaches Sayachan Core v4 advance bridge and return
   });
 });
 
+test('accept memory candidate forwards a core-subject-scoped write request', async () => {
+  const userId = new Types.ObjectId('000000000000000000000001');
+  let capturedRequest;
+  const restoreAcceptRunner = sayachanService.__test__.setCoreAcceptMemoryCandidateRunnerForTest(async (request) => {
+    capturedRequest = request;
+    return {
+      status: 'accepted',
+      memoryRecord: {
+        memoryId: 'memory-route-accept',
+        coreSubjectId: request.coreSubjectId,
+        kind: request.candidateProposal.memoryKind,
+        content: request.candidateProposal.content,
+        status: 'active',
+        scope: request.scope,
+        sourceRefs: request.sourceRefs,
+        confidence: request.candidateProposal.confidence,
+        sensitivity: request.sensitivity,
+        supersedes: []
+      },
+      sourceTrace: ['test.accept_memory_candidate']
+    };
+  });
+
+  try {
+    const result = await sayachanService.acceptMemoryCandidateProposal({
+      proposalId: 'candidate-route-accept-1',
+      kind: 'memory',
+      memoryKind: 'interaction_preference',
+      content: 'User prefers direct, plain explanations.',
+      reason: 'The user explicitly asked for plain explanations.',
+      confidence: 0.82,
+      userConfirmationRequired: true,
+      sourceTrace: ['runtime.v4_3.closeout'],
+      status: 'pending'
+    }, {
+      userId,
+      userRole: 'tester',
+      coreSubjectId: 'cs_route_accept',
+      messageId: '000000000000000000000777'
+    });
+
+    assert.equal(result.status, 'accepted');
+    assert.equal(capturedRequest.coreSubjectId, 'cs_route_accept');
+    assert.equal(capturedRequest.candidateProposal.proposalId, 'candidate-route-accept-1');
+    assert.equal(capturedRequest.candidateProposal.memoryKind, 'interaction_preference');
+    assert.equal(capturedRequest.scope, 'core_subject');
+    assert.equal(capturedRequest.sensitivity, 'low');
+    assert.deepEqual(capturedRequest.sourceRefs, [{
+      sourceId: '000000000000000000000777:candidate-route-accept-1',
+      sourceType: 'manual_review',
+      summary: 'User accepted the candidate proposal in SayaDesk.',
+      sourceTrace: ['saya_desk.sayachan_candidate_accept']
+    }]);
+  } finally {
+    restoreAcceptRunner();
+  }
+});
+
+test('sayachan provisions missing core subject ids lazily for existing users', async () => {
+  const userId = new Types.ObjectId('000000000000000000000001');
+  let capturedCreateRequest;
+  let capturedUpdate;
+  let capturedCoreRequest;
+  const restoreCreateSubjectRunner = sayachanService.__test__.setCoreCreateSubjectRunnerForTest(async (request) => {
+    capturedCreateRequest = request;
+    return {
+      coreSubject: {
+        coreSubjectId: 'cs_lazy_provisioned',
+        subjectType: 'person'
+      },
+      sourceTrace: ['test.create_core_subject']
+    };
+  });
+  const restoreCoreTurnAdvanceRunner = sayachanService.__test__.setCoreTurnAdvanceRunnerForTest(async (request) => {
+    capturedCoreRequest = request;
+    return {
+      turnId: 'turn-lazy-subject',
+      advanceId: 'adv-lazy-subject',
+      status: 'completed',
+      assistantOutput: [{
+        outputId: 'turn-lazy-subject:final:1',
+        kind: 'final_text',
+        text: 'lazy subject ok',
+        sourceTrace: ['provider.final']
+      }],
+      toolProposals: [],
+      candidateProposals: [],
+      trace: {
+        traceId: 'turn-lazy-subject',
+        debugAvailable: false
+      }
+    };
+  });
+
+  try {
+    await withPatchedMethods([
+      {
+        target: User,
+        key: 'findById',
+        value: () => ({
+          select: async () => ({ coreSubjectId: null })
+        })
+      },
+      {
+        target: User,
+        key: 'findOneAndUpdate',
+        value: (query, update) => {
+          capturedUpdate = { query, update };
+          return {
+            select: async () => ({ coreSubjectId: 'cs_lazy_provisioned' })
+          };
+        }
+      }
+    ], async () => {
+      const result = await sayachanService.chat({
+        text: 'hello lazy subject'
+      }, {
+        userId,
+        userRole: 'tester'
+      });
+
+      assert.equal(result.reply, 'lazy subject ok');
+      assert.deepEqual(capturedCreateRequest, { subjectType: 'person' });
+      assert.equal(capturedUpdate.query._id.toHexString(), '000000000000000000000001');
+      assert.deepEqual(capturedUpdate.update, {
+        $set: { coreSubjectId: 'cs_lazy_provisioned' }
+      });
+      assert.equal(capturedCoreRequest.host.coreSubjectId, 'cs_lazy_provisioned');
+      assert.equal(capturedCoreRequest.host.hostUserId, '000000000000000000000001');
+    });
+  } finally {
+    restoreCoreTurnAdvanceRunner();
+    restoreCreateSubjectRunner();
+  }
+});
+
 test('authenticated /sayachan/stream emits host-orchestrated advance events', async () => {
   const app = createApp({
     corsOrigins: ['http://localhost:5173'],
@@ -690,7 +828,7 @@ test('authenticated /sayachan/stream emits host-orchestrated advance events', as
       key: 'loadUserForSession',
       value: async (token) => {
         loadedToken = token;
-        return { _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' };
+        return { _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com', coreSubjectId: 'cs_stream_smoke' };
       }
     }
   ], async () => {
@@ -825,7 +963,7 @@ test('authenticated /sayachan/stream streams tool activity before host execution
     {
       target: authService,
       key: 'loadUserForSession',
-      value: async () => ({ _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' })
+      value: async () => ({ _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com', coreSubjectId: 'cs_stream_tool_smoke' })
     }
   ], async () => {
     const restoreFocusSnapshotBuilder = sayachanService.__test__.setFocusSnapshotBuilderForTest(async () => null);
@@ -984,7 +1122,7 @@ test('authenticated /sayachan rejects legacy v3-shaped body', async () => {
     {
       target: authService,
       key: 'loadUserForSession',
-      value: async () => ({ _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' })
+      value: async () => ({ _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com', coreSubjectId: 'cs_core_failure_smoke' })
     }
   ], async () => {
     const response = await requestKoaApp(app, '/sayachan', {
@@ -1173,7 +1311,7 @@ test('authenticated /sayachan returns explicit 502 when Sayachan Core bridge fai
     {
       target: authService,
       key: 'loadUserForSession',
-      value: async () => ({ _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com' })
+      value: async () => ({ _id: '000000000000000000000001', role: 'tester', email: 'tester@example.com', coreSubjectId: 'cs_core_failure_smoke' })
     }
   ], async () => {
     const restoreFocusSnapshotBuilder = sayachanService.__test__.setFocusSnapshotBuilderForTest(async () => null);

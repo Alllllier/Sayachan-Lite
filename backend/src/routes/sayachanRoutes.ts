@@ -19,7 +19,10 @@ import { parseParamObjectId } from '../middleware/route/objectIdParsing.js';
 import { validateBody } from '../middleware/route/requestBodyValidation.js';
 import { objectId, validatedBody } from './routeState.js';
 import { NotFoundError } from '../http/httpErrors.js';
-import { updateCandidateProposalStatus } from '../services/chatPersistenceService.js';
+import {
+  findCandidateProposalForMessage,
+  updateCandidateProposalStatus
+} from '../services/chatPersistenceService.js';
 
 type SayachanState = AuthenticatedRouteState;
 type SayachanHandler = RouteHandler<SayachanState>;
@@ -29,7 +32,8 @@ const router = new Router<SayachanState>();
 const sayachanHandler: SayachanHandler = async (ctx) => {
   ctx.body = await sayachanService.chat(validatedBody<SayaDeskSayachanRequestDto>(ctx), {
     userId: resolveCurrentUserId(ctx),
-    userRole: ctx.state.user?.role
+    userRole: ctx.state.user?.role,
+    coreSubjectId: ctx.state.user?.coreSubjectId
   });
 };
 
@@ -40,10 +44,30 @@ const updateCandidateProposalStatusHandler: SayachanHandler = async (ctx) => {
       code: 'CANDIDATE_PROPOSAL_NOT_FOUND'
     });
   }
+  const messageId = objectId(ctx, 'messageId');
+  const update = validatedBody<ChatCandidateProposalStatusUpdateDto>(ctx);
+  if (update.status === 'accepted') {
+    const proposal = await findCandidateProposalForMessage(
+      messageId,
+      proposalId,
+      { userId: ctx.state.userId }
+    );
+    if (!proposal) {
+      throw new NotFoundError('Candidate proposal not found', {
+        code: 'CANDIDATE_PROPOSAL_NOT_FOUND'
+      });
+    }
+    await sayachanService.acceptMemoryCandidateProposal(proposal, {
+      userId: ctx.state.userId,
+      userRole: ctx.state.user?.role,
+      coreSubjectId: ctx.state.user?.coreSubjectId,
+      messageId: messageId.toHexString()
+    });
+  }
   const message = await updateCandidateProposalStatus(
-    objectId(ctx, 'messageId'),
+    messageId,
     proposalId,
-    validatedBody<ChatCandidateProposalStatusUpdateDto>(ctx),
+    update,
     { userId: ctx.state.userId }
   );
   if (!message) {
@@ -93,7 +117,8 @@ const sayachanStreamHandler: SayachanHandler = async (ctx) => {
   try {
     for await (const event of sayachanService.chatStream(validatedBody<SayaDeskSayachanRequestDto>(ctx), {
       userId: resolveCurrentUserId(ctx),
-      userRole: ctx.state.user?.role
+      userRole: ctx.state.user?.role,
+      coreSubjectId: ctx.state.user?.coreSubjectId
     })) {
       if (closed) {
         break;

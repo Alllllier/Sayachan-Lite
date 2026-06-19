@@ -160,12 +160,96 @@ export const sayaDeskSayachanCandidateProposalKindValues = [
 export const sayaDeskSayachanCandidateProposalSchema = z.object({
   proposalId: z.string().min(1),
   kind: z.enum(sayaDeskSayachanCandidateProposalKindValues),
+  memoryKind: z.enum([
+    'user_fact',
+    'user_preference',
+    'interaction_preference',
+    'important_event'
+  ]).optional(),
   content: z.string().min(1),
   reason: z.string().min(1),
   confidence: z.number().min(0).max(1),
   userConfirmationRequired: z.boolean().default(true),
   observedAffect: sayaDeskSayachanCandidateObservedAffectSchema.nullable().optional(),
   reflection: sayaDeskSayachanCandidateReflectionSchema.nullable().optional(),
+  sourceTrace: z.array(z.string()).default([])
+}).strict()
+
+export const sayaDeskSayachanMemorySourceRefSchema = z.object({
+  sourceId: z.string().min(1),
+  sourceType: z.enum([
+    'turn',
+    'advance',
+    'host_tool_result',
+    'host_context',
+    'manual_review',
+    'system_seed',
+    'other'
+  ]),
+  summary: z.string().min(1).nullable().optional(),
+  sourceTrace: z.array(z.string()).default([])
+}).strict()
+
+export const sayaDeskSayachanMemoryRecordSchema = z.object({
+  memoryId: z.string().min(1),
+  coreSubjectId: z.string().min(1),
+  kind: z.enum([
+    'user_fact',
+    'user_preference',
+    'interaction_preference',
+    'important_event'
+  ]),
+  content: z.string().min(1),
+  status: z.enum([
+    'candidate',
+    'active',
+    'resolved',
+    'superseded',
+    'archived',
+    'corrected',
+    'deleted',
+    'rejected'
+  ]).default('active'),
+  scope: z.enum(['core_subject', 'relationship', 'host', 'conversation']).default('core_subject'),
+  sourceRefs: z.array(sayaDeskSayachanMemorySourceRefSchema).default([]),
+  confidence: z.number().min(0).max(1).default(0.5),
+  sensitivity: z.enum(['low', 'medium', 'high']).default('low'),
+  reconciliationKey: z.string().min(1).nullable().optional(),
+  expiresAt: z.string().min(1).nullable().optional(),
+  resolvedAt: z.string().min(1).nullable().optional(),
+  supersedes: z.array(z.string()).default([]),
+  supersededBy: z.string().min(1).nullable().optional(),
+  createdAt: z.string().min(1).nullable().optional(),
+  updatedAt: z.string().min(1).nullable().optional()
+}).strict()
+
+export const sayaDeskSayachanCoreSubjectSchema = z.object({
+  coreSubjectId: z.string().min(1),
+  subjectType: z.enum(['person', 'group', 'agent', 'other']).default('person')
+}).strict()
+
+export const sayaDeskSayachanCreateCoreSubjectRequestSchema = z.object({
+  subjectType: z.enum(['person', 'group', 'agent', 'other']).default('person')
+}).strict()
+
+export const sayaDeskSayachanCreateCoreSubjectResultSchema = z.object({
+  coreSubject: sayaDeskSayachanCoreSubjectSchema,
+  sourceTrace: z.array(z.string()).default([])
+}).strict()
+
+export const sayaDeskSayachanAcceptMemoryCandidateRequestSchema = z.object({
+  coreSubjectId: z.string().min(1),
+  candidateProposal: sayaDeskSayachanCandidateProposalSchema,
+  sourceRefs: z.array(sayaDeskSayachanMemorySourceRefSchema).default([]),
+  scope: z.enum(['core_subject', 'relationship', 'host', 'conversation']).default('core_subject'),
+  sensitivity: z.enum(['low', 'medium', 'high']).default('low'),
+  reconciliationKey: z.string().min(1).nullable().optional(),
+  expiresAt: z.string().min(1).nullable().optional()
+}).strict()
+
+export const sayaDeskSayachanAcceptMemoryCandidateResultSchema = z.object({
+  status: z.literal('accepted'),
+  memoryRecord: sayaDeskSayachanMemoryRecordSchema,
   sourceTrace: z.array(z.string()).default([])
 }).strict()
 
@@ -349,6 +433,10 @@ export type SayaDeskHostToolExecutionResultDto = z.infer<typeof sayaDeskHostTool
 export type SayaDeskSayachanAssistantOutputItemDto = z.infer<typeof sayaDeskSayachanAssistantOutputItemSchema>
 export type SayaDeskSayachanToolProposalDto = z.infer<typeof sayaDeskSayachanToolProposalSchema>
 export type SayaDeskSayachanCandidateProposalDto = z.infer<typeof sayaDeskSayachanCandidateProposalSchema>
+export type SayaDeskSayachanAcceptMemoryCandidateRequestDto = z.infer<typeof sayaDeskSayachanAcceptMemoryCandidateRequestSchema>
+export type SayaDeskSayachanAcceptMemoryCandidateResultDto = z.infer<typeof sayaDeskSayachanAcceptMemoryCandidateResultSchema>
+export type SayaDeskSayachanCreateCoreSubjectRequestDto = z.infer<typeof sayaDeskSayachanCreateCoreSubjectRequestSchema>
+export type SayaDeskSayachanCreateCoreSubjectResultDto = z.infer<typeof sayaDeskSayachanCreateCoreSubjectResultSchema>
 export type SayaDeskSayachanToolOutputDto = z.infer<typeof sayaDeskSayachanToolOutputSchema>
 export type SayaDeskSayachanAdvanceTurnRequestDto = z.infer<typeof sayaDeskSayachanAdvanceTurnRequestSchema>
 export type SayaDeskSayachanTurnAdvanceResultDto = z.infer<typeof sayaDeskSayachanTurnAdvanceResultSchema>

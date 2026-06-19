@@ -1,5 +1,6 @@
 import {
   type AiChatRequestDto,
+  type ChatCandidateProposalDto,
   type ChatCandidateProposalStatusUpdateDto,
   chatMemoryCandidateSchema,
   chatCandidateProposalSchema,
@@ -312,6 +313,27 @@ export async function updateCandidateProposalStatus(
   return toChatMessageDto(message);
 }
 
+export async function findCandidateProposalForMessage(
+  messageId: ObjectId,
+  proposalId: string,
+  { userId }: ServiceOptions
+): Promise<ChatCandidateProposalDto | undefined> {
+  const message = await ChatMessage.findOne(
+    {
+      _id: messageId,
+      userId,
+      role: 'assistant',
+      'candidateProposals.proposalId': proposalId
+    },
+    { candidateProposals: 1 }
+  ).lean();
+  const proposals = Array.isArray(message?.candidateProposals)
+    ? message.candidateProposals
+    : [];
+  const proposal = proposals.find(candidate => candidate.proposalId === proposalId);
+  return proposal ? chatCandidateProposalSchema.parse(proposal) : undefined;
+}
+
 export const __test__ = {
   CHAT_SESSION_MESSAGE_LIMIT,
   latestUserTextFromRequest,
@@ -325,5 +347,6 @@ export default {
   preparePersistentTextTurn,
   preparePersistentChatTurn,
   updateCandidateProposalStatus,
+  findCandidateProposalForMessage,
   __test__
 };

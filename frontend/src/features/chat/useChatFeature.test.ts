@@ -393,6 +393,7 @@ describe('useChatFeature orchestration', () => {
       candidateProposals: [{
         proposalId: 'candidate-v4-1',
         kind: 'memory',
+        memoryKind: 'interaction_preference',
         content: 'User likes v4 proposal persistence.',
         reason: 'Useful future preference.',
         confidence: 0.8,
@@ -539,6 +540,7 @@ describe('useChatFeature orchestration', () => {
     expect(feature.getMessageCandidateProposals(1)).toEqual([{
       proposalId: 'candidate-v4-1',
       kind: 'memory',
+      memoryKind: 'interaction_preference',
       content: 'User likes v4 proposal persistence.',
       reason: 'Useful future preference.',
       confidence: 0.8,
@@ -553,6 +555,7 @@ describe('useChatFeature orchestration', () => {
       candidateProposals: [{
         proposalId: 'candidate-v4-1',
         kind: 'memory',
+        memoryKind: 'interaction_preference',
         content: 'User likes v4 proposal persistence.',
         reason: 'Useful future preference.',
         confidence: 0.8,
@@ -577,6 +580,54 @@ describe('useChatFeature orchestration', () => {
     }))
     expect(chatStore.setProviderState).toHaveBeenCalledWith(undefined)
     expect(chatStore.setSending).toHaveBeenLastCalledWith(false)
+  })
+
+  it('accepts v4 candidate proposals through the Sayachan status endpoint', async () => {
+    const feature = useChatFeature()
+    loadChatSessionMock.mockResolvedValue({
+      messages: [{
+        _id: 'message-v4-accept',
+        role: 'assistant',
+        content: '我记一下这个偏好。',
+        candidateProposals: [{
+          proposalId: 'candidate-v4-accept-1',
+          kind: 'memory',
+          memoryKind: 'interaction_preference',
+          content: 'User prefers direct, plain explanations.',
+          reason: 'The user explicitly asked for plain explanations.',
+          confidence: 0.82,
+          userConfirmationRequired: true,
+          sourceTrace: ['runtime.v4_3.closeout'],
+          status: 'pending'
+        }]
+      }]
+    })
+    updateSayachanCandidateProposalStatusMock.mockResolvedValue({
+      _id: 'message-v4-accept',
+      role: 'assistant',
+      content: '我记一下这个偏好。',
+      candidateProposals: [{
+        proposalId: 'candidate-v4-accept-1',
+        kind: 'memory',
+        memoryKind: 'interaction_preference',
+        content: 'User prefers direct, plain explanations.',
+        reason: 'The user explicitly asked for plain explanations.',
+        confidence: 0.82,
+        userConfirmationRequired: true,
+        sourceTrace: ['runtime.v4_3.closeout'],
+        status: 'accepted'
+      }]
+    })
+
+    await feature.loadCurrentSession()
+    await feature.acceptCandidateProposal(0, 'candidate-v4-accept-1')
+
+    expect(updateSayachanCandidateProposalStatus).toHaveBeenCalledWith(
+      'message-v4-accept',
+      'candidate-v4-accept-1',
+      'accepted'
+    )
+    expect(feature.getMessageCandidateProposals(0)[0]?.status).toBe('accepted')
   })
 
   it('routes v4 turns through the non-streaming Sayachan gateway when streaming is disabled', async () => {

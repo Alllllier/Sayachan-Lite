@@ -77,7 +77,7 @@ export const chatCandidateProposalSchema = sayaDeskSayachanCandidateProposalSche
 }).strict()
 
 export const chatCandidateProposalStatusUpdateSchema = z.object({
-  status: z.literal('dismissed')
+  status: z.enum(['dismissed', 'accepted'])
 }).strict()
 
 export const chatResponseStrategySchema = z.object({

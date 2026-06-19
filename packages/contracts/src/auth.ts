@@ -16,6 +16,7 @@ export const publicUserSchema = z.object({
   _id: z.string().nullable().optional(),
   email: z.string().optional(),
   role: z.enum(authRoleValues).optional(),
+  coreSubjectId: z.string().nullable().optional(),
   disabled: z.boolean().optional(),
   createdAt: z.string().nullable().optional(),
   updatedAt: z.string().nullable().optional(),

@@ -57,6 +57,7 @@ const {
   getMessageCandidateProposals,
   getMessageFocusSnapshot,
   acceptMemoryCandidate,
+  acceptCandidateProposal,
   dismissMemoryCandidate,
   dismissCandidateProposal,
   chatInputDisabled,
@@ -526,6 +527,14 @@ function sayachanDebugResponseId(trace: SayaDeskSayachanDebugTraceDto): string {
                         v-if="proposal.status === 'pending'"
                         type="button"
                         class="chat-memory-action"
+                        @click="acceptCandidateProposal(idx, proposal.proposalId)"
+                      >
+                        {{ t('chat.memoryCandidateSave') }}
+                      </button>
+                      <button
+                        v-if="proposal.status === 'pending'"
+                        type="button"
+                        class="chat-memory-action"
                         @click="dismissCandidateProposal(idx, proposal.proposalId)"
                       >
                         {{ t('chat.memoryCandidateDismiss') }}
@@ -558,6 +567,14 @@ function sayachanDebugResponseId(trace: SayaDeskSayachanDebugTraceDto): string {
                         <span v-if="proposal.status !== 'pending'" class="chat-memory-candidate-status">
                           {{ proposal.status === 'dismissed' ? t('chat.candidateProposalDismissed') : t('chat.candidateProposalAccepted') }}
                         </span>
+                        <button
+                          v-if="proposal.status === 'pending'"
+                          type="button"
+                          class="chat-memory-action"
+                          @click="acceptCandidateProposal(idx, proposal.proposalId)"
+                        >
+                          {{ t('chat.memoryCandidateSave') }}
+                        </button>
                         <button
                           v-if="proposal.status === 'pending'"
                           type="button"
