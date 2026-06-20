@@ -355,6 +355,15 @@ export const sayaDeskSayachanTraceSchema = z.object({
   debugAvailable: z.boolean().optional()
 }).strict()
 
+const sayaDeskSayachanStandingPreferencesDebugSchema = z.object({
+  status: z.string().min(1).optional(),
+  persistence: z.string().min(1).optional(),
+  surfaced_count: z.number().optional(),
+  content: z.string().nullable().optional(),
+  source_memory_count: z.number().optional(),
+  source_trace: z.array(z.string()).optional()
+}).passthrough()
+
 export const sayaDeskSayachanDebugTraceSchema = z.object({
   runtime: z.string().min(1),
   provider: z.string().min(1).optional(),
@@ -362,6 +371,9 @@ export const sayaDeskSayachanDebugTraceSchema = z.object({
   provider_response_id: z.string().nullable().optional(),
   advance_kind: z.string().min(1).optional(),
   participation_profile: z.record(z.string(), z.unknown()).optional(),
+  state_snapshot: z.object({
+    standing_preferences: sayaDeskSayachanStandingPreferencesDebugSchema.optional()
+  }).passthrough().optional(),
   stage_summaries: z.array(z.object({
     stage_name: z.string().min(1),
     status: z.enum(['completed', 'skipped', 'failed']),

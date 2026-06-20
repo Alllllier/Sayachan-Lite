@@ -124,6 +124,12 @@ const debugMemoryCandidateTrace = computed<DebugMemoryCandidateTrace | null>(() 
 const debugGovernanceTrace = computed<DebugGovernanceTrace | null>(() => runtimeControls.latestDebugTrace?.governance || null)
 const sayachanDebugTrace = computed<SayaDeskSayachanDebugTraceDto | null>(() => runtimeControls.latestSayachanDebugTrace || null)
 const sayachanDebugAdvanceKind = computed(() => sayachanDebugTrace.value?.advance_kind || t('chat.debugEmpty'))
+const sayachanDebugStandingPreferences = computed(() => (
+  sayachanDebugTrace.value?.state_snapshot?.standing_preferences || null
+))
+const sayachanDebugStandingPreferencesContent = computed(() => (
+  sayachanDebugStandingPreferences.value?.content || t('chat.debugEmpty')
+))
 
 function sendCurrentMessage(): Promise<void> {
   return handleSend()
@@ -975,6 +981,27 @@ function sayachanDebugResponseId(trace: SayaDeskSayachanDebugTraceDto): string {
                   </template>
                 </div>
 
+                <div class="runtime-debug-block">
+                  <div class="runtime-debug-title">{{ t('chat.debugV4StandingPreferences') }}</div>
+                  <div v-if="!sayachanDebugStandingPreferences" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
+                  <template v-else>
+                    <div class="runtime-debug-line">
+                      <span>{{ t('chat.debugStatus') }}</span>
+                      <span>{{ sayachanDebugStandingPreferences.status || t('chat.debugEmpty') }}</span>
+                    </div>
+                    <div class="runtime-debug-line">
+                      <span>{{ t('chat.debugPersistence') }}</span>
+                      <span>{{ sayachanDebugStandingPreferences.persistence || t('chat.debugEmpty') }}</span>
+                    </div>
+                    <div class="runtime-debug-line">
+                      <span>{{ t('chat.debugSourceMemoryCount') }}</span>
+                      <span>{{ sayachanDebugStandingPreferences.source_memory_count ?? 0 }}</span>
+                    </div>
+                    <div class="runtime-debug-content">
+                      {{ sayachanDebugStandingPreferencesContent }}
+                    </div>
+                  </template>
+                </div>
               </template>
             </div>
           </div>
@@ -1857,6 +1884,16 @@ function sayachanDebugResponseId(trace: SayaDeskSayachanDebugTraceDto): string {
 
 .runtime-debug-line span:last-child {
   text-align: right;
+  word-break: break-word;
+}
+
+.runtime-debug-content {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
   word-break: break-word;
 }
 
