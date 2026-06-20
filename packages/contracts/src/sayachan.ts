@@ -253,6 +253,11 @@ export const sayaDeskSayachanAcceptMemoryCandidateResultSchema = z.object({
   sourceTrace: z.array(z.string()).default([])
 }).strict()
 
+export const sayaDeskSayachanListMemoryRecordsResultSchema = z.object({
+  memoryRecords: z.array(sayaDeskSayachanMemoryRecordSchema).default([]),
+  sourceTrace: z.array(z.string()).default([])
+}).strict()
+
 export const sayaDeskSayachanToolOutputSchema = z.object({
   proposalId: z.string().min(1).optional(),
   providerCallId: z.string().min(1),
@@ -447,6 +452,8 @@ export type SayaDeskSayachanToolProposalDto = z.infer<typeof sayaDeskSayachanToo
 export type SayaDeskSayachanCandidateProposalDto = z.infer<typeof sayaDeskSayachanCandidateProposalSchema>
 export type SayaDeskSayachanAcceptMemoryCandidateRequestDto = z.infer<typeof sayaDeskSayachanAcceptMemoryCandidateRequestSchema>
 export type SayaDeskSayachanAcceptMemoryCandidateResultDto = z.infer<typeof sayaDeskSayachanAcceptMemoryCandidateResultSchema>
+export type SayaDeskSayachanMemoryRecordDto = z.infer<typeof sayaDeskSayachanMemoryRecordSchema>
+export type SayaDeskSayachanListMemoryRecordsResultDto = z.infer<typeof sayaDeskSayachanListMemoryRecordsResultSchema>
 export type SayaDeskSayachanCreateCoreSubjectRequestDto = z.infer<typeof sayaDeskSayachanCreateCoreSubjectRequestSchema>
 export type SayaDeskSayachanCreateCoreSubjectResultDto = z.infer<typeof sayaDeskSayachanCreateCoreSubjectResultSchema>
 export type SayaDeskSayachanToolOutputDto = z.infer<typeof sayaDeskSayachanToolOutputSchema>

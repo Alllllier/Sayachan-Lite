@@ -736,6 +736,64 @@ test('accept memory candidate forwards a core-subject-scoped write request', asy
   }
 });
 
+test('authenticated /sayachan/memory/records lists v4 memory records for current core subject', async () => {
+  const app = createApp({
+    corsOrigins: ['http://localhost:5173'],
+    trustProxy: false
+  });
+  let capturedCoreSubjectId;
+
+  await withPatchedMethods([
+    {
+      target: authService,
+      key: 'loadUserForSession',
+      value: async () => ({
+        _id: '000000000000000000000001',
+        role: 'tester',
+        email: 'tester@example.com',
+        coreSubjectId: 'cs_memory_records_route'
+      })
+    }
+  ], async () => {
+    const restoreListRunner = sayachanService.__test__.setCoreListMemoryRecordsRunnerForTest(async (coreSubjectId) => {
+      capturedCoreSubjectId = coreSubjectId;
+      return {
+        memoryRecords: [{
+          memoryId: 'memory-route-list',
+          coreSubjectId,
+          kind: 'interaction_preference',
+          content: '用户希望技术解释优先使用大白话。',
+          status: 'active',
+          scope: 'core_subject',
+          sourceRefs: [],
+          confidence: 0.9,
+          sensitivity: 'low',
+          supersedes: []
+        }],
+        sourceTrace: ['test.list_memory_records']
+      };
+    });
+
+    try {
+      const response = await requestKoaApp(app, '/sayachan/memory/records', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer sayachan-memory-records-session'
+        }
+      });
+      const body = await response.json();
+
+      assert.equal(response.status, 200);
+      assert.equal(capturedCoreSubjectId, 'cs_memory_records_route');
+      assert.equal(body.memoryRecords.length, 1);
+      assert.equal(body.memoryRecords[0].content, '用户希望技术解释优先使用大白话。');
+      assert.deepEqual(body.sourceTrace, ['test.list_memory_records']);
+    } finally {
+      restoreListRunner();
+    }
+  });
+});
+
 test('sayachan provisions missing core subject ids lazily for existing users', async () => {
   const userId = new Types.ObjectId('000000000000000000000001');
   let capturedCreateRequest;

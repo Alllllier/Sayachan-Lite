@@ -4,12 +4,14 @@ import {
   sayaDeskSayachanAdvanceTurnRequestSchema,
   sayaDeskSayachanCreateCoreSubjectRequestSchema,
   sayaDeskSayachanCreateCoreSubjectResultSchema,
+  sayaDeskSayachanListMemoryRecordsResultSchema,
   sayaDeskSayachanTurnAdvanceResultSchema,
   type SayaDeskSayachanAcceptMemoryCandidateRequestDto,
   type SayaDeskSayachanAcceptMemoryCandidateResultDto,
   type SayaDeskSayachanAdvanceTurnRequestDto,
   type SayaDeskSayachanCreateCoreSubjectRequestDto,
   type SayaDeskSayachanCreateCoreSubjectResultDto,
+  type SayaDeskSayachanListMemoryRecordsResultDto,
   type SayaDeskSayachanTurnAdvanceResultDto
 } from '@sayachan/contracts';
 import { z } from 'zod';
@@ -28,6 +30,7 @@ export type SayachanCoreAcceptMemoryCandidateRequest = SayaDeskSayachanAcceptMem
 export type SayachanCoreAcceptMemoryCandidateResult = SayaDeskSayachanAcceptMemoryCandidateResultDto;
 export type SayachanCoreCreateSubjectRequest = SayaDeskSayachanCreateCoreSubjectRequestDto;
 export type SayachanCoreCreateSubjectResult = SayaDeskSayachanCreateCoreSubjectResultDto;
+export type SayachanCoreListMemoryRecordsResult = SayaDeskSayachanListMemoryRecordsResultDto;
 const coreTurnAdvanceStreamEventSchema = z.discriminatedUnion('type', [
   z.object({
     packetType: z.literal('sayachan_turn_advance_stream_event').optional(),
@@ -136,6 +139,28 @@ export async function postSayachanCoreAcceptMemoryCandidate(
   return parsed.data;
 }
 
+export async function getSayachanCoreMemoryRecords(
+  coreSubjectId: string
+): Promise<SayachanCoreListMemoryRecordsResult> {
+  const coreUrl = configuredCoreUrl();
+  const response = await fetchWithTimeout(
+    `${coreUrl}/v4/memory/records?coreSubjectId=${encodeURIComponent(coreSubjectId)}`,
+    { method: 'GET' },
+    configuredTimeoutMs()
+  );
+
+  if (!response.ok) {
+    throw new Error(`Sayachan Core memory records request failed with status ${response.status}`);
+  }
+
+  const parsed = sayaDeskSayachanListMemoryRecordsResultSchema.safeParse(await response.json());
+  if (!parsed.success) {
+    throw new Error('Sayachan Core returned an invalid memory records result');
+  }
+
+  return parsed.data;
+}
+
 export async function postSayachanCoreSubject(
   request: SayachanCoreCreateSubjectRequest = { subjectType: 'person' }
 ): Promise<SayachanCoreCreateSubjectResult> {
@@ -229,6 +254,7 @@ export const __test__ = {
 
 export default {
   postSayachanCoreAcceptMemoryCandidate,
+  getSayachanCoreMemoryRecords,
   postSayachanCoreSubject,
   postSayachanCoreTurnAdvance,
   postSayachanCoreTurnAdvanceStream,

@@ -29,6 +29,7 @@ import {
   type SayaDeskHostCapabilityManifest
 } from './sayachanHostContextService.js';
 import {
+  getSayachanCoreMemoryRecords,
   postSayachanCoreAcceptMemoryCandidate,
   postSayachanCoreSubject,
   postSayachanCoreTurnAdvance,
@@ -37,6 +38,7 @@ import {
   type SayachanCoreAcceptMemoryCandidateResult,
   type SayachanCoreAdvanceTurnRequest,
   type SayachanCoreCreateSubjectResult,
+  type SayachanCoreListMemoryRecordsResult,
   type SayachanCoreConversationMessage,
   type SayachanCoreTurnAdvanceResult,
   type SayachanCoreTurnAdvanceStreamEvent
@@ -48,6 +50,7 @@ type SayachanCoreTurnAdvanceRunner = typeof postSayachanCoreTurnAdvance;
 type SayachanCoreTurnAdvanceStreamRunner = typeof postSayachanCoreTurnAdvanceStream;
 type SayachanCoreAcceptMemoryCandidateRunner = typeof postSayachanCoreAcceptMemoryCandidate;
 type SayachanCoreCreateSubjectRunner = typeof postSayachanCoreSubject;
+type SayachanCoreListMemoryRecordsRunner = typeof getSayachanCoreMemoryRecords;
 type FocusSnapshotBuilder = (
   focus: SayaDeskSayachanFocusDto | null | undefined,
   userId: ObjectId | null | undefined
@@ -67,6 +70,7 @@ let runCoreTurnAdvance: SayachanCoreTurnAdvanceRunner = postSayachanCoreTurnAdva
 let runCoreTurnAdvanceStream: SayachanCoreTurnAdvanceStreamRunner = postSayachanCoreTurnAdvanceStream;
 let runCoreAcceptMemoryCandidate: SayachanCoreAcceptMemoryCandidateRunner = postSayachanCoreAcceptMemoryCandidate;
 let runCoreCreateSubject: SayachanCoreCreateSubjectRunner = postSayachanCoreSubject;
+let runCoreListMemoryRecords: SayachanCoreListMemoryRecordsRunner = getSayachanCoreMemoryRecords;
 let focusSnapshotBuilder: FocusSnapshotBuilder = buildSayaDeskFocusSnapshot;
 let hostCapabilityManifestBuilder: HostCapabilityManifestBuilder = buildSayaDeskHostCapabilityManifest;
 let chatPersistenceAvailabilityCheck: ChatPersistenceAvailabilityCheck = defaultChatPersistenceAvailabilityCheck;
@@ -773,6 +777,16 @@ export async function acceptMemoryCandidateProposal(
   return runCoreAcceptMemoryCandidate(request);
 }
 
+export async function listMemoryRecords(options: SayachanExecutionOptions = {}): Promise<SayachanCoreListMemoryRecordsResult> {
+  if (!options.userId) {
+    throw new BadRequestError('User is required to list Sayachan memory records', {
+      code: 'SAYACHAN_MEMORY_LIST_REQUIRES_USER'
+    });
+  }
+  const coreSubjectId = await ensureCoreSubjectIdForUser(options.userId, options.coreSubjectId);
+  return runCoreListMemoryRecords(coreSubjectId);
+}
+
 export async function chat(request: SayaDeskSayachanRequestDto, options: SayachanExecutionOptions = {}): Promise<SayaDeskSayachanResponseDto> {
   const preparedTurn = options.userId && chatPersistenceAvailabilityCheck()
     ? await preparePersistentTextTurn({ text: request.text }, { userId: options.userId })
@@ -874,6 +888,13 @@ export const __test__ = {
       runCoreCreateSubject = previous;
     };
   },
+  setCoreListMemoryRecordsRunnerForTest(runner: SayachanCoreListMemoryRecordsRunner) {
+    const previous = runCoreListMemoryRecords;
+    runCoreListMemoryRecords = runner;
+    return () => {
+      runCoreListMemoryRecords = previous;
+    };
+  },
   setFocusSnapshotBuilderForTest(builder: FocusSnapshotBuilder) {
     const previous = focusSnapshotBuilder;
     focusSnapshotBuilder = builder;
@@ -902,5 +923,6 @@ export default {
   acceptMemoryCandidateProposal,
   chat,
   chatStream,
+  listMemoryRecords,
   __test__
 };

@@ -28,6 +28,17 @@ type SayachanState = AuthenticatedRouteState;
 type SayachanHandler = RouteHandler<SayachanState>;
 
 const router = new Router<SayachanState>();
+const SAYACHAN_MEMORY_ACCESS_ROLES = new Set(['owner', 'tester']);
+
+const requireSayachanMemoryAccess: SayachanHandler = async (ctx, next) => {
+  if (!SAYACHAN_MEMORY_ACCESS_ROLES.has(ctx.state.user?.role || '')) {
+    ctx.status = 403;
+    ctx.body = { error: 'Sayachan memory access requires owner or tester role' };
+    return;
+  }
+
+  await next();
+};
 
 const sayachanHandler: SayachanHandler = async (ctx) => {
   ctx.body = await sayachanService.chat(validatedBody<SayaDeskSayachanRequestDto>(ctx), {
@@ -76,6 +87,14 @@ const updateCandidateProposalStatusHandler: SayachanHandler = async (ctx) => {
     });
   }
   ctx.body = chatMessageSchema.parse(message);
+};
+
+const listMemoryRecordsHandler: SayachanHandler = async (ctx) => {
+  ctx.body = await sayachanService.listMemoryRecords({
+    userId: ctx.state.userId,
+    userRole: ctx.state.user?.role,
+    coreSubjectId: ctx.state.user?.coreSubjectId
+  });
 };
 
 async function writeSseEvent(ctx: Parameters<SayachanHandler>[0], event: unknown): Promise<void> {
@@ -146,6 +165,7 @@ const sayachanStreamHandler: SayachanHandler = async (ctx) => {
 
 router.post('/sayachan', validateBody<SayaDeskSayachanRequestDto, SayachanState>(sayaDeskSayachanRequestSchema), sayachanHandler);
 router.post('/sayachan/stream', validateBody<SayaDeskSayachanRequestDto, SayachanState>(sayaDeskSayachanRequestSchema), sayachanStreamHandler);
+router.get('/sayachan/memory/records', requireCurrentUser, requireSayachanMemoryAccess, listMemoryRecordsHandler);
 router.put(
   '/sayachan/candidates/:messageId/:proposalId/status',
   requireCurrentUser,
