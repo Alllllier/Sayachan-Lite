@@ -157,6 +157,21 @@ export const sayaDeskSayachanCandidateProposalKindValues = [
   'reflection_artifact'
 ] as const
 
+export const sayaDeskSayachanMemorySourceRefSchema = z.object({
+  sourceId: z.string().min(1),
+  sourceType: z.enum([
+    'turn',
+    'advance',
+    'host_tool_result',
+    'host_context',
+    'manual_review',
+    'system_seed',
+    'other'
+  ]),
+  summary: z.string().min(1).nullable().optional(),
+  sourceTrace: z.array(z.string()).default([])
+}).strict()
+
 export const sayaDeskSayachanCandidateProposalSchema = z.object({
   proposalId: z.string().min(1),
   kind: z.enum(sayaDeskSayachanCandidateProposalKindValues),
@@ -172,21 +187,7 @@ export const sayaDeskSayachanCandidateProposalSchema = z.object({
   userConfirmationRequired: z.boolean().default(true),
   observedAffect: sayaDeskSayachanCandidateObservedAffectSchema.nullable().optional(),
   reflection: sayaDeskSayachanCandidateReflectionSchema.nullable().optional(),
-  sourceTrace: z.array(z.string()).default([])
-}).strict()
-
-export const sayaDeskSayachanMemorySourceRefSchema = z.object({
-  sourceId: z.string().min(1),
-  sourceType: z.enum([
-    'turn',
-    'advance',
-    'host_tool_result',
-    'host_context',
-    'manual_review',
-    'system_seed',
-    'other'
-  ]),
-  summary: z.string().min(1).nullable().optional(),
+  sourceRefs: z.array(sayaDeskSayachanMemorySourceRefSchema).optional(),
   sourceTrace: z.array(z.string()).default([])
 }).strict()
 

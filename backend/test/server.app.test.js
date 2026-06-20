@@ -710,6 +710,12 @@ test('accept memory candidate forwards a core-subject-scoped write request', asy
       reason: 'The user explicitly asked for plain explanations.',
       confidence: 0.82,
       userConfirmationRequired: true,
+      sourceRefs: [{
+        sourceId: 'saya-desk:note:note-birthday',
+        sourceType: 'host_tool_result',
+        summary: 'Read note "Birthday".',
+        sourceTrace: ['memory.evidence_refs.from_host_tool_output']
+      }],
       sourceTrace: ['runtime.v4_3.closeout'],
       status: 'pending'
     }, {
@@ -723,6 +729,12 @@ test('accept memory candidate forwards a core-subject-scoped write request', asy
     assert.equal(capturedRequest.coreSubjectId, 'cs_route_accept');
     assert.equal(capturedRequest.candidateProposal.proposalId, 'candidate-route-accept-1');
     assert.equal(capturedRequest.candidateProposal.memoryKind, 'interaction_preference');
+    assert.deepEqual(capturedRequest.candidateProposal.sourceRefs, [{
+      sourceId: 'saya-desk:note:note-birthday',
+      sourceType: 'host_tool_result',
+      summary: 'Read note "Birthday".',
+      sourceTrace: ['memory.evidence_refs.from_host_tool_output']
+    }]);
     assert.equal(capturedRequest.scope, 'core_subject');
     assert.equal(capturedRequest.sensitivity, 'low');
     assert.deepEqual(capturedRequest.sourceRefs, [{

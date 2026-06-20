@@ -75,6 +75,36 @@ const candidateReflectionSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
+const memorySourceRefSchema = new mongoose.Schema({
+  sourceId: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  sourceType: {
+    type: String,
+    enum: [
+      'turn',
+      'advance',
+      'host_tool_result',
+      'host_context',
+      'manual_review',
+      'system_seed',
+      'other'
+    ],
+    required: true
+  },
+  summary: {
+    type: String,
+    default: undefined,
+    trim: true
+  },
+  sourceTrace: {
+    type: [String],
+    default: undefined
+  }
+}, { _id: false });
+
 const candidateProposalSchema = new mongoose.Schema({
   proposalId: {
     type: String,
@@ -115,6 +145,10 @@ const candidateProposalSchema = new mongoose.Schema({
   },
   reflection: {
     type: candidateReflectionSchema,
+    default: undefined
+  },
+  sourceRefs: {
+    type: [memorySourceRefSchema],
     default: undefined
   },
   sourceTrace: {
