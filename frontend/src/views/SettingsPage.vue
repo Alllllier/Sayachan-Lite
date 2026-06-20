@@ -26,6 +26,7 @@ const languageOptions = computed(() => [
 const memoryRecords = ref<SayaDeskSayachanMemoryRecordDto[]>([])
 const memoryLoading = ref(false)
 const memoryError = ref('')
+const activeMemoryCount = computed(() => memoryRecords.value.filter(record => record.status === 'active').length)
 
 function updateLanguage(value: string): void {
   if (isSupportedLocale(value)) {
@@ -67,8 +68,37 @@ function memoryRecordStatusLabel(status: SayaDeskSayachanMemoryRecordDto['status
   return status
 }
 
+function memoryRecordSensitivityLabel(sensitivity: SayaDeskSayachanMemoryRecordDto['sensitivity']): string {
+  if (sensitivity === 'low') return t('settings.memorySensitivityLow')
+  if (sensitivity === 'medium') return t('settings.memorySensitivityMedium')
+  if (sensitivity === 'high') return t('settings.memorySensitivityHigh')
+  return sensitivity
+}
+
+function memoryRecordScopeLabel(scope: SayaDeskSayachanMemoryRecordDto['scope']): string {
+  if (scope === 'core_subject') return t('settings.memoryScopeCoreSubject')
+  if (scope === 'relationship') return t('settings.memoryScopeRelationship')
+  if (scope === 'host') return t('settings.memoryScopeHost')
+  if (scope === 'conversation') return t('settings.memoryScopeConversation')
+  return scope
+}
+
 function memoryRecordId(record: SayaDeskSayachanMemoryRecordDto): string {
   return record.memoryId
+}
+
+function memoryRecordConfidence(record: SayaDeskSayachanMemoryRecordDto): string {
+  return `${Math.round(record.confidence * 100)}%`
+}
+
+function formatMemoryDate(value: string | null | undefined): string {
+  if (!value) return t('settings.memoryDateUnknown')
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat(currentLanguage.value, {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  }).format(date)
 }
 
 async function logout(): Promise<void> {
@@ -116,8 +146,14 @@ onMounted(loadMemoryEntries)
       <article v-if="canManageMemory" class="card settings-card settings-memory-card">
         <div class="settings-memory-header">
           <div>
-            <h2 class="card-title">{{ t('settings.memoryTitle') }}</h2>
+            <div class="settings-memory-title-row">
+              <h2 class="card-title">{{ t('settings.memoryTitle') }}</h2>
+              <span class="settings-memory-readonly">{{ t('settings.memoryReadOnly') }}</span>
+            </div>
             <p class="card-meta">{{ t('settings.memoryCaption') }}</p>
+            <p v-if="memoryRecords.length > 0" class="settings-memory-summary">
+              {{ t('settings.memorySummary', { active: activeMemoryCount, total: memoryRecords.length }) }}
+            </p>
           </div>
           <button class="btn btn-secondary btn-sm" type="button" :disabled="memoryLoading" @click="loadMemoryEntries">
             {{ t('settings.memoryRefresh') }}
@@ -140,6 +176,33 @@ onMounted(loadMemoryEntries)
               <span class="settings-memory-status">{{ memoryRecordStatusLabel(record.status) }}</span>
             </div>
             <p class="settings-memory-content">{{ record.content }}</p>
+            <dl class="settings-memory-meta">
+              <div>
+                <dt>{{ t('settings.memoryMetaSensitivity') }}</dt>
+                <dd>{{ memoryRecordSensitivityLabel(record.sensitivity) }}</dd>
+              </div>
+              <div>
+                <dt>{{ t('settings.memoryMetaConfidence') }}</dt>
+                <dd>{{ memoryRecordConfidence(record) }}</dd>
+              </div>
+              <div>
+                <dt>{{ t('settings.memoryMetaScope') }}</dt>
+                <dd>{{ memoryRecordScopeLabel(record.scope) }}</dd>
+              </div>
+              <div>
+                <dt>{{ t('settings.memoryMetaUpdated') }}</dt>
+                <dd>{{ formatMemoryDate(record.updatedAt) }}</dd>
+              </div>
+            </dl>
+            <details v-if="record.sourceRefs.length > 0" class="settings-memory-sources">
+              <summary>{{ t('settings.memorySourceSummary', { count: record.sourceRefs.length }) }}</summary>
+              <ul>
+                <li v-for="source in record.sourceRefs" :key="source.sourceId">
+                  <span class="settings-memory-source-type">{{ source.sourceType }}</span>
+                  <span>{{ source.summary || source.sourceId }}</span>
+                </li>
+              </ul>
+            </details>
           </li>
         </ul>
       </article>
@@ -219,6 +282,31 @@ onMounted(loadMemoryEntries)
   margin-bottom: 0;
 }
 
+.settings-memory-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.settings-memory-readonly {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.settings-memory-summary {
+  margin: var(--space-xs) 0 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
 .settings-memory-list {
   display: flex;
   flex-direction: column;
@@ -265,6 +353,58 @@ onMounted(loadMemoryEntries)
   white-space: pre-wrap;
 }
 
+.settings-memory-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-sm);
+  margin: 0;
+}
+
+.settings-memory-meta div {
+  min-width: 0;
+}
+
+.settings-memory-meta dt {
+  margin-bottom: 2px;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.settings-memory-meta dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.settings-memory-sources {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.settings-memory-sources summary {
+  cursor: pointer;
+  font-weight: var(--font-weight-semibold);
+}
+
+.settings-memory-sources ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+  padding-left: var(--space-md);
+}
+
+.settings-memory-sources li {
+  line-height: 1.5;
+}
+
+.settings-memory-source-type {
+  margin-right: var(--space-xs);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
 @media (max-width: 560px) {
   .settings-card--row {
     align-items: flex-start;
@@ -287,6 +427,10 @@ onMounted(loadMemoryEntries)
     display: flex;
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .settings-memory-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .settings-memory-header .btn {
