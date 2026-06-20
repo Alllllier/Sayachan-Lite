@@ -20,11 +20,6 @@ type DebugMemoryCandidateTrace = NonNullable<ChatDebugTraceDto['memoryCandidate'
 type DebugGovernanceTrace = NonNullable<ChatDebugTraceDto['governance']>
 type DebugJudgmentTrace = NonNullable<ChatDebugTraceDto['judgment']>[number]
 type DebugJudgmentSummary = NonNullable<DebugJudgmentTrace['judgments']>[string]
-type SayachanDebugStageSummary = {
-  stageName: string
-  status: string
-}
-
 const messageListRef = ref<HTMLElement | null>(null)
 const personalityBaselineOptions: PersonalityBaselineOption[] = ['warm', 'strict', 'haraguro']
 const convergenceModeOptions: ConvergenceModeOption[] = ['explore', 'guided', 'decisive']
@@ -128,15 +123,6 @@ const debugMemoryTrace = computed<DebugMemoryTrace | null>(() => runtimeControls
 const debugMemoryCandidateTrace = computed<DebugMemoryCandidateTrace | null>(() => runtimeControls.latestDebugTrace?.memoryCandidate || null)
 const debugGovernanceTrace = computed<DebugGovernanceTrace | null>(() => runtimeControls.latestDebugTrace?.governance || null)
 const sayachanDebugTrace = computed<SayaDeskSayachanDebugTraceDto | null>(() => runtimeControls.latestSayachanDebugTrace || null)
-const sayachanDebugStageSummaries = computed<SayachanDebugStageSummary[]>(() => {
-  const trace = sayachanDebugTrace.value
-  if (!trace) return []
-  const summaries = trace.stage_summaries || []
-  return summaries.map(stage => ({
-    stageName: stage.stage_name,
-    status: stage.status
-  }))
-})
 const sayachanDebugAdvanceKind = computed(() => sayachanDebugTrace.value?.advance_kind || t('chat.debugEmpty'))
 
 function sendCurrentMessage(): Promise<void> {
@@ -989,14 +975,6 @@ function sayachanDebugResponseId(trace: SayaDeskSayachanDebugTraceDto): string {
                   </template>
                 </div>
 
-                <div class="runtime-debug-block">
-                  <div class="runtime-debug-title">{{ t('chat.debugV4Stages') }}</div>
-                  <div v-if="sayachanDebugStageSummaries.length === 0" class="runtime-debug-empty">{{ t('chat.debugNoTrace') }}</div>
-                  <div v-for="stage in sayachanDebugStageSummaries" :key="stage.stageName" class="runtime-debug-line">
-                    <span>{{ stage.stageName }}</span>
-                    <span>{{ stage.status }}</span>
-                  </div>
-                </div>
               </template>
             </div>
           </div>
