@@ -8,7 +8,7 @@ import {
   shouldRequireDatabase
 } from '../dist/database.js';
 
-const LOCAL_MONGO_URI = 'mongodb://localhost:27017/personal-os-lite';
+const LOCAL_MONGO_URI = 'mongodb://localhost:27017/sayaDesk';
 
 function withPatchedConnect(connect, run) {
   const originalConnect = mongoose.connect;

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const LOCAL_MONGO_URI = 'mongodb://localhost:27017/personal-os-lite';
+const LOCAL_MONGO_URI = 'mongodb://localhost:27017/sayaDesk';
 
 type DatabaseEnv = Record<string, string | undefined>;
 

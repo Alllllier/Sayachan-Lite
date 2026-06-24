@@ -56,7 +56,7 @@ cp frontend/.env.local.example frontend/.env.local
 
 | 变量 | 所属 | 说明 | 默认值 |
 |------|------|--------|--------|
-| `MONGO_URI` | Backend | MongoDB 连接串 | `mongodb://localhost:27017/personal-os-lite`（技术内部配置，可保持默认） |
+| `MONGO_URI` | Backend | MongoDB 连接串 | `mongodb://localhost:27017/sayaDesk`（技术内部配置，可保持默认） |
 | `PORT` | Backend | 后端服务端口 | `3001` |
 | `FRONTEND_ORIGIN` | Backend | CORS 允许的前端地址 | `http://localhost:5173` |
 | `KIMI_API_KEY` | Backend | 可选的 Kimi API Key | - |
